@@ -10,7 +10,7 @@
 
 **Spec:** [正文发布设计](../specs/2026-09-04-fmea-publication-body-design.md)。同时遵循 [完整 FMEA 产品设计](../specs/2026-08-27-full-fmea-modular-product-design.md)。
 
-**Status:** APPROVED / IMPLEMENTING。用户于 2026-09-04 确认，从 Task 1 开始。实现起点 `d1040fcf`（文档提交），代码基线 `9fca984e`，工作树 `C:/Users/35551/Desktop/RAG/.worktrees/interface-output-v1`，分支 `feat/interface-output-v1`。不切 main，不推送，不创建 PR。
+**Status:** COMPLETE。用户于 2026-09-04 确认，从 Task 1 开始。实现起点 `d1040fcf`（文档提交），代码基线 `9fca984e`，工作树 `C:/Users/35551/Desktop/RAG/.worktrees/interface-output-v1`，分支 `feat/interface-output-v1`。不切 main，不推送，不创建 PR。
 
 **Task 1 完成记录（2026-09-04）。** Task 1 提交 `75d1cb98` → `c4cdfc4b` → `7bd0c69b`。最终定向测试 100 passed（主代理复验 0.79s），范围 Ruff 与差异空白检查通过；Luna xhigh 规格/质量审查发现五项缺口，经 round 1 修正；其引入的两项兼容性回归经 round 2 关闭，PASS / CLOSED。该结论不表示真实发布与三格式正文报告已经接通。[Task 1 交接](../../handoff/fmea-publication-body-task1.md)。
 
@@ -18,7 +18,9 @@
 
 **Task 3 完成记录（2026-09-04）。** 代码至 `f595fcb0`，主代理合并定向验证 **216 passed，1 deselected，31.53s**；未重复未改动的万行测试。12 个改动文件 Ruff 与范围差异检查通过；独立 Luna xhigh 复审 Spec PASS / Quality Approved，无阻断项。支持固定模板视图、完整模板集合提交核验与旧历史读取；生成布局使用稳定字段键排序，尚不支持任意自定义排序元数据。Task 4/5 未开始。[Task 3 交接](../../handoff/fmea-publication-body-task3.md)。
 
-**Task 4 完成记录（2026-09-05）。** 实现 `09bd6c8f`、复审修正 `757c8fe1`。主代理最终四文件定向集合 **106 passed in 3.46s**，范围 Ruff 与差异检查通过。独立 Luna xhigh 复审发现两项 XLSX 阻断问题，定点复核已关闭，PASS / Quality Approved。真实 Word 与 Excel 小样例及多换行/超长正文边界预览通过；旧机器附录宽表仍是明确保留的阅读限制，不宣称整份 DOCX 精排。Task 5 未开始。[Task 4 交接](../../handoff/fmea-publication-body-task4.md)。
+**Task 4 完成记录（2026-09-05）。** 实现 `09bd6c8f`、复审修正 `757c8fe1`。主代理最终四文件定向集合 **106 passed in 3.46s**，范围 Ruff 与差异检查通过。独立 Luna xhigh 复审发现两项 XLSX 阻断问题，定点复核已关闭，PASS / Quality Approved。真实 Word 与 Excel 小样例及多换行/超长正文边界预览通过；旧机器附录宽表仍是明确保留的阅读限制，不宣称整份 DOCX 精排。该记录形成时 Task 5 尚未开始。[Task 4 交接](../../handoff/fmea-publication-body-task4.md)。
+
+**Task 5 完成记录（2026-09-05）。** 实现 `505ec66e`，复审修正 `812ddef4`、`86c8e7be`、`7d28f454`。前四 Task 与初版 Task 5 的 16 文件去重集合 **408 passed，1 deselected，58.43s**；最终 Task 5 三文件集合 **94 passed，33.72s**，尾列反例与既有可见正文/布局反例 **7 passed，11.35s**。范围 Ruff、差异检查、真实 runner 与增强独立 verifier 均通过。两轮 Luna xhigh 定点复核关闭 Office 可见正文、固定模板布局、三 profile provenance 和 Excel 尾随单元格绕过，整体方案无条件通过。实际包 `a73d6400-adcf-452b-a909-4ec4f2c464f7`；不代表真实工程资料、在线检索或工业认证。[Task 5 交接](../../handoff/fmea-publication-body-task5.md)。
 
 ## Global Constraints
 
@@ -160,11 +162,11 @@ assert _without_format_identity(_parse_docx(docx_bytes)) == _without_format_iden
 
 **Interfaces:** 复用 `run_full_acceptance(output_root=tmp_path)` 和 `verify_acceptance_directory(artifact_dir)`，不另建 runner，其中 `tmp_path` 为 pytest 临时目录。若验收包需要区分旧摘要与新正文，显式版本化包合同并保留旧验证分支；新包必须要求正文标记，删除标记应失败。
 
-- [ ] 新增独立篡改反例：改故障正文、quote、评分关联、审核版本；将快照和导出文件一起改并重算自洽哈希；删除正文标记。verifier 必须依据批准原生记录拒绝，而不是复用生产投影或信任 manifest 的 P0 数字。
-- [ ] 执行 `.venv/Scripts/python.exe -m pytest tests/integration/test_fmea_full_acceptance.py tests/integration/test_fmea_cross_domain_acceptance.py tests/regression/test_fmea_delivery_security.py -q`，确认 RED。
-- [ ] 扩充现有 fuel-combustion 完整服务样例与 verifier；电气/软件只做结构迁移证明，不称为完整工程验证。保持三种证据 profile 的 provenance 无损，不连接新检索器。
-- [ ] 同一命令 GREEN；对前四 Task 的定向测试集合合并去重后运行一次。未改前端不跑浏览器全套；未改分页/分块/大小合同不重复万行压测。
-- [ ] 运行最终真实 runner 与独立 verifier：
+- [x] 新增独立篡改反例：改故障正文、quote、评分关联、审核版本；将快照和导出文件一起改并重算自洽哈希；删除正文标记。verifier 必须依据批准原生记录拒绝，而不是复用生产投影或信任 manifest 的 P0 数字。
+- [x] 执行 `.venv/Scripts/python.exe -m pytest tests/integration/test_fmea_full_acceptance.py tests/integration/test_fmea_cross_domain_acceptance.py tests/regression/test_fmea_delivery_security.py -q`，确认 RED。
+- [x] 扩充现有 fuel-combustion 完整服务样例与 verifier；电气/软件只做结构迁移证明，不称为完整工程验证。保持三种证据 profile 的 provenance 无损，不连接新检索器。
+- [x] 同一命令 GREEN；对前四 Task 的定向测试集合合并去重后运行一次。未改前端不跑浏览器全套；未改分页/分块/大小合同不重复万行压测。
+- [x] 运行最终真实 runner 与独立 verifier：
 
 ```powershell
 .venv/Scripts/python.exe scripts/run_fmea_full_acceptance.py
@@ -172,8 +174,8 @@ assert _without_format_identity(_parse_docx(docx_bytes)) == _without_format_iden
 git diff --check
 ```
 
-- [ ] 检查实际返回目录中的 Word/Excel/JSON。交接记录正文覆盖字段、包 ID、测试证据、平台跳过、旧快照兼容及仍待真实资料验证的边界；不能预填通过数。
-- [ ] 做范围整体复审，关闭阻断项；仅提交本轮拥有的文件，提交信息 `test(fmea): verify publication body delivery end to end`。未授权不 push/PR。
+- [x] 检查实际返回目录中的 Word/Excel/JSON。交接记录正文覆盖字段、包 ID、测试证据、平台跳过、旧快照兼容及仍待真实资料验证的边界；不能预填通过数。
+- [x] 做范围整体复审，关闭阻断项；仅提交本轮拥有的文件，提交信息 `test(fmea): verify publication body delivery end to end`。未授权不 push/PR。
 
 ## 并行安排与复核
 

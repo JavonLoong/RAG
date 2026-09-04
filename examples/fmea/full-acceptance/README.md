@@ -27,12 +27,22 @@ Private runtime databases and registries are not copied into it. A fresh pending
 directory is verified before publication; failed partial directories never
 advance `latest.json`. The independent verifier does not import these helpers.
 
-The existing governance publisher stores row/risk/graph identity summaries in
-its normalized snapshot, so this connected fixture's published documents show
-those identity projections. Detailed field, score, evidence, and graph DTOs are
-available in `evidence.json` and independently hash-bound to those summaries.
-This is not a claim that the publisher already emits a formatted engineering
-FMEA body report; rich adapter projections are exercised separately below.
+The publication-body implementation stores version-bound FMEA fields, confirmed
+risk, propagation, public evidence quotes, and review/approval summaries in an
+immutable normalized snapshot. The saved template layout drives the reading
+sections of XLSX and DOCX; the original machine-readable typed tables remain.
+The Word machine appendix retains wide tables and is not a polished reading
+section. Exact types and complete values remain available in canonical JSON.
+
+Task 5 extends this runner and its independent verifier to compare those bodies
+against approved native records in `evidence.json`, not merely compare export
+hashes with one another. It also validates the visible XLSX/DOCX reading body,
+pinned report layout and retrieval provenance. Completion evidence, package
+version compatibility and the final artifact ID are recorded in
+`docs/handoff/fmea-publication-body-task5.md`; this README remains descriptive,
+not a substitute for that recorded test result. The public offline bundle is
+not signed external evidence against an attacker who can rewrite every native
+record and the entire bundle.
 
 Fuel/combustion exercises the connected lifecycle. Electrical/software packs
 exercise the same compiler/registries here and typed extension serialization and
