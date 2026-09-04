@@ -30,20 +30,11 @@ _MIN_WIDTH: Final = 12
 _WIDTH_SAMPLE_ROWS: Final = 32
 _TYPES_COLUMN: Final = "__types__"
 _RESERVED_HEADERS: Final = frozenset({"Identity", _TYPES_COLUMN})
-_READABLE_MAIN_MAX_COLUMNS: Final = 6
 _READABLE_MAIN_EXTRA_HEADERS: Final = ("评分摘要", "复核状态", "证据编号")
-_READABLE_DETAIL_TEXT_PART_SIZE: Final = 400
-_READABLE_DETAIL_CONTINUATION_THRESHOLD: Final = 400
-_READABLE_PREFERRED_FIELDS: Final = (
-    "item_id",
-    "function_id",
-    "failure_mode",
-    "causes",
-    "effects",
-    "controls",
-    "barriers",
-    "actions",
-)
+_READABLE_ROW_LINE_BUDGET: Final = 24
+_READABLE_MAIN_MARKER_WIDTHS: Final = (12.0, 10.0, 24.0)
+_READABLE_MAIN_VALUE_WIDTH: Final = 24.0
+_READABLE_DETAIL_COLUMN_WIDTHS: Final = (14.0, 12.0, 16.0, 28.0, 48.0)
 
 
 class XlsxExportError(ValueError):
@@ -261,12 +252,63 @@ def _human_text(value: object) -> str:
 
 
 def _readable_columns(view) -> tuple[object, ...]:
-    available = tuple(view.columns)
-    selected: list[object] = []
-    for field_key in _READABLE_PREFERRED_FIELDS:
-        selected.extend(column for column in available if column.field_key == field_key)
-    selected.extend(column for column in available if column not in selected)
-    return tuple(selected[:_READABLE_MAIN_MAX_COLUMNS])
+    return tuple(view.columns)
+
+
+def _display_width(value: str) -> int:
+    return sum(2 if unicodedata.east_asian_width(character) in {"W", "F", "A"} else 1 for character in value)
+
+
+def _visual_line_count(value: str, column_width: float) -> int:
+    return sum(
+        max(1, math.ceil(_display_width(line.rstrip("\r")) / max(1, column_width)))
+        for line in value.split("\n")
+    )
+
+
+def _readable_text_parts(value: str, column_width: float) -> tuple[str, ...]:
+    if _visual_line_count(value, column_width) <= _READABLE_ROW_LINE_BUDGET:
+        return (value,)
+
+    parts: list[str] = []
+    part_start = 0
+    line_count = 1
+    line_width = 0
+    for index, character in enumerate(value):
+        if character == "\n":
+            next_line_count = line_count + 1
+            next_line_width = 0
+        else:
+            character_width = 0 if character == "\r" else (2 if unicodedata.east_asian_width(character) in {"W", "F", "A"} else 1)
+            wraps = line_width > 0 and line_width + character_width > column_width
+            next_line_count = line_count + int(wraps)
+            next_line_width = character_width if wraps else line_width + character_width
+        if next_line_count > _READABLE_ROW_LINE_BUDGET:
+            parts.append(value[part_start:index])
+            part_start = index
+            line_count = 1
+            line_width = 0
+            if character == "\n":
+                line_count = 2
+            else:
+                character_width = 0 if character == "\r" else (2 if unicodedata.east_asian_width(character) in {"W", "F", "A"} else 1)
+                line_width = character_width
+            continue
+        line_count = next_line_count
+        line_width = next_line_width
+    parts.append(value[part_start:])
+    if any(_visual_line_count(part, column_width) > _READABLE_ROW_LINE_BUDGET for part in parts):
+        _invalid()
+    return tuple(parts)
+
+
+def _set_readable_widths(worksheet, widths: Sequence[float]) -> None:
+    for column_index, width in enumerate(widths, start=1):
+        worksheet.column_dimensions[get_column_letter(column_index)].width = width
+
+
+def _main_column_widths(column_count: int) -> tuple[float, ...]:
+    return (*_READABLE_MAIN_MARKER_WIDTHS, *(_READABLE_MAIN_VALUE_WIDTH for _ in range(column_count - 3)))
 
 
 def _detail_row(detail: Mapping[str, object]) -> Mapping[str, object]:
@@ -317,12 +359,15 @@ def _risk_summary(risks: Sequence[Mapping[str, object]]) -> str:
 
 def _append_readable_main(worksheet, view) -> None:
     columns = _readable_columns(view)
-    headers = [column.label for column in columns] + list(_READABLE_MAIN_EXTRA_HEADERS)
+    headers = ["逻辑行", "分段", "续字段", *[column.label for column in columns], *_READABLE_MAIN_EXTRA_HEADERS]
+    if len(headers) > _MAX_COLUMNS:
+        _invalid()
+    widths = _main_column_widths(len(headers))
+    _set_readable_widths(worksheet, widths)
     for column_index, header in enumerate(headers, start=1):
         _set_string_cell(worksheet.cell(1, column_index), str(header))
-    details_by_index = view.details
-    for row_index, values in enumerate(view.rows, start=2):
-        detail = details_by_index[row_index - 2] if row_index - 2 < len(details_by_index) else {}
+    for logical_row, values in enumerate(view.rows, start=1):
+        detail = view.details[logical_row - 1] if logical_row - 1 < len(view.details) else {}
         row = _detail_row(detail) if isinstance(detail, Mapping) else {}
         risks = _detail_risks(detail, row) if isinstance(detail, Mapping) else ()
         display_values = [_human_text(values[column.field_key]) for column in columns]
@@ -331,8 +376,26 @@ def _append_readable_main(worksheet, view) -> None:
             _human_text(row.get("review_status")),
             "、".join(_detail_evidence_ids(row)),
         ))
-        for column_index, value in enumerate(display_values, start=1):
-            _set_string_cell(worksheet.cell(row_index, column_index), value)
+        display_fields = [column.field_key for column in columns] + ["risk_summary", "review_status", "evidence_ids"]
+        parts = [
+            _readable_text_parts(value, width)
+            for value, width in zip(display_values, widths[3:], strict=True)
+        ]
+        part_count = max(map(len, parts), default=1)
+        continued_fields = [field for field, field_parts in zip(display_fields, parts, strict=True) if len(field_parts) > 1]
+        for part_index in range(part_count):
+            row_values = (
+                f"第{logical_row}行",
+                f"{part_index + 1}/{part_count}",
+                "、".join(continued_fields),
+                *(
+                    field_parts[part_index] if part_index < len(field_parts) else ""
+                    for field_parts in parts
+                ),
+            )
+            row_index = worksheet.max_row + 1
+            for column_index, value in enumerate(row_values, start=1):
+                _set_string_cell(worksheet.cell(row_index, column_index), value)
 
 
 def _append_detail_record(
@@ -342,15 +405,9 @@ def _append_detail_record(
     detail_type: str,
     field: str,
     value: object,
-    *,
-    continuation: bool = False,
 ) -> None:
     text = _human_text(value)
-    parts = (
-        tuple(text[index:index + _READABLE_DETAIL_TEXT_PART_SIZE] for index in range(0, len(text), _READABLE_DETAIL_TEXT_PART_SIZE))
-        if continuation and len(text) > _READABLE_DETAIL_CONTINUATION_THRESHOLD
-        else (text,)
-    )
+    parts = _readable_text_parts(text, _READABLE_DETAIL_COLUMN_WIDTHS[-1])
     for part_index, part in enumerate(parts, start=1):
         field_name = field if len(parts) == 1 else f"{field} [part {part_index}/{len(parts)}]"
         values = (row_id, _human_text(record_version), detail_type, field_name, part)
@@ -368,6 +425,9 @@ def _append_mapping_fields(
     value: object,
 ) -> None:
     if isinstance(value, Mapping):
+        if not value:
+            _append_detail_record(worksheet, row_id, record_version, detail_type, prefix, value)
+            return
         for key, item in value.items():
             field = f"{prefix}.{key}" if prefix else str(key)
             _append_mapping_fields(worksheet, row_id, record_version, detail_type, field, item)
@@ -381,19 +441,12 @@ def _append_mapping_fields(
         for index, item in enumerate(value, start=1):
             _append_mapping_fields(worksheet, row_id, record_version, detail_type, f"{prefix}[{index}]", item)
         return
-    _append_detail_record(
-        worksheet,
-        row_id,
-        record_version,
-        detail_type,
-        prefix,
-        value,
-        continuation=prefix.rsplit(".", 1)[-1] == "quote",
-    )
+    _append_detail_record(worksheet, row_id, record_version, detail_type, prefix, value)
 
 
 def _append_readable_details(worksheet, view, projection: Mapping[str, object]) -> None:  # noqa: C901
     headers = ("行ID", "记录版本", "详情类型", "字段", "内容")
+    _set_readable_widths(worksheet, _READABLE_DETAIL_COLUMN_WIDTHS)
     for column_index, header in enumerate(headers, start=1):
         _set_string_cell(worksheet.cell(1, column_index), header)
 
@@ -482,24 +535,26 @@ def _append_readable_details(worksheet, view, projection: Mapping[str, object]) 
         _append_mapping_fields(worksheet, "", "", "传播", "propagation", projection["propagation"])
 
 
-def _display_width(value: str) -> int:
-    return sum(2 if unicodedata.east_asian_width(character) in {"W", "F", "A"} else 1 for character in value)
-
-
 def _style_readable_sheet(worksheet) -> None:
     _style_sheet(worksheet)
+    widths = (
+        _main_column_widths(worksheet.max_column)
+        if worksheet.title == "正文"
+        else _READABLE_DETAIL_COLUMN_WIDTHS
+    )
+    _set_readable_widths(worksheet, widths)
     for row_index in range(2, worksheet.max_row + 1):
-        lines = 1
-        for column in range(1, worksheet.max_column + 1):
-            value = worksheet.cell(row_index, column).value
-            if value is None:
-                continue
-            width = worksheet.column_dimensions[get_column_letter(column)].width or _MIN_WIDTH
-            lines += sum(
-                max(1, math.ceil(_display_width(line) / max(1, width)))
-                for line in str(value).splitlines()
-            ) - 1
-        worksheet.row_dimensions[row_index].height = min(409.5, max(36, 15 * lines))
+        line_counts = [
+            _visual_line_count(
+                "" if (value := worksheet.cell(row_index, column).value) is None else str(value),
+                widths[column - 1],
+            )
+            for column in range(1, worksheet.max_column + 1)
+        ]
+        lines = max(line_counts, default=1)
+        if lines > _READABLE_ROW_LINE_BUDGET:
+            _invalid()
+        worksheet.row_dimensions[row_index].height = max(36, 15 * lines)
 
 
 def _validate_package_xml(name: str, raw: bytes) -> None:

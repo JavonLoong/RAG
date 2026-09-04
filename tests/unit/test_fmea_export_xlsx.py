@@ -140,7 +140,7 @@ def test_xlsx_reading_body_uses_report_view_and_keeps_full_evidence_in_deduplica
 def test_xlsx_human_quote_continuation_reassembles_literal_text() -> None:
     from tests.unit.test_fmea_report_view import _layout, _snapshot
 
-    long_quote = "可追溯证据文本。" * 60
+    long_quote = "可追溯证据文本。" * 100
     snapshot = _snapshot(
         layout=_layout({
             "field_key": "failure_mode",
@@ -168,9 +168,128 @@ def test_xlsx_human_quote_continuation_reassembles_literal_text() -> None:
     detail_rows = list(workbook["正文详情"].iter_rows(values_only=True))[1:]
     quote_rows = [row for row in detail_rows if str(row[3]).startswith("evidence-long.quote [part ")]
 
-    assert len(quote_rows) == 2
+    assert [row[3] for row in quote_rows] == [
+        "evidence-long.quote [part 1/2]",
+        "evidence-long.quote [part 2/2]",
+    ]
     assert "".join(str(row[4]) for row in quote_rows) == long_quote
-    assert all(len(str(row[4])) <= 400 for row in quote_rows)
+
+
+def test_xlsx_human_continuations_cover_newlines_main_and_ordinary_details_losslessly() -> None:
+    from tests.unit.test_fmea_report_view import _layout, _snapshot
+
+    newline_text = "\n".join("甲甲" for _ in range(100))
+    main_long_text = "主正文" * 250
+    detail_long_text = "普通详情" * 250
+    snapshot = _snapshot(
+        layout=_layout(
+            {
+                "field_key": "failure_mode",
+                "label": "故障模式",
+                "value_type": "string",
+                "value_path": ("row", "failure_mode"),
+            },
+            {
+                "field_key": "item_id",
+                "label": "项目",
+                "value_type": "string",
+                "value_path": ("row", "item_id"),
+            },
+        ),
+        row={
+            "failure_mode": newline_text,
+            "item_id": main_long_text,
+            "ordinary_detail": detail_long_text,
+        },
+        refs=(
+            {
+                "evidence_id": "evidence-empty-locator",
+                "document_id": "manual-empty-locator",
+                "document_version": "1",
+                "content_hash": "c" * 64,
+                "evidence_hash": "d" * 64,
+                "locator": {},
+                "quote": "短引文",
+                "source_type": "primary_document",
+                "source_trust": "trusted",
+            },
+        ),
+    )
+
+    workbook = openpyxl.load_workbook(io.BytesIO(XlsxFmeaExporter().render(snapshot)), data_only=False)
+    body_rows = list(workbook["正文"].iter_rows(values_only=True))
+    body_headers = list(body_rows[0])
+    continuation_column = body_headers.index("续字段")
+
+    for field_key, label, expected in (
+        ("failure_mode", "故障模式", newline_text),
+        ("item_id", "项目", main_long_text),
+    ):
+        value_column = body_headers.index(label)
+        parts = [
+            row
+            for row in body_rows[1:]
+            if field_key in str(row[continuation_column])
+        ]
+        assert len(parts) > 1
+        assert "".join(str(row[value_column] or "") for row in parts) == expected
+
+    detail_rows = list(workbook["正文详情"].iter_rows(values_only=True))[1:]
+    detail_parts = [row for row in detail_rows if str(row[3]).startswith("ordinary_detail [part ")]
+    assert len(detail_parts) > 1
+    assert "".join(str(row[4]) for row in detail_parts) == detail_long_text
+    assert any(row[3] == "evidence-empty-locator.locator" and row[4] == "（空对象）" for row in detail_rows)
+
+
+def test_xlsx_reading_body_keeps_all_saved_view_columns_in_declared_order() -> None:
+    from tests.unit.test_fmea_report_view import _layout, _snapshot
+
+    field_specs = (
+        ("item_id", "项目"),
+        ("function_id", "功能"),
+        ("failure_mode", "故障模式"),
+        ("causes", "原因"),
+        ("effects", "影响"),
+        ("controls", "控制"),
+        ("barriers", "屏障"),
+        ("actions", "措施"),
+        ("custom.control", "自定义控制"),
+    )
+    columns = tuple(
+        {
+            "field_key": field_key,
+            "label": label,
+            "value_type": "string",
+            "value_path": ("extension_values", field_key)
+            if field_key == "custom.control"
+            else ("row", field_key),
+        }
+        for field_key, label in field_specs
+    )
+    snapshot = _snapshot(
+        layout=_layout(*columns),
+        row={
+            "item_id": "item-1",
+            "function_id": "function-1",
+            "failure_mode": "低压",
+            "causes": ("堵塞",),
+            "effects": ("供油不稳",),
+            "controls": ("压差监测",),
+            "barriers": ("报警",),
+            "actions": ("更换滤芯",),
+            "extension_values": (
+                {"field_key": "custom.control", "value_type": "string", "value": "自定义联锁"},
+            ),
+        },
+    )
+
+    workbook = openpyxl.load_workbook(io.BytesIO(XlsxFmeaExporter().render(snapshot)), data_only=False)
+    body_rows = list(workbook["正文"].iter_rows(values_only=True))
+    headers = list(body_rows[0])
+    expected_labels = [label for _, label in field_specs]
+    assert [header for header in headers if header in expected_labels] == expected_labels
+    body_values = {value for row in body_rows[1:] for value in row}
+    assert {"更换滤芯", "自定义联锁"} <= body_values
 
 
 def test_xlsx_rejects_reading_detail_that_exceeds_excel_cell_limit_without_truncation() -> None:
