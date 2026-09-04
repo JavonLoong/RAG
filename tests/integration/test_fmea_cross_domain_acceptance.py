@@ -20,7 +20,9 @@ from docx.text.paragraph import Paragraph
 from core_domain.fmea.codec import decode_row, encode_json
 from core_domain.fmea.domain_pack import DomainPackManifest
 from core_domain.fmea.entities import FieldClaim, FieldValue, FmeaRow, validate_extension_values
+from core_domain.fmea.governance import RetrievalProvenanceSnapshot
 from core_domain.fmea.states import ClaimStatus, EvidenceSupportStatus, PublicationStatus, ReviewStatus
+from core_domain.query_contracts import EvidenceSelectionProfile
 from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
 from fmea_infrastructure.domain_pack_registry import (
     FileDomainPackRegistry,
@@ -37,6 +39,19 @@ from tests.fmea_governance_fixtures import make_fmea_revision, make_normalized_s
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCHEMA_ID = "graphrag.fmea.v1"
+_PROFILE_PROVENANCE = {
+    EvidenceSelectionProfile.RAG_ONLY.value: (("text",), (("text", 1),), ()),
+    EvidenceSelectionProfile.GRAPHRAG_ONLY.value: (
+        ("graph", "community"),
+        (("graph", 1), ("community", 1)),
+        (),
+    ),
+    EvidenceSelectionProfile.COMBINED.value: (
+        ("text", "graph", "community"),
+        (("text", 1), ("graph", 1), ("community", 1)),
+        (),
+    ),
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -211,11 +226,13 @@ def _core_domain_imports_domain_modules() -> tuple[str, ...]:
     return tuple(sorted(imported))
 
 
-def run_domain_fixture(pack_id: str) -> DomainFixture:
+def run_domain_fixture(pack_id: str, *, profile: str = EvidenceSelectionProfile.COMBINED.value) -> DomainFixture:
     """Load, register, serialize, snapshot, and export one real pack fixture."""
 
     if pack_id not in PACK_SPECS:
         raise KeyError(pack_id)
+    if profile not in _PROFILE_PROVENANCE:
+        raise ValueError(profile)
     spec = PACK_SPECS[pack_id]
     manifest_source = spec.manifest_path.read_bytes()
     scoring_source = spec.scoring_path.read_bytes()
@@ -240,9 +257,18 @@ def run_domain_fixture(pack_id: str) -> DomainFixture:
     if spec.extension_values:
         validate_extension_values(row, template)
     row_payload = json.loads(encode_json(row))
+    evidence_types, source_counts, warnings = _PROFILE_PROVENANCE[profile]
+    provenance = RetrievalProvenanceSnapshot(
+        requested_profile=profile,
+        resolved_profile=profile,
+        evidence_types=evidence_types,
+        source_counts=source_counts,
+        warnings=warnings,
+    )
     revision = make_fmea_revision(
         analysis_id=f"{pack_id}-analysis",
         workspace_id="ws-1",
+        retrieval_provenance=provenance,
     )
     body_row = dict(row_payload)
     body_row["field_evidence"] = [
@@ -302,6 +328,13 @@ def run_domain_fixture(pack_id: str) -> DomainFixture:
             "scoring_rule": {
                 "id": scoring_rule.rule_pack_id,
                 "version": scoring_rule.version,
+            },
+            "retrieval_provenance": {
+                "requested_profile": profile,
+                "resolved_profile": profile,
+                "evidence_types": list(evidence_types),
+                "source_counts": [list(item) for item in source_counts],
+                "warnings": list(warnings),
             },
         },
         audit_summary={"event_count": 1},
@@ -372,6 +405,37 @@ def test_demo_exports_exercise_marked_publication_body_path(pack_id: str) -> Non
     assert result.snapshot.version_manifest["body_schema_version"] == "graphrag.fmea.body.v1"
     assert result.snapshot.decision_summary[0]["role_category"] == "human_reviewer"
     assert all(view["version_manifest"]["body_schema_version"] == "graphrag.fmea.body.v1" for view in result.export_views.values())
+
+
+@pytest.mark.parametrize(
+    "profile",
+    [
+        EvidenceSelectionProfile.RAG_ONLY.value,
+        EvidenceSelectionProfile.GRAPHRAG_ONLY.value,
+        EvidenceSelectionProfile.COMBINED.value,
+    ],
+)
+def test_three_evidence_profiles_survive_marked_body_and_all_exports(profile: str) -> None:
+    result = run_domain_fixture("fuel-combustion", profile=profile)
+    evidence_types, source_counts, warnings = _PROFILE_PROVENANCE[profile]
+    expected_snapshot = {
+        "requested_profile": profile,
+        "resolved_profile": profile,
+        "evidence_types": evidence_types,
+        "source_counts": source_counts,
+        "warnings": warnings,
+    }
+    expected_export = {
+        "requested_profile": profile,
+        "resolved_profile": profile,
+        "evidence_types": list(evidence_types),
+        "source_counts": [list(item) for item in source_counts],
+        "warnings": list(warnings),
+    }
+
+    assert result.snapshot.version_manifest["retrieval_provenance"] == expected_snapshot
+    for view in result.export_views.values():
+        assert view["version_manifest"]["retrieval_provenance"] == expected_export
 
 
 @pytest.mark.parametrize("pack_id", ["electrical-demo", "software-demo"])

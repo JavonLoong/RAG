@@ -4,6 +4,8 @@ No runner, fixture builder, or exporter helper is imported here. Inventory
 verification alone is deliberately insufficient to accept a product workflow.
 """
 
+# ruff: noqa: RUF001
+
 from __future__ import annotations
 
 import argparse
@@ -40,6 +42,32 @@ _PRIVATE_KEYS = {"access_token", "api_key", "authorization", "credentials", "pas
 _TABLES = ("Manifest", "FMEA", "Risk", "Propagation", "Evidence", "Decisions", "Unresolved")
 _OFFICE_TABLES = ("正文", "正文详情", *_TABLES)
 _WORD = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+_LAYOUT_ROW_FIELDS = frozenset(
+    {
+        "row_id",
+        "analysis_id",
+        "evidence_pack_id",
+        "item_id",
+        "function_id",
+        "failure_mode",
+        "causes",
+        "mechanisms",
+        "effects",
+        "symptoms",
+        "controls",
+        "barriers",
+        "actions",
+        "claim_status",
+        "review_status",
+        "publication_status",
+        "record_version",
+        "row_hash",
+    }
+)
+_LAYOUT_FIELD_KEY = re.compile(r"[A-Za-z_][A-Za-z0-9_.-]*\Z")
+_LAYOUT_VALUE_TYPES = frozenset(
+    {"string", "integer", "number", "decimal", "boolean", "object", "array", "null", "json", "string[]"}
+)
 _P0_FIELDS = (
     "model_approval_count",
     "known_without_evidence_count",
@@ -991,6 +1019,90 @@ def _template_bindings(case: dict[str, object], revisions: dict[str, dict[str, o
     return records
 
 
+def _layout_value_path(field_key: str) -> list[str]:
+    _require(_LAYOUT_FIELD_KEY.fullmatch(field_key) is not None and ".." not in field_key, "FMEA_PUBLICATION_LAYOUT_MISMATCH")
+    if field_key in _LAYOUT_ROW_FIELDS:
+        return ["row", field_key]
+    if "." in field_key:
+        return ["extension_values", field_key]
+    return ["unavailable", field_key]
+
+
+def _independent_report_layout(canonical_json: str, identity: list[str]) -> dict[str, object]:
+    source = _parse(canonical_json.encode("utf-8"))
+    template = source.get("template")
+    schema = source.get("output_schema")
+    _require(isinstance(template, dict) and isinstance(schema, dict), "FMEA_PUBLICATION_LAYOUT_MISMATCH")
+    _require(
+        template.get("id") == identity[0] and template.get("version") == identity[1],
+        "FMEA_PUBLICATION_LAYOUT_MISMATCH",
+    )
+    properties = schema.get("properties", {})
+    _require(isinstance(properties, dict), "FMEA_PUBLICATION_LAYOUT_MISMATCH")
+    properties = dict(properties)
+    properties.setdefault("failure_mode", {"type": "string"})
+    properties.setdefault("causes", {"type": "array", "items": {"type": "string"}})
+    properties.setdefault("effects", {"type": "array", "items": {"type": "string"}})
+    columns = []
+    for field_key in sorted(properties):
+        definition = properties[field_key]
+        if isinstance(definition, bool):
+            definition = {}
+        _require(isinstance(definition, dict), "FMEA_PUBLICATION_LAYOUT_MISMATCH")
+        value_type = definition.get("type", "json")
+        items = definition.get("items", {})
+        if value_type == "array" and isinstance(items, dict) and items.get("type") == "string":
+            value_type = "string[]"
+        if not isinstance(value_type, str) or value_type not in _LAYOUT_VALUE_TYPES:
+            value_type = "json"
+        label = definition.get("title", field_key)
+        _require(isinstance(label, str), "FMEA_PUBLICATION_LAYOUT_MISMATCH")
+        columns.append(
+            {
+                "field_key": field_key,
+                "label": label,
+                "value_type": value_type,
+                "value_path": _layout_value_path(field_key),
+            }
+        )
+    return {
+        "template_identity": {
+            "template_id": identity[0],
+            "version": identity[1],
+            "template_hash": identity[2],
+        },
+        "columns": columns,
+    }
+
+
+def _select_independent_report_identity(
+    revision: dict[str, object], templates: dict[tuple[str, str], dict[str, str]]
+) -> list[str]:
+    identities = revision.get("template_identities")
+    _require(isinstance(identities, list) and identities, "FMEA_TEMPLATE_BINDING_INVALID")
+    seen: set[tuple[str, str]] = set()
+    direct_core: list[list[str]] = []
+    for identity in identities:
+        _require(isinstance(identity, list) and len(identity) == 3, "FMEA_TEMPLATE_BINDING_INVALID")
+        _require(all(isinstance(value, str) for value in identity), "FMEA_TEMPLATE_BINDING_INVALID")
+        key = (identity[0], identity[1])
+        _require(key not in seen, "FMEA_DUPLICATE_RECORD")
+        seen.add(key)
+        template = templates.get(key)
+        _require(template is not None, "FMEA_TEMPLATE_BINDING_INVALID")
+        _require(template.get("template_hash") == _digest(identity[2]), "FMEA_TEMPLATE_BINDING_INVALID")
+        source = _parse(template["canonical_json"].encode("utf-8"))
+        schema = source.get("output_schema")
+        _require(isinstance(schema, dict), "FMEA_PUBLICATION_LAYOUT_MISMATCH")
+        properties = schema.get("properties")
+        _require(isinstance(properties, dict), "FMEA_PUBLICATION_LAYOUT_MISMATCH")
+        if {"failure_mode", "effects"}.issubset(properties):
+            direct_core.append(identity)
+    _require(len(seen) == len(identities), "FMEA_TEMPLATE_BINDING_INVALID")
+    _require(len(direct_core) == 1, "FMEA_PUBLICATION_LAYOUT_MISMATCH")
+    return direct_core[0]
+
+
 def _validate_publication_manifest_body(case: dict[str, object], snapshot: dict[str, object], revision: dict[str, object], templates: dict[tuple[str, str], dict[str, str]]) -> None:
     version_manifest = snapshot.get("version_manifest")
     _require(isinstance(version_manifest, dict), "FMEA_PUBLICATION_BODY_MARKER_MISSING")
@@ -1013,23 +1125,29 @@ def _validate_publication_manifest_body(case: dict[str, object], snapshot: dict[
     report_identity = layout.get("template_identity")
     _require(isinstance(report_identity, dict) and set(report_identity) == {"template_hash", "template_id", "version"}, "FMEA_TEMPLATE_BINDING_INVALID")
     identity = [report_identity["template_id"], report_identity["version"], report_identity["template_hash"]]
-    _require(identity in revision["template_identities"], "FMEA_TEMPLATE_BINDING_INVALID")
-    _require(templates.get((identity[0], identity[1]), {}).get("template_hash") == _digest(identity[2]), "FMEA_TEMPLATE_BINDING_INVALID")
+    expected_identity = _select_independent_report_identity(revision, templates)
+    _require(identity == expected_identity, "FMEA_PUBLICATION_LAYOUT_MISMATCH")
+    template = templates[(expected_identity[0], expected_identity[1])]
+    _require(
+        layout == _independent_report_layout(template["canonical_json"], expected_identity),
+        "FMEA_PUBLICATION_LAYOUT_MISMATCH",
+    )
     columns = layout.get("columns")
     _require(isinstance(columns, list) and bool(columns), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
     for column in columns:
         _require(isinstance(column, dict) and set(column) == {"field_key", "label", "value_path", "value_type"}, "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
         _require(isinstance(column["value_path"], list) and all(isinstance(item, str) for item in column["value_path"]), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
     selected = case["evidence_selection"]
+    native_provenance = revision.get("retrieval_provenance")
+    _require(isinstance(selected, dict) and isinstance(native_provenance, dict), "FMEA_EVIDENCE_PROFILE_MISMATCH")
+    profile_fields = ("requested_profile", "resolved_profile", "evidence_types", "source_counts", "warnings")
+    _require(
+        all(selected.get(field) == native_provenance.get(field) for field in profile_fields[:2]),
+        "FMEA_EVIDENCE_PROFILE_MISMATCH",
+    )
     provenance = version_manifest["retrieval_provenance"]
     _require(isinstance(provenance, dict), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
-    expected_provenance = {
-        "evidence_types": ["text"],
-        "requested_profile": selected["requested_profile"],
-        "resolved_profile": selected["resolved_profile"],
-        "source_counts": [["text", sum(len(pack["refs"]) for pack in case["evidence_packs"])]],
-        "warnings": [],
-    }
+    expected_provenance = {field: native_provenance.get(field) for field in profile_fields}
     _require(provenance == expected_provenance, "FMEA_EVIDENCE_PROFILE_MISMATCH")
 
 
@@ -1054,6 +1172,330 @@ def _validate_v2_publication_body(case: dict[str, object], revisions: dict[str, 
         for field, value in expected.items():
             _require(snapshot.get(field) == value, "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
         _require(snapshot.get("row_count") == len(expected["rows"]), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+
+
+def _visible_plain(value: object) -> object:
+    if isinstance(value, dict):
+        return {str(key): _visible_plain(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_visible_plain(item) for item in value]
+    return value
+
+
+def _visible_text(value: object) -> str:
+    if value is None:
+        return "（无）"
+    if isinstance(value, str):
+        if value == "":
+            return "（空字符串）"
+        if not value.strip():
+            return "（空白字符串）"
+        return value
+    if isinstance(value, dict):
+        if not value:
+            return "（空对象）"
+        return json.dumps(_visible_plain(value), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    if isinstance(value, list):
+        if not value:
+            return "（空列表）"
+        return "；".join(_visible_text(item) for item in value)
+    return str(value)
+
+
+def _visible_row_values(row: dict[str, object], layout: dict[str, object]) -> list[str]:
+    extensions = {
+        item["field_key"]: item.get("value")
+        for item in row.get("extension_values", [])
+        if isinstance(item, dict) and isinstance(item.get("field_key"), str)
+    }
+    values = []
+    for column in layout["columns"]:
+        path = column["value_path"]
+        _require(isinstance(path, list) and len(path) == 2, "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
+        kind, key = path
+        value = row.get(key) if kind == "row" else extensions.get(key) if kind == "extension_values" else None
+        values.append(_visible_text(value))
+    return values
+
+
+def _visible_risk_summary(snapshot: dict[str, object], row: dict[str, object]) -> str:
+    risks = [
+        risk
+        for risk in snapshot["risk_records"]
+        if risk.get("row_id") == row.get("row_id")
+        and risk.get("source_record_version") == row.get("record_version")
+    ]
+    summaries = []
+    for risk in risks:
+        parts = [str(risk["assessment_id"]), str(risk["status"])]
+        derived = risk.get("derived")
+        if isinstance(derived, dict):
+            for key in ("rpn", "priority"):
+                if key in derived:
+                    parts.append(f"{key}={_visible_text(derived[key])}")
+        summaries.append("；".join(parts))
+    return " | ".join(summaries)
+
+
+def _visible_evidence_ids(row: dict[str, object]) -> str:
+    identifiers = set()
+    for binding in row.get("field_evidence", []):
+        if isinstance(binding, dict):
+            identifiers.update(str(item) for item in binding.get("evidence_ids", []))
+    return "、".join(sorted(identifiers))
+
+
+def _visible_main_values(snapshot: dict[str, object], layout: dict[str, object]) -> list[list[str]]:
+    result = []
+    for row in snapshot["rows"]:
+        values = _visible_row_values(row, layout)
+        values.extend((_visible_risk_summary(snapshot, row), _visible_text(row.get("review_status")), _visible_evidence_ids(row)))
+        result.append(values)
+    return result
+
+
+def _visible_detail_append(result: list[tuple[str, str, str, str, str]], row_id: str, version: str, detail_type: str, prefix: str, value: object) -> None:
+    if isinstance(value, dict):
+        if not value:
+            result.append((row_id, version, detail_type, prefix, "（空对象）"))
+            return
+        for key, item in value.items():
+            field = f"{prefix}.{key}" if prefix else str(key)
+            _visible_detail_append(result, row_id, version, detail_type, field, item)
+        return
+    if isinstance(value, list) and value and all(isinstance(item, dict) for item in value):
+        for index, item in enumerate(value, start=1):
+            _visible_detail_append(result, row_id, version, detail_type, f"{prefix}[{index}]", item)
+        return
+    result.append((row_id, version, detail_type, prefix, _visible_text(value)))
+
+
+def _visible_detail_rows(snapshot: dict[str, object]) -> list[tuple[str, str, str, str, str]]:  # noqa: C901 - independent detail semantics
+    result: list[tuple[str, str, str, str, str]] = []
+    for row in snapshot["rows"]:
+        row_id = _visible_text(row.get("row_id"))
+        version = _visible_text(row.get("record_version"))
+        for key, value in row.items():
+            if key in {"extension_values", "field_evidence", "field_support", "field_claims"}:
+                continue
+            result.append((row_id, version, "正文", str(key), _visible_text(value)))
+        for extension in row.get("extension_values", []):
+            if isinstance(extension, dict):
+                result.append((row_id, version, "扩展字段", _visible_text(extension.get("field_key")), _visible_text(extension.get("value"))))
+        for field, detail_type in (("field_evidence", "证据绑定"), ("field_support", "字段支持"), ("field_claims", "字段声明")):
+            if row.get(field):
+                result.append((row_id, version, detail_type, field, _visible_text(row[field])))
+        for risk in snapshot["risk_records"]:
+            if risk.get("row_id") == row.get("row_id") and risk.get("source_record_version") == row.get("record_version"):
+                _visible_detail_append(result, row_id, version, "评分", _visible_text(risk.get("assessment_id")), risk)
+        for decision in snapshot["decision_summary"]:
+            if isinstance(decision, dict) and decision.get("row_id") == row.get("row_id"):
+                _visible_detail_append(result, row_id, version, "复核", _visible_text(decision.get("decision_id")), decision)
+
+    seen_packs: set[str] = set()
+    seen_evidence: set[str] = set()
+    global_version = _visible_text("")
+    for pack in snapshot["evidence_summary"]:
+        if not isinstance(pack, dict):
+            continue
+        pack_id = _visible_text(pack.get("pack_id"))
+        if pack_id not in seen_packs:
+            seen_packs.add(pack_id)
+            _visible_detail_append(result, "", global_version, "共享证据包", f"pack.{pack_id}", {key: value for key, value in pack.items() if key != "refs"})
+        for reference in pack.get("refs", []):
+            if not isinstance(reference, dict):
+                continue
+            identity = reference.get("evidence_id")
+            identity = identity if isinstance(identity, str) else _visible_text(reference)
+            if identity in seen_evidence:
+                continue
+            seen_evidence.add(identity)
+            _visible_detail_append(result, "", global_version, "证据", identity, reference)
+    if not snapshot["rows"]:
+        for decision in snapshot["decision_summary"]:
+            if isinstance(decision, dict):
+                _visible_detail_append(result, "", global_version, "复核", "decision", decision)
+    if snapshot.get("propagation") is not None:
+        _visible_detail_append(result, "", global_version, "传播", "propagation", snapshot["propagation"])
+    return result
+
+
+def _collapse_visible_detail_rows(rows: list[tuple[str, str, str, str, str]]) -> list[tuple[str, str, str, str, str]]:
+    segment_pattern = re.compile(r"(.+) \[part ([1-9][0-9]*)/([1-9][0-9]*)\]\Z")
+    order: list[tuple[str, object]] = []
+    segments: dict[tuple[str, str, str, str], tuple[int, dict[int, str]]] = {}
+    for row_id, version, detail_type, field, content in rows:
+        match = segment_pattern.fullmatch(field)
+        if match is None:
+            order.append(("plain", (row_id, version, detail_type, field, content)))
+            continue
+        base = match.group(1)
+        part = int(match.group(2))
+        total = int(match.group(3))
+        key = (row_id, version, detail_type, base)
+        if key not in segments:
+            segments[key] = (total, {})
+            order.append(("segment", key))
+        expected_total, values = segments[key]
+        _require(expected_total == total and part not in values, "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
+        values[part] = content
+    result = []
+    for kind, value in order:
+        if kind == "plain":
+            result.append(value)
+            continue
+        row_id, version, detail_type, field = value
+        total, values = segments[value]
+        _require(set(values) == set(range(1, total + 1)), "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
+        result.append((row_id, version, detail_type, field, "".join(values[index] for index in range(1, total + 1))))
+    return result
+
+
+def _visible_xlsx_body(payload: bytes, snapshot: dict[str, object], layout: dict[str, object]) -> None:
+    workbook = openpyxl.load_workbook(io.BytesIO(payload), read_only=True, data_only=False)
+    try:
+        main_rows = [tuple("" if value is None else str(value) for value in row) for row in workbook["正文"].iter_rows(values_only=True)]
+        expected_headers = ["逻辑行", "分段", "续字段", *[column["label"] for column in layout["columns"]], "评分摘要", "复核状态", "证据编号"]
+        _require(main_rows and list(main_rows[0]) == expected_headers, "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
+        actual_rows = [row for row in main_rows[1:] if any(value != "" for value in row)]
+        expected_values = _visible_main_values(snapshot, layout)
+        cursor = 0
+        for logical_index, values in enumerate(expected_values, start=1):
+            group = []
+            while cursor < len(actual_rows) and actual_rows[cursor][0] == f"第{logical_index}行":
+                group.append(actual_rows[cursor])
+                cursor += 1
+            _require(group, "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
+            parts = []
+            for row in group:
+                match = re.fullmatch(r"([1-9][0-9]*)/([1-9][0-9]*)", row[1])
+                _require(match is not None, "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
+                parts.append((int(match.group(1)), int(match.group(2))))
+            total = parts[0][1]
+            _require(total == len(group) and sorted(part for part, _ in parts) == list(range(1, total + 1)), "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
+            continued = [
+                field
+                for field_index, field in enumerate([column["field_key"] for column in layout["columns"]] + ["risk_summary", "review_status", "evidence_ids"], start=3)
+                if any(row[field_index] != "" for row in group[1:])
+            ]
+            expected_continued = "、".join(continued)
+            _require(all(row[2] == expected_continued for row in group), "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
+            for field_index, expected in enumerate(values, start=3):
+                _require("".join(row[field_index] for row in group) == expected, "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
+        _require(cursor == len(actual_rows), "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
+        detail_table = [
+            tuple("" if value is None else str(value) for value in row[:5])
+            for row in workbook["正文详情"].iter_rows(values_only=True)
+            if any(value is not None and value != "" for value in row)
+        ]
+        _require(detail_table and list(detail_table[0]) == ["行ID", "记录版本", "详情类型", "字段", "内容"], "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
+        _require(
+            _collapse_visible_detail_rows(detail_table[1:]) == _visible_detail_rows(snapshot),
+            "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH",
+        )
+    finally:
+        workbook.close()
+
+
+def _visible_docx_body(payload: bytes, snapshot: dict[str, object], layout: dict[str, object]) -> None:  # noqa: C901 - independent visible-body semantics
+    members = _office_members(payload)
+    root = safe_xml_fromstring(members["word/document.xml"], forbid_dtd=True, forbid_entities=True, forbid_external=True)
+    body = root.find(f"{_WORD}body")
+    _require(body is not None, "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
+    paragraphs = []
+    tables = []
+    for child in body:
+        if child.tag == f"{_WORD}p":
+            text = _word_paragraph(child)
+            if text.startswith("Canonical table: "):
+                break
+            if text:
+                paragraphs.append(text)
+        elif child.tag == f"{_WORD}tbl":
+            tables.append([
+                [_word_cell(cell) for cell in row.findall(f"{_WORD}tc")]
+                for row in child.findall(f"{_WORD}tr")
+            ])
+    expected_values = _visible_main_values(snapshot, layout)
+    expected_table = [[column["label"] for column in layout["columns"][:3]]]
+    expected_table.extend([values[:3] for values in expected_values])
+    _require(tables == [expected_table], "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
+    expected_paragraphs = ["FMEA Export", "FMEA 正文", "逐行详情"]
+    declared_keys = {column["field_key"] for column in layout["columns"]}
+    for row, values in zip(snapshot["rows"], expected_values, strict=True):
+        row_id = _visible_text(row.get("row_id"))
+        version = _visible_text(row.get("record_version"))
+        expected_paragraphs.append(f"行ID：{row_id}（记录版本：{version}）")
+        for column, value in zip(layout["columns"], values[: len(layout["columns"])], strict=True):
+            expected_paragraphs.append(f"{column['label']} [{column['field_key']}]：{value}")
+        for key, value in row.items():
+            if key == "extension_values" or key in declared_keys:
+                continue
+            expected_paragraphs.append(f"{key}：{_visible_text(value)}")
+        for extension in row.get("extension_values", []):
+            if isinstance(extension, dict):
+                expected_paragraphs.append(
+                    f"扩展字段 {extension.get('field_key')}（{extension.get('value_type')}）：{_visible_text(extension.get('value'))}"
+                )
+        for risk in snapshot["risk_records"]:
+            if risk.get("row_id") == row.get("row_id") and risk.get("source_record_version") == row.get("record_version"):
+                _visible_docx_mapping_paragraphs(expected_paragraphs, f"评分 {_visible_text(risk.get('assessment_id'))}", risk)
+        for decision in snapshot["decision_summary"]:
+            if isinstance(decision, dict) and decision.get("row_id") == row.get("row_id"):
+                _visible_docx_mapping_paragraphs(expected_paragraphs, f"复核 {_visible_text(decision.get('decision_id'))}", decision)
+    expected_paragraphs.append("共享证据")
+    seen_packs: set[str] = set()
+    seen_evidence: set[str] = set()
+    for pack in snapshot["evidence_summary"]:
+        if not isinstance(pack, dict):
+            continue
+        pack_id = _visible_text(pack.get("pack_id"))
+        if pack_id not in seen_packs:
+            seen_packs.add(pack_id)
+            _visible_docx_mapping_paragraphs(expected_paragraphs, f"证据包 {pack_id}", {key: value for key, value in pack.items() if key != "refs"})
+        for reference in pack.get("refs", []):
+            if not isinstance(reference, dict):
+                continue
+            identity = reference.get("evidence_id")
+            identity = identity if isinstance(identity, str) else _visible_text(reference)
+            if identity in seen_evidence:
+                continue
+            seen_evidence.add(identity)
+            _visible_docx_mapping_paragraphs(expected_paragraphs, f"证据 {identity}", reference)
+    if not snapshot["rows"]:
+        for decision in snapshot["decision_summary"]:
+            if isinstance(decision, dict):
+                _visible_docx_mapping_paragraphs(expected_paragraphs, f"复核 {_visible_text(decision.get('decision_id'))}", decision)
+    if snapshot.get("propagation") is not None:
+        expected_paragraphs.append("传播")
+        _visible_docx_mapping_paragraphs(expected_paragraphs, "传播", snapshot["propagation"])
+    expected_paragraphs.append("机器附录")
+    _require(paragraphs == expected_paragraphs, "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
+
+
+def _visible_docx_mapping_paragraphs(result: list[str], prefix: str, value: object) -> None:
+    if isinstance(value, dict):
+        if not value:
+            result.append(f"{prefix}：（空对象）")
+            return
+        for key, item in value.items():
+            field = f"{prefix}.{key}" if prefix else str(key)
+            _visible_docx_mapping_paragraphs(result, field, item)
+        return
+    if isinstance(value, list) and value and all(isinstance(item, dict) for item in value):
+        for index, item in enumerate(value, start=1):
+            _visible_docx_mapping_paragraphs(result, f"{prefix}[{index}]", item)
+        return
+    result.append(f"{prefix}：{_visible_text(value)}")
+
+
+def _validate_visible_office_body(payload: bytes, format_name: str, snapshot: dict[str, object]) -> None:
+    layout = snapshot.get("version_manifest", {}).get("report_layout")
+    _require(isinstance(layout, dict), "FMEA_PUBLICATION_LAYOUT_MISMATCH")
+    if format_name == "xlsx":
+        _visible_xlsx_body(payload, snapshot, layout)
+    elif format_name == "docx":
+        _visible_docx_body(payload, snapshot, layout)
 
 
 def _validate_versioned_content(case: dict, revisions: dict, migration_child: dict, contract_version: str = SCHEMA_VERSION) -> None:
@@ -1641,6 +2083,8 @@ def verify_export_set(
         _require(identity in snapshots, "FMEA_EXPORT_SNAPSHOT_UNBOUND")
         _require(format_name not in formats[identity], "FMEA_DUPLICATE_EXPORT")
         _require(_export_snapshot(view, format_name) == snapshots[identity], "FMEA_EXPORT_SEMANTIC_MISMATCH")
+        if contract_version == SCHEMA_VERSION and format_name in {"xlsx", "docx"}:
+            _validate_visible_office_body(payloads[path], format_name, snapshots[identity])
         formats[identity].add(format_name)
     _require(all(value == {"json", "xlsx", "docx"} for value in formats.values()), "FMEA_EXPORT_SET_INCOMPLETE")
     verify_native_hashes({"snapshots": list(snapshots.values())})

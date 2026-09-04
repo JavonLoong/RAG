@@ -523,6 +523,22 @@ def _rewrite_office_payload(payload, format_name, mutation, old_hash, new_hash):
                     version_manifest.pop("body_schema_version", None)
                     row[1].value = json.dumps(version_manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
                     break
+        elif mutation == "layout_label":
+            table = workbook["Manifest"]
+            for row in table.iter_rows(min_row=2):
+                if row[0].value == "version_manifest":
+                    version_manifest = json.loads(row[1].value)
+                    version_manifest["report_layout"]["columns"][0]["label"] = "forged visible label"
+                    row[1].value = json.dumps(version_manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                    break
+        elif mutation == "report_identity_switch":
+            table = workbook["Manifest"]
+            for row in table.iter_rows(min_row=2):
+                if row[0].value == "version_manifest":
+                    version_manifest = json.loads(row[1].value)
+                    _switch_report_identity(version_manifest)
+                    row[1].value = json.dumps(version_manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                    break
         output = io.BytesIO()
         workbook.save(output)
         workbook.close()
@@ -555,6 +571,22 @@ def _rewrite_office_payload(payload, format_name, mutation, old_hash, new_hash):
                 version_manifest.pop("body_schema_version", None)
                 row.cells[1].text = json.dumps(version_manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
                 break
+    elif mutation == "layout_label":
+        table = canonical["Manifest"]
+        for row in table.rows[1:]:
+            if row.cells[0].text == "version_manifest":
+                version_manifest = json.loads(row.cells[1].text)
+                version_manifest["report_layout"]["columns"][0]["label"] = "forged visible label"
+                row.cells[1].text = json.dumps(version_manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                break
+    elif mutation == "report_identity_switch":
+        table = canonical["Manifest"]
+        for row in table.rows[1:]:
+            if row.cells[0].text == "version_manifest":
+                version_manifest = json.loads(row.cells[1].text)
+                _switch_report_identity(version_manifest)
+                row.cells[1].text = json.dumps(version_manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                break
     else:
         old_value, new_value = {
             "failure_body": ("fuel filter blockage", "forged failure body"),
@@ -575,9 +607,22 @@ def _rewrite_office_payload(payload, format_name, mutation, old_hash, new_hash):
     return output.getvalue().replace(old_hash.encode(), new_hash.encode())
 
 
+def _switch_report_identity(version_manifest):
+    identities = version_manifest["template_identities"]
+    current = version_manifest["report_layout"]["template_identity"]
+    current_identity = [current["template_id"], current["version"], current["template_hash"]]
+    alternate = next((item for item in identities if item != current_identity), None)
+    assert alternate is not None, "fixture must contain a second approved template identity"
+    version_manifest["report_layout"]["template_identity"] = {
+        "template_id": alternate[0],
+        "version": alternate[1],
+        "template_hash": alternate[2],
+    }
+
+
 def _reseal_body_tamper(full_artifact, tmp_path, mutation):  # noqa: C901 - explicit body tamper matrix
     verifier, artifact, manifest, _payloads, evidence = full_artifact
-    root = tmp_path / f"tampered-{mutation}"
+    root = tmp_path / manifest["artifact_id"]
     shutil.copytree(artifact, root)
     evidence = deepcopy(evidence)
     original_case = evidence["cases"][0]
@@ -601,6 +646,10 @@ def _reseal_body_tamper(full_artifact, tmp_path, mutation):  # noqa: C901 - expl
             snapshot["decision_summary"][0]["record_version"] = 3
         elif mutation == "missing_body_marker":
             snapshot["version_manifest"].pop("body_schema_version")
+        elif mutation == "layout_label":
+            snapshot["version_manifest"]["report_layout"]["columns"][0]["label"] = "forged visible label"
+        elif mutation == "report_identity_switch":
+            _switch_report_identity(snapshot["version_manifest"])
         else:  # pragma: no cover - parametrized below
             raise AssertionError(mutation)
         new_hash = _adversarial_digest({key: value for key, value in snapshot.items() if key != "snapshot_hash"})
@@ -632,6 +681,10 @@ def _reseal_body_tamper(full_artifact, tmp_path, mutation):  # noqa: C901 - expl
                 view["decision_summary"][0]["record_version"] = 3
             elif mutation == "missing_body_marker":
                 view["version_manifest"].pop("body_schema_version")
+            elif mutation == "layout_label":
+                view["version_manifest"]["report_layout"]["columns"][0]["label"] = "forged visible label"
+            elif mutation == "report_identity_switch":
+                _switch_report_identity(view["version_manifest"])
             view["snapshot_hash"] = new_hash
             payload = json.dumps(view, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
         else:
@@ -653,6 +706,92 @@ def _reseal_body_tamper(full_artifact, tmp_path, mutation):  # noqa: C901 - expl
     return verifier, root, native
 
 
+def _rewrite_visible_body(payload, format_name, surface):  # noqa: C901 - explicit XLSX/DOCX bypass matrix
+    replacements = 0
+    if format_name == "xlsx":
+        import openpyxl
+
+        workbook = openpyxl.load_workbook(io.BytesIO(payload))
+        sheet_name = "正文" if surface == "main" else "正文详情"
+        sheet = workbook[sheet_name]
+        old_value = "fuel filter blockage" if surface == "main" else "Synthetic acceptance fixture"
+        new_value = "forged visible body" if surface == "main" else "forged visible evidence"
+        for row in sheet.iter_rows():
+            for cell in row:
+                if isinstance(cell.value, str) and old_value in cell.value:
+                    cell.value = cell.value.replace(old_value, new_value)
+                    replacements += 1
+        output = io.BytesIO()
+        workbook.save(output)
+        workbook.close()
+        return output.getvalue(), replacements
+
+    from docx import Document
+
+    document = Document(io.BytesIO(payload))
+    old_value = "fuel filter blockage" if surface == "main" else "Synthetic acceptance fixture"
+    new_value = "forged visible body" if surface == "main" else "forged visible evidence"
+    if surface == "main":
+        cells = (cell for row in document.tables[0].rows for cell in row.cells)
+    else:
+        for paragraph in document.paragraphs:
+            if old_value in paragraph.text:
+                paragraph.text = paragraph.text.replace(old_value, new_value)
+                replacements += 1
+    if surface == "main":
+        for cell in cells:
+            if old_value in cell.text:
+                cell.text = cell.text.replace(old_value, new_value)
+                replacements += 1
+    output = io.BytesIO()
+    document.save(output)
+    return output.getvalue(), replacements
+
+
+def _reseal_visible_body_tamper(full_artifact, tmp_path, format_name, surface):
+    verifier, artifact, manifest, _payloads, evidence = full_artifact
+    root = tmp_path / manifest["artifact_id"]
+    shutil.copytree(artifact, root)
+    evidence = deepcopy(evidence)
+    changed_payloads = {}
+    replacement_count = 0
+    expected_publications = sum(1 for export in evidence["cases"][0]["exports"] if export["format"] == format_name)
+    assert expected_publications == 2
+    for export in evidence["cases"][0]["exports"]:
+        path = export["path"]
+        current_format = export["format"]
+        payload = (root / path).read_bytes()
+        if current_format == format_name:
+            assert current_format != "json"
+            payload, replacements = _rewrite_visible_body(payload, current_format, surface)
+            replacement_count += replacements
+            (root / path).write_bytes(payload)
+            export["manifest"]["sha256"] = sha256(payload).hexdigest()
+            export["manifest"]["byte_length"] = len(payload)
+        changed_payloads[path] = payload
+
+    assert replacement_count == expected_publications and replacement_count > 0
+
+    evidence_payload = json.dumps(evidence, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+    (root / "evidence.json").write_bytes(evidence_payload)
+    manifest = deepcopy(manifest)
+    for path, payload in {**changed_payloads, "evidence.json": evidence_payload}.items():
+        manifest["files"][path] = {"sha256": sha256(payload).hexdigest(), "size_bytes": len(payload)}
+    (root / "manifest.json").write_text(json.dumps(manifest, sort_keys=True), encoding="utf-8")
+    return verifier, root
+
+
+@pytest.mark.parametrize("surface", ["main", "details"])
+@pytest.mark.parametrize("format_name", ["xlsx", "docx"])
+def test_v2_visible_body_tampering_is_rejected_after_resealing_office_exports(full_artifact, tmp_path, format_name, surface):
+    verifier, root = _reseal_visible_body_tamper(full_artifact, tmp_path, format_name, surface)
+
+    result = verifier.verify_acceptance_directory(root)
+
+    assert result.passed is False
+    assert result.error_code == "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH"
+
+
 @pytest.mark.parametrize(
     ("mutation", "error_code"),
     [
@@ -670,6 +809,16 @@ def test_v2_body_tampering_is_rejected_after_resealing_all_exports(full_artifact
 
     assert result.passed is False
     assert result.error_code == error_code
+
+
+@pytest.mark.parametrize("mutation", ["layout_label", "report_identity_switch"])
+def test_v2_layout_tampering_is_rejected_after_resealing_all_exports(full_artifact, tmp_path, mutation):
+    verifier, root, _native = _reseal_body_tamper(full_artifact, tmp_path, mutation)
+
+    result = verifier.verify_acceptance_directory(root)
+
+    assert result.passed is False
+    assert result.error_code == "FMEA_PUBLICATION_LAYOUT_MISMATCH"
 
 
 @pytest.mark.parametrize(
