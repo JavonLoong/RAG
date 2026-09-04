@@ -12,7 +12,9 @@
 
 **Status:** APPROVED / IMPLEMENTING。用户于 2026-09-04 确认，从 Task 1 开始。实现起点 `d1040fcf`（文档提交），代码基线 `9fca984e`，工作树 `C:/Users/35551/Desktop/RAG/.worktrees/interface-output-v1`，分支 `feat/interface-output-v1`。不切 main，不推送，不创建 PR。
 
-**进度（2026-09-04）：Task 1 已完成；Task 2–5 未开始。** Task 1 提交 `75d1cb98` → `c4cdfc4b` → `7bd0c69b`。最终定向测试 100 passed（主代理复验 0.79s），范围 Ruff 与差异空白检查通过；Luna xhigh 规格/质量审查发现五项缺口，经 round 1 修正；其引入的两项兼容性回归经 round 2 关闭，PASS / CLOSED。该结论不表示真实发布与三格式正文报告已经接通。[Task 1 交接](../../handoff/fmea-publication-body-task1.md)。
+**Task 1 完成记录（2026-09-04）。** Task 1 提交 `75d1cb98` → `c4cdfc4b` → `7bd0c69b`。最终定向测试 100 passed（主代理复验 0.79s），范围 Ruff 与差异空白检查通过；Luna xhigh 规格/质量审查发现五项缺口，经 round 1 修正；其引入的两项兼容性回归经 round 2 关闭，PASS / CLOSED。该结论不表示真实发布与三格式正文报告已经接通。[Task 1 交接](../../handoff/fmea-publication-body-task1.md)。
+
+**续做状态：Task 2 已完成，代码至 `7d702fc6`。** 最终主代理定向验证 **165 passed in 28.61s**，全部改动文件 Ruff 与范围差异检查通过。独立 Luna xhigh 复审及两轮定点复核关闭全部发现，Spec ✅ / Quality Approved，无新增 Critical/Important。Task 3–5 未开始。实施记录见 [Task 2 交接](../../handoff/fmea-publication-body-task2.md)。新 SQLite 集成测试改用独立文件名，避免与单元测试在同次 pytest 收集时重名。旧治理验收验证器的格式反例补充在 `tests/integration/test_fmea_governance_acceptance.py`，不提前宣称 Task 5 完成。
 
 ## Global Constraints
 
@@ -88,14 +90,16 @@ assert body.evidence_summary[0]["pack_hash"]
 
 ## Task 2：真实发布接入与事务内核验
 
-**Files:** Modify `fmea_application/governance_service.py`, `fmea_application/governance_contracts.py`, `fmea_infrastructure/governance_repository_sqlite.py`, `fmea_infrastructure/composition.py`; Create `tests/integration/test_fmea_publication_body.py`; Test `tests/regression/test_fmea_governance_atomic_publish.py`, `tests/regression/test_fmea_governance_idempotency.py`。
+**Files:** Modify `fmea_application/governance_service.py`, `fmea_application/governance_contracts.py`, `fmea_infrastructure/governance_repository_sqlite.py`, `fmea_infrastructure/composition.py`; Create `tests/integration/test_fmea_publication_body_sqlite.py`; Test `tests/regression/test_fmea_governance_atomic_publish.py`, `tests/regression/test_fmea_governance_idempotency.py`。实施中必要适配：`publication_body.py` 仅内部审核凭据；`routes_fmea_governance_v1.py` 仅安全错误映射；`scripts/run_fmea_governance_acceptance.py` 与 `scripts/verify_fmea_governance_acceptance.py` 适配上述四项原子文件交付回归所调用的旧验收样例。不得补造审计或绕过数据库约束；完整三格式验收仍在 Task 5。
 
 **Interfaces:** 消费 Task 1 的运行时 `source.build_publication_body` 及只读 `publication_reviews` port。实现 `load_publication_reviews(revision: FmeaRevision) -> tuple[PublicationReviewRecord, ...]` 的真实仓储适配并配置进运行时；不能由 HTTP/CLI 调用者提供。`PreparedPublication` 内部保存提交校验需要的源绑定，外部 PublishCommand 保持不变。
 
-- [ ] 增加真实 SQLite 测试：批准后发布有正文；原始复核缺失会失败；准备正文后改源行会失败且无半发布；伪造正文并重算整个导出哈希链仍拒绝；故障注入回滚；重放返回同一快照；发布后改行不改变保存快照。
-- [ ] 测试明确比较 publication/snapshot/manifest/eligibility/audit/outbox 写入前后状态，而非只断言抛异常。使用现有 atomic publish 的故障注入入口和治理 idempotency 夹具，不构造第二套提交器。
-- [ ] 执行 `.venv/Scripts/python.exe -m pytest tests/integration/test_fmea_publication_body.py tests/regression/test_fmea_governance_atomic_publish.py tests/regression/test_fmea_governance_idempotency.py -q`，保存 RED。
-- [ ] 将 `_snapshot()` 原摘要生成替换为单份输入的正文投影，批准摘要在已有 approval 对象上构建：
+复审补充：服务端解析完整决定与审计的 canonical 身份，使用内部 `PublicationReviewAuthority` 凭据随正文传入 `PublicationSourceBinding`，提交事务内重新核验；仅公开摘要不足以绑定审核者、事件与原始内容。actor ID 等内部字段不进入快照或导出。正文过期/不完整映射 409，不安全映射 400，均不可重试；不改变请求结构。
+
+- [x] 增加真实 SQLite 测试：批准后发布有正文；原始复核缺失会失败；准备正文后改源行会失败且无半发布；伪造正文并重算整个导出哈希链仍拒绝；故障注入回滚；重放返回同一快照；发布后改行不改变保存快照。
+- [x] 测试明确比较 publication/snapshot/manifest/eligibility/audit/outbox 写入前后状态，而非只断言抛异常。使用现有 atomic publish 的故障注入入口和治理 idempotency 夹具，不构造第二套提交器。
+- [x] 执行 `.venv/Scripts/python.exe -m pytest tests/integration/test_fmea_publication_body_sqlite.py tests/regression/test_fmea_governance_atomic_publish.py tests/regression/test_fmea_governance_idempotency.py -q`，保存 RED。初始 RED 记录仍使用改名前路径；改名只解决测试模块冲突。
+- [x] 将 `_snapshot()` 原摘要生成替换为单份输入的正文投影，批准摘要在已有 approval 对象上构建：
 
 ```python
 inputs = self._inputs(revision.analysis_id, revision.workspace_id)
@@ -104,8 +108,8 @@ body = self._source.build_publication_body(revision, inputs)
 # 原有 publication_id、manifest_id、revision_hash、created_at 不改变生成规则。
 ```
 
-- [ ] 同一事务内核对可变业务源；按固定内容身份验证独立来源；把正文与权威源核对后才能执行原写入序列。保留撤销检查和早期幂等回放。来源若无法保证版本一致性，报告具体缺口并暂停 Task，不将测试夹具当作生产保证。
-- [ ] 同一命令 GREEN；独立复审并发窗口、伪造自洽哈希、错误映射和原子性；本地提交 `feat(fmea): publish immutable body with authoritative source checks`。
+- [x] 同一事务内核对可变业务源；按固定内容身份验证独立来源；把正文与权威源核对后才能执行原写入序列。保留撤销检查和早期幂等回放。来源若无法保证版本一致性，报告具体缺口并暂停 Task，不将测试夹具当作生产保证。
+- [x] 同一命令 GREEN；独立复审并发窗口、伪造自洽哈希、错误映射和原子性；实际本地提交为 `1416b32c`、`7f6c6ecd`、`7d702fc6`，无推送或 PR。
 
 ## Task 3：模板驱动的通用报告视图
 
