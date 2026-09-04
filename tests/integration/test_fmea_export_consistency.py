@@ -422,6 +422,23 @@ def test_empty_optional_parts_round_trip_without_fabrication() -> None:
     )
 
 
+def test_empty_mapping_record_round_trips_through_xlsx_types_marker() -> None:
+    snapshot = _forge_snapshot(make_normalized_snapshot(), unresolved_items=({},))
+    snapshot = _forge_snapshot(snapshot, snapshot_hash=snapshot_content_hash(snapshot))
+
+    expected = _semantic_json(snapshot)
+    payload = XlsxFmeaExporter().render(snapshot)
+
+    assert _without_format_identity(_parse_xlsx(payload)) == _without_format_identity(expected)
+    workbook = openpyxl.load_workbook(io.BytesIO(payload), data_only=False, read_only=False)
+    try:
+        unresolved_rows = list(workbook["Unresolved"].iter_rows(values_only=True))
+        assert unresolved_rows[0] == ("Identity", "__types__")
+        assert unresolved_rows[1] == ("item-001", "{}")
+    finally:
+        workbook.close()
+
+
 def test_draft_marker_is_visible_in_all_formats_and_absent_from_published() -> None:
     snapshot = make_normalized_snapshot()
     rendered = {

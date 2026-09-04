@@ -220,7 +220,7 @@ def _append_typed_table(
             encoded, value_type = _value_encoding(record[key])
             types[key] = value_type
             _set_string_cell(worksheet.cell(row_index, column_index), encoded)
-            _set_string_cell(worksheet.cell(row_index, len(headers)), _json_text(types))
+        _set_string_cell(worksheet.cell(row_index, len(headers)), _json_text(types))
 
 
 def _plain_value(value: object) -> object:
