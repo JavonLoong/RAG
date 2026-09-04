@@ -22,7 +22,9 @@ from zipfile import BadZipFile, ZipFile
 import openpyxl
 from defusedxml.ElementTree import fromstring as safe_xml_fromstring
 
-SCHEMA_VERSION = "graphrag.fmea.full.acceptance.v1"
+LEGACY_SCHEMA_VERSION = "graphrag.fmea.full.acceptance.v1"
+SCHEMA_VERSION = "graphrag.fmea.full.acceptance.v2"
+BODY_SCHEMA_VERSION = "graphrag.fmea.body.v1"
 DEFAULT_OUTPUT_ROOT = Path(__file__).resolve().parents[1] / "observability/reports/fmea-full-acceptance"
 _MAX_FILE_BYTES = 32 * 1024 * 1024
 _MAX_TOTAL_BYTES = 128 * 1024 * 1024
@@ -36,6 +38,7 @@ _RELATIVE_FILE = re.compile(
 _PRIVATE = re.compile(r"(?:\bBearer\s+\S+|(?<![A-Za-z0-9])[A-Za-z]:[\\/]|\\\\|\bfile://)", re.IGNORECASE)
 _PRIVATE_KEYS = {"access_token", "api_key", "authorization", "credentials", "password", "private_key", "private_path", "secret", "raw_output", "provider_output", "prompt"}
 _TABLES = ("Manifest", "FMEA", "Risk", "Propagation", "Evidence", "Decisions", "Unresolved")
+_OFFICE_TABLES = ("正文", "正文详情", *_TABLES)
 _WORD = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 _P0_FIELDS = (
     "model_approval_count",
@@ -174,7 +177,7 @@ def load_bundle(directory: str | Path) -> tuple[dict[str, object], dict[str, byt
     try:
         root = _directory(Path(directory))
         manifest = _parse(_read(root / "manifest.json", _MAX_MANIFEST_BYTES))
-        _require(manifest.get("schema_version") == SCHEMA_VERSION, "FMEA_ARTIFACT_SCHEMA_INVALID")
+        _require(manifest.get("schema_version") in {LEGACY_SCHEMA_VERSION, SCHEMA_VERSION}, "FMEA_ARTIFACT_SCHEMA_INVALID")
         entries = manifest.get("files")
         _require(isinstance(entries, dict) and 0 < len(entries) <= _MAX_FILES, "FMEA_ARTIFACT_INVENTORY_INVALID")
         _require("evidence.json" in entries, "FMEA_ARTIFACT_INVENTORY_INVALID")
@@ -296,6 +299,18 @@ def _word_cell(cell) -> str:
     return "\n".join(paragraphs)
 
 
+def _word_paragraph(node) -> str:
+    parts = []
+    for child in node.iter():
+        if child.tag == f"{_WORD}t":
+            parts.append(child.text or "")
+        elif child.tag in {f"{_WORD}br", f"{_WORD}cr"}:
+            parts.append("\n")
+        elif child.tag == f"{_WORD}tab":
+            parts.append("\t")
+    return "".join(parts)
+
+
 def _office_projection(tables: list[list[list[object]]]) -> dict[str, object]:
     _require(len(tables) == len(_TABLES) and tables[0][0] == ["Key", "Value", "Type"], "FMEA_OFFICE_TABLE_INVALID")
     metadata = {}
@@ -313,9 +328,15 @@ def _office_projection(tables: list[list[list[object]]]) -> dict[str, object]:
     return {**metadata, "rows": rows, "risk_records": risk, "propagation": propagation[0] if propagation else None, "evidence_summary": evidence, "decision_summary": decisions, "unresolved_items": unresolved}
 
 
-def parse_export(payload: bytes, format_name: str) -> dict[str, object]:
+def parse_export(
+    payload: bytes,
+    format_name: str,
+    *,
+    contract_version: str = SCHEMA_VERSION,
+) -> dict[str, object]:
     """Read actual Office cells using a parser independent from the exporters."""
     try:
+        _require(contract_version in {LEGACY_SCHEMA_VERSION, SCHEMA_VERSION}, "FMEA_ARTIFACT_SCHEMA_INVALID")
         if format_name == "json":
             result = _parse(payload)
         else:
@@ -324,16 +345,46 @@ def parse_export(payload: bytes, format_name: str) -> dict[str, object]:
             if format_name == "xlsx":
                 workbook = openpyxl.load_workbook(io.BytesIO(payload), read_only=True, data_only=False)
                 try:
-                    _require(tuple(workbook.sheetnames) == _TABLES, "FMEA_OFFICE_TABLE_INVALID")
+                    names = tuple(workbook.sheetnames)
+                    allowed_names = (
+                        {_TABLES, _OFFICE_TABLES}
+                        if contract_version == LEGACY_SCHEMA_VERSION
+                        else {_OFFICE_TABLES}
+                    )
+                    _require(names in allowed_names, "FMEA_OFFICE_TABLE_INVALID")
                     tables = [[list(row) for row in workbook[name].iter_rows(values_only=True)] for name in _TABLES]
                 finally:
                     workbook.close()
             else:
                 root = safe_xml_fromstring(members["word/document.xml"], forbid_dtd=True, forbid_entities=True, forbid_external=True)
-                tables = [
-                    [[_word_cell(cell) for cell in row.findall(f"{_WORD}tc")] for row in table.findall(f"{_WORD}tr")]
-                    for table in root.findall(f"{_WORD}body/{_WORD}tbl")
-                ]
+                canonical_tables = {}
+                marker = None
+                body = root.find(f"{_WORD}body")
+                _require(body is not None, "FMEA_OFFICE_TABLE_INVALID")
+                for child in body:
+                    if child.tag == f"{_WORD}p":
+                        text = _word_paragraph(child).strip()
+                        if text.startswith("Canonical table: "):
+                            marker = text.removeprefix("Canonical table: ")
+                    elif child.tag == f"{_WORD}tbl" and marker is not None:
+                        _require(marker in _TABLES and marker not in canonical_tables, "FMEA_OFFICE_TABLE_INVALID")
+                        canonical_tables[marker] = [
+                            [_word_cell(cell) for cell in row.findall(f"{_WORD}tc")]
+                            for row in child.findall(f"{_WORD}tr")
+                        ]
+                        marker = None
+                if set(canonical_tables) == set(_TABLES):
+                    tables = [canonical_tables[name] for name in _TABLES]
+                else:
+                    _require(contract_version == LEGACY_SCHEMA_VERSION, "FMEA_OFFICE_TABLE_INVALID")
+                    tables = [
+                        [
+                            [_word_cell(cell) for cell in row.findall(f"{_WORD}tc")]
+                            for row in table.findall(f"{_WORD}tr")
+                        ]
+                        for table in body.findall(f"{_WORD}tbl")
+                    ]
+                    _require(len(tables) == len(_TABLES), "FMEA_OFFICE_TABLE_INVALID")
             result = _office_projection(tables)
         _require(result.get("format") == format_name, "FMEA_EXPORT_FORMAT_INVALID")
         _privacy(result)
@@ -347,8 +398,6 @@ def parse_export(payload: bytes, format_name: str) -> dict[str, object]:
 def _unsupported_known_claims(case: dict[str, object], packs: dict[str, set[str]]) -> int:
     seen_claims = set()
     rows = list(case.get("candidates", []))
-    for snapshot in case.get("snapshots", []):
-        rows.extend(snapshot.get("rows", []))
     for row in rows:
         valid_ids = packs.get(row.get("evidence_pack_id"), set())
         claims = list(row.get("field_claims", []))
@@ -697,7 +746,7 @@ def _one_event(case: dict, event_type: str, aggregate_id: str) -> dict:
     return event
 
 
-def _validate_versioned_content(case: dict, revisions: dict, migration_child: dict) -> None:
+def _validate_legacy_versioned_content(case: dict, revisions: dict, migration_child: dict) -> None:
     """Join immutable identity projections back to their actual native DTOs."""
     rows = sorted(case["candidates"], key=lambda row: row["row_id"])
     risks = sorted((record for record in case["risk_records"] if record["status"] == "confirmed"), key=lambda record: record["assessment_id"])
@@ -722,6 +771,312 @@ def _validate_versioned_content(case: dict, revisions: dict, migration_child: di
         event = _one_event(case, "risk.confirmed", risk["assessment_id"])
         _require(event.get("payload", {}).get("assessment") == risk, "FMEA_RISK_CONTENT_MISMATCH")
         _require(event.get("aggregate_type") == "risk_assessment", "FMEA_OUTBOX_BINDING_INVALID")
+
+
+def _public_row(row: dict[str, object]) -> dict[str, object]:
+    result = dict(row)
+    field_evidence = row.get("field_evidence")
+    field_support = row.get("field_support")
+    _require(isinstance(field_evidence, list) and isinstance(field_support, list), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+    result["field_evidence"] = [
+        {"field_key": item[0], "evidence_ids": item[1]}
+        for item in sorted(field_evidence, key=lambda item: item[0])
+        if isinstance(item, list) and len(item) == 2
+    ]
+    result["field_support"] = [
+        {"field_key": item[0], "support_status": item[1]}
+        for item in sorted(field_support, key=lambda item: item[0])
+        if isinstance(item, list) and len(item) == 2
+    ]
+    _require(len(result["field_evidence"]) == len(field_evidence), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+    _require(len(result["field_support"]) == len(field_support), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+    result["row_hash"] = _hash_json(row)
+    return result
+
+
+def _public_risk(record: dict[str, object]) -> dict[str, object]:
+    fields = (
+        "assessment_id",
+        "derived",
+        "dimensions",
+        "domain_pack_id",
+        "domain_pack_version",
+        "evidence_pack_id",
+        "invalidated_reason",
+        "proposal_id",
+        "record_version",
+        "row_id",
+        "rule_pack_id",
+        "rule_pack_version",
+        "source_record_version",
+        "status",
+        "workspace_id",
+    )
+    _require(all(field in record for field in fields), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+    result = {field: record[field] for field in fields}
+    result["assessment_hash"] = _hash_json(record)
+    dimensions = result["dimensions"]
+    _require(isinstance(dimensions, list), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+    result["dimensions"] = sorted(dimensions, key=lambda item: item["name"])
+    result["confirmation_basis"] = {"proposal_id": record["proposal_id"]}
+    return result
+
+
+_PUBLIC_EDGE_FIELDS = (
+    "analysis_id",
+    "barrier_ids",
+    "claim_status",
+    "delay_ms",
+    "direction",
+    "edge_id",
+    "evidence_ids",
+    "evidence_pack_id",
+    "evidence_support",
+    "fault_tolerance_time_ms",
+    "interface_variable",
+    "is_cyclic",
+    "is_external",
+    "is_terminal",
+    "is_unprocessed",
+    "operating_modes",
+    "path_length",
+    "publication_status",
+    "record_version",
+    "relation_type",
+    "response_time_ms",
+    "review_status",
+    "risk_priority",
+    "source_entity_id",
+    "target_entity_id",
+    "threshold",
+    "unit",
+)
+
+
+def _public_edge(edge: dict[str, object]) -> dict[str, object]:
+    _require(all(field in edge for field in _PUBLIC_EDGE_FIELDS), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+    return {field: edge[field] for field in _PUBLIC_EDGE_FIELDS}
+
+
+def _public_graph(graph: dict[str, object]) -> dict[str, object]:
+    fields = (
+        "analysis_id",
+        "analysis_record_version",
+        "domain_pack_id",
+        "domain_pack_version",
+        "graph_revision_id",
+        "record_version",
+        "rule_pack_id",
+        "rule_pack_version",
+        "status",
+        "topology_hash",
+        "topology_snapshot_id",
+        "workspace_id",
+    )
+    _require(all(field in graph for field in fields), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+    result = {field: graph[field] for field in fields}
+    result["row_lineage"] = []
+    result["nodes"] = [
+        {field: node[field] for field in ("node_id", "node_type", "operating_modes")}
+        for node in graph["nodes"]
+    ]
+    result["edges"] = [_public_edge(edge) for edge in graph["edges"]]
+    result["paths"] = []
+    for path in graph["paths"]:
+        result["paths"].append({
+            "analysis_id": path["analysis_id"],
+            "edges": [_public_edge(edge) for edge in path["edges"]],
+            "is_cyclic": path["is_cyclic"],
+            "path_id": path["path_id"],
+            "path_length": path["path_length"],
+            "requires_human_review": path["requires_human_review"],
+            "source_entity_id": path["source_entity_id"],
+            "target_entity_id": path["target_entity_id"],
+        })
+    return result
+
+
+def _public_locator(locator: object) -> dict[str, object]:
+    if isinstance(locator, dict):
+        return dict(locator)
+    _require(isinstance(locator, str), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+    match = re.fullmatch(r"page:(\d+)#span:(\d+)", locator)
+    _require(match is not None, "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+    return {"page": int(match.group(1)), "span": int(match.group(2))}
+
+
+def _public_evidence(packs: list[dict[str, object]]) -> list[dict[str, object]]:
+    result = []
+    for pack in sorted(packs, key=lambda item: item["pack_id"]):
+        versions = pack.get("versions")
+        _require(isinstance(versions, dict), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+        refs = []
+        for ref in sorted(pack["refs"], key=lambda item: item["evidence_id"]):
+            fields = ("content_hash", "document_id", "document_version", "evidence_hash", "evidence_id", "quote", "source_trust", "source_type")
+            _require(all(field in ref for field in fields), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+            refs.append({
+                **{field: ref[field] for field in fields},
+                "locator": _public_locator(ref["locator"]),
+            })
+        result.append({
+            "evidence_pack_version": versions.get("evidence_pack_version"),
+            "pack_hash": _digest(pack["pack_hash"]),
+            "pack_id": pack["pack_id"],
+            "refs": refs,
+        })
+    return result
+
+
+def _public_decisions(case: dict[str, object], candidates: dict[str, dict[str, object]]) -> list[dict[str, object]]:
+    audits = case["audits"]
+    result = []
+    for decision in case["review_decisions"]:
+        row = decision.get("row") if isinstance(decision.get("row"), dict) else decision
+        _require(isinstance(row, dict) and row.get("row_id") in candidates, "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+        candidate = candidates[row["row_id"]]
+        _require(row == candidate and decision.get("record_version") == candidate.get("record_version"), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+        matching = [
+            audit for audit in audits
+            if audit.get("command") == "review.decision"
+            and audit.get("decision_id") == decision.get("decision_id")
+            and audit.get("row_id") == row.get("row_id")
+        ]
+        _require(len(matching) == 1, "FMEA_REVIEW_RECEIPT_BINDING_INVALID")
+        audit = matching[0]
+        _require(audit.get("actor_type") == "human", "FMEA_AUTHORITY_BINDING_INVALID")
+        _require(audit.get("applied_record_version") == candidate.get("record_version"), "FMEA_REVIEW_RECEIPT_BINDING_INVALID")
+        _digest(audit.get("after_hash"))
+        result.append({
+            "analysis_id": candidate["analysis_id"],
+            "decided_at": audit["occurred_at_server"],
+            "decision": "accepted",
+            "decision_id": decision["decision_id"],
+            "reason": audit["reason"],
+            "record_type": "row_review",
+            "record_version": candidate["record_version"],
+            "role_category": "human_reviewer",
+            "row_hash": _hash_json(candidate),
+            "row_id": candidate["row_id"],
+            "workspace_id": audit["workspace_id"],
+        })
+    return sorted(result, key=lambda item: item["decision_id"])
+
+
+def _template_bindings(case: dict[str, object], revisions: dict[str, dict[str, object]]) -> dict[tuple[str, str], dict[str, str]]:
+    records = {}
+    for item in case.get("registered_templates", []):
+        compiled = item.get("compiled", {})
+        metadata = compiled.get("metadata", {}) if isinstance(compiled, dict) else {}
+        template_id = item.get("template_id") or metadata.get("template_id") or metadata.get("id")
+        version = item.get("version") or metadata.get("version")
+        template_hash = item.get("template_hash") or compiled.get("template_hash") if isinstance(compiled, dict) else None
+        canonical = compiled.get("canonical_json") if isinstance(compiled, dict) else None
+        _require(isinstance(template_id, str) and isinstance(version, str), "FMEA_TEMPLATE_BINDING_INVALID")
+        _require(isinstance(template_hash, str) and isinstance(canonical, str), "FMEA_TEMPLATE_BINDING_INVALID")
+        _require(_digest(template_hash) == sha256(canonical.encode("utf-8")).hexdigest(), "FMEA_TEMPLATE_CONTENT_MISMATCH")
+        _require((template_id, version) not in records, "FMEA_DUPLICATE_RECORD")
+        if isinstance(compiled, dict) and isinstance(compiled.get("template_hash"), str):
+            _require(_digest(compiled["template_hash"]) == _digest(template_hash), "FMEA_TEMPLATE_CONTENT_MISMATCH")
+        if "source_hash" in item:
+            _digest(item["source_hash"])
+        records[(template_id, version)] = {"template_hash": _digest(template_hash), "canonical_json": canonical}
+    identities = set()
+    for revision in revisions.values():
+        for identity in revision["template_identities"]:
+            _require(isinstance(identity, list) and len(identity) == 3, "FMEA_TEMPLATE_BINDING_INVALID")
+            key = (identity[0], identity[1])
+            identities.add(key)
+            _require(records.get(key, {}).get("template_hash") == _digest(identity[2]), "FMEA_TEMPLATE_BINDING_INVALID")
+    _require(identities <= set(records), "FMEA_TEMPLATE_BINDING_INVALID")
+    return records
+
+
+def _validate_publication_manifest_body(case: dict[str, object], snapshot: dict[str, object], revision: dict[str, object], templates: dict[tuple[str, str], dict[str, str]]) -> None:
+    version_manifest = snapshot.get("version_manifest")
+    _require(isinstance(version_manifest, dict), "FMEA_PUBLICATION_BODY_MARKER_MISSING")
+    _require(version_manifest.get("body_schema_version") == BODY_SCHEMA_VERSION, "FMEA_PUBLICATION_BODY_MARKER_MISSING")
+    expected_keys = {
+        "analysis_hash",
+        "body_schema_version",
+        "domain_pack_identity",
+        "propagation_rule_identity",
+        "report_layout",
+        "retrieval_provenance",
+        "scoring_rule_identities",
+        "template_identities",
+    }
+    _require(set(version_manifest) == expected_keys, "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+    for field in ("analysis_hash", "domain_pack_identity", "propagation_rule_identity", "scoring_rule_identities", "template_identities"):
+        _require(version_manifest.get(field) == revision.get(field), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+    layout = version_manifest.get("report_layout")
+    _require(isinstance(layout, dict) and set(layout) == {"columns", "template_identity"}, "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+    report_identity = layout.get("template_identity")
+    _require(isinstance(report_identity, dict) and set(report_identity) == {"template_hash", "template_id", "version"}, "FMEA_TEMPLATE_BINDING_INVALID")
+    identity = [report_identity["template_id"], report_identity["version"], report_identity["template_hash"]]
+    _require(identity in revision["template_identities"], "FMEA_TEMPLATE_BINDING_INVALID")
+    _require(templates.get((identity[0], identity[1]), {}).get("template_hash") == _digest(identity[2]), "FMEA_TEMPLATE_BINDING_INVALID")
+    columns = layout.get("columns")
+    _require(isinstance(columns, list) and bool(columns), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+    for column in columns:
+        _require(isinstance(column, dict) and set(column) == {"field_key", "label", "value_path", "value_type"}, "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+        _require(isinstance(column["value_path"], list) and all(isinstance(item, str) for item in column["value_path"]), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+    selected = case["evidence_selection"]
+    provenance = version_manifest["retrieval_provenance"]
+    _require(isinstance(provenance, dict), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+    expected_provenance = {
+        "evidence_types": ["text"],
+        "requested_profile": selected["requested_profile"],
+        "resolved_profile": selected["resolved_profile"],
+        "source_counts": [["text", sum(len(pack["refs"]) for pack in case["evidence_packs"])]],
+        "warnings": [],
+    }
+    _require(provenance == expected_provenance, "FMEA_EVIDENCE_PROFILE_MISMATCH")
+
+
+def _validate_v2_publication_body(case: dict[str, object], revisions: dict[str, dict[str, object]]) -> None:
+    candidates = _indexed(case["candidates"], "row_id")
+    risks = sorted((record for record in case["risk_records"] if record.get("status") == "confirmed"), key=lambda item: item["assessment_id"])
+    graphs = [graph for graph in case["propagation_graphs"] if graph.get("status") == "confirmed"]
+    _require(len(graphs) == 1, "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+    expected = {
+        "rows": [_public_row(candidates[key]) for key in sorted(candidates)],
+        "risk_records": [_public_risk(record) for record in risks],
+        "propagation": _public_graph(graphs[0]),
+        "evidence_summary": _public_evidence(case["evidence_packs"]),
+        "decision_summary": _public_decisions(case, candidates),
+        "unresolved_items": [],
+    }
+    templates = _template_bindings(case, revisions)
+    for snapshot in case["snapshots"]:
+        revision = revisions.get(snapshot.get("revision_id"))
+        _require(revision is not None, "FMEA_SNAPSHOT_CONTENT_MISMATCH")
+        _validate_publication_manifest_body(case, snapshot, revision, templates)
+        for field, value in expected.items():
+            _require(snapshot.get(field) == value, "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+        _require(snapshot.get("row_count") == len(expected["rows"]), "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH")
+
+
+def _validate_versioned_content(case: dict, revisions: dict, migration_child: dict, contract_version: str = SCHEMA_VERSION) -> None:
+    if contract_version == LEGACY_SCHEMA_VERSION:
+        _validate_legacy_versioned_content(case, revisions, migration_child)
+        return
+    rows = sorted(case["candidates"], key=lambda row: row["row_id"])
+    risks = sorted((record for record in case["risk_records"] if record["status"] == "confirmed"), key=lambda record: record["assessment_id"])
+    row_versions = [[row["row_id"], row["record_version"], _hash_json(row)] for row in rows]
+    risk_versions = [[risk["assessment_id"], risk["record_version"], _hash_json(risk)] for risk in risks]
+    graph = next(item for item in case["propagation_graphs"] if item["status"] == "confirmed")
+    for revision in revisions.values():
+        _require(sorted(revision["row_versions"]) == row_versions, "FMEA_REVISION_CONTENT_MISMATCH")
+        if revision["revision_id"] == migration_child["revision_id"]:
+            _require(revision["risk_versions"] == [] and revision.get("propagation_graph_revision_id") is None and revision.get("propagation_graph_hash") is None, "FMEA_MIGRATION_BINDING_INVALID")
+        else:
+            _require(sorted(revision["risk_versions"]) == risk_versions, "FMEA_REVISION_CONTENT_MISMATCH")
+            _require(revision.get("propagation_graph_revision_id") == graph["graph_revision_id"] and _digest(revision.get("propagation_graph_hash")) == _hash_json(graph), "FMEA_PROPAGATION_CONTENT_MISMATCH")
+    for risk in risks:
+        event = _one_event(case, "risk.confirmed", risk["assessment_id"])
+        _require(event.get("payload", {}).get("assessment") == risk, "FMEA_RISK_CONTENT_MISMATCH")
+        _require(event.get("aggregate_type") == "risk_assessment", "FMEA_OUTBOX_BINDING_INVALID")
+    _validate_v2_publication_body(case, revisions)
 
 
 def _topology_body(topology: dict) -> dict:
@@ -795,19 +1150,28 @@ def _validate_graph_structure(case: dict, revisions: dict) -> None:
         _require(event.get("payload", {}).get("graph") == graph, "FMEA_PROPAGATION_CONTENT_MISMATCH")
 
 
-def _manifest_version_hash(revision: dict[str, object]) -> str:
-    return _hash_json({
+def _manifest_version_hash(revision: dict[str, object], body_schema_version: str | None = None) -> str:
+    body = {
         "revision_hash": revision.get("revision_hash"),
         "analysis_hash": revision.get("analysis_hash"),
         "domain_pack_identity": revision.get("domain_pack_identity"),
         "template_identities": revision.get("template_identities"),
         "scoring_rule_identities": revision.get("scoring_rule_identities"),
         "propagation_rule_identity": revision.get("propagation_rule_identity"),
-    }, ascii_only=False)
+    }
+    if body_schema_version is not None:
+        body["body_schema_version"] = body_schema_version
+    return _hash_json(body, ascii_only=False)
 
 
-def _validate_manifests(case: dict[str, object], revisions: dict[str, dict[str, object]], publications: dict[str, dict[str, object]]) -> None:
+def _validate_manifests(
+    case: dict[str, object],
+    revisions: dict[str, dict[str, object]],
+    publications: dict[str, dict[str, object]],
+    contract_version: str = SCHEMA_VERSION,
+) -> None:
     manifests = _indexed(case["manifests"], "manifest_id")
+    snapshots = _indexed(case["snapshots"], "snapshot_id")
     published_revision_ids = {publication.get("revision_id") for publication in publications.values()}
     _require({manifest.get("revision_id") for manifest in manifests.values()} == published_revision_ids, "FMEA_MANIFEST_BINDING_INVALID")
     for manifest in manifests.values():
@@ -821,7 +1185,12 @@ def _validate_manifests(case: dict[str, object], revisions: dict[str, dict[str, 
         )}
         _require(_hash_json(body, ascii_only=False) == _digest(manifest.get("manifest_hash")), "FMEA_MANIFEST_HASH_MISMATCH")
         if "version_manifest_hash" in manifest:
-            _require(_digest(manifest["version_manifest_hash"]) == _digest(_manifest_version_hash(revision)), "FMEA_MANIFEST_BINDING_INVALID")
+            snapshot = snapshots.get(manifest.get("snapshot_id"), {})
+            marker = None
+            if contract_version == SCHEMA_VERSION:
+                marker = snapshot.get("version_manifest", {}).get("body_schema_version")
+                _require(marker == BODY_SCHEMA_VERSION, "FMEA_PUBLICATION_BODY_MARKER_MISSING")
+            _require(_digest(manifest["version_manifest_hash"]) == _digest(_manifest_version_hash(revision, marker)), "FMEA_MANIFEST_BINDING_INVALID")
 
 
 def _validate_submissions(case: dict[str, object], revisions: dict[str, dict[str, object]], approvals: dict[str, dict[str, object]]) -> None:
@@ -1147,7 +1516,12 @@ def _validate_used_payloads(cases: list[dict[str, object]], payloads: dict[str, 
     _require(set(payloads) == _used_payload_paths(cases), "FMEA_ARTIFACT_UNUSED_FILE")
 
 
-def validate_case_semantics(case: dict[str, object], summary: dict[str, int], payloads: dict[str, bytes] | None = None) -> None:
+def validate_case_semantics(
+    case: dict[str, object],
+    summary: dict[str, int],
+    payloads: dict[str, bytes] | None = None,
+    contract_version: str = SCHEMA_VERSION,
+) -> None:
     """Validate one case from its raw arrays and actual export bytes."""
     _require(isinstance(case, dict), "FMEA_ARTIFACT_SCHEMA_INVALID")
     _require(case.get("case_id") == "fuel-combustion", "FMEA_CASE_INVALID")
@@ -1172,7 +1546,7 @@ def validate_case_semantics(case: dict[str, object], summary: dict[str, int], pa
     _validate_graph_and_revision_links(case, packs, revisions, workspace_id, analysis_id)
     _validate_propagation_receipts(case)
     _validate_graph_structure(case, revisions)
-    _validate_versioned_content(case, revisions, migration_child)
+    _validate_versioned_content(case, revisions, migration_child, contract_version)
     _validate_steps(case, audits, outbox)
     _validate_replays(case)
     publications = _indexed(case["publications"], "publication_id")
@@ -1180,12 +1554,12 @@ def validate_case_semantics(case: dict[str, object], summary: dict[str, int], pa
     approvals = _indexed(case["approvals"], "approval_id")
     _validate_submissions(case, revisions, approvals)
     verify_publication_bindings(case)
-    _validate_manifests(case, revisions, publications)
+    _validate_manifests(case, revisions, publications, contract_version)
     _require(all(item.get("revision_id") in {root.get("revision_id"), governance_child.get("revision_id")} for item in publications.values()), "FMEA_PUBLICATION_BINDING_INVALID")
     _require(migration_child.get("revision_id") not in {item.get("revision_id") for item in publications.values()}, "FMEA_MIGRATION_BINDING_INVALID")
     _validate_export_wrappers(case, publications, payloads)
     if payloads is not None:
-        verify_export_set(case, payloads)
+        verify_export_set(case, payloads, contract_version=contract_version)
     _validate_migration(case, root, migration_child, case["exports"], payloads)
     _validate_lifecycle(case, publications, audits, outbox)
     verify_native_hashes(case)
@@ -1245,15 +1619,24 @@ def _export_snapshot(view: dict, format_name: str) -> dict:
     return result
 
 
-def verify_export_set(case: dict[str, object], payloads: dict[str, bytes]) -> set[str]:
+def verify_export_set(
+    case: dict[str, object], payloads: dict[str, bytes], *, contract_version: str | None = None
+) -> set[str]:
     """Bind independent decoded data, not just a displayed hash, to snapshots."""
     snapshots = _unique_records(case.get("snapshots"), "snapshot_id")
+    if contract_version is None:
+        contract_version = (
+            SCHEMA_VERSION
+            if any(snapshot.get("version_manifest", {}).get("body_schema_version") == BODY_SCHEMA_VERSION for snapshot in snapshots.values())
+            else LEGACY_SCHEMA_VERSION
+        )
+    _require(contract_version in {LEGACY_SCHEMA_VERSION, SCHEMA_VERSION}, "FMEA_ARTIFACT_SCHEMA_INVALID")
     exports = _unique_records(case.get("exports"), "path")
     formats = {key: set() for key in snapshots}
     for path, record in exports.items():
         format_name = record.get("format")
         _require(format_name in {"json", "xlsx", "docx"} and path.endswith(f".{format_name}") and path in payloads, "FMEA_EXPORT_FORMAT_INVALID")
-        view = parse_export(payloads[path], format_name)
+        view = parse_export(payloads[path], format_name, contract_version=contract_version)
         identity = view.get("snapshot_id")
         _require(identity in snapshots, "FMEA_EXPORT_SNAPSHOT_UNBOUND")
         _require(format_name not in formats[identity], "FMEA_DUPLICATE_EXPORT")
@@ -1319,9 +1702,10 @@ def _validate_structural_case(case: dict[str, object]) -> None:
     _require(case.get("coverage") == "structural_domain", "FMEA_CASE_COVERAGE_INVALID")
 
 
-def _validate_manifest_shape(manifest: dict[str, object]) -> None:
+def _validate_manifest_shape(manifest: dict[str, object], schema_version: str | None = None) -> None:
     _require(set(manifest) == {"schema_version", "artifact_id", "cases", "summary", "files"}, "FMEA_ARTIFACT_SCHEMA_INVALID")
-    _require(manifest.get("schema_version") == SCHEMA_VERSION, "FMEA_ARTIFACT_SCHEMA_INVALID")
+    expected = schema_version or manifest.get("schema_version")
+    _require(expected in {LEGACY_SCHEMA_VERSION, SCHEMA_VERSION} and manifest.get("schema_version") == expected, "FMEA_ARTIFACT_SCHEMA_INVALID")
     cases = manifest.get("cases")
     _require(isinstance(cases, list) and all(isinstance(case, str) and case for case in cases), "FMEA_ARTIFACT_SCHEMA_INVALID")
     _require(len(cases) == len(set(cases)), "FMEA_DUPLICATE_CASE")
@@ -1348,14 +1732,15 @@ def verify_acceptance_directory(directory: str | Path) -> VerificationResult:
         artifact_id = str(manifest.get("artifact_id", ""))
         evidence = _parse(payloads["evidence.json"])
         _require(set(evidence) >= {"schema_version", "cases"}, "FMEA_ARTIFACT_SCHEMA_INVALID")
-        _require(evidence.get("schema_version") == SCHEMA_VERSION, "FMEA_ARTIFACT_SCHEMA_INVALID")
+        schema_version = manifest.get("schema_version")
+        _require(evidence.get("schema_version") == schema_version, "FMEA_ARTIFACT_SCHEMA_INVALID")
         cases = evidence.get("cases")
         _require(isinstance(cases, list) and bool(cases), "FMEA_WORKFLOW_EVIDENCE_INCOMPLETE")
         _require(all(isinstance(case, dict) for case in cases), "FMEA_ARTIFACT_SCHEMA_INVALID")
         case_ids = [case.get("case_id") for case in cases]
         _require(all(isinstance(case_id, str) and case_id for case_id in case_ids), "FMEA_CASE_INVALID")
         _require(len(case_ids) == len(set(case_ids)), "FMEA_DUPLICATE_CASE")
-        _validate_manifest_shape(manifest)
+        _validate_manifest_shape(manifest, schema_version)
         manifest_cases = manifest["cases"]
         _require(set(manifest_cases) == set(case_ids), "FMEA_CASE_BINDING_INVALID")
         full_cases = [case for case in cases if case.get("case_id") == "fuel-combustion" and case.get("coverage") == "full_lifecycle"]
@@ -1363,7 +1748,7 @@ def verify_acceptance_directory(directory: str | Path) -> VerificationResult:
         _validate_domain_proofs(evidence)
         for case in cases:
             if case.get("coverage") == "full_lifecycle":
-                validate_case_semantics(case, manifest["summary"], payloads)
+                validate_case_semantics(case, manifest["summary"], payloads, contract_version=schema_version)
             else:
                 _validate_structural_case(case)
         _validate_used_payloads(cases, payloads)

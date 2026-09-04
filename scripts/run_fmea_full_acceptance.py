@@ -18,7 +18,7 @@ from types import ModuleType
 from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
-SCHEMA_VERSION = "graphrag.fmea.full.acceptance.v1"
+SCHEMA_VERSION = "graphrag.fmea.full.acceptance.v2"
 DEFAULT_OUTPUT_ROOT = ROOT / "observability/reports/fmea-full-acceptance"
 
 

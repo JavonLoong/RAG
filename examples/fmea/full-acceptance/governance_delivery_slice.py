@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from contextlib import closing
+from hashlib import sha256
 from pathlib import Path
 
 from core_domain.fmea.codec import decode_analysis
@@ -42,6 +43,7 @@ from fmea_infrastructure.domain_pack_registry import (
 from fmea_infrastructure.export_docx import DocxFmeaExporter
 from fmea_infrastructure.export_json import CanonicalJsonExporter
 from fmea_infrastructure.export_xlsx import XlsxFmeaExporter
+from fmea_infrastructure.governance_repository_sqlite import SqliteGovernanceRepository
 from fmea_infrastructure.propagation_rule_registry import FilePropagationRuleRegistry, load_propagation_rule_pack
 from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
 from fmea_infrastructure.risk_repository_sqlite import SqliteRiskRepository
@@ -101,11 +103,13 @@ class PersistedProviders:
         self.parent_revision = None
         self.review = SqliteFmeaRepository(database_path)
         self.risk = SqliteRiskRepository(database_path)
+        self.publication_reviews = SqliteGovernanceRepository(database_path)
         domain_source = (ROOT / "domain_packs/fuel-combustion/manifest.yaml").read_bytes()
         domain = load_domain_pack_manifest(domain_source)
 
         registry_root = Path(database_path).parent / "immutable-registries"
         template_registry = FileTemplateRegistry(registry_root / "templates")
+        self.template_registry = template_registry
         compiler = TemplateCompiler(schema_validator=Draft202012SchemaAdapter(), source_loader=load_template_source)
         for path in (
             ROOT / "templates/examples/fuel-combustion-fmea.yaml",
@@ -122,6 +126,12 @@ class PersistedProviders:
             scoring_rule_registry=FileScoringRuleRegistry(registry_root / "scoring"),
             propagation_rule_registry=propagation_registry,
         )
+
+    def get_report_template(self, template_id, version):
+        return self.artifact_provider.get_report_template(template_id, version)
+
+    def load_publication_reviews(self, revision):
+        return self.publication_reviews.load_publication_reviews(revision)
 
     def _scope(self, analysis_id, workspace_id):
         if (analysis_id, workspace_id) != (self.source.analysis.analysis_id, self.source.evidence_pack.workspace_id):
@@ -203,6 +213,7 @@ class GovernanceDeliveryRun:
                 acknowledgements=providers,
                 retrieval=providers,
                 parent=providers,
+                publication_reviews=providers,
             ),
             repository=self.repository,
             clock=lambda: UTC,
@@ -288,6 +299,23 @@ class GovernanceDeliveryRun:
             "reviewer",
         )
         revision = self.service.get_revision(assembled.revision_id, self.actor("reviewer"))
+        known_templates = {(item["template_id"], item["version"]) for item in self.evidence.get("registered_templates", [])}
+        for template_id, version, content_hash in revision.template_identities:
+            if (template_id, version) in known_templates:
+                continue
+            canonical = self.providers.get_report_template(template_id, version)
+            source = self.providers.template_registry.get_source_bytes(template_id, version)
+            self.evidence.setdefault("registered_templates", []).append({
+                "compiled": {
+                    "canonical_json": canonical,
+                    "template_hash": content_hash,
+                },
+                "source_hash": sha256(source).hexdigest(),
+                "template_hash": content_hash,
+                "template_id": template_id,
+                "version": version,
+            })
+            known_templates.add((template_id, version))
         readiness = self.service.readiness(revision.revision_id, self.actor("reviewer"))
         if not readiness.ready:
             raise ValueError(f"full acceptance readiness failed: {public(readiness)}")

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import importlib
+import io
 import json
+import shutil
 from copy import deepcopy
 from hashlib import sha256
 
@@ -80,6 +82,81 @@ def test_independent_office_parser_preserves_json_semantics(format_name):
     assert {key: value for key, value in actual.items() if key not in {"format", "media_type"}} == {
         key: value for key, value in expected.items() if key not in {"format", "media_type"}
     }
+
+
+def _legacy_xlsx_payload(payload: bytes) -> bytes:
+    import openpyxl
+
+    workbook = openpyxl.load_workbook(io.BytesIO(payload))
+    del workbook["正文详情"]
+    del workbook["正文"]
+    assert tuple(workbook.sheetnames) == (
+        "Manifest",
+        "FMEA",
+        "Risk",
+        "Propagation",
+        "Evidence",
+        "Decisions",
+        "Unresolved",
+    )
+    output = io.BytesIO()
+    workbook.save(output)
+    workbook.close()
+    return output.getvalue()
+
+
+def _legacy_docx_payload(payload: bytes) -> bytes:
+    from docx import Document
+    from docx.text.paragraph import Paragraph
+
+    document = Document(io.BytesIO(payload))
+    body = document.element.body
+    children = list(body)
+    machine_appendix = next(
+        index
+        for index, child in enumerate(children)
+        if child.tag.endswith("}p") and Paragraph(child, document).text.strip() == "机器附录"
+    )
+    for child in children[:machine_appendix]:
+        body.remove(child)
+    for child in list(body):
+        if child.tag.endswith("}p"):
+            body.remove(child)
+    assert len(document.tables) == 7
+    output = io.BytesIO()
+    document.save(output)
+    return output.getvalue()
+
+
+def test_legacy_v1_snapshot_exports_use_the_documented_old_office_layout_portably():
+    from core_domain.fmea.governance import canonical_json_value
+    from fmea_infrastructure.export_docx import DocxFmeaExporter
+    from fmea_infrastructure.export_json import CanonicalJsonExporter
+    from fmea_infrastructure.export_xlsx import XlsxFmeaExporter
+    from tests.fmea_governance_fixtures import make_normalized_snapshot
+
+    verifier = importlib.import_module("scripts.verify_fmea_full_acceptance")
+    snapshot = make_normalized_snapshot()
+    assert "body_schema_version" not in snapshot.version_manifest
+    payloads = {}
+    exports = []
+    for renderer in (CanonicalJsonExporter(), XlsxFmeaExporter(), DocxFmeaExporter()):
+        path = f"exports/legacy.{renderer.format}"
+        payload = renderer.render(snapshot)
+        if renderer.format == "xlsx":
+            payload = _legacy_xlsx_payload(payload)
+        elif renderer.format == "docx":
+            payload = _legacy_docx_payload(payload)
+        payloads[path] = payload
+        exports.append({"path": path, "format": renderer.format})
+
+    case = {"snapshots": [canonical_json_value(snapshot)], "exports": exports}
+
+    assert verifier.verify_export_set(
+        case,
+        payloads,
+        contract_version=verifier.LEGACY_SCHEMA_VERSION,
+    ) == set(payloads)
 
 
 def test_independent_parser_rejects_private_marker_even_in_office_metadata():
@@ -240,7 +317,13 @@ def test_office_identity_column_cannot_disagree_with_row_id(format_name):
         document["FMEA"]["A2"] = "forged-display-identity"
     else:
         document = Document(io.BytesIO(DocxFmeaExporter().render(snapshot)))
-        document.tables[1].cell(1, 0).text = "forged-display-identity"
+        fmea_table = next(
+            table
+            for table in document.tables
+            if table.rows and table.rows[0].cells and table.rows[0].cells[0].text == "Identity"
+            and any(cell.text == "row_id" for cell in table.rows[0].cells)
+        )
+        fmea_table.cell(1, 0).text = "forged-display-identity"
     document.save(output)
     with pytest.raises(verifier.VerificationError, match="IDENTITY"):
         verifier.parse_export(output.getvalue(), format_name)
@@ -340,7 +423,7 @@ def test_acceptance_requires_one_full_fuel_case_not_structural_only(tmp_path):
     verifier = importlib.import_module("scripts.verify_fmea_full_acceptance")
     root, manifest = _bundle(tmp_path)
     evidence = {
-        "schema_version": verifier.SCHEMA_VERSION,
+        "schema_version": manifest["schema_version"],
         "cases": [{"case_id": "electrical-demo", "coverage": "structural_domain"}],
     }
     payload = json.dumps(evidence, separators=(",", ":")).encode()
@@ -402,6 +485,191 @@ def test_real_full_artifact_passes_independent_verifier(full_artifact, tmp_path_
     propagation_replays = [item for item in case["replays"] if item["command"].startswith("fmea.propagation.")]
     assert propagation_replays
     assert all(item.get("state_hash_before") == item.get("state_hash_after") for item in propagation_replays)
+
+
+def _rewrite_office_payload(payload, format_name, mutation, old_hash, new_hash):  # noqa: C901 - explicit format tamper matrix
+    if format_name == "xlsx":
+        import openpyxl
+
+        workbook = openpyxl.load_workbook(io.BytesIO(payload))
+        if mutation == "failure_body":
+            for sheet in workbook.worksheets:
+                for row in sheet.iter_rows():
+                    for cell in row:
+                        if cell.value == "fuel filter blockage":
+                            cell.value = "forged failure body"
+        elif mutation == "quote":
+            for sheet in workbook.worksheets:
+                for row in sheet.iter_rows():
+                    for cell in row:
+                        if isinstance(cell.value, str):
+                            cell.value = cell.value.replace("Synthetic acceptance fixture", "Tampered acceptance fixture")
+        elif mutation == "scoring_association":
+            for sheet in workbook.worksheets:
+                for row in sheet.iter_rows():
+                    for cell in row:
+                        if cell.value == "fuel-sod-rpn":
+                            cell.value = "forged-sod-rpn"
+        elif mutation == "review_version":
+            table = workbook["Decisions"]
+            headers = [cell.value for cell in next(table.iter_rows())]
+            column = headers.index("record_version") + 1
+            table.cell(row=2, column=column).value = 3
+        elif mutation == "missing_body_marker":
+            table = workbook["Manifest"]
+            for row in table.iter_rows(min_row=2):
+                if row[0].value == "version_manifest":
+                    version_manifest = json.loads(row[1].value)
+                    version_manifest.pop("body_schema_version", None)
+                    row[1].value = json.dumps(version_manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                    break
+        output = io.BytesIO()
+        workbook.save(output)
+        workbook.close()
+        return output.getvalue().replace(old_hash.encode(), new_hash.encode())
+
+    from docx import Document
+    from docx.table import Table
+    from docx.text.paragraph import Paragraph
+
+    document = Document(io.BytesIO(payload))
+    canonical = {}
+    marker = None
+    for child in document.element.body.iterchildren():
+        if child.tag.endswith("}p"):
+            text = Paragraph(child, document).text.strip()
+            if text.startswith("Canonical table: "):
+                marker = text.removeprefix("Canonical table: ")
+        elif child.tag.endswith("}tbl") and marker is not None:
+            canonical[marker] = Table(child, document)
+            marker = None
+    if mutation == "review_version":
+        table = canonical["Decisions"]
+        headers = [cell.text for cell in table.rows[0].cells]
+        table.cell(1, headers.index("record_version")).text = "3"
+    elif mutation == "missing_body_marker":
+        table = canonical["Manifest"]
+        for row in table.rows[1:]:
+            if row.cells[0].text == "version_manifest":
+                version_manifest = json.loads(row.cells[1].text)
+                version_manifest.pop("body_schema_version", None)
+                row.cells[1].text = json.dumps(version_manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                break
+    else:
+        old_value, new_value = {
+            "failure_body": ("fuel filter blockage", "forged failure body"),
+            "quote": ("Synthetic acceptance fixture", "Tampered acceptance fixture"),
+            "scoring_association": ("fuel-sod-rpn", "forged-sod-rpn"),
+        }[mutation]
+        for table in document.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    if old_value in cell.text:
+                        for paragraph in cell.paragraphs:
+                            for run in paragraph.runs:
+                                run.text = run.text.replace(old_value, new_value)
+                        if old_value in cell.text:
+                            cell.text = cell.text.replace(old_value, new_value)
+    output = io.BytesIO()
+    document.save(output)
+    return output.getvalue().replace(old_hash.encode(), new_hash.encode())
+
+
+def _reseal_body_tamper(full_artifact, tmp_path, mutation):  # noqa: C901 - explicit body tamper matrix
+    verifier, artifact, manifest, _payloads, evidence = full_artifact
+    root = tmp_path / f"tampered-{mutation}"
+    shutil.copytree(artifact, root)
+    evidence = deepcopy(evidence)
+    original_case = evidence["cases"][0]
+    native = {name: deepcopy(original_case[name]) for name in ("candidates", "risk_records", "evidence_packs", "review_decisions", "propagation_graphs", "scoring_rules")}
+    old_hashes = {}
+    new_hashes = {}
+    for snapshot in original_case["snapshots"]:
+        old_hash = snapshot["snapshot_hash"]
+        old_hashes[snapshot["snapshot_id"]] = old_hash
+        if mutation == "failure_body":
+            snapshot["rows"][0]["failure_mode"] = "forged failure body"
+        elif mutation == "quote":
+            snapshot["evidence_summary"][0]["refs"][0]["quote"] = snapshot["evidence_summary"][0]["refs"][0]["quote"].replace(
+                "Synthetic acceptance fixture", "Tampered acceptance fixture"
+            )
+        elif mutation == "scoring_association":
+            risk = snapshot["risk_records"][0]
+            risk["rule_pack_id"] = "forged-sod-rpn"
+            risk["derived"]["scoring_rule_pack_id"] = "forged-sod-rpn"
+        elif mutation == "review_version":
+            snapshot["decision_summary"][0]["record_version"] = 3
+        elif mutation == "missing_body_marker":
+            snapshot["version_manifest"].pop("body_schema_version")
+        else:  # pragma: no cover - parametrized below
+            raise AssertionError(mutation)
+        new_hash = _adversarial_digest({key: value for key, value in snapshot.items() if key != "snapshot_hash"})
+        snapshot["snapshot_hash"] = new_hash
+        new_hashes[snapshot["snapshot_id"]] = new_hash
+
+    case = evidence["cases"][0]
+    changed_payloads = {}
+    for export in case["exports"]:
+        snapshot_id = export["run"]["snapshot_id"]
+        path = export["path"]
+        format_name = export["format"]
+        payload = (root / path).read_bytes()
+        old_hash = old_hashes[snapshot_id]
+        new_hash = new_hashes[snapshot_id]
+        if format_name == "json":
+            view = json.loads(payload)
+            if mutation == "failure_body":
+                view["rows"][0]["failure_mode"] = "forged failure body"
+            elif mutation == "quote":
+                view["evidence_summary"][0]["refs"][0]["quote"] = view["evidence_summary"][0]["refs"][0]["quote"].replace(
+                    "Synthetic acceptance fixture", "Tampered acceptance fixture"
+                )
+            elif mutation == "scoring_association":
+                risk = view["risk_records"][0]
+                risk["rule_pack_id"] = "forged-sod-rpn"
+                risk["derived"]["scoring_rule_pack_id"] = "forged-sod-rpn"
+            elif mutation == "review_version":
+                view["decision_summary"][0]["record_version"] = 3
+            elif mutation == "missing_body_marker":
+                view["version_manifest"].pop("body_schema_version")
+            view["snapshot_hash"] = new_hash
+            payload = json.dumps(view, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+        else:
+            payload = _rewrite_office_payload(payload, format_name, mutation, old_hash, new_hash)
+        (root / path).write_bytes(payload)
+        changed_payloads[path] = payload
+        export["run"]["snapshot_hash"] = new_hash
+        export["manifest"]["snapshot_hash"] = new_hash
+        export["manifest"]["sha256"] = sha256(payload).hexdigest()
+        export["manifest"]["byte_length"] = len(payload)
+
+    evidence_payload = json.dumps(evidence, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+    (root / "evidence.json").write_bytes(evidence_payload)
+    manifest = deepcopy(manifest)
+    for path, payload in {**changed_payloads, "evidence.json": evidence_payload}.items():
+        manifest["files"][path] = {"sha256": sha256(payload).hexdigest(), "size_bytes": len(payload)}
+    (root / "manifest.json").write_text(json.dumps(manifest, sort_keys=True), encoding="utf-8")
+    assert {name: original_case[name] for name in native} == native
+    return verifier, root, native
+
+
+@pytest.mark.parametrize(
+    ("mutation", "error_code"),
+    [
+        ("failure_body", "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH"),
+        ("quote", "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH"),
+        ("scoring_association", "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH"),
+        ("review_version", "FMEA_PUBLICATION_BODY_NATIVE_MISMATCH"),
+        ("missing_body_marker", "FMEA_PUBLICATION_BODY_MARKER_MISSING"),
+    ],
+)
+def test_v2_body_tampering_is_rejected_after_resealing_all_exports(full_artifact, tmp_path, mutation, error_code):
+    verifier, root, _native = _reseal_body_tamper(full_artifact, tmp_path, mutation)
+
+    result = verifier.verify_acceptance_directory(root)
+
+    assert result.passed is False
+    assert result.error_code == error_code
 
 
 @pytest.mark.parametrize(

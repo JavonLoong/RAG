@@ -120,8 +120,19 @@ def test_full_acceptance_executes_connected_lifecycle(tmp_path: Path) -> None:
     verified = verify_acceptance_directory(result.artifact_dir)
     assert verified.passed, verified.error_code
     evidence = json.loads((result.artifact_dir / "evidence.json").read_text(encoding="utf-8"))
+    assert evidence["schema_version"] == "graphrag.fmea.full.acceptance.v2"
     fuel = next(case for case in evidence["cases"] if case["case_id"] == "fuel-combustion")
     assert fuel["coverage"] == "full_lifecycle"
+    assert all(
+        snapshot["version_manifest"]["body_schema_version"] == "graphrag.fmea.body.v1"
+        for snapshot in fuel["snapshots"]
+    )
+    body_snapshot = fuel["snapshots"][0]
+    assert body_snapshot["rows"][0]["failure_mode"] == "fuel filter blockage"
+    assert body_snapshot["evidence_summary"][0]["refs"][0]["quote"].startswith("Synthetic acceptance fixture")
+    assert body_snapshot["risk_records"][0]["source_record_version"] == body_snapshot["rows"][0]["record_version"]
+    assert body_snapshot["decision_summary"][0]["record_version"] == body_snapshot["rows"][0]["record_version"]
+    assert body_snapshot["version_manifest"]["report_layout"]["template_identity"]["template_hash"]
     migrated = next(
         revision
         for revision in fuel["revisions"]

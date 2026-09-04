@@ -14,6 +14,8 @@ import openpyxl
 import orjson
 import pytest
 from docx import Document
+from docx.table import Table
+from docx.text.paragraph import Paragraph
 
 from core_domain.fmea.codec import decode_row, encode_json
 from core_domain.fmea.domain_pack import DomainPackManifest
@@ -169,13 +171,28 @@ def _parse_xlsx(payload: bytes) -> dict[str, object]:
 
 def _parse_docx(payload: bytes) -> dict[str, object]:
     document = Document(io.BytesIO(payload))
-    tables = iter(document.tables)
-    manifest_table = next(tables)
+    marker_to_table = {}
+    marker = None
+    for child in document.element.body.iterchildren():
+        if child.tag.endswith("}p"):
+            text = Paragraph(child, document).text.strip()
+            if text.startswith("Canonical table: "):
+                marker = text.removeprefix("Canonical table: ")
+        elif child.tag.endswith("}tbl") and marker is not None:
+            marker_to_table[marker] = Table(child, document)
+            marker = None
+    # The marker is authoritative; the header check only avoids a misleading
+    # KeyError when an old exporter omitted a marker entirely.
+    assert {"Manifest", "FMEA"} <= set(marker_to_table)
+    manifest_table = marker_to_table["Manifest"]
     manifest = {
         row.cells[0].text: _parse_value(row.cells[1].text, row.cells[2].text)
         for row in manifest_table.rows[1:]
     }
-    return {"rows": _parse_typed_table(tuple(tuple(cell.text for cell in row.cells) for row in next(tables).rows)), **manifest}
+    return {
+        "rows": _parse_typed_table(tuple(tuple(cell.text for cell in row.cells) for row in marker_to_table["FMEA"].rows)),
+        **manifest,
+    }
 
 
 def _mapping_tuple(value: object) -> tuple[dict[str, object], ...]:
@@ -223,15 +240,59 @@ def run_domain_fixture(pack_id: str) -> DomainFixture:
     if spec.extension_values:
         validate_extension_values(row, template)
     row_payload = json.loads(encode_json(row))
+    revision = make_fmea_revision(
+        analysis_id=f"{pack_id}-analysis",
+        workspace_id="ws-1",
+    )
+    body_row = dict(row_payload)
+    body_row["field_evidence"] = [
+        {"field_key": key, "evidence_ids": evidence_ids}
+        for key, evidence_ids in row_payload["field_evidence"]
+    ]
+    body_row["field_support"] = [
+        {"field_key": key, "support_status": support_status}
+        for key, support_status in row_payload["field_support"]
+    ]
+    body_row.setdefault("field_claims", [])
+    body_row.setdefault("extension_values", [])
+    body_row["row_hash"] = "a" * 64
     snapshot = make_normalized_snapshot(
-        revision=make_fmea_revision(),
-        rows=(row_payload,),
+        revision=revision,
+        rows=(body_row,),
         risk_records=(),
         propagation=None,
-        evidence_summary=({"pack_id": f"{pack_id}-evidence", "evidence_count": 1},),
-        decision_summary=(),
+        evidence_summary=({
+            "pack_id": f"{pack_id}-evidence",
+            "pack_hash": "b" * 64,
+            "evidence_pack_version": "fixture-evidence-v1",
+            "refs": [{
+                "evidence_id": "evidence-demo-1",
+                "document_id": f"{pack_id}-document",
+                "document_version": "fixture-document-v1",
+                "content_hash": "c" * 64,
+                "evidence_hash": "d" * 64,
+                "locator": {"page": 1, "span": 1},
+                "quote": "Bounded structural demonstration evidence.",
+                "source_type": "primary_document",
+                "source_trust": "reviewed",
+            }],
+        },),
+        decision_summary=({
+            "record_type": "row_review",
+            "decision_id": f"{pack_id}-decision-1",
+            "workspace_id": "ws-1",
+            "analysis_id": f"{pack_id}-analysis",
+            "row_id": f"{pack_id}-row-1",
+            "record_version": 1,
+            "row_hash": "a" * 64,
+            "role_category": "human_reviewer",
+            "decision": "accepted",
+            "reason": "Structural fixture accepted.",
+            "decided_at": "2026-08-30T00:00:00Z",
+        },),
         version_manifest={
             "schema_id": _SCHEMA_ID,
+            "body_schema_version": "graphrag.fmea.body.v1",
             "domain_pack": {"id": manifest.pack_id, "version": manifest.version, "hash": manifest.content_hash},
             "template": {
                 "id": template.metadata.template_id,
@@ -302,6 +363,15 @@ def test_demo_packs_are_structurally_distinct_and_use_distinct_scoring_anchors()
     assert electrical.template.output_schema != software.template.output_schema
     assert electrical.scoring_rule.rule_pack_id != software.scoring_rule.rule_pack_id
     assert electrical.scoring_rule.dimension_anchors != software.scoring_rule.dimension_anchors
+
+
+@pytest.mark.parametrize("pack_id", ["fuel-combustion", "electrical-demo", "software-demo"])
+def test_demo_exports_exercise_marked_publication_body_path(pack_id: str) -> None:
+    result = run_domain_fixture(pack_id)
+
+    assert result.snapshot.version_manifest["body_schema_version"] == "graphrag.fmea.body.v1"
+    assert result.snapshot.decision_summary[0]["role_category"] == "human_reviewer"
+    assert all(view["version_manifest"]["body_schema_version"] == "graphrag.fmea.body.v1" for view in result.export_views.values())
 
 
 @pytest.mark.parametrize("pack_id", ["electrical-demo", "software-demo"])
