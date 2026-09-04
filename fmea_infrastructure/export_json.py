@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 import re
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from typing import NoReturn, cast
 
 from core_domain.fmea.errors import FmeaDomainError
@@ -144,6 +144,47 @@ def _snapshot_projection(
     )
 
 
+def _projection_fragments(projection: Mapping[str, object]) -> Iterator[bytes]:
+    """Encode the fixed envelope without building a complete export string.
+
+    Values keep the existing canonical encoder (not a second numeric/string
+    codec). Only top-level arrays are split into individual records.
+    """
+    limits = TemplateLimits(max_array_items=_MAX_COLLECTION_ITEMS)
+    yield b"{"
+    for index, key in enumerate(sorted(projection)):
+        if index:
+            yield b","
+        yield canonical_json(key, limits=limits).encode("utf-8")
+        yield b":"
+        value = projection[key]
+        if isinstance(value, list):
+            yield b"["
+            for item_index, item in enumerate(value):
+                if item_index:
+                    yield b","
+                yield canonical_json(item, limits=limits).encode("utf-8")
+            yield b"]"
+        else:
+            yield canonical_json(value, limits=limits).encode("utf-8")
+    yield b"}\n"
+
+
+def _bounded_chunks(fragments: Iterator[bytes], chunk_size: int) -> Iterator[bytes]:
+    pending = bytearray()
+    for fragment in fragments:
+        offset = 0
+        while offset < len(fragment):
+            count = min(chunk_size - len(pending), len(fragment) - offset)
+            pending.extend(fragment[offset:offset + count])
+            offset += count
+            if len(pending) == chunk_size:
+                yield bytes(pending)
+                pending.clear()
+    if pending:
+        yield bytes(pending)
+
+
 class CanonicalJsonExporter:
     """Render one normalized snapshot as deterministic canonical JSON bytes."""
 
@@ -155,7 +196,7 @@ class CanonicalJsonExporter:
             raise _error("FMEA_EXPORT_JSON_INVALID", "draft_preview must be a boolean")
         self._draft_preview = draft_preview
 
-    def render(self, snapshot: NormalizedFmeaSnapshot, *, draft_preview: bool | None = None) -> bytes:
+    def _prepare(self, snapshot: NormalizedFmeaSnapshot, draft_preview: bool | None) -> Mapping[str, object]:
         if type(snapshot) is not NormalizedFmeaSnapshot:
             raise _error("FMEA_EXPORT_SNAPSHOT_INVALID", "snapshot must be a NormalizedFmeaSnapshot")
         if draft_preview is not None and type(draft_preview) is not bool:
@@ -171,6 +212,16 @@ class CanonicalJsonExporter:
                 media_type=self.media_type,
             )
             _validate_export_value(projection)
+        except CanonicalJsonExportError:
+            raise
+        except (FmeaDomainError, StructuredOutputError, TypeError, ValueError, OverflowError):
+            raise _error("FMEA_EXPORT_JSON_INVALID", "snapshot cannot be rendered as canonical JSON") from None
+
+        return projection
+
+    def render(self, snapshot: NormalizedFmeaSnapshot, *, draft_preview: bool | None = None) -> bytes:
+        projection = self._prepare(snapshot, draft_preview)
+        try:
             body = canonical_json(
                 projection,
                 limits=TemplateLimits(max_array_items=_MAX_COLLECTION_ITEMS),
@@ -178,6 +229,29 @@ class CanonicalJsonExporter:
             return body.encode("utf-8") + b"\n"
         except CanonicalJsonExportError:
             raise
+        except (FmeaDomainError, StructuredOutputError, TypeError, ValueError, OverflowError):
+            raise _error("FMEA_EXPORT_JSON_INVALID", "snapshot cannot be rendered as canonical JSON") from None
+
+    def iter_chunks(
+        self,
+        snapshot: NormalizedFmeaSnapshot,
+        *,
+        draft_preview: bool | None = None,
+        chunk_size: int = 65_536,
+    ) -> Iterator[bytes]:
+        """Yield canonical export bytes in nonempty, bounded output chunks.
+
+        Concatenation is byte-identical to render(). A chunk may split a UTF-8
+        code point: concatenate bytes or use an incremental decoder. Validation
+        happens on first iteration, before output. Snapshot/projection and hash
+        validation remain resident; this is not a constant-memory pipeline.
+        The common exporter protocol and ExportService still use render().
+        """
+        if type(chunk_size) is not int or chunk_size < 1:
+            raise _error("FMEA_EXPORT_CHUNK_SIZE_INVALID", "chunk_size must be a positive integer")
+        projection = self._prepare(snapshot, draft_preview)
+        try:
+            yield from _bounded_chunks(_projection_fragments(projection), chunk_size)
         except (FmeaDomainError, StructuredOutputError, TypeError, ValueError, OverflowError):
             raise _error("FMEA_EXPORT_JSON_INVALID", "snapshot cannot be rendered as canonical JSON") from None
 

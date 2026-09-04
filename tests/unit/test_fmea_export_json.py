@@ -14,6 +14,58 @@ from tests.fmea_governance_fixtures import make_fmea_revision, make_normalized_s
 EXPECTED_JSON_SHA256 = "150ccccf5c9793ded4904a2a7df98c064c49644160608be261e0a2962bf3c268"
 
 
+@pytest.mark.parametrize("chunk_size", (1, 17, 65536))
+def test_chunks_preserve_existing_bytes_hash_and_bound(chunk_size):
+    snapshot = make_normalized_snapshot()
+    exporter = CanonicalJsonExporter()
+    chunks = list(exporter.iter_chunks(snapshot, chunk_size=chunk_size))
+    assert chunks and all(type(chunk) is bytes and 0 < len(chunk) <= chunk_size for chunk in chunks)
+    payload = b"".join(chunks)
+    assert payload == exporter.render(snapshot)
+    assert sha256(payload).hexdigest() == EXPECTED_JSON_SHA256
+
+
+@pytest.mark.parametrize("preview", (False, True))
+def test_chunks_preserve_unicode_numeric_and_preview_semantics(preview, monkeypatch):
+    import codecs
+
+    snapshot = make_normalized_snapshot(row_payload={
+        "row_id": "行-1", "failure_mode": "燃料🔥\\\"\n低压",
+        "values": [None, True, False, -0.0, 1e-7, 1e20, 9223372036854775807],
+    })
+    exporter = CanonicalJsonExporter(draft_preview=True)
+    expected = exporter.render(snapshot, draft_preview=preview)
+
+    def forbidden_render(*args, **kwargs):
+        pytest.fail("iter_chunks must not split a fully rendered payload")
+
+    monkeypatch.setattr(exporter, "render", forbidden_render)
+    decoder = codecs.getincrementaldecoder("utf-8")()
+    chunks = list(exporter.iter_chunks(snapshot, chunk_size=7, draft_preview=preview))
+    decoded = "".join(decoder.decode(chunk) for chunk in chunks) + decoder.decode(b"", final=True)
+    assert decoded.encode("utf-8") == expected
+    assert orjson.loads(decoded)["draft_preview"] is preview
+
+
+@pytest.mark.parametrize("chunk_size", (0, -1, True, 1.5, "64", None))
+def test_chunks_reject_invalid_bounds(chunk_size):
+    with pytest.raises(ValueError) as failure:
+        list(CanonicalJsonExporter().iter_chunks(make_normalized_snapshot(), chunk_size=chunk_size))
+    assert failure.value.code == "FMEA_EXPORT_CHUNK_SIZE_INVALID"
+
+
+def test_chunks_validate_entire_snapshot_before_emitting_any_bytes():
+    snapshot = make_normalized_snapshot()
+    forged = _forge_snapshot(snapshot, rows=({"row_id": "r", "value": "C:\\private\\data"},))
+    emitted = []
+    with pytest.raises(ValueError) as failure:
+        for chunk in CanonicalJsonExporter().iter_chunks(forged, chunk_size=1):
+            emitted.append(chunk)
+    assert not emitted
+    assert failure.value.code == "FMEA_EXPORT_JSON_INVALID"
+    assert "private" not in str(failure.value)
+
+
 def _forge_snapshot(snapshot: NormalizedFmeaSnapshot, **overrides: object) -> NormalizedFmeaSnapshot:
     forged = object.__new__(NormalizedFmeaSnapshot)
     for field in fields(snapshot):
