@@ -584,7 +584,9 @@ def migration_dry_run(
     report = _service_call(
         lambda: service.dry_run(_migration_command(revision_id, body, key, expected_version), access.actor)
     )
-    return _json_response(request, "fmea_migration_report", migration_report_data(report), status=202, record_version=1)
+    data = migration_report_data(report)
+    data["report_id"] = migration_report_id(access.workspace.workspace_id, report.migration_id)
+    return _json_response(request, "fmea_migration_report", data, status=202, record_version=1)
 
 
 @router.post("/migration-reports/{report_id}/confirmations")

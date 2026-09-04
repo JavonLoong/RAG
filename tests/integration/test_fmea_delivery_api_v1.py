@@ -373,14 +373,31 @@ def test_migration_dry_run_forwards_source_version_and_reports_etag() -> None:
     assert response.status_code == 202
     assert migration.dry_run_commands[0].expected_source_version == 7
     assert response.headers["etag"] == '"1"'
+    assert response.json()["data"]["report_id"] == migration_report_id("ws-1", "migration-1")
+    assert response.json()["data"]["report_hash"] == migration.report().report_hash
 
 
 def test_migration_confirmation_preserves_original_dry_run_identity() -> None:
     migration = FakeMigrationService()
     app, _ = _app(roles=frozenset({"template_admin"}), migration_service=migration)
     report = migration.report()
-    response = TestClient(app).post(
-        f"/api/v1/fmea/migration-reports/{migration_report_id('ws-1', 'migration-1')}/confirmations",
+    client = TestClient(app)
+    dry_run_body = {
+        "migration_id": "migration-1",
+        "source_revision_hash": "sha256:" + "a" * 64,
+        "target_domain_pack_id": "domain-pack",
+        "target_domain_pack_version": "1.1.0",
+        "target_domain_pack_hash": "sha256:" + "c" * 64,
+    }
+    dry_run_response = client.post(
+        "/api/v1/fmea/revisions/revision-1/migration-dry-runs",
+        headers={**_headers(), "If-Match": '"7"', "Idempotency-Key": UUID2},
+        json=dry_run_body,
+    )
+    assert dry_run_response.status_code == 202
+    report_id = dry_run_response.json()["data"]["report_id"]
+    response = client.post(
+        f"/api/v1/fmea/migration-reports/{report_id}/confirmations",
         headers={**_headers(), "If-Match": '"1"', "Idempotency-Key": UUID1},
         json={
             "migration_id": "migration-1",
