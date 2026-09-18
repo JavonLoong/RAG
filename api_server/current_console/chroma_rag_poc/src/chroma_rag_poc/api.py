@@ -99,6 +99,7 @@ from rag_orchestrator.router import (
 from rag_orchestrator.triage import GraphRagTriageStore
 from retrieval_engine.graph import SQLiteGraphRetriever
 from storage_layer.graph_store import GraphStore
+from storage_layer.project_workspace import ProjectWorkspaceError, ProjectWorkspaceRegistry
 
 PACKAGE_FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
 RETRIEVAL_POLICY_SESSION_COOKIE = "rag_policy_session"
@@ -4140,6 +4141,47 @@ def _build_query_registry(persist_dir: Path) -> WorkspaceRegistry | _DefaultWork
     return _DefaultWorkspaceRegistry(persist_dir)
 
 
+def _record_delivery_http_metric(
+    request: Request,
+    *,
+    status_code: int,
+    started: float,
+    response_bytes: str | int | None,
+) -> None:
+    path_match = re.match(r"^/api/delivery/projects/([^/]+)", request.url.path)
+    path_project_id = str(path_match.group(1)).lower() if path_match else ""
+    if path_project_id == "restore":
+        path_project_id = ""
+    project_id = str(
+        getattr(request.state, "delivery_project_id", "")
+        or path_project_id
+        or request.headers.get("X-Project-ID")
+        or "default"
+    ).lower()
+    try:
+        registry = getattr(request.app.state, "project_workspace_registry", None)
+        if registry is None:
+            registry = ProjectWorkspaceRegistry(request.app.state.persist_dir / "projects")
+            request.app.state.project_workspace_registry = registry
+        registry.record_http_metric(
+            project_id,
+            {
+                "timestamp": datetime.now().astimezone().isoformat(timespec="milliseconds"),
+                "method": request.method,
+                "path": request.url.path,
+                "status_code": int(status_code),
+                "duration_ms": round((time.perf_counter() - started) * 1000, 3),
+                "actor": str(getattr(request.state, "delivery_actor", "unauthenticated")),
+                "correlation_id": str(
+                    getattr(request.state, "delivery_correlation_id", "") or secrets.token_hex(16)
+                ),
+                "response_bytes": int(response_bytes) if response_bytes not in (None, "") else None,
+            },
+        )
+    except (OSError, TypeError, ValueError, ProjectWorkspaceError):
+        return
+
+
 def create_app(
     persist_dir: Path = DEFAULT_PERSIST_DIR,
     upload_dir: Path = DEFAULT_UPLOAD_DIR,
@@ -4168,8 +4210,24 @@ def create_app(
     app.add_middleware(
         CORSMiddleware,
         allow_origins=allowed_cors_origins,
-        allow_methods=["GET", "POST", "DELETE"],
-        allow_headers=["Accept", "Authorization", "Content-Type", "Origin"],
+        allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=[
+            "Accept",
+            "Authorization",
+            "Content-Type",
+            "Origin",
+            "Idempotency-Key",
+            "X-Client-Request-ID",
+            "X-Correlation-ID",
+            "X-Project-ID",
+        ],
+        expose_headers=[
+            "X-Correlation-ID",
+            "X-Authenticated-Actor",
+            "X-Idempotency-Replayed",
+            "X-Response-Time-Ms",
+            "Server-Timing",
+        ],
     )
 
     from .routes_fmea_review_v1 import FmeaRequestBodyLimitMiddleware
@@ -4184,11 +4242,135 @@ def create_app(
     app.state.persist_dir.mkdir(parents=True, exist_ok=True)
     app.state.upload_dir.mkdir(parents=True, exist_ok=True)
     app.state.log_dir.mkdir(parents=True, exist_ok=True)
+    app.state.delivery_auth_mode = os.environ.get("RAG_DELIVERY_AUTH_MODE", "local").strip().lower() or "local"
+    app.state.delivery_local_actor = os.environ.get("RAG_DELIVERY_LOCAL_ACTOR", "local-user").strip() or "local-user"
     app.state.memory_db_path = app.state.persist_dir / "memory" / "conversation_memory.sqlite3"
     memory_vector_dir = os.environ.get("RAG_MEMORY_VECTOR_DIR", "").strip()
     app.state.memory_vector_persist_dir = Path(memory_vector_dir) if memory_vector_dir else None
     if app.state.memory_vector_persist_dir:
         app.state.memory_vector_persist_dir.mkdir(parents=True, exist_ok=True)
+
+    @app.middleware("http")
+    async def delivery_identity_and_project_authorization(request: Request, call_next):
+        if not request.url.path.startswith("/api/delivery"):
+            return await call_next(request)
+        correlation_id = str(request.headers.get("X-Correlation-ID") or secrets.token_hex(16))
+        request.state.delivery_correlation_id = correlation_id
+        mode = str(getattr(request.app.state, "delivery_auth_mode", "local") or "local").lower()
+        if mode == "oidc":
+            try:
+                identity = _resolve_retrieval_policy_oidc_identity(request, request.app.state.persist_dir)
+            except HTTPException as exc:
+                return JSONResponse(
+                    status_code=exc.status_code,
+                    content={
+                        "detail": {
+                            "code": "delivery_authentication_failed",
+                            "message": str(exc.detail),
+                            "stage": "authentication",
+                            "retryable": False,
+                            "details": {},
+                            "correlation_id": correlation_id,
+                        }
+                    },
+                    headers={"X-Correlation-ID": correlation_id},
+                )
+            if not identity:
+                return JSONResponse(
+                    status_code=401,
+                    content={
+                        "detail": {
+                            "code": "delivery_authentication_required",
+                            "message": "A valid OIDC identity is required for delivery APIs",
+                            "stage": "authentication",
+                            "retryable": False,
+                            "details": {},
+                            "correlation_id": correlation_id,
+                        }
+                    },
+                    headers={"X-Correlation-ID": correlation_id},
+                )
+            actor = str(identity["subject"])
+            groups = {str(item) for item in identity.get("groups") or []}
+            request.state.delivery_identity_source = "oidc"
+        else:
+            actor = str(getattr(request.app.state, "delivery_local_actor", "local-user") or "local-user")
+            groups = {"local-users"}
+            request.state.delivery_identity_source = "local"
+        request.state.delivery_actor = actor
+        request.state.delivery_groups = sorted(groups)
+
+        project_id = str(request.headers.get("X-Project-ID") or request.query_params.get("project_id") or "").strip().lower()
+        path_match = re.match(r"^/api/delivery/projects/([^/]+)", request.url.path)
+        path_project_id = str(path_match.group(1)).lower() if path_match else ""
+        if path_project_id in {"restore"}:
+            path_project_id = ""
+        if project_id and path_project_id and project_id != path_project_id:
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "detail": {
+                        "code": "project_context_conflict",
+                        "message": "Path and header project contexts do not match",
+                        "stage": "authorization",
+                        "retryable": False,
+                        "details": {"path_project_id": path_project_id, "header_project_id": project_id},
+                        "correlation_id": correlation_id,
+                    }
+                },
+                headers={"X-Correlation-ID": correlation_id},
+            )
+        project_id = path_project_id or project_id
+        try:
+            registry = getattr(request.app.state, "project_workspace_registry", None)
+            if registry is None:
+                registry = ProjectWorkspaceRegistry(request.app.state.persist_dir / "projects")
+                request.app.state.project_workspace_registry = registry
+            task_match = re.match(r"^/api/delivery/tasks/([^/]+)", request.url.path)
+            if task_match:
+                task_project_id = registry.get_task(task_match.group(1)).project_id
+                if project_id and project_id != task_project_id:
+                    return JSONResponse(
+                        status_code=403,
+                        content={
+                            "detail": {
+                                "code": "task_project_access_denied",
+                                "message": "The task does not belong to the requested project",
+                                "stage": "authorization",
+                                "retryable": False,
+                                "details": {"project_id": project_id},
+                                "correlation_id": correlation_id,
+                            }
+                        },
+                        headers={"X-Correlation-ID": correlation_id},
+                    )
+                project_id = task_project_id
+            if project_id:
+                project = registry.get_project(project_id)
+                allowed_actors = {str(item) for item in project.configuration.get("allowed_actors") or []}
+                allowed_groups = {str(item) for item in project.configuration.get("allowed_groups") or []}
+                if (allowed_actors or allowed_groups) and actor not in allowed_actors and not (groups & allowed_groups):
+                    return JSONResponse(
+                        status_code=403,
+                        content={
+                            "detail": {
+                                "code": "project_access_denied",
+                                "message": "The authenticated identity is not authorized for this project",
+                                "stage": "authorization",
+                                "retryable": False,
+                                "details": {"project_id": project_id},
+                                "correlation_id": correlation_id,
+                            }
+                        },
+                        headers={"X-Correlation-ID": correlation_id},
+                    )
+        except ProjectWorkspaceError:
+            pass
+        request.state.delivery_project_id = project_id or "default"
+        response = await call_next(request)
+        response.headers["X-Correlation-ID"] = correlation_id
+        response.headers["X-Authenticated-Actor"] = actor
+        return response
 
     workspace_registry = _build_query_registry(app.state.persist_dir)
     app.state.workspace_registry = workspace_registry
