@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import unittest
 import re
+import unittest
 from pathlib import Path
 
 
@@ -9,7 +9,51 @@ class FrontendDemoModeContractTests(unittest.TestCase):
     def setUp(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
         self.root_html = (repo_root / "index.html").read_text(encoding="utf-8")
-        self.html = (repo_root / "frontend_app" / "current_console" / "index.html").read_text(encoding="utf-8")
+        console_root = repo_root / "frontend_app" / "current_console"
+        self.html = "\n".join(
+            [
+                (console_root / "index.html").read_text(encoding="utf-8"),
+                (console_root / "modules" / "console-app.js").read_text(encoding="utf-8"),
+                (console_root / "modules" / "pages" / "acceptance-page.js").read_text(
+                    encoding="utf-8"
+                ),
+            ]
+        )
+
+    def test_prd_acceptance_workbench_is_backend_backed_and_evidence_guarded(self) -> None:
+        for marker in (
+            'data-page="acceptance"',
+            'id="page-acceptance"',
+            'id="acceptanceWorkItems"',
+            'id="acceptanceEvidenceFile"',
+            'id="acceptanceArtifactEditor"',
+            'id="btnAcceptanceBuild"',
+            "/api/delivery/acceptance/status",
+            "/api/delivery/acceptance/evidence",
+            "/api/delivery/acceptance/build-package",
+            "expected_sha256",
+            "Idempotency-Key",
+            "candidate_files",
+            "data-load-acceptance-candidate",
+            "/api/delivery/acceptance/candidates/",
+            "候选证据：待人工复核",
+            'id="acceptanceHandoffPreview"',
+            'id="btnAcceptanceLoadHandoff"',
+            'id="btnAcceptanceCopyHandoff"',
+            'id="btnAcceptanceDownloadHandoff"',
+            "/api/delivery/acceptance/handoff",
+            "/api/delivery/acceptance/package-files/human_review_handoff.md",
+        ):
+            self.assertIn(marker, self.html)
+
+    def test_delivery_task_renderer_does_not_reference_document_loop_state(self) -> None:
+        task_renderer = self.html.split("if (els.deliveryTaskList) {", 1)[1].split(
+            "if (els.deliveryProviderList) {", 1
+        )[0]
+
+        self.assertNotIn("doc.status", task_renderer)
+        self.assertNotIn("doc.version_id", task_renderer)
+        self.assertIn("task.task_id", task_renderer)
 
     def test_public_demo_search_uses_browser_local_search_path(self) -> None:
         self.assertRegex(
@@ -96,20 +140,6 @@ class FrontendDemoModeContractTests(unittest.TestCase):
             self.assertIn("global_search", html)
             self.assertIn("formatAdvancedQueryMarkdown(result)", html)
             self.assertIn("window.formatAdvancedQueryMarkdown = formatAdvancedQueryMarkdown;", html)
-
-    def test_wechat_affection_question_forces_full_contact_evidence_contract(self) -> None:
-        required = [
-            "WECHAT_AFFECTION_QUESTION",
-            "全量私聊联系人级暧昧关系分析",
-            "不要只基于 top-k chunk",
-            "每个一对一私聊联系人",
-            "请按联系人逐个分析所有私聊记录",
-            "关键证据原文，必须带日期、消息发送方、chunk_id 或 message_id",
-            "如果没有原文证据，不允许判断为暧昧",
-            "CONTACT_FULL_SCAN",
-        ]
-        for text in required:
-            self.assertIn(text, self.html)
 
     def test_search_results_render_retrieval_diagnostics_in_both_entrypoints(self) -> None:
         for html in (self.html, self.root_html):

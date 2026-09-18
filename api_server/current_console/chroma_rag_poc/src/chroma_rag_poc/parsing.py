@@ -10,9 +10,10 @@ from __future__ import annotations
 import csv
 import re
 from collections import OrderedDict
+from collections.abc import Iterable
 from io import BytesIO, StringIO
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import orjson
 
@@ -537,10 +538,10 @@ def _collect_structured_blocks(
 def _ordered_keys(node: dict[str, Any]) -> list[str]:
     ordered: list[str] = []
     for preferred in PREFERRED_TEXT_KEYS:
-        for key in node.keys():
+        for key in node:
             if str(key).strip().lower() == preferred and key not in ordered:
                 ordered.append(str(key))
-    for key in node.keys():
+    for key in node:
         key_str = str(key)
         if key_str not in ordered:
             ordered.append(key_str)
@@ -672,31 +673,107 @@ def _load_pdf_payload(raw_bytes: bytes, source_name: str) -> list[SourceRecord]:
 def _load_docx_payload(raw_bytes: bytes, source_name: str) -> list[SourceRecord]:
     try:
         from docx import Document
+        from docx.oxml.table import CT_Tbl
+        from docx.oxml.text.paragraph import CT_P
+        from docx.table import Table
+        from docx.text.paragraph import Paragraph
     except ImportError as exc:
         raise ValueError("DOCX 解析依赖缺失，请安装 python-docx") from exc
 
     document = Document(BytesIO(raw_bytes))
     blocks: list[TextBlock] = []
+    last_visual_id: str | None = None
 
-    def append(text: str, block_type: str = "Para") -> None:
+    def append(
+        text: str,
+        block_type: str = "Para",
+        *,
+        table_id: str | None = None,
+        image_id: str | None = None,
+        caption_for: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
         cleaned = normalize_text(text)
         if not cleaned:
             return
-        blocks.append(TextBlock(text=cleaned, block_type=block_type, order=len(blocks)))
+        order = len(blocks)
+        blocks.append(
+            TextBlock(
+                text=cleaned,
+                block_type=block_type,
+                order=order,
+                block_id=f"BLK-{stable_hash(f'{source_name}:{order}:{block_type}:{cleaned}')[:16]}",
+                table_id=table_id,
+                image_id=image_id,
+                caption_for=caption_for,
+                metadata=dict(metadata or {}),
+            )
+        )
 
-    for paragraph in document.paragraphs:
-        text = normalize_text(paragraph.text)
-        if not text:
-            continue
-        style_name = normalize_text(getattr(getattr(paragraph, "style", None), "name", "")).lower()
-        block_type = "Title" if any(token in style_name for token in ("heading", "title")) else "Para"
-        append(text, block_type)
+    # Walk body XML so tables stay between their surrounding paragraphs.
+    for body_index, child in enumerate(document.element.body.iterchildren()):
+        if isinstance(child, CT_P):
+            paragraph = Paragraph(child, document)
+            text = normalize_text(paragraph.text)
+            style_name = normalize_text(getattr(getattr(paragraph, "style", None), "name", "")).lower()
+            is_caption = "caption" in style_name or bool(
+                re.match(r"^(?:figure|fig\.?|table|图|表)\s*\d+", text, flags=re.IGNORECASE)
+            )
+            if text:
+                block_type = (
+                    "Caption"
+                    if is_caption
+                    else "Title"
+                    if any(token in style_name for token in ("heading", "title"))
+                    else "List"
+                    if "list" in style_name
+                    else "Para"
+                )
+                append(
+                    text,
+                    block_type,
+                    caption_for=last_visual_id if is_caption else None,
+                    metadata={"docx_body_index": body_index, "style": style_name},
+                )
 
-    for table in document.tables:
-        for row in table.rows:
-            cells = [normalize_text(cell.text) for cell in row.cells if normalize_text(cell.text)]
-            if cells:
-                append(" | ".join(cells), "List")
+            for image_index, blip in enumerate(child.xpath(".//a:blip"), start=1):
+                relationship_id = blip.get(
+                    "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed"
+                )
+                related = document.part.related_parts.get(relationship_id) if relationship_id else None
+                blob = bytes(getattr(related, "blob", b""))
+                image_id = f"IMG-{stable_hash(f'{source_name}:{body_index}:{image_index}:{relationship_id}')[:16]}"
+                append(
+                    text or f"Embedded image {image_index}",
+                    "Image",
+                    image_id=image_id,
+                    metadata={
+                        "docx_body_index": body_index,
+                        "relationship_id": relationship_id or "",
+                        "content_type": str(getattr(related, "content_type", "")),
+                        "image_sha256": stable_hash(blob.hex()) if blob else "",
+                    },
+                )
+                last_visual_id = image_id
+        elif isinstance(child, CT_Tbl):
+            table = Table(child, document)
+            table_id = f"TBL-{stable_hash(f'{source_name}:{body_index}:table')[:16]}"
+            widths = [len(row.cells) for row in table.rows]
+            for row_index, row in enumerate(table.rows):
+                cells = [normalize_text(cell.text) for cell in row.cells]
+                append(
+                    " | ".join(cells),
+                    "Table",
+                    table_id=table_id,
+                    metadata={
+                        "docx_body_index": body_index,
+                        "row_index": row_index,
+                        "column_count": len(cells),
+                        "table_column_counts": str(widths),
+                        "cells_json": orjson.dumps(cells).decode("utf-8"),
+                    },
+                )
+            last_visual_id = table_id
 
     if not blocks:
         raise ValueError("DOCX 未提取到可用文本")
@@ -709,7 +786,13 @@ def _load_docx_payload(raw_bytes: bytes, source_name: str) -> list[SourceRecord]
             page_num=None,
             text=_build_structured_text(blocks),
             blocks=blocks,
-            metadata={"source_kind": "DOCX"},
+            metadata={
+                "source_kind": "DOCX",
+                "reading_order_preserved": True,
+                "table_count": len({block.table_id for block in blocks if block.table_id}),
+                "image_count": len({block.image_id for block in blocks if block.image_id}),
+                "caption_count": sum(1 for block in blocks if block.block_type == "Caption"),
+            },
         )
     ]
 

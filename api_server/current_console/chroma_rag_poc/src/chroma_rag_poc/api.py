@@ -4314,6 +4314,12 @@ def create_app(
     except ImportError:
         pass
 
+    try:
+        from .routes_acceptance import router as acceptance_router
+        app.include_router(acceptance_router)
+    except ImportError:
+        pass
+
     @app.get("/")
     async def index():
         if resolved_frontend_dir is None:
@@ -6214,12 +6220,21 @@ def create_app(
         )
 
     if resolved_frontend_dir is not None and resolved_frontend_dir.exists():
-        libs_dir = resolved_frontend_dir / "libs"
-        assets_dir = resolved_frontend_dir / "assets"
-        if libs_dir.exists():
-            app.mount("/libs", StaticFiles(directory=str(libs_dir)), name="libs")
-        if assets_dir.exists():
-            app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+        static_subdirectories = {
+            "libs": "libs",
+            "assets": "assets",
+            "modules": "modules",
+            "styles": "styles",
+            "demo_data": "demo_data",
+        }
+        for route_name, directory_name in static_subdirectories.items():
+            directory = resolved_frontend_dir / directory_name
+            if directory.exists():
+                app.mount(
+                    f"/{route_name}",
+                    StaticFiles(directory=str(directory)),
+                    name=route_name,
+                )
         app.mount("/static", StaticFiles(directory=str(resolved_frontend_dir)), name="static")
     if resolved_deliverables_dir.exists():
         app.mount("/deliverables", StaticFiles(directory=str(resolved_deliverables_dir)), name="deliverables")

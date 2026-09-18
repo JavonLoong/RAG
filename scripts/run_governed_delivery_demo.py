@@ -1,6 +1,6 @@
 """Generate a deterministic M2-M5 two-week progress demonstration package."""
 
-# ruff: noqa: RUF001, W291
+# ruff: noqa: RUF001
 
 from __future__ import annotations
 

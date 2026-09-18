@@ -15,80 +15,61 @@ DEFAULT_TRIAGE_REGRESSION_DATASET = (
     REPO_ROOT / "outputs" / "smoke_chroma" / "evaluation" / "graphrag_triage_regression.jsonl"
 )
 
-WECHAT_PRIVATE_CONTACT_FIXTURE_SOURCE = "wechat_private_contact_affection_gold.md"
-WECHAT_PRIVATE_CONTACT_FIXTURE_TEXT = """# WeChat private-contact affection sweep gold fixture
+POWER_EQUIPMENT_TRIAGE_FIXTURE_SOURCE = "power_equipment_graphrag_quality_gold.md"
+POWER_EQUIPMENT_TRIAGE_FIXTURE_TEXT = """# Power equipment GraphRAG quality gold fixture
 
-This document is a small promoted regression fixture for 全量私聊联系人级暧昧关系分析.
-It represents one-to-one private chat chunks and preserves contact partitions, dates,
-speakers, message_id, chunk_id, and original text evidence.
+This promoted regression fixture verifies that broad GraphRAG answers keep
+traceable source evidence instead of passing through an empty graph summary.
 
-Contact: 小琳
-Remark: 小琳
-username: wxid_xiaolin_gold
-conversation_type: private_chat
-chunk_id: contact-xiaolin-20260103
-message_id: msg-xiaolin-001
-2026-01-03 23:10:05 号主: 宝宝晚安，今天辛苦了，抱抱。
-message_id: msg-xiaolin-002
-2026-01-03 23:11:18 小琳: 晚安宝贝抱抱，明天见。
-judgement: 较确定
-reason: 双方互称宝宝/宝贝，并出现晚安、抱抱、明天见等双向亲密互动原文证据。
+## Inspection note GT-2-2026-06-18
 
-Contact: 徐明阳
-Remark: 徐明阳
-username: wxid_xumingyang_gold
-conversation_type: private_chat
-chunk_id: contact-xumingyang-20250519
-message_id: msg-xumingyang-001
-2025-05-19 15:24:58 徐明阳: 我们讨论一下社保制度和政治学概论的问题。
-message_id: msg-xumingyang-002
-2025-05-19 15:30:12 号主: 可以，这个属于学术讨论。
-judgement: 不足证据
-reason: 内容是学术或普通朋友交流，没有暧昧证据。
+Equipment: GT-2 gas turbine
+Observation: vibration growth was recorded on bearing B2 during high-load operation.
+Evidence id: gt2-vibration-001
+Cause: borescope inspection found early bearing wear and lubricant contamination.
+Recommended action: reduce load, replace the bearing at the next maintenance window,
+and repeat vibration monitoring after the restart.
 
-Excluded conversation: 文件传输助手
-conversation_type: file_transfer
-chunk_id: excluded-filehelper-001
-message_id: msg-filehelper-001
-2026-01-04 00:01:00 号主: 草稿里写过宝宝、宝贝、亲爱的。
-judgement: 排除
-reason: 文件传输助手不是一对一私聊联系人，不允许归因到任何联系人。
+## Inspection note GT-3-2026-06-19
 
-Expected full-contact result:
-- 较确定暧昧对象人数: 1
-- 疑似暧昧对象人数: 0
-- 性别不确定但有暧昧证据的人数: 0
-- 小琳 / wxid_xiaolin_gold / 较确定 / evidence: msg-xiaolin-001, msg-xiaolin-002
-- 徐明阳 / wxid_xumingyang_gold / 不足证据
-- 文件传输助手必须排除
-- 不要只基于 top-k chunk; 必须做全量逐联系人扫描并解释为什么其他联系人未计入。
+Equipment: GT-3 gas turbine
+Observation: exhaust temperature spread stayed inside the normal control range.
+Evidence id: gt3-normal-001
+Cause: no bearing wear evidence was found.
+Recommended action: continue routine monitoring.
+
+Expected result:
+- GT-2 is the relevant equipment.
+- The answer must cite vibration growth, bearing B2, early bearing wear,
+  lubricant contamination, and the recommended load reduction / bearing replacement.
+- GT-3 must not be treated as a matching fault case.
 """
 
-WECHAT_PRIVATE_CONTACT_CASE = RAGEvaluationCase(
-    id="wechat_private_contact_affection_sweep_gold_001",
+POWER_EQUIPMENT_TRIAGE_CASE = RAGEvaluationCase(
+    id="power_equipment_graphrag_quality_gold_001",
     question=(
-        "请执行全量私聊联系人级暧昧关系分析，不要只基于 top-k chunk。"
-        "请按每个一对一私聊联系人逐个分析所有聊天记录，输出较确定/疑似/不足证据，"
-        "必须给出日期、发送方、chunk_id 或 message_id 的原文证据，并说明为什么其他联系人未计入。"
+        "Which maintenance evidence links GT-2 vibration growth to bearing wear, "
+        "and what action is recommended?"
     ),
     reference_answer=(
-        "小琳因宝宝晚安、晚安宝贝抱抱等双向亲密互动判为较确定；"
-        "徐明阳是学术讨论，证据不足；文件传输助手必须排除。"
+        "GT-2 vibration growth on bearing B2 is linked to early bearing wear and "
+        "lubricant contamination; the recommended action is to reduce load, replace "
+        "the bearing at the next maintenance window, and repeat vibration monitoring."
     ),
     expected_evidence_keywords=[
-        "全量私聊联系人级暧昧关系分析",
-        "小琳",
-        "晚安宝贝抱抱",
-        "较确定",
-        "徐明阳",
-        "不足证据",
-        "文件传输助手",
+        "GT-2",
+        "vibration growth",
+        "bearing B2",
+        "early bearing wear",
+        "lubricant contamination",
+        "reduce load",
+        "replace the bearing",
     ],
-    task_type="private_contact_affection_sweep",
-    source_scope="wechat_private_contact_affection_gold",
+    task_type="graphrag_triage",
+    source_scope="power_equipment_graphrag_quality_gold",
     grading_notes=(
-        "Promoted fixture for broad private-contact analysis. Must not pass through an empty "
-        "top-k-only regression gate."
+        "Promoted fixture for broad GraphRAG quality. The answer must include "
+        "non-empty source evidence and avoid treating unrelated normal equipment as a fault case."
     ),
     expected_modes=["global", "comprehensive"],
 )
@@ -101,11 +82,11 @@ def seed_promoted_graphrag_regression_fixture(
     collection_name: str = SMOKE_COLLECTION,
     backend: str = "hashing",
 ) -> dict[str, Any]:
-    """Ingest the private-contact fixture and upsert its promoted regression case."""
+    """Ingest the promoted fixture and upsert its regression case."""
     persist_path = Path(persist_dir)
     dataset = Path(dataset_path)
     _load_console_pipeline().ingest_source_payloads(
-        payloads=[(WECHAT_PRIVATE_CONTACT_FIXTURE_SOURCE, WECHAT_PRIVATE_CONTACT_FIXTURE_TEXT.encode("utf-8"))],
+        payloads=[(POWER_EQUIPMENT_TRIAGE_FIXTURE_SOURCE, POWER_EQUIPMENT_TRIAGE_FIXTURE_TEXT.encode("utf-8"))],
         persist_dir=persist_path,
         collection_name=collection_name,
         chunk_size=2400,
@@ -113,8 +94,8 @@ def seed_promoted_graphrag_regression_fixture(
         backend=backend,
     )
     cases = _load_existing_cases(dataset)
-    case_record = WECHAT_PRIVATE_CONTACT_CASE.to_dataset_record()
-    cases = [case for case in cases if str(case.get("id")) != WECHAT_PRIVATE_CONTACT_CASE.id]
+    case_record = POWER_EQUIPMENT_TRIAGE_CASE.to_dataset_record()
+    cases = [case for case in cases if str(case.get("id")) != POWER_EQUIPMENT_TRIAGE_CASE.id]
     cases.append(case_record)
     dataset.parent.mkdir(parents=True, exist_ok=True)
     dataset.write_text(
@@ -126,8 +107,8 @@ def seed_promoted_graphrag_regression_fixture(
         "collection_name": collection_name,
         "dataset_path": str(dataset),
         "case_count": len(cases),
-        "seeded_case_id": WECHAT_PRIVATE_CONTACT_CASE.id,
-        "source_file": WECHAT_PRIVATE_CONTACT_FIXTURE_SOURCE,
+        "seeded_case_id": POWER_EQUIPMENT_TRIAGE_CASE.id,
+        "source_file": POWER_EQUIPMENT_TRIAGE_FIXTURE_SOURCE,
     }
 
 

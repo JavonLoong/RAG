@@ -5,6 +5,14 @@ import tomllib
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def _desktop_console_contract_source() -> str:
+    console_root = ROOT / "frontend_app" / "current_console"
+    html = (console_root / "index.html").read_text(encoding="utf-8")
+    module_path = console_root / "modules" / "console-app.js"
+    assert "modules/console-app.js" in html
+    return f"{html}\n{module_path.read_text(encoding='utf-8')}"
+
+
 def test_project_front_door_mentions_required_paths():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     required = [
@@ -21,25 +29,25 @@ def test_project_front_door_mentions_required_paths():
 
 
 def test_desktop_one_click_contract_is_present():
-    html = (ROOT / "frontend_app/current_console/index.html").read_text(encoding="utf-8")
+    console_source = _desktop_console_contract_source()
     required = [
-        "btnKgWechatOneClick",
-        "WECHAT_AFFECTION_QUESTION",
-        "applyWechatAffectionGraphPreset",
-        "runWechatAffectionOneClick",
+        "btnKgPowerRagOneClick",
+        "POWER_RAG_DEFAULT_QUESTION",
+        "applyPowerRagGraphPreset",
+        "runPowerRagOneClick",
         "kgPublicBooksJsonMode",
         "generative",
     ]
     for text in required:
-        assert text in html
+        assert text in console_source
 
 
 def test_electron_local_file_picker_contract_is_present():
     main = (ROOT / "electron/main.cjs").read_text(encoding="utf-8")
     preload = (ROOT / "electron/preload.cjs").read_text(encoding="utf-8")
-    assert "power-rag:pick-wechat-rag-corpus" in main
-    assert "findDefaultWechatRagCorpus" in main
-    assert "pickWechatRagCorpus" in preload
+    assert "power-rag:pick-power-rag-corpus" in main
+    assert "findDefaultPowerRagCorpus" in main
+    assert "pickPowerRagCorpus" in preload
 
 
 def test_electron_desktop_starts_ocr_service_contract():
@@ -60,7 +68,7 @@ def test_ocr_server_runtime_dependencies_are_declared():
 
 def test_github_pages_index_uses_same_graph_renderer_contract():
     root_index = (ROOT / "index.html").read_text(encoding="utf-8")
-    console_index = (ROOT / "frontend_app/current_console/index.html").read_text(encoding="utf-8")
+    console_source = _desktop_console_contract_source()
     required = [
         "buildKgCommunityGraph",
         "renderKgD3GraphView",
@@ -71,4 +79,4 @@ def test_github_pages_index_uses_same_graph_renderer_contract():
     ]
     for text in required:
         assert text in root_index
-        assert text in console_index
+        assert text in console_source

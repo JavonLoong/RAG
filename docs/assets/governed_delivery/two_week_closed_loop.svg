@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="720" viewBox="0 0 1600 720" role="img" aria-labelledby="title desc">
+  <title id="title">图 1 M2 至 M5 本轮实现范围</title>
+  <desc id="desc">用工程流程图展示 M2 至 M5 已实现的代码接口、处理步骤和输出，并列出自动化测试结果。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#334155"/>
+    </marker>
+  </defs>
+
+  <rect width="1600" height="720" fill="#ffffff"/>
+  <text x="60" y="58" fill="#111827" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="31" font-weight="700">图 1　M2—M5 本轮实现范围（代码与自动化测试）</text>
+  <text x="60" y="94" fill="#475569" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="18">分支：codex/8.8汇报　代码基线：6603cf87　复核日期：2026-08-08</text>
+  <line x1="60" y1="116" x2="1540" y2="116" stroke="#1e3a8a" stroke-width="3"/>
+
+  <g font-family="Microsoft YaHei, Segoe UI, sans-serif">
+    <rect x="60" y="154" width="330" height="370" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+    <rect x="60" y="154" width="330" height="54" fill="#eaf0f8" stroke="#334155" stroke-width="1.5"/>
+    <text x="78" y="190" fill="#111827" font-size="24" font-weight="700">M2　资料读取</text>
+    <text x="78" y="242" fill="#64748b" font-size="16" font-weight="700">输入</text>
+    <text x="78" y="272" fill="#111827" font-size="18">解析结果或 OCR 结果</text>
+    <line x1="78" y1="292" x2="372" y2="292" stroke="#cbd5e1"/>
+    <text x="78" y="326" fill="#64748b" font-size="16" font-weight="700">已实现的处理</text>
+    <text x="78" y="358" fill="#111827" font-size="18">• 记录质量问题</text>
+    <text x="78" y="391" fill="#111827" font-size="18">• 保存复核决定</text>
+    <text x="78" y="424" fill="#111827" font-size="18">• 内容修改后建立新版本</text>
+    <line x1="78" y1="447" x2="372" y2="447" stroke="#cbd5e1"/>
+    <text x="78" y="478" fill="#64748b" font-size="16" font-weight="700">输出</text>
+    <text x="78" y="506" fill="#111827" font-size="18">资料版本、页码与修改记录</text>
+
+    <rect x="443" y="154" width="330" height="370" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+    <rect x="443" y="154" width="330" height="54" fill="#eaf0f8" stroke="#334155" stroke-width="1.5"/>
+    <text x="461" y="190" fill="#111827" font-size="24" font-weight="700">M3　资料入库</text>
+    <text x="461" y="242" fill="#64748b" font-size="16" font-weight="700">输入</text>
+    <text x="461" y="272" fill="#111827" font-size="18">审核通过的资料版本</text>
+    <line x1="461" y1="292" x2="755" y2="292" stroke="#cbd5e1"/>
+    <text x="461" y="326" fill="#64748b" font-size="16" font-weight="700">已实现的处理</text>
+    <text x="461" y="358" fill="#111827" font-size="18">• 同步到检索库</text>
+    <text x="461" y="391" fill="#111827" font-size="18">• 按资料版本检索</text>
+    <text x="461" y="424" fill="#111827" font-size="18">• 查看状态与重新建立资料库</text>
+    <line x1="461" y1="447" x2="755" y2="447" stroke="#cbd5e1"/>
+    <text x="461" y="478" fill="#64748b" font-size="16" font-weight="700">输出</text>
+    <text x="461" y="506" fill="#111827" font-size="18">检索结果与原文位置</text>
+
+    <rect x="826" y="154" width="330" height="370" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+    <rect x="826" y="154" width="330" height="54" fill="#eaf0f8" stroke="#334155" stroke-width="1.5"/>
+    <text x="844" y="190" fill="#111827" font-size="24" font-weight="700">M4　知识关系图</text>
+    <text x="844" y="242" fill="#64748b" font-size="16" font-weight="700">输入</text>
+    <text x="844" y="272" fill="#111827" font-size="18">已发布的资料版本</text>
+    <line x1="844" y1="292" x2="1138" y2="292" stroke="#cbd5e1"/>
+    <text x="844" y="326" fill="#64748b" font-size="16" font-weight="700">已实现的处理</text>
+    <text x="844" y="358" fill="#111827" font-size="18">• 规则基线抽取关系</text>
+    <text x="844" y="391" fill="#111827" font-size="18">• 类型和原文绑定检查</text>
+    <text x="844" y="424" fill="#111827" font-size="18">• 图数据同步与路径查询</text>
+    <line x1="844" y1="447" x2="1138" y2="447" stroke="#cbd5e1"/>
+    <text x="844" y="478" fill="#64748b" font-size="16" font-weight="700">输出</text>
+    <text x="844" y="506" fill="#111827" font-size="18">图谱版本、关系与查询路径</text>
+
+    <rect x="1209" y="154" width="330" height="370" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+    <rect x="1209" y="154" width="330" height="54" fill="#eaf0f8" stroke="#334155" stroke-width="1.5"/>
+    <text x="1227" y="190" fill="#111827" font-size="24" font-weight="700">M5　FMEA 输出</text>
+    <text x="1227" y="242" fill="#64748b" font-size="16" font-weight="700">输入</text>
+    <text x="1227" y="272" fill="#111827" font-size="18">已发布的图谱版本</text>
+    <line x1="1227" y1="292" x2="1521" y2="292" stroke="#cbd5e1"/>
+    <text x="1227" y="326" fill="#64748b" font-size="16" font-weight="700">已实现的处理</text>
+    <text x="1227" y="358" fill="#111827" font-size="18">• 生成 FMEA 任务</text>
+    <text x="1227" y="391" fill="#111827" font-size="18">• 保存字段来源和审核状态</text>
+    <text x="1227" y="424" fill="#111827" font-size="18">• 导出检查与反馈动作</text>
+    <line x1="1227" y1="447" x2="1521" y2="447" stroke="#cbd5e1"/>
+    <text x="1227" y="478" fill="#64748b" font-size="16" font-weight="700">输出</text>
+    <text x="1227" y="506" fill="#111827" font-size="18">FMEA 结果、导出文件与记录</text>
+  </g>
+
+  <line x1="390" y1="339" x2="436" y2="339" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="773" y1="339" x2="819" y2="339" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="1156" y1="339" x2="1202" y2="339" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <g font-family="Microsoft YaHei, Segoe UI, sans-serif">
+    <rect x="60" y="560" width="1479" height="86" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+    <line x1="430" y1="560" x2="430" y2="646" stroke="#94a3b8"/>
+    <line x1="800" y1="560" x2="800" y2="646" stroke="#94a3b8"/>
+    <line x1="1170" y1="560" x2="1170" y2="646" stroke="#94a3b8"/>
+    <text x="82" y="593" fill="#111827" font-size="24" font-weight="700">13/13</text>
+    <text x="82" y="624" fill="#475569" font-size="17">M2—M5 主要流程测试</text>
+    <text x="452" y="593" fill="#111827" font-size="24" font-weight="700">27/27</text>
+    <text x="452" y="624" fill="#475569" font-size="17">资料读取、检索与图数据测试</text>
+    <text x="822" y="593" fill="#111827" font-size="24" font-weight="700">40/40</text>
+    <text x="822" y="624" fill="#475569" font-size="17">本次自动化测试合计</text>
+    <text x="1192" y="593" fill="#111827" font-size="24" font-weight="700">通过</text>
+    <text x="1192" y="624" fill="#475569" font-size="17">静态代码检查</text>
+  </g>
+
+  <text x="60" y="686" fill="#64748b" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="16">注：图中结论仅对应代码与自动化测试范围，不代表真实项目资料已经完成验收。</text>
+</svg>

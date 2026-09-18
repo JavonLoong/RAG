@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .schemas import ChunkRecord, SourceRecord, TextBlock
+from .schemas import ChunkRecord, SourceRecord
 from .text_utils import estimate_token_count, normalize_text, stable_hash
 
 # 项目2 的多级断点标记（优先级从高到低）
@@ -100,12 +100,17 @@ def _chunk_with_title_trigger(
     current_text = ""
     current_pages: set[int] = set()
     current_labels: dict[str, int] = {}
+    current_block_ids: set[str] = set()
+    current_table_ids: set[str] = set()
+    current_image_ids: set[str] = set()
+    current_caption_for_ids: set[str] = set()
     active_section_title = str(record.metadata.get("passage_title") or "")
     record_boundary_type = str(record.metadata.get("boundary_type") or "record")
     chunk_index = 0
 
     def _flush(*, keep_tail: bool = True):
         nonlocal current_text, current_pages, current_labels, chunk_index
+        nonlocal current_block_ids, current_table_ids, current_image_ids, current_caption_for_ids
         text = normalize_text(current_text)
         if not text:
             return
@@ -124,6 +129,10 @@ def _chunk_with_title_trigger(
                 source_ext=source_ext,
                 source_kind=source_kind,
                 section_title=active_section_title,
+                block_ids=sorted(current_block_ids),
+                table_ids=sorted(current_table_ids),
+                image_ids=sorted(current_image_ids),
+                caption_for_ids=sorted(current_caption_for_ids),
             )
             stored_text = _attach_boundary_prefix(sub_text, base_metadata)
             text_hash = stable_hash(stored_text)
@@ -146,6 +155,10 @@ def _chunk_with_title_trigger(
         current_text = tail
         current_pages = retained_pages
         current_labels = dict(current_labels) if tail else {}
+        current_block_ids = set(current_block_ids) if tail else set()
+        current_table_ids = set(current_table_ids) if tail else set()
+        current_image_ids = set(current_image_ids) if tail else set()
+        current_caption_for_ids = set(current_caption_for_ids) if tail else set()
 
     for block in blocks:
         # 项目1 核心逻辑：Title 触发新 chunk
@@ -172,6 +185,14 @@ def _chunk_with_title_trigger(
         if block.page_num >= 0:
             current_pages.add(block.page_num)
         current_labels[block.block_type] = current_labels.get(block.block_type, 0) + 1
+        if block.block_id:
+            current_block_ids.add(block.block_id)
+        if block.table_id:
+            current_table_ids.add(block.table_id)
+        if block.image_id:
+            current_image_ids.add(block.image_id)
+        if block.caption_for:
+            current_caption_for_ids.add(block.caption_for)
 
     _flush(keep_tail=False)
     return chunks
@@ -229,6 +250,10 @@ def _build_chunk_metadata(
     source_ext: str,
     source_kind: str,
     section_title: str = "",
+    block_ids: list[str] | None = None,
+    table_ids: list[str] | None = None,
+    image_ids: list[str] | None = None,
+    caption_for_ids: list[str] | None = None,
 ) -> dict[str, str | int | float | bool]:
     boundary_type = str(record.metadata.get("boundary_type") or "record")
     passage_id = str(record.metadata.get("passage_id") or "")
@@ -257,6 +282,15 @@ def _build_chunk_metadata(
         value = record.metadata.get(key)
         if value is not None and value != "":
             metadata[key] = value
+    for plural_key, singular_key, values in (
+        ("block_ids", "block_id", block_ids or []),
+        ("table_ids", "table_id", table_ids or []),
+        ("image_ids", "image_id", image_ids or []),
+        ("caption_for_ids", "caption_for", caption_for_ids or []),
+    ):
+        if values:
+            metadata[plural_key] = str(values)
+            metadata[singular_key] = values[0]
     return metadata
 
 

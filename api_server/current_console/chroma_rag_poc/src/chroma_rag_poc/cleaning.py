@@ -7,6 +7,8 @@
 """
 from __future__ import annotations
 
+from dataclasses import replace
+
 from .schemas import SourceRecord, TextBlock
 from .text_utils import normalize_text
 
@@ -54,58 +56,43 @@ def _merge_short_blocks(blocks: list[TextBlock], min_chars: int = 10) -> list[Te
         if not text:
             continue
 
+        # Layout-bearing blocks are evidence boundaries.  Merging them into a
+        # neighbour would erase table/image/caption locators and reading order.
+        is_structural = bool(
+            block.table_id
+            or block.image_id
+            or block.caption_for
+            or block.block_type.casefold() in {"table", "image", "caption"}
+        )
+        if is_structural:
+            if pending_short is not None:
+                cleaned.append(pending_short)
+                pending_short = None
+            cleaned.append(replace(block, text=text))
+            continue
+
+        if pending_short is not None and pending_short.page_num != block.page_num:
+            cleaned.append(pending_short)
+            pending_short = None
+
         if len(text) < min_chars:
             if pending_short is None:
-                pending_short = TextBlock(
-                    text=text,
-                    block_type=block.block_type,
-                    order=block.order,
-                    page_num=block.page_num,
-                    doc_id=block.doc_id,
-                    x=block.x,
-                    y=block.y,
-                )
+                pending_short = replace(block, text=text)
             else:
                 # 连续短块合并
-                pending_short = TextBlock(
-                    text=pending_short.text + text,
-                    block_type=pending_short.block_type,
-                    order=pending_short.order,
-                    page_num=pending_short.page_num,
-                    doc_id=pending_short.doc_id,
-                    x=pending_short.x,
-                    y=pending_short.y,
-                )
+                pending_short = replace(pending_short, text=pending_short.text + text)
         else:
             if pending_short is not None:
                 # 把短块合并到当前块前面
                 text = pending_short.text + text
                 pending_short = None
-            cleaned.append(
-                TextBlock(
-                    text=text,
-                    block_type=block.block_type,
-                    order=block.order,
-                    page_num=block.page_num,
-                    doc_id=block.doc_id,
-                    x=block.x,
-                    y=block.y,
-                )
-            )
+            cleaned.append(replace(block, text=text))
 
     # 最后如果还有短块，合并到最后一个块
     if pending_short is not None:
         if cleaned:
             last = cleaned[-1]
-            cleaned[-1] = TextBlock(
-                text=last.text + pending_short.text,
-                block_type=last.block_type,
-                order=last.order,
-                page_num=last.page_num,
-                doc_id=last.doc_id,
-                x=last.x,
-                y=last.y,
-            )
+            cleaned[-1] = replace(last, text=last.text + pending_short.text)
         else:
             cleaned.append(pending_short)
 

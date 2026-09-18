@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>五年级数学题库采集系统 — 架构流程图</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: #f5f0e8;
+    padding: 30px;
+    min-width: 1200px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 22px;
+    color: #333;
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+  }
+  .canvas {
+    position: relative;
+    width: 1140px;
+    margin: 0 auto;
+    height: 820px;
+  }
+  /* ---- 子系统区域 ---- */
+  .subsystem {
+    position: absolute;
+    border: 2px dashed;
+    border-radius: 10px;
+    padding: 14px 14px 10px 14px;
+  }
+  .subsystem .label {
+    position: absolute;
+    top: -13px;
+    left: 16px;
+    background: #f5f0e8;
+    padding: 0 8px;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  /* 颜色定义 */
+  .sub-ui        { border-color: #e6a817; background: rgba(255,253,231,0.55); }
+  .sub-ui .label  { color: #b8860b; }
+  .sub-catch     { border-color: #7b1fa2; background: rgba(243,229,245,0.55); }
+  .sub-catch .label { color: #6a1b9a; }
+  .sub-enrich    { border-color: #388e3c; background: rgba(232,245,233,0.55); }
+  .sub-enrich .label { color: #2e7d32; }
+  .sub-adapter   { border-color: #d32f2f; background: rgba(255,235,238,0.55); }
+  .sub-adapter .label { color: #c62828; }
+  .sub-store     { border-color: #5d4037; background: rgba(239,235,233,0.55); }
+  .sub-store .label { color: #4e342e; }
+
+  /* ---- 节点盒子 ---- */
+  .node {
+    position: absolute;
+    border: 2px solid;
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 12px;
+    line-height: 1.45;
+    text-align: center;
+    min-width: 130px;
+    background: #fff;
+    box-shadow: 1px 2px 6px rgba(0,0,0,0.08);
+  }
+  .node .title { font-weight: bold; font-size: 12.5px; }
+  .node .file  { font-size: 11px; color: #666; margin-top: 2px; }
+
+  .n-ui      { border-color: #fbc02d; }
+  .n-catch   { border-color: #9c27b0; }
+  .n-enrich  { border-color: #43a047; }
+  .n-adapter { border-color: #e53935; }
+  .n-store   { border-color: #6d4c41; }
+
+  /* ---- SVG 箭头层 ---- */
+  svg.arrows {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+  svg.arrows line, svg.arrows path {
+    stroke-width: 1.8;
+    fill: none;
+  }
+  svg.arrows text {
+    font-size: 10.5px;
+    font-family: 'Microsoft YaHei', sans-serif;
+    fill: #555;
+  }
+  marker polygon { fill: #666; }
+</style>
+</head>
+<body>
+
+<h1>五年级数学题库采集与审核系统 — 系统架构流程图</h1>
+
+<div class="canvas">
+
+  <!-- ========== 子系统背景 ========== -->
+  <!-- 1. 合规采集 (左上) -->
+  <div class="subsystem sub-catch" style="left:0; top:0; width:370px; height:250px;">
+    <span class="label">合规网络采集管线 (Compliance Ingestion)</span>
+  </div>
+  <!-- 2. 大模型引擎 (右上) -->
+  <div class="subsystem sub-enrich" style="left:400; top:0; width:400px; height:250px;">
+    <span class="label">大模型结构化引擎 (Enrichment Engine)</span>
+  </div>
+  <!-- 3. 模型适配 (右上角) -->
+  <div class="subsystem sub-adapter" style="left:830; top:0; width:310px; height:250px;">
+    <span class="label">大模型适配层 (Model Adapter)</span>
+  </div>
+  <!-- 4. 存储层 (底部中) -->
+  <div class="subsystem sub-store" style="left:300; top:520; width:540px; height:280px;">
+    <span class="label">本地关系型存储层 (Storage Layer)</span>
+  </div>
+  <!-- 5. 审核端 (左下) -->
+  <div class="subsystem sub-ui" style="left:0; top:320; width:270px; height:480px;">
+    <span class="label">用户与教师审核端 (UI & Verification)</span>
+  </div>
+
+  <!-- ========== 节点盒子 ========== -->
+
+  <!-- 合规采集管线节点 -->
+  <div class="node n-catch" style="left:30px; top:35px; width:150px;">
+    <div class="title">run_pipeline.py</div>
+    <div class="file">批量运行管线入口</div>
+  </div>
+  <div class="node n-catch" style="left:30px; top:110px; width:150px;">
+    <div class="title">src/crawler.py</div>
+    <div class="file">合规爬虫与图片下载</div>
+  </div>
+  <div class="node n-catch" style="left:200px; top:110px; width:155px;">
+    <div class="title">WHITELIST_SOURCES</div>
+    <div class="file">config.py 白名单校验</div>
+  </div>
+  <div class="node n-catch" style="left:115px; top:190px; width:155px;">
+    <div class="title">图片占位符替换</div>
+    <div class="file">[图片: img_xxx.png]</div>
+  </div>
+
+  <!-- 大模型引擎节点 -->
+  <div class="node n-enrich" style="left:420px; top:35px; width:160px;">
+    <div class="title">src/enricher.py</div>
+    <div class="file">LLM 结构化解析器</div>
+  </div>
+  <div class="node n-enrich" style="left:610px; top:35px; width:170px;">
+    <div class="title">clean_html()</div>
+    <div class="file">HTML 清洗 + 占位符保留</div>
+  </div>
+  <div class="node n-enrich" style="left:420px; top:125px; width:170px;">
+    <div class="title">KNOWLEDGE_TREE</div>
+    <div class="file">北京东城区人教版知识树</div>
+  </div>
+  <div class="node n-enrich" style="left:620px; top:125px; width:160px;">
+    <div class="title">DIFFICULTY_LEVELS</div>
+    <div class="file">难度 1-5 等级标准</div>
+  </div>
+  <div class="node n-enrich" style="left:500px; top:200px; width:200px;">
+    <div class="title">Prompt 构建与发送</div>
+    <div class="file">知识点 + 难度 + 原文 → LLM</div>
+  </div>
+
+  <!-- 模型适配层节点 -->
+  <div class="node n-adapter" style="left:855px; top:45px; width:175px;">
+    <div class="title">load_api_config()</div>
+    <div class="file">config.py LLM 密钥加载</div>
+  </div>
+  <div class="node n-adapter" style="left:855px; top:130px; width:175px;">
+    <div class="title">LLM API 调用</div>
+    <div class="file">v1/chat/completions</div>
+  </div>
+  <div class="node n-adapter" style="left:855px; top:200px; width:175px;">
+    <div class="title">返回题目 JSON 数组</div>
+    <div class="file">stem / answer / image_path</div>
+  </div>
+
+  <!-- 存储层节点 -->
+  <div class="node n-store" style="left:330px; top:555px; width:180px;">
+    <div class="title">database.py</div>
+    <div class="file">SQLite CRUD 操作层</div>
+  </div>
+  <div class="node n-store" style="left:330px; top:650px; width:180px;">
+    <div class="title">question_bank.db</div>
+    <div class="file">raw_materials + questions 表</div>
+  </div>
+  <div class="node n-store" style="left:560px; top:555px; width:200px;">
+    <div class="title">data/images/</div>
+    <div class="file">SHA256 去重的物理图库</div>
+  </div>
+  <div class="node n-store" style="left:560px; top:650px; width:200px;">
+    <div class="title">raw_materials/</div>
+    <div class="file">原始 HTML + 元数据 JSON</div>
+  </div>
+
+  <!-- 审核端节点 -->
+  <div class="node n-ui" style="left:25px; top:360px; width:220px;">
+    <div class="title">run_web.py</div>
+    <div class="file">Web 服务启动入口</div>
+  </div>
+  <div class="node n-ui" style="left:25px; top:440px; width:220px;">
+    <div class="title">src/web_server.py</div>
+    <div class="file">FastAPI 审核路由 + API</div>
+  </div>
+  <div class="node n-ui" style="left:25px; top:520px; width:220px;">
+    <div class="title">templates/</div>
+    <div class="file">题目卡片 + 图片预览模板</div>
+  </div>
+  <div class="node n-ui" style="left:25px; top:610px; width:220px;">
+    <div class="title">create_seed_images()</div>
+    <div class="file">Pillow 几何图绘制引擎</div>
+  </div>
+  <div class="node n-ui" style="left:25px; top:700px; width:220px;">
+    <div class="title">教师人工审核操作</div>
+    <div class="file">已审核 / 已驳回 状态更新</div>
+  </div>
+
+  <!-- ========== 数据流箭头 (中间过渡区) ========== -->
+
+  <!-- 中间过渡节点 -->
+  <div class="node" style="left:400px; top:310px; width:340px; border-color:#999; background:#fff8e1;">
+    <div class="title" style="color:#e65100;">数据流中继：采集结果 → 结构化 → 入库</div>
+    <div class="file">crawler 产出 raw HTML → enricher 产出 JSON → database 写入</div>
+  </div>
+
+  <div class="node" style="left:400px; top:420px; width:340px; border-color:#999; background:#e8eaf6;">
+    <div class="title" style="color:#283593;">题目状态流转</div>
+    <div class="file">AI生成，待审核 → 教师复核 → 已审核 / 已驳回</div>
+  </div>
+
+  <!-- ========== SVG 箭头连线 ========== -->
+  <svg class="arrows">
+    <defs>
+      <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#666"/>
+      </marker>
+      <marker id="arrowBlue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#1565c0"/>
+      </marker>
+      <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#2e7d32"/>
+      </marker>
+      <marker id="arrowOrange" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#e65100"/>
+      </marker>
+    </defs>
+
+    <!-- 采集管线内部流转 -->
+    <line x1="105" y1="75" x2="105" y2="108" stroke="#7b1fa2" marker-end="url(#arrowhead)"/>
+    <line x1="180" y1="135" x2="198" y2="135" stroke="#7b1fa2" marker-end="url(#arrowhead)"/>
+    <line x1="105" y1="150" x2="135" y2="188" stroke="#7b1fa2" marker-end="url(#arrowhead)"/>
+
+    <!-- 采集 → 中继 -->
+    <line x1="192" y1="230" x2="398" y2="318" stroke="#e65100" stroke-width="2" marker-end="url(#arrowOrange)"/>
+    <text x="250" y="268" fill="#e65100" font-size="11">raw HTML</text>
+
+    <!-- 中继 → 引擎 -->
+    <line x1="570" y1="310" x2="570" y2="248" stroke="#2e7d32" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrowGreen)"/>
+    <text x="578" y="285" fill="#2e7d32" font-size="11">送入 LLM</text>
+
+    <!-- 引擎 → 适配层 -->
+    <line x1="700" y1="220" x2="853" y2="150" stroke="#d32f2f" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <text x="745" y="178" fill="#d32f2f" font-size="11">API 请求</text>
+
+    <!-- 适配层返回 -->
+    <line x1="942" y1="200" x2="942" y2="170" stroke="#d32f2f" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+    <line x1="855" y1="220" x2="702" y2="220" stroke="#2e7d32" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrowGreen)"/>
+    <text x="745" y="216" fill="#2e7d32" font-size="11">JSON 返回</text>
+
+    <!-- 中继 → 存储 -->
+    <line x1="570" y1="355" x2="570" y2="418" stroke="#e65100" stroke-width="2" marker-end="url(#arrowOrange)"/>
+    <line x1="500" y1="460" x2="420" y2="553" stroke="#5d4037" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <text x="430" y="505" fill="#5d4037" font-size="11">写入数据库</text>
+
+    <!-- 中继 → 图片库 -->
+    <line x1="640" y1="460" x2="660" y2="553" stroke="#5d4037" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <text x="655" y="510" fill="#5d4037" font-size="11">存储图片</text>
+
+    <!-- database.py → question_bank.db -->
+    <line x1="420" y1="600" x2="420" y2="648" stroke="#5d4037" marker-end="url(#arrowhead)"/>
+
+    <!-- 审核端 → 存储 -->
+    <line x1="247" y1="550" x2="328" y2="575" stroke="#e6a817" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <text x="250" y="558" fill="#b8860b" font-size="11">读取题目</text>
+
+    <!-- 审核端内部 -->
+    <line x1="135" y1="400" x2="135" y2="438" stroke="#e6a817" marker-end="url(#arrowhead)"/>
+    <line x1="135" y1="480" x2="135" y2="518" stroke="#e6a817" marker-end="url(#arrowhead)"/>
+    <line x1="135" y1="560" x2="135" y2="608" stroke="#e6a817" marker-end="url(#arrowhead)"/>
+    <line x1="135" y1="650" x2="135" y2="698" stroke="#e6a817" marker-end="url(#arrowhead)"/>
+
+    <!-- 审核操作 → 状态流转 -->
+    <line x1="247" y1="720" x2="398" y2="440" stroke="#1565c0" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrowBlue)"/>
+    <text x="285" y="600" fill="#1565c0" font-size="11">状态更新</text>
+
+    <!-- seed images → images/ -->
+    <line x1="247" y1="635" x2="558" y2="575" stroke="#6d4c41" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowhead)"/>
+    <text x="370" y="597" fill="#6d4c41" font-size="11">生成种子图</text>
+
+  </svg>
+
+</div>
+
+<p style="text-align:center; margin-top:20px; color:#888; font-size:12px;">
+  question_collector 系统架构图 · 2026-07-06
+</p>
+
+</body>
+</html>

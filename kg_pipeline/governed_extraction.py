@@ -5,14 +5,18 @@ auditable baseline for common gas-turbine/FMEA statements.  A callable small
 model or LLM client can be injected for broader extraction, but every output is
 still passed through the governance schema and evidence gates before release.
 """
-# ruff: noqa: RUF001, TRY003
+# ruff: noqa: C901, RUF001, TRY003
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from collections.abc import Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeout
 from dataclasses import dataclass
+from time import perf_counter
 from typing import Any
 
 from core_domain.delivery import CanonicalDocumentVersion, ContentStatus, GraphDomainSchema
@@ -40,6 +44,10 @@ _ZH_FAILURE_CAUSE_PATTERN = re.compile(
 _ZH_EFFECT_PATTERN = re.compile(r"(?:影响|后果)(?:是|为|包括)?(?P<value>[^，。；]{2,40})")
 _ZH_DETECTION_PATTERN = re.compile(r"(?:可|可以|能够)?通过(?P<value>[^，。；]{2,40}?)(?:发现|检测|识别)")
 _ZH_ACTION_PATTERN = re.compile(r"(?:并|可|可以)?(?:通过|采用)(?P<value>[^，。；]{2,50}?)(?:处理|缓解|解决|预防)")
+_MODEL_PATTERN = re.compile(
+    r"(?P<model>M\s*7[O0]1\s*F|M\s*7[O0]I\s*F|PG\s*9351\s*F(?:A)?|LM\s*2500|STG5-4000F)",
+    re.IGNORECASE,
+)
 _EN_CORE_PATTERN = re.compile(
     r"(?P<component>[A-Za-z][A-Za-z0-9 /_-]{2,40}?)\s+"
     r"(?P<failure>[A-Za-z][A-Za-z0-9 /_-]{2,40}?)\s+"
@@ -58,6 +66,10 @@ def extract_governed_statements(
     schema: GraphDomainSchema | None = None,
     model_client: Any | None = None,
     model_name: str | None = None,
+    prompt_version: str = "graph-extraction-v1",
+    temperature: float = 0.0,
+    timeout_seconds: float = 120.0,
+    retries: int = 0,
 ) -> ExtractionResult:
     schema = schema or GraphDomainSchema()
     for document in documents:
@@ -66,13 +78,21 @@ def extract_governed_statements(
 
     normalized_backend = str(backend).strip().lower().replace("_", "-")
     if normalized_backend == "rules":
-        statements, per_chunk = _extract_with_rules(documents)
+        statements, per_chunk = _extract_with_rules(documents, schema)
     elif normalized_backend in {"small-model", "llm"}:
         if model_client is None:
             raise GovernedExtractionError(
                 f"{normalized_backend} extraction requires an injected callable/client; rules remains the offline fallback"
             )
-        statements, per_chunk = _extract_with_model(documents, schema, model_client)
+        statements, per_chunk = _extract_with_model(
+            documents,
+            schema,
+            model_client,
+            prompt_version=prompt_version,
+            temperature=temperature,
+            timeout_seconds=timeout_seconds,
+            retries=retries,
+        )
     else:
         raise GovernedExtractionError("backend must be rules, small-model, or llm")
 
@@ -91,6 +111,10 @@ def extract_governed_statements(
         diagnostics={
             "backend": normalized_backend,
             "model": model_name or ("gas-turbine-rule-baseline-v1" if normalized_backend == "rules" else "injected"),
+            "prompt_version": prompt_version if normalized_backend != "rules" else None,
+            "temperature": temperature if normalized_backend != "rules" else None,
+            "timeout_seconds": timeout_seconds if normalized_backend != "rules" else None,
+            "retries": retries if normalized_backend != "rules" else None,
             "document_versions": [item.version_id for item in documents],
             "evidence_chunks": sum(len(item.evidence) for item in documents),
             "candidate_statement_count": len(result),
@@ -103,12 +127,13 @@ def extract_governed_statements(
 
 def _extract_with_rules(
     documents: Sequence[CanonicalDocumentVersion],
+    schema: GraphDomainSchema,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     statements: list[dict[str, Any]] = []
     diagnostics: list[dict[str, Any]] = []
     for document in documents:
         for evidence in document.evidence:
-            extracted = _rule_statements(evidence.text, evidence.evidence_id)
+            extracted = _rule_statements(evidence.text, evidence.evidence_id, schema)
             statements.extend(extracted)
             diagnostics.append({
                 "document_version_id": document.version_id,
@@ -119,8 +144,14 @@ def _extract_with_rules(
     return statements, diagnostics
 
 
-def _rule_statements(text: str, evidence_id: str) -> list[dict[str, Any]]:
+def _rule_statements(text: str, evidence_id: str, schema: GraphDomainSchema) -> list[dict[str, Any]]:
     clean = " ".join(str(text).split())
+    model_match = _MODEL_PATTERN.search(clean)
+    model_scope = (
+        (schema.normalize_model(re.sub(r"\s+", "", model_match.group("model")).upper()),)
+        if model_match
+        else ()
+    )
     core = _ZH_CORE_PATTERN.search(clean)
     language = "zh"
     if core is None:
@@ -132,22 +163,70 @@ def _rule_statements(text: str, evidence_id: str) -> list[dict[str, Any]]:
             return []
         failure = _clean_value(simple.group("failure"))
         cause = _clean_value(simple.group("cause"))
-        return [_statement(failure, "CAUSED_BY", cause, "FAILURE_MODE", "CAUSE", evidence_id, 0.76)]
+        return [
+            _statement(
+                failure,
+                "CAUSED_BY",
+                cause,
+                "FAILURE_MODE",
+                "CAUSE",
+                evidence_id,
+                0.76,
+                schema=schema,
+                model_scope=model_scope,
+            )
+        ]
 
     groups = core.groupdict()
     equipment = _clean_value(groups.get("equipment") or "")
+    if model_scope:
+        equipment = f"{model_scope[0]}燃气轮机"
     component = _clean_value(groups.get("component") or "")
     failure = _clean_value(groups.get("failure") or "")
     cause = _clean_value(groups.get("cause") or "")
     output: list[dict[str, Any]] = []
     if equipment and component:
-        output.append(_statement(component, "PART_OF", equipment, "COMPONENT", "EQUIPMENT", evidence_id, 0.86))
+        output.append(
+            _statement(
+                component,
+                "PART_OF",
+                equipment,
+                "COMPONENT",
+                "EQUIPMENT",
+                evidence_id,
+                0.86,
+                schema=schema,
+                model_scope=model_scope,
+            )
+        )
     if component and failure:
         output.append(
-            _statement(component, "HAS_FAILURE_MODE", failure, "COMPONENT", "FAILURE_MODE", evidence_id, 0.88)
+            _statement(
+                component,
+                "HAS_FAILURE_MODE",
+                failure,
+                "COMPONENT",
+                "FAILURE_MODE",
+                evidence_id,
+                0.88,
+                schema=schema,
+                model_scope=model_scope,
+            )
         )
     if failure and cause:
-        output.append(_statement(failure, "CAUSED_BY", cause, "FAILURE_MODE", "CAUSE", evidence_id, 0.84))
+        output.append(
+            _statement(
+                failure,
+                "CAUSED_BY",
+                cause,
+                "FAILURE_MODE",
+                "CAUSE",
+                evidence_id,
+                0.84,
+                schema=schema,
+                model_scope=model_scope,
+            )
+        )
 
     patterns = (
         ("HAS_EFFECT", "EFFECT", _ZH_EFFECT_PATTERN if language == "zh" else _EN_EFFECT_PATTERN, 0.82),
@@ -160,7 +239,17 @@ def _rule_statements(text: str, evidence_id: str) -> list[dict[str, Any]]:
             value = _clean_value(match.group("value"))
             if value:
                 output.append(
-                    _statement(failure, predicate, value, "FAILURE_MODE", object_type, evidence_id, confidence)
+                    _statement(
+                        failure,
+                        predicate,
+                        value,
+                        "FAILURE_MODE",
+                        object_type,
+                        evidence_id,
+                        confidence,
+                        schema=schema,
+                        model_scope=model_scope,
+                    )
                 )
     return output
 
@@ -169,6 +258,11 @@ def _extract_with_model(
     documents: Sequence[CanonicalDocumentVersion],
     schema: GraphDomainSchema,
     model_client: Any,
+    *,
+    prompt_version: str,
+    temperature: float,
+    timeout_seconds: float,
+    retries: int,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     statements: list[dict[str, Any]] = []
     diagnostics: list[dict[str, Any]] = []
@@ -182,7 +276,14 @@ def _extract_with_model(
                 f"Entity types: {list(schema.entity_types)}\nRelation types: {list(schema.relation_types)}\n"
                 f"Evidence:\n{evidence.text}"
             )
-            raw = _invoke_model(model_client, prompt)
+            started_at = perf_counter()
+            raw, attempt_count = _invoke_model(
+                model_client,
+                prompt,
+                temperature=temperature,
+                timeout_seconds=timeout_seconds,
+                retries=retries,
+            )
             payload = _parse_json_payload(raw)
             chunk_statements = payload.get("statements") or payload.get("triples") or []
             if not isinstance(chunk_statements, list):
@@ -194,6 +295,11 @@ def _extract_with_model(
                 statement["predicate"] = statement.get("predicate") or statement.get("relation")
                 statement["object"] = statement.get("object") or statement.get("target")
                 statement["evidence_ids"] = [evidence.evidence_id]
+                statement["knowledge_type"] = schema.knowledge_type_for_relation(str(statement["predicate"]))
+                raw_scope = statement.get("model_scope") or []
+                if isinstance(raw_scope, str):
+                    raw_scope = [raw_scope]
+                statement["model_scope"] = [schema.normalize_model(str(item)) for item in raw_scope if str(item)]
                 statement["metadata"] = {
                     **dict(statement.get("metadata") or {}),
                     "automatic_extractor": "model",
@@ -204,17 +310,59 @@ def _extract_with_model(
                 "evidence_id": evidence.evidence_id,
                 "statement_count": len(chunk_statements),
                 "matched": bool(chunk_statements),
+                "prompt_version": prompt_version,
+                "prompt_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
+                "temperature": temperature,
+                "timeout_seconds": timeout_seconds,
+                "attempt_count": attempt_count,
+                "duration_ms": round((perf_counter() - started_at) * 1000, 3),
+                "raw_response_summary": {
+                    "sha256": hashlib.sha256(raw.encode("utf-8")).hexdigest(),
+                    "character_count": len(raw),
+                },
             })
     return statements, diagnostics
 
 
-def _invoke_model(client: Any, prompt: str) -> str:
+def _invoke_model(
+    client: Any,
+    prompt: str,
+    *,
+    temperature: float,
+    timeout_seconds: float,
+    retries: int,
+) -> tuple[str, int]:
+    last_error: Exception | None = None
+    for attempt in range(1, max(0, int(retries)) + 2):
+        executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="graph-extraction-model")
+        future = executor.submit(_call_model, client, prompt, temperature)
+        try:
+            return str(future.result(timeout=max(0.001, float(timeout_seconds)))), attempt
+        except FutureTimeout:
+            future.cancel()
+            last_error = GovernedExtractionError(
+                f"Model extraction timed out after {timeout_seconds} seconds on attempt {attempt}"
+            )
+        except Exception as exc:  # provider failures are retried only when explicitly configured
+            last_error = exc
+        finally:
+            executor.shutdown(wait=False, cancel_futures=True)
+    raise GovernedExtractionError(f"Model extraction failed after {attempt} attempt(s): {last_error}") from last_error
+
+
+def _call_model(client: Any, prompt: str, temperature: float) -> str:
     for method_name in ("complete", "generate", "invoke"):
         method = getattr(client, method_name, None)
         if callable(method):
-            return str(method(prompt))
+            try:
+                return str(method(prompt, temperature=temperature))
+            except TypeError:
+                return str(method(prompt))
     if callable(client):
-        return str(client(prompt))
+        try:
+            return str(client(prompt, temperature=temperature))
+        except TypeError:
+            return str(client(prompt))
     raise GovernedExtractionError("Injected model client must be callable or expose complete/generate/invoke")
 
 
@@ -241,6 +389,9 @@ def _statement(
     object_type: str,
     evidence_id: str,
     confidence: float,
+    *,
+    schema: GraphDomainSchema,
+    model_scope: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     return {
         "subject": subject,
@@ -249,6 +400,8 @@ def _statement(
         "subject_type": subject_type,
         "object_type": object_type,
         "evidence_ids": [evidence_id],
+        "knowledge_type": schema.knowledge_type_for_relation(predicate),
+        "model_scope": list(model_scope),
         "confidence": confidence,
         "metadata": {"automatic_extractor": "gas-turbine-rule-baseline-v1"},
     }

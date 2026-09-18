@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="760" viewBox="0 0 1600 760" role="img" aria-labelledby="title desc">
+  <title id="title">表 1 证据范围与验收边界</title>
+  <desc id="desc">表格区分自动化测试已经证实的内容和仍需真实资料验收的内容。</desc>
+  <rect width="1600" height="760" fill="#ffffff"/>
+
+  <text x="60" y="58" fill="#111827" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="31" font-weight="700">表 1　证据范围与验收边界</text>
+  <text x="60" y="94" fill="#475569" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="18">判断规则：自动化测试证明代码路径；真实项目效果必须由真实资料和人工验收证明。</text>
+  <line x1="60" y1="116" x2="1540" y2="116" stroke="#1e3a8a" stroke-width="3"/>
+
+  <g font-family="Microsoft YaHei, Segoe UI, sans-serif">
+    <rect x="60" y="146" width="1480" height="70" fill="#eaf0f8" stroke="#334155" stroke-width="1.5"/>
+    <line x1="240" y1="146" x2="240" y2="654" stroke="#334155"/>
+    <line x1="770" y1="146" x2="770" y2="654" stroke="#334155"/>
+    <line x1="1300" y1="146" x2="1300" y2="654" stroke="#334155"/>
+    <text x="150" y="190" fill="#111827" font-size="21" text-anchor="middle" font-weight="700">模块</text>
+    <text x="505" y="190" fill="#111827" font-size="21" text-anchor="middle" font-weight="700">代码与自动化测试已证实</text>
+    <text x="1035" y="190" fill="#111827" font-size="21" text-anchor="middle" font-weight="700">真实项目仍需验收</text>
+    <text x="1420" y="190" fill="#111827" font-size="21" text-anchor="middle" font-weight="700">当前判断</text>
+
+    <rect x="60" y="216" width="1480" height="104" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+    <line x1="240" y1="216" x2="240" y2="320" stroke="#334155"/>
+    <line x1="770" y1="216" x2="770" y2="320" stroke="#334155"/>
+    <line x1="1300" y1="216" x2="1300" y2="320" stroke="#334155"/>
+    <text x="150" y="277" fill="#111827" font-size="22" text-anchor="middle" font-weight="700">M2</text>
+    <text x="270" y="258" fill="#111827" font-size="18">质量问题记录、复核决定、</text>
+    <text x="270" y="287" fill="#111827" font-size="18">资料版本与修改记录</text>
+    <text x="800" y="258" fill="#111827" font-size="18">真实扫描件的 OCR 准确率、</text>
+    <text x="800" y="287" fill="#111827" font-size="18">漏页率、表格效果和人工纠错记录</text>
+    <text x="1420" y="277" fill="#7c2d12" font-size="19" text-anchor="middle" font-weight="700">部分完成</text>
+
+    <rect x="60" y="320" width="1480" height="104" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+    <line x1="240" y1="320" x2="240" y2="424" stroke="#334155"/>
+    <line x1="770" y1="320" x2="770" y2="424" stroke="#334155"/>
+    <line x1="1300" y1="320" x2="1300" y2="424" stroke="#334155"/>
+    <text x="150" y="381" fill="#111827" font-size="22" text-anchor="middle" font-weight="700">M3</text>
+    <text x="270" y="362" fill="#111827" font-size="18">正式资料入库、按版本检索、</text>
+    <text x="270" y="391" fill="#111827" font-size="18">状态查看和重新建立资料库</text>
+    <text x="800" y="362" fill="#111827" font-size="18">真实语料的检索命中率、</text>
+    <text x="800" y="391" fill="#111827" font-size="18">回答质量、速度和资源占用</text>
+    <text x="1420" y="381" fill="#7c2d12" font-size="19" text-anchor="middle" font-weight="700">部分完成</text>
+
+    <rect x="60" y="424" width="1480" height="104" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+    <line x1="240" y1="424" x2="240" y2="528" stroke="#334155"/>
+    <line x1="770" y1="424" x2="770" y2="528" stroke="#334155"/>
+    <line x1="1300" y1="424" x2="1300" y2="528" stroke="#334155"/>
+    <text x="150" y="485" fill="#111827" font-size="22" text-anchor="middle" font-weight="700">M4</text>
+    <text x="270" y="466" fill="#111827" font-size="18">规则基线、类型检查、原文绑定、</text>
+    <text x="270" y="495" fill="#111827" font-size="18">图数据同步和路径查询</text>
+    <text x="800" y="466" fill="#111827" font-size="18">真实资料上的实体和关系抽取</text>
+    <text x="800" y="495" fill="#111827" font-size="18">准确率、召回率和人工复核结果</text>
+    <text x="1420" y="485" fill="#7c2d12" font-size="19" text-anchor="middle" font-weight="700">部分完成</text>
+
+    <rect x="60" y="528" width="1480" height="126" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+    <line x1="240" y1="528" x2="240" y2="654" stroke="#334155"/>
+    <line x1="770" y1="528" x2="770" y2="654" stroke="#334155"/>
+    <line x1="1300" y1="528" x2="1300" y2="654" stroke="#334155"/>
+    <text x="150" y="600" fill="#111827" font-size="22" text-anchor="middle" font-weight="700">M5</text>
+    <text x="270" y="574" fill="#111827" font-size="18">FMEA 生成、字段来源、审核状态、</text>
+    <text x="270" y="603" fill="#111827" font-size="18">两种导出格式检查和反馈动作</text>
+    <text x="800" y="574" fill="#111827" font-size="18">领域人员对真实 FMEA 的批准、</text>
+    <text x="800" y="603" fill="#111827" font-size="18">修改或否定记录，以及生产验收</text>
+    <text x="1420" y="600" fill="#7c2d12" font-size="19" text-anchor="middle" font-weight="700">部分完成</text>
+  </g>
+
+  <text x="60" y="700" fill="#111827" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="19" font-weight="700">准确汇报口径：</text>
+  <text x="205" y="700" fill="#334155" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="19">本轮完成了代码连接和自动化测试；真实资料验收仍是下一阶段任务。</text>
+  <text x="60" y="734" fill="#64748b" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="15">来源：当前分支代码、测试文件及 2026-08-08 本地复核结果。</text>
+</svg>

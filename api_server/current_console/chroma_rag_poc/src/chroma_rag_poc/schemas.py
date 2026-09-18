@@ -22,6 +22,12 @@ class TextBlock:
     doc_id: int = -1         # ← 项目1: 文档ID
     x: float = 0.0           # ← 项目2: 水平坐标
     y: float = 0.0           # ← 项目2: 纵坐标（用于排序）
+    block_id: str | None = None
+    table_id: str | None = None
+    image_id: str | None = None
+    caption_for: str | None = None
+    bbox: tuple[float, float, float, float] | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(slots=True)

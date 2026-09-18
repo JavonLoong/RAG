@@ -32,7 +32,7 @@ from .quality_profiles import (
 )
 from .promoted_regression_fixtures import (
     DEFAULT_TRIAGE_REGRESSION_DATASET,
-    WECHAT_PRIVATE_CONTACT_CASE,
+    POWER_EQUIPMENT_TRIAGE_CASE,
     seed_promoted_graphrag_regression_fixture,
 )
 from .runner import EvaluationRunner, EvaluationSuite
@@ -61,7 +61,7 @@ __all__ = [
     "RAGEvaluationReport",
     "RelevancyMetric",
     "DEFAULT_TRIAGE_REGRESSION_DATASET",
-    "WECHAT_PRIVATE_CONTACT_CASE",
+    "POWER_EQUIPMENT_TRIAGE_CASE",
     "benchmark_gate_to_json",
     "evaluate_single",
     "evaluate_external_benchmark_gate",

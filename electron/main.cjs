@@ -52,18 +52,8 @@ const POWER_RAG_CORPUS_FILE_NAMES = (process.env.POWER_RAG_CORPUS_FILE_NAMES || 
   .split(",")
   .map((item) => item.trim())
   .filter(Boolean);
-const WECHAT_RAG_CORPUS_FILE_NAMES = (
-  process.env.POWER_RAG_WECHAT_CORPUS_FILE_NAMES || "wechat_private_chunks_rag.json,wechat_private_chunks.json,wechat_private.json"
-)
-  .split(",")
-  .map((item) => item.trim())
-  .filter(Boolean);
 const POWER_RAG_CORPUS_BASE_DIR = process.env.POWER_RAG_CORPUS_BASE_DIR || REPO_ROOT;
 const PREFERRED_POWER_RAG_CORPUS_DIRS = (process.env.POWER_RAG_CORPUS_DIRS || "")
-  .split(";")
-  .map((item) => item.trim())
-  .filter(Boolean);
-const PREFERRED_WECHAT_RAG_CORPUS_DIRS = (process.env.POWER_RAG_WECHAT_CORPUS_DIRS || process.env.POWER_RAG_CORPUS_DIRS || "")
   .split(";")
   .map((item) => item.trim())
   .filter(Boolean);
@@ -162,14 +152,6 @@ function findDefaultPowerRagCorpus() {
   });
 }
 
-function findDefaultWechatRagCorpus() {
-  return findDefaultCorpusFile({
-    fileNames: WECHAT_RAG_CORPUS_FILE_NAMES,
-    preferredDirs: PREFERRED_WECHAT_RAG_CORPUS_DIRS,
-    baseDir: POWER_RAG_CORPUS_BASE_DIR,
-  });
-}
-
 function findDefaultCorpusFile({ fileNames, preferredDirs, baseDir }) {
   const candidates = [];
   for (const dir of preferredDirs) {
@@ -217,13 +199,6 @@ function registerDesktopIpcHandlers() {
       options,
       defaultPath: findDefaultPowerRagCorpus(),
       title: "选择 PowerRAG JSON 语料",
-    });
-  });
-  ipcMain.handle("power-rag:pick-wechat-rag-corpus", async (_event, options = {}) => {
-    return pickCorpusFile({
-      options,
-      defaultPath: findDefaultWechatRagCorpus(),
-      title: "选择微信私聊 RAG JSON 语料",
     });
   });
 }

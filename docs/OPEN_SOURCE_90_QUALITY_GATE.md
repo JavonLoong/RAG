@@ -20,7 +20,7 @@ The command currently checks:
 - the strict `open_source_90` evaluation profile;
 - RAG harness behavior under the strict thresholds;
 - GraphRAG graph quality guardrails;
-- a seeded promoted GraphRAG triage regression fixture for full private-contact analysis;
+- a seeded promoted GraphRAG triage regression fixture for evidence-grounded equipment analysis;
 - a generated target report in `evaluation/reports/`.
 
 ## Target Metrics
@@ -38,7 +38,7 @@ The command currently checks:
 
 Passing this gate means the project wiring and local guardrails are healthy and the promoted regression path is not empty. It does not prove the real corpus has reached 90% quality until an expert gold set or external benchmark run is attached to the same profile.
 
-For the WeChat broad-analysis class of questions, the gate should be expanded with promoted cases that force full-contact analysis, not top-k-only answers.
+For broad corpus-analysis questions, the gate should be expanded with promoted cases that force full-partition evidence analysis, not top-k-only answers.
 
 ## External Benchmark Gate
 
@@ -59,4 +59,4 @@ Latest external probes:
 - Result: PASS
 - Checks: base `npm run check` with 32 focused smoke tests, 16 strict quality/profile/regression tests, seeded promoted GraphRAG triage regression (`case_count=1`), and target report generation.
 - Generated report: `evaluation/reports/open_source_90_gate_20260621_143108.md`
-- Gap: the seeded private-contact case prevents empty regression passes, but broad WeChat/contact-level questions still need real promoted cases or an expert gold set before claiming actual 90% corpus quality.
+- Gap: the seeded equipment-evidence case prevents empty regression passes, but broad corpus-level questions still need real promoted cases or an expert gold set before claiming actual 90% corpus quality.

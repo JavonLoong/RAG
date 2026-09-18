@@ -3,6 +3,7 @@ from __future__ import annotations
 from .advanced_query import ADVANCED_QUERY_ROUTES, AdvancedQueryExecutionResult, AdvancedQueryExecutor
 from .fmea import FMEAService, build_fmea_items
 from .global_search import GlobalSearchOrchestrator, GlobalSearchResult
+from .governed_graphrag import GovernedGraphRAGService, GovernedQAResult
 from .graph_quality import GraphQualityReport, GraphQualityThresholds, evaluate_graph_quality
 from .graphrag_qa import GraphRagConfigurationError, GraphRagQAOrchestrator, GraphRagQAResult
 from .hallucination_guard import GuardResult, HallucinationGuard
@@ -31,6 +32,8 @@ __all__ = [
     "FMEAService",
     "GlobalSearchOrchestrator",
     "GlobalSearchResult",
+    "GovernedGraphRAGService",
+    "GovernedQAResult",
     "GraphQualityReport",
     "GraphQualityThresholds",
     "GraphRagConfigurationError",

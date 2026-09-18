@@ -10070,7 +10070,7 @@ function normalizePageName(page) {
 
   const name = String(page || "").replace(/^#/, "");
 
-  return ["overview", "data", "search", "kg", "kg_data", "kg_search", "kg_benchmark", "benchmark"].includes(name) ? name : "overview";
+  return ["overview", "data", "search", "kg", "kg_data", "kg_search"].includes(name) ? name : "overview";
 
 }
 
@@ -12670,35 +12670,6 @@ Tasks:
 4. Every conclusion must cite original evidence with source, chunk_id or record_id when available.
 5. If evidence is insufficient, say so explicitly; do not replace source evidence with graph-only relations.`;
 
-const WECHAT_DEFAULT_COLLECTION = "wechat_private_chunks_rag";
-
-const WECHAT_AFFECTION_QUESTION = `请执行“全量私聊联系人级暧昧关系分析”，不要只基于 top-k chunk。
-
-定义：
-1. 号主 = 聊天记录中的本人 / 我 / 当前微信账号主人。
-2. 对方 = 每个一对一私聊联系人。
-3. 排除群聊、公众号、系统通知、文件传输助手。
-4. “暧昧证据”包括但不限于：宝宝、宝贝、亲爱的、想你、喜欢你、抱抱、亲亲、晚安、撒娇、约见面、情绪依赖、恋爱暗示、情侣式称呼、明显双向亲密互动。
-5. 不要把普通朋友、同学、工作沟通误判为暧昧。
-6. 如果无法确认对方性别，单独标为“性别不确定”。
-
-任务：
-请按联系人逐个分析所有私聊记录，输出：
-- 较确定暧昧对象人数
-- 疑似暧昧对象人数
-- 性别不确定但有暧昧证据的人数
-- 每个联系人姓名 / 备注 / username
-- 判断等级：较确定 / 疑似 / 不足证据
-- 关键证据原文，必须带日期、消息发送方、chunk_id 或 message_id
-- 为什么这些证据支持这个判断
-- 为什么没有把其他联系人计入
-
-要求：
-如果没有原文证据，不允许判断为暧昧。
-如果证据不足，必须说证据不足。
-优先召回完整，不要为了简洁漏掉联系人。
-Route hint: CONTACT_FULL_SCAN。`;
-
 const POWER_RAG_GENERIC_SCHEMA = {
   entityTypes: [
     "Equipment",
@@ -12726,38 +12697,6 @@ const POWER_RAG_GENERIC_SCHEMA = {
     "HAS_EVIDENCE",
     "MENTIONED_IN",
     "RELATES_TO"
-  ]
-};
-
-const WECHAT_AFFECTION_SCHEMA = {
-  entityTypes: [
-    "AccountOwner",
-    "Contact",
-    "Message",
-    "AffectionEvidence",
-    "RelationshipSignal",
-    "Date",
-    "Sender",
-    "Conversation",
-    "Username",
-    "Chunk",
-    "MessageId"
-  ],
-  relationTypes: [
-    "SENT_MESSAGE",
-    "RECEIVED_MESSAGE",
-    "HAS_CONTACT",
-    "HAS_USERNAME",
-    "HAS_DATE",
-    "HAS_SENDER",
-    "HAS_CHUNK_ID",
-    "HAS_MESSAGE_ID",
-    "HAS_AFFECTION_EVIDENCE",
-    "HAS_RELATIONSHIP_SIGNAL",
-    "MENTIONS",
-    "EVIDENCED_BY",
-    "BELONGS_TO_CONVERSATION",
-    "CONTACT_FULL_SCAN"
   ]
 };
 
@@ -12804,38 +12743,6 @@ function applyPowerRagGraphPreset() {
   setFormValue("kgSearchMode", "global");
 
   setFormValue("kgMaxHops", "2");
-
-}
-
-function applyWechatAffectionGraphPreset() {
-
-  setFormValue("kgPublicBooksJsonCollection", WECHAT_DEFAULT_COLLECTION);
-
-  activateRagCollection(WECHAT_DEFAULT_COLLECTION, { reason: "wechat-affection-preset", persist: true });
-
-  setFormValue("kgPublicBooksJsonMode", "create");
-
-  setFormValue("kgPublicBooksJsonChunkSize", "900");
-
-  setFormValue("kgPublicBooksJsonOverlap", "120");
-
-  setFormValue("kgSchemaDataType", "wechat_private_chat");
-
-  setFormValue("kgSchemaGoal", "CONTACT_FULL_SCAN for WeChat private chats. Preserve contact_name, remark, username, date, sender, message_id, chunk_id, source_file, private/group boundary, and verbatim evidence. Extract every one-to-one contact partition and affection evidence without relying only on top-k chunks.");
-
-  setFormValue("kgEntityTypes", WECHAT_AFFECTION_SCHEMA.entityTypes.join(", "));
-
-  setFormValue("kgRelationTypes", WECHAT_AFFECTION_SCHEMA.relationTypes.join(", "));
-
-  setFormValue("kgExtractEngine", "generative");
-
-  setFormValue("kgCommunityAlgo", "leiden");
-
-  setFormValue("kgSearchTopK", "100");
-
-  setFormValue("kgSearchMode", "global");
-
-  setFormValue("kgMaxHops", "3");
 
 }
 
@@ -12888,26 +12795,6 @@ async function pickPowerRagCorpusFile(options = {}) {
     $("kgFileInput")?.click();
 
     throw new Error("This is not the Electron desktop runtime. The file picker has been opened; select a RAG JSON file before running one-click detection.");
-
-  }
-
-  const descriptor = await pickCorpus(options);
-
-  return fileFromDesktopDescriptor(descriptor);
-
-}
-
-async function pickWechatRagCorpusFile(options = {}) {
-
-  const desktopApi = window.powerRagDesktop;
-
-  const pickCorpus = desktopApi?.pickWechatRagCorpus || desktopApi?.pickPowerRagCorpus;
-
-  if (!pickCorpus) {
-
-    $("kgFileInput")?.click();
-
-    throw new Error("This is not the Electron desktop runtime. The file picker has been opened; select a WeChat RAG JSON file before running one-click analysis.");
 
   }
 
@@ -20221,57 +20108,6 @@ function formatPartitionAnalysisMarkdown(result) {
 
 window.formatPartitionAnalysisMarkdown = formatPartitionAnalysisMarkdown;
 
-function formatContactAnalysisMarkdown(result) {
-
-  const analysis = result?.contact_analysis;
-
-  const coverage = result?.coverage_report || analysis?.coverage_report || {};
-
-  const analysisType = coverage?.analysis_type || analysis?.analysis_type || "";
-
-  if (!["private_contact_affection_sweep", "private_contact_term_evidence_sweep"].includes(analysisType)) return "";
-
-  const contacts = Array.isArray(analysis?.contacts) ? analysis.contacts : [];
-
-  const sections = [
-    "### Private Contact Full Scan",
-    [
-      "**Coverage:**",
-      `- analysis_type: ${analysisType}`,
-      `- collection: ${coverage.collection || result?.resolved_collection || "unknown"}`,
-      `- private_contact_count: ${Number(coverage.private_contact_count || 0)}`,
-      `- contacts_analyzed: ${Number(coverage.contacts_analyzed || contacts.length || 0)}`,
-      `- candidate_contact_count: ${Number(coverage.candidate_contact_count || 0)}`,
-      `- top_k_used: ${Boolean(coverage.top_k_used)}`
-    ].join("\n")
-  ];
-
-  const queryTerms = Array.isArray(coverage.query_terms) ? coverage.query_terms.filter(Boolean) : [];
-  if (queryTerms.length) sections.push(`**Query terms:** ${queryTerms.map(escapeMarkdownTableCell).join(", ")}`);
-
-  if (contacts.length) {
-    const table = [
-      "| Contact | Remark | Username | Level | Evidence |",
-      "|---|---|---|---|---:|",
-      ...contacts.slice(0, 80).map((item) => {
-        const evidence = Array.isArray(item?.evidence) ? item.evidence : (Array.isArray(item?.evidence_items) ? item.evidence_items : []);
-        return `| ${escapeMarkdownTableCell(item?.contact_name || item?.name || item?.contact || "")} | ${escapeMarkdownTableCell(item?.remark || item?.alias || "")} | ${escapeMarkdownTableCell(item?.username || "")} | ${escapeMarkdownTableCell(item?.judgement || item?.judgment || item?.level || "unknown")} | ${Number(item?.evidence_count || evidence.length || 0)} |`;
-      })
-    ].join("\n");
-    sections.push(`**Contacts:**\n${table}`);
-  }
-
-  const excluded = coverage.excluded_reasons && typeof coverage.excluded_reasons === "object"
-    ? Object.entries(coverage.excluded_reasons).map(([key, value]) => `- ${key}: ${value}`)
-    : [];
-  if (excluded.length) sections.push(`**Excluded:**\n${excluded.join("\n")}`);
-
-  return sections.join("\n\n");
-
-}
-
-window.formatContactAnalysisMarkdown = formatContactAnalysisMarkdown;
-
 function formatAdvancedQueryMarkdown(result) {
 
   if (!result || typeof result !== "object") return "";
@@ -20640,7 +20476,6 @@ function renderUnifiedQueryAnswer(result, container = els.askAnswer) {
 
     formatAdvancedQueryMarkdown(result),
 
-    formatContactAnalysisMarkdown(result),
 
 
     formatPartitionAnalysisMarkdown(result),
@@ -24011,100 +23846,6 @@ $("btnKgBuild")?.addEventListener("click", async () => {
 
   }
 
-  async function runWechatAffectionOneClick() {
-
-    const btn = $("btnKgWechatOneClick");
-
-    try {
-
-      if (btn) { btn.disabled = true; btn.dataset.busy = "true"; }
-
-      clearKgOneClickLog();
-
-      setKgOneClickStatus("Running", "running");
-
-      appendKgOneClickLog("Switch to GraphRAG / graph build", "WeChat private-chat full contact scan.", "lucide:panel-top");
-
-      setWorkspaceMode("graphrag", { keepPage: true });
-
-      setPage("kg_data");
-
-      applyWechatAffectionGraphPreset();
-
-      appendKgOneClickLog("Applied WeChat affection preset", "collection=create, top_k=100, CONTACT_FULL_SCAN", "lucide:sliders-horizontal");
-
-      if (!_pendingJsonFiles.kgCorpus.length) {
-
-        appendKgOneClickLog("Loading default WeChat RAG JSON corpus", "Prefer the latest exported private chat corpus file.", "lucide:file-json");
-
-        const file = await pickWechatRagCorpusFile({ preferDefault: true });
-
-        if (!file) throw new Error("No WeChat RAG JSON corpus file was selected.");
-
-        addKgCorpusFiles([file], { replace: true, silent: true });
-
-        appendKgOneClickLog("WeChat corpus loaded", `${relativePathOf(file)} (${(file.size / 1048576).toFixed(1)} MB)`, "lucide:check-circle");
-
-      } else {
-
-        appendKgOneClickLog("Using current pending corpus", `${_pendingJsonFiles.kgCorpus.length} files`, "lucide:files");
-
-      }
-
-      setKgOneClickStatus("Ingesting", "running");
-
-      appendKgOneClickLog("Start detection and ingestion", "Rebuild the WeChat collection to avoid stale residue.", "lucide:database-zap");
-
-      await runKgCorpusIngestForCurrentFiles();
-
-      appendKgOneClickLog("Ingestion finished", "Chunks and contact partitions refreshed.", "lucide:check-circle");
-
-      setKgOneClickStatus("Building graph", "running");
-
-      appendKgOneClickLog("Start graph construction", "Waiting for the graph build task to finish.", "lucide:cpu");
-
-      await clickButtonAndWaitForIdle("btnKgBuild", 1200000);
-
-      const nodeCount = window._kgGraph?.nodes?.length || 0;
-
-      const edgeCount = window._kgGraph?.links?.length || 0;
-
-      if (!nodeCount) throw new Error("Graph build finished but generated no nodes. Check corpus parsing and WeChat schema configuration.");
-
-      appendKgOneClickLog("Graph build finished", `${nodeCount.toLocaleString()} nodes, ${edgeCount.toLocaleString()} edges`, "lucide:network");
-
-      setKgOneClickStatus("Answering", "running");
-
-      setPage("kg_search");
-
-      setFormValue("kgAskInput", WECHAT_AFFECTION_QUESTION);
-
-      appendKgOneClickLog("Filled WeChat full-contact question", "Requires date, sender, chunk_id or message_id for every affection judgment.", "lucide:message-square-text");
-
-      await runKgAsk();
-
-      setKgOneClickStatus("Finished", "success");
-
-      appendKgOneClickLog("WeChat one-click flow finished", "Check the result in the GraphRAG answer area.", "lucide:check-circle");
-
-    } catch (err) {
-
-      const message = err?.message || String(err);
-
-      setKgOneClickStatus("Failed", "danger");
-
-      appendKgOneClickLog("Flow failed", message, "lucide:alert-triangle");
-
-      showToast(message, "danger");
-
-    } finally {
-
-      if (btn) { btn.disabled = false; delete btn.dataset.busy; }
-
-    }
-
-  }
-
   $("btnKgPowerRagPickCorpus")?.addEventListener("click", async () => {
 
     try {
@@ -24127,33 +23868,8 @@ $("btnKgBuild")?.addEventListener("click", async () => {
 
   });
 
-  $("btnKgWechatPickCorpus")?.addEventListener("click", async () => {
-
-    try {
-
-      const file = await pickWechatRagCorpusFile({ preferDefault: false });
-
-      if (file) {
-
-        addKgCorpusFiles([file], { replace: true });
-
-        applyWechatAffectionGraphPreset();
-
-        appendKgOneClickLog("Selected WeChat RAG corpus", relativePathOf(file), "lucide:file-json");
-
-      }
-
-    } catch (err) {
-
-      showToast(err?.message || String(err), "warning");
-
-    }
-
-  });
-
   $("btnKgPowerRagOneClick")?.addEventListener("click", runPowerRagOneClick);
 
-  $("btnKgWechatOneClick")?.addEventListener("click", runWechatAffectionOneClick);
 
 
 
@@ -24991,8 +24707,6 @@ window.addEventListener("DOMContentLoaded", init);
 
         <button class="nav-item" data-page="search" type="button" data-mode-tag="rag"><iconify-icon icon="lucide:search"></iconify-icon><span>语义检索</span></button>
 
-        <button class="nav-item" data-page="benchmark" type="button" data-mode-tag="rag"><iconify-icon icon="lucide:gauge"></iconify-icon><span>性能基准</span></button>
-
 
 
         <button class="nav-item is-hidden" data-page="kg" type="button" data-mode-tag="graphrag"><iconify-icon icon="lucide:network"></iconify-icon><span>图谱概览</span></button>
@@ -25000,8 +24714,6 @@ window.addEventListener("DOMContentLoaded", init);
         <button class="nav-item is-hidden" data-page="kg_data" type="button" data-mode-tag="graphrag"><iconify-icon icon="lucide:database-zap"></iconify-icon><span>图谱构建</span></button>
 
         <button class="nav-item is-hidden" data-page="kg_search" type="button" data-mode-tag="graphrag"><iconify-icon icon="lucide:message-square-dashed"></iconify-icon><span>图谱问答</span></button>
-
-        <button class="nav-item is-hidden" data-page="kg_benchmark" type="button" data-mode-tag="graphrag"><iconify-icon icon="lucide:gauge"></iconify-icon><span>图谱基准</span></button>
 
       </nav>
 
@@ -25047,7 +24759,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                 <h3>动力装备 RAG 智能知识平台</h3>
 
-                <p>面向燃气轮机、汽轮机、锅炉和辅机资料的工程知识库工作台，覆盖资料接入、OCR 清洗、向量入库、语义检索、GraphRAG 图谱扩展和性能基准评估</p>
+                <p>面向燃气轮机、汽轮机、锅炉和辅机资料的工程知识库工作台，覆盖资料接入、OCR 清洗、向量入库、语义检索、GraphRAG 图谱扩展和运行观测</p>
 
                 <div class="hero-proof-row" aria-label="项目能力摘要">
 
@@ -25057,7 +24769,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                   <span class="proof-pill"><iconify-icon icon="lucide:network"></iconify-icon><span>GraphRAG 流程</span></span>
 
-                  <span class="proof-pill"><iconify-icon icon="lucide:gauge"></iconify-icon><span>可复现实验指标</span></span>
+                  <span class="proof-pill"><iconify-icon icon="lucide:gauge"></iconify-icon><span>运行状态观测</span></span>
 
                 </div>
 
@@ -25068,8 +24780,6 @@ window.addEventListener("DOMContentLoaded", init);
                   <button class="ghost-btn" data-jump="search" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
 
                   <button class="ghost-btn" data-jump="kg" type="button"><iconify-icon icon="lucide:network"></iconify-icon><span>查看KG流程</span></button>
-
-                  <button class="ghost-btn" data-jump="benchmark" type="button"><iconify-icon icon="lucide:gauge"></iconify-icon><span>性能压测</span></button>
 
                 </div>
 
@@ -25135,7 +24845,7 @@ window.addEventListener("DOMContentLoaded", init);
 
               <article class="snapshot-card"><iconify-icon icon="lucide:search-check"></iconify-icon><h4>可信语义检索</h4><p>用向量召回连接工程问题和原始资料片段，适合论文演示与现场答辩。</p></article>
 
-              <article class="snapshot-card"><iconify-icon icon="lucide:share-2"></iconify-icon><h4>GraphRAG 扩展</h4><p>保留实体关系抽取、图谱问答和图谱基准入口，便于展示后续增强路线。</p></article>
+              <article class="snapshot-card"><iconify-icon icon="lucide:share-2"></iconify-icon><h4>GraphRAG 扩展</h4><p>保留实体关系抽取、图谱问答和图谱质量观察入口，便于展示后续增强路线。</p></article>
 
               <article class="snapshot-card"><iconify-icon icon="lucide:bar-chart-3"></iconify-icon><h4>性能与质量指标</h4><p>集中呈现集合规模、Token、延迟、吞吐和处理质量，方便按 BOSS 项目经历总结。</p></article>
 
@@ -26643,11 +26353,9 @@ window.addEventListener("DOMContentLoaded", init);
 
                   <button class="ghost-btn" id="btnKgPowerRagPickCorpus" type="button"><iconify-icon icon="lucide:file-json"></iconify-icon><span>选择语料</span></button>
 
-                  <button class="ghost-btn" id="btnKgWechatPickCorpus" type="button"><iconify-icon icon="lucide:message-circle"></iconify-icon><span>选择微信语料</span></button>
 
                   <button class="ghost-btn" id="btnKgPowerRagOneClick" type="button"><iconify-icon icon="lucide:play"></iconify-icon><span>通用检测</span></button>
 
-                  <button class="btn" id="btnKgWechatOneClick" type="button"><iconify-icon icon="lucide:heart"></iconify-icon><span>微信暧昧分析</span></button>
 
                 </div>
 
@@ -26793,7 +26501,6 @@ window.addEventListener("DOMContentLoaded", init);
 
                         <option value="auto" selected>自动判断</option>
 
-                        <option value="chat_logs">微信/聊天记录</option>
 
                         <option value="technical_equipment_docs">工程技术文档</option>
 
@@ -26811,7 +26518,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                       <label>分析目标</label>
 
-                      <input class="form-control" id="kgSchemaGoal" type="text" value="问答、关系检索、证据可追溯" placeholder="例如：全量私聊联系人关系分析">
+                      <input class="form-control" id="kgSchemaGoal" type="text" value="问答、关系检索、证据可追溯" placeholder="例如：设备故障关系分析">
 
                     </div>
 
@@ -27314,13 +27021,13 @@ window.addEventListener("DOMContentLoaded", init);
 
                   <strong>证据源选择</strong>
 
-                  <p class="kg-step-note">读取微信文本集合、GraphStore、社区摘要；普通 top-k 只作补充，不作为全量结论依据。</p>
+                  <p class="kg-step-note">读取文本集合、GraphStore、社区摘要；普通 top-k 只作补充，不作为全量结论依据。</p>
 
                 </div>
 
                 <div class="kg-flow-arrow" aria-hidden="true"></div>
 
-                <div class="kg-flow-node" data-flow-node="full-contact-scan">
+                <div class="kg-flow-node" data-flow-node="full-partition-scan">
 
                   <span>04 FULL SCAN</span>
 
@@ -27366,7 +27073,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                   <span class="pill">GLOBAL_SEARCH: 跨社区/全局总结</span>
 
-                  <span class="pill">CONTACT_FULL_SCAN: 全量私聊联系人级分析</span>
+                  <span class="pill">FULL_PARTITION_SCAN: ????????</span>
 
                 </div>
 
@@ -27377,118 +27084,6 @@ window.addEventListener("DOMContentLoaded", init);
           </div>
 
         </section>
-
-
-
-        <section class="page" id="page-kg_benchmark">
-
-          <div class="page-stack">
-
-            <div class="benchmark-grid">
-
-              <article class="panel">
-
-                <div class="panel-head">
-
-                  <div>
-
-                    <h3>图谱性能压测参数</h3>
-
-                  </div>
-
-                </div>
-
-                <div class="form-grid">
-
-                  <div class="field"><label>评测基准数据集</label><select class="form-control"><option>动力装备复杂推理 QA-100</option></select></div>
-
-                  <div class="field"><label>并发评估线程</label><input class="form-control" type="number" value="5"></div>
-
-                  <div class="field"><label>最大关联节点召回数</label><input class="form-control" type="number" value="250"></div>
-
-                  <div class="field"><label>图 + 向量混合策略</label><select class="form-control"><option>Hybrid (Vector Retrieval + Graph PageRank)</option></select></div>
-
-                </div>
-
-                <div style="margin-top:18px;"><div class="progress"><div class="progress-bar" style="width: 0%"></div></div></div>
-
-                <div class="queue-actions" style="justify-content:flex-start; margin-top:18px;">
-
-                  <button class="btn" type="button"><iconify-icon icon="lucide:activity"></iconify-icon><span>启动 GraphRAG 压测</span></button>
-
-                </div>
-
-                <div class="search-meta">等待压测任务启动...</div>
-
-              </article>
-
-
-
-              <article class="panel">
-
-                <div class="panel-head">
-
-                  <div>
-
-                    <h3>多维度表现 (vs 传统纯向量 RAG)</h3>
-
-                  </div>
-
-                </div>
-
-                <div class="metric-grid" style="grid-template-columns: repeat(2, 1fr); margin-top: 0;">
-
-                  <div class="metric-card panel" style="background: rgba(255,255,255,0.02)">
-
-                    <p class="card-kicker">多跳推理准确率 (Multi-hop Accuracy)</p>
-
-                    <div class="metric-value" style="font-size: 24px;">-- %</div>
-
-                    <div style="font-size: 11px; color: var(--success); margin-top: 6px;">对比传统 RAG 基准预估 <strong>大幅提升</strong></div>
-
-                  </div>
-
-                  <div class="metric-card panel" style="background: rgba(255,255,255,0.02)">
-
-                    <p class="card-kicker">实体链接召回率 (Entity Recall)</p>
-
-                    <div class="metric-value" style="font-size: 24px;">-- %</div>
-
-                    <div style="font-size: 11px; color: var(--success); margin-top: 6px;">对比传统 RAG 基准预估 <strong>显著提升</strong></div>
-
-                  </div>
-
-                  <div class="metric-card panel" style="background: rgba(255,255,255,0.02)">
-
-                    <p class="card-kicker">全局摘要覆盖度 (Global Summary Coverage)</p>
-
-                    <div class="metric-value" style="font-size: 24px;">--</div>
-
-                    <div style="font-size: 11px; color: var(--success); margin-top: 6px;">得益于社区聚类，避免“只见树木不见森林</div>
-
-                  </div>
-
-                  <div class="metric-card panel" style="background: rgba(255,255,255,0.02)">
-
-                    <p class="card-kicker">端到端平均延迟 (Avg Latency)</p>
-
-                    <div class="metric-value" style="font-size: 24px;">-- ms</div>
-
-                    <div style="font-size: 11px; color: var(--danger); margin-top: 6px;">因图计算与合并开销，对比纯向量检索 <strong>有所增加</strong></div>
-
-                  </div>
-
-                </div>
-
-              </article>
-
-            </div>
-
-          </div>
-
-        </section>
-
-
 
         <div class="modal" id="modelCatalog" hidden role="dialog" aria-modal="true" aria-labelledby="modelCatalogTitle">
 
@@ -27515,72 +27110,6 @@ window.addEventListener("DOMContentLoaded", init);
           </div>
 
         </div>
-
-
-
-        <section class="page" id="page-benchmark">
-
-          <div class="page-stack">
-
-            <div class="benchmark-grid">
-
-              <article class="panel">
-
-                <div class="panel-head">
-
-                  <div>
-
-                    <h3>运行参数</h3>
-
-                  </div>
-
-                </div>
-
-                <div class="form-grid">
-
-                  <div class="field"><label for="benchDocs">文档</label><input class="form-control" id="benchDocs" type="number" min="50" max="5000" value="500"></div>
-
-                  <div class="field"><label for="benchBatch">批大</label><input class="form-control" id="benchBatch" type="number" min="10" max="1000" value="100"></div>
-
-                  <div class="field"><label for="benchQueries">查询</label><input class="form-control" id="benchQueries" type="number" min="10" max="1000" value="50"></div>
-
-                  <div class="field"><label for="benchTopK">返回条数</label><input class="form-control" id="benchTopK" type="number" min="1" max="100" value="5"></div>
-
-                </div>
-
-                <div style="margin-top:18px;"><div class="progress"><div class="progress-bar" id="benchFill"></div></div></div>
-
-                <div class="queue-actions" style="justify-content:flex-start;margin-top:18px;"><button class="btn" id="btnBench" type="button"><iconify-icon icon="lucide:square-activity"></iconify-icon><span>开始压</span></button></div>
-
-                <div class="search-meta" id="benchLog">等待压测开始</div>
-
-              </article>
-
-
-
-              <article class="panel" id="benchResults">
-
-                <div class="panel-head">
-
-                  <div>
-
-                    <h3>性能读数</h3>
-
-                  </div>
-
-                </div>
-
-                <div class="empty-state" id="benchEmpty">尚未运行压测</div>
-
-                <div class="bench-grid" id="benchGrid"></div>
-
-              </article>
-
-            </div>
-
-          </div>
-
-        </section>
 
       </main>
 

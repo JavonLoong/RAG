@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>PowerRAG GraphRAG 五大核心模块实操流程图</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    padding: 24px 30px;
+  }
+  h1 {
+    text-align: center; font-size: 24px; color: #fff;
+    margin-bottom: 8px; letter-spacing: 3px;
+  }
+  .subtitle {
+    text-align: center; font-size: 13px; color: #888;
+    margin-bottom: 30px;
+  }
+
+  /* ===== 每个模块卡片 ===== */
+  .module-card {
+    background: #16213e;
+    border-radius: 14px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    border: 1px solid #2a3a5c;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  .module-card h2 {
+    font-size: 18px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .module-card h2 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 50%;
+    font-size: 14px; font-weight: bold; flex-shrink: 0;
+  }
+  .module-card .file-ref {
+    font-size: 12px; color: #7ea8be; margin-bottom: 16px;
+  }
+
+  /* ===== 流程条 ===== */
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+  .step {
+    flex-shrink: 0;
+    min-width: 155px;
+    max-width: 200px;
+    padding: 14px 14px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 12.5px;
+    line-height: 1.5;
+    position: relative;
+  }
+  .step .step-title {
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 5px;
+  }
+  .step .step-detail {
+    font-size: 11.5px;
+    opacity: 0.85;
+  }
+  .step .step-code {
+    font-size: 10.5px;
+    color: #aad;
+    margin-top: 5px;
+    font-family: Consolas, monospace;
+    word-break: break-all;
+  }
+
+  /* 箭头连接件 */
+  .arrow {
+    flex-shrink: 0;
+    width: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #556;
+  }
+
+  /* 模块色系 */
+  .m1 .num { background: #0097a7; color: #fff; }
+  .m1 .step { background: #0e3d45; border: 1px solid #0097a7; color: #b2ebf2; }
+
+  .m2 .num { background: #7b1fa2; color: #fff; }
+  .m2 .step { background: #2e1044; border: 1px solid #7b1fa2; color: #e1bee7; }
+
+  .m3 .num { background: #e65100; color: #fff; }
+  .m3 .step { background: #3e1a00; border: 1px solid #e65100; color: #ffe0b2; }
+
+  .m4 .num { background: #2e7d32; color: #fff; }
+  .m4 .step { background: #0d3312; border: 1px solid #2e7d32; color: #c8e6c9; }
+
+  .m5 .num { background: #c62828; color: #fff; }
+  .m5 .step { background: #3b0c0c; border: 1px solid #c62828; color: #ffcdd2; }
+
+  /* 分支标注 */
+  .branch-label {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    margin: 0 2px;
+  }
+  .bl-local  { background: #1b5e20; color: #a5d6a7; }
+  .bl-global { background: #b71c1c; color: #ef9a9a; }
+  .bl-vector { background: #0d47a1; color: #90caf9; }
+
+  /* 分叉容器 */
+  .fork-container {
+    display: flex;
+    gap: 14px;
+    margin-top: 10px;
+  }
+  .fork-branch {
+    flex: 1;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 12px;
+    line-height: 1.55;
+  }
+  .fork-branch .branch-title {
+    font-weight: bold; font-size: 13px; margin-bottom: 6px;
+  }
+  .fork-branch ul { padding-left: 16px; }
+  .fork-branch li { margin-bottom: 3px; }
+  .fork-branch .code { font-family: Consolas, monospace; font-size: 11px; color: #aad; }
+
+  .fb-local  { background: #0d3312; border: 1px solid #2e7d32; color: #c8e6c9; }
+  .fb-global { background: #3b0c0c; border: 1px solid #c62828; color: #ffcdd2; }
+</style>
+</head>
+<body>
+
+<h1>PowerRAG — GraphRAG 五大核心模块实操流程图</h1>
+<p class="subtitle">基于项目实际代码绘制 · 社区划分 → 主题摘要 → 证据召回 → 推理生成 → 结果评估</p>
+
+<!-- ==================== 模块 1：社区划分 ==================== -->
+<div class="module-card m1">
+  <h2><span class="num">1</span> 社区划分 (Community Detection)</h2>
+  <div class="file-ref">📄 kg_pipeline/community_detection.py · 算法: Leiden (leidenalg + igraph)</div>
+
+  <div class="flow">
+    <div class="step">
+      <div class="step-title">加载图谱数据</div>
+      <div class="step-detail">从 SQLite GraphStore 读取全部节点和边</div>
+      <div class="step-code">graph_store.get_all_nodes()<br>graph_store.get_all_edges_as_tuples()</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">构建 NetworkX 图</div>
+      <div class="step-detail">将节点/边转换为 NetworkX 无向图,合并多条边权重</div>
+      <div class="step-code">build_networkx_graph()</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">转换为 igraph</div>
+      <div class="step-detail">将 NetworkX 图转换为 igraph 格式,保留节点名和边权重</div>
+      <div class="step-code">igraph.Graph(n=len, edges=...)</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">运行 Leiden 算法</div>
+      <div class="step-detail">使用 RBConfigurationVertexPartition 做社区划分,支持 resolution 参数控制粒度</div>
+      <div class="step-code">leidenalg.find_partition(ig, resolution=1.0)</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">生成社区分配</div>
+      <div class="step-detail">为每个节点分配社区 ID (如 C0, C1, C2…) 并统计社区大小</div>
+      <div class="step-code">CommunityAssignment(node, C0, level=0)</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">持久化写入 DB</div>
+      <div class="step-detail">将社区分配结果写回 SQLite 的 communities 表</div>
+      <div class="step-code">graph_store.store_communities()</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 模块 2：主题摘要 ==================== -->
+<div class="module-card m2">
+  <h2><span class="num">2</span> 主题摘要 (Community Summarization)</h2>
+  <div class="file-ref">📄 kg_pipeline/community_summary.py · 依赖: LLM Client + GraphStore</div>
+
+  <div class="flow">
+    <div class="step">
+      <div class="step-title">读取社区列表</div>
+      <div class="step-detail">从 DB 获取指定 level 的全部社区,过滤 member_count &lt; min_size 的小社区</div>
+      <div class="step-code">graph_store.get_communities(level=0)</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">提取社区实体与边</div>
+      <div class="step-detail">获取每个社区内所有实体名称和三元组关系</div>
+      <div class="step-code">get_community_entities(C0)<br>get_community_edges(C0)</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">构建摘要 Prompt</div>
+      <div class="step-detail">将实体列表和关系列表格式化为 LLM 可理解的结构化文本</div>
+      <div class="step-code">build_community_prompt()</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">调用 LLM 生成摘要</div>
+      <div class="step-detail">要求 LLM 返回 JSON: {"title": "...", "summary": "..."}</div>
+      <div class="step-code">_call_llm(llm, prompt)</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">证据溯源绑定</div>
+      <div class="step-detail">将摘要中每个句子匹配回源三元组 ID,建立 sentence_evidence 映射</div>
+      <div class="step-code">build_summary_sentence_evidence()</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">写入摘要表</div>
+      <div class="step-detail">持久化 title, summary, entity_count, metadata 到 community_summaries 表</div>
+      <div class="step-code">store_community_summaries()</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 模块 3：证据召回 ==================== -->
+<div class="module-card m3">
+  <h2><span class="num">3</span> 证据召回 (Evidence Retrieval & Routing)</h2>
+  <div class="file-ref">📄 rag_orchestrator/router.py + retrieval_engine/graph.py + rag_orchestrator/global_search.py</div>
+
+  <div class="flow">
+    <div class="step">
+      <div class="step-title">用户输入 Query</div>
+      <div class="step-detail">接收用户的自然语言问题</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">语义分析 + LLM 路由</div>
+      <div class="step-detail">先用规则分析器 SemanticQueryAnalyzer 判断,再用 LLM 做精确分类</div>
+      <div class="step-code">AdaptiveQueryRouter.route_query()</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">路由决策输出</div>
+      <div class="step-detail">
+        <span class="branch-label bl-vector">VECTOR_ONLY</span>
+        <span class="branch-label bl-local">LOCAL_SEARCH</span>
+        <span class="branch-label bl-global">GLOBAL_SEARCH</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="fork-container" style="margin-top: 14px;">
+    <div class="fork-branch fb-local">
+      <div class="branch-title">🔍 局部搜索 (Local Search)</div>
+      <ul>
+        <li><b>文本召回</b>: ChromaDB 向量相似度 TopK<br><span class="code">text_retriever.retrieve(query, top_k)</span></li>
+        <li><b>图谱召回</b>: 实体名 N-gram 匹配 → PPR 多跳 BFS 遍历邻居<br><span class="code">SQLiteGraphRetriever.retrieve()</span></li>
+        <li><b>PPR 评分</b>: score = match_score × confidence × 0.85^hop</li>
+        <li><b>社区摘要</b>: 关键词命中 community_summaries 表</li>
+      </ul>
+    </div>
+    <div class="fork-branch fb-global">
+      <div class="branch-title">🌐 全局搜索 (Global Search — Map-Reduce)</div>
+      <ul>
+        <li><b>MAP 阶段</b>: 遍历每个社区摘要, LLM 判断是否相关并产出 Partial Answer<br><span class="code">GlobalSearchOrchestrator.search()</span></li>
+        <li><b>过滤</b>: LLM 返回 "NOT_RELEVANT" 则跳过</li>
+        <li><b>REDUCE 阶段</b>: 将所有 Partial Answers 合并, LLM 综合输出最终答案</li>
+        <li><b>溯源</b>: 每个 Partial Answer 携带 source_evidence (triple_id + 原文)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 模块 4：推理生成 ==================== -->
+<div class="module-card m4">
+  <h2><span class="num">4</span> 推理生成 (Inference & Answer Generation)</h2>
+  <div class="file-ref">📄 rag_orchestrator/graphrag_qa.py · GraphRagQAOrchestrator</div>
+
+  <div class="flow">
+    <div class="step">
+      <div class="step-title">多源证据合并</div>
+      <div class="step-detail">将文本证据 [T1..TN]、图谱证据 [G1..GN] 和社区证据 [C1..CN] 合并</div>
+      <div class="step-code">build_context(question, text_ev, graph_ev, global_ctx)</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">构建推理 Prompt</div>
+      <div class="step-detail">将合并上下文 + 引用 ID 列表 + 用户问题组装为 Prompt</div>
+      <div class="step-code">build_default_prompt(q, ctx, citations)</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">LLM 生成答案</div>
+      <div class="step-detail">调用 LLM 生成带 [T1] [G2] 等引用标记的自然语言回答</div>
+      <div class="step-code">_call_llm(self.llm, prompt)</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">幻觉检测 (可选)</div>
+      <div class="step-detail">HallucinationGuard 检查答案中是否有证据不支持的声明</div>
+      <div class="step-code">hallucination_guard.verify(answer, context)</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">自修正循环</div>
+      <div class="step-detail">若检测到幻觉, 重新构建带修正指令的 Prompt, 最多重试 3 次</div>
+      <div class="step-code">max_retries = 3</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">输出最终结果</div>
+      <div class="step-detail">返回 GraphRagQAResult: answer, citations[], evidence[], prompt</div>
+      <div class="step-code">GraphRagQAResult.to_dict()</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 模块 5：结果评估 ==================== -->
+<div class="module-card m5">
+  <h2><span class="num">5</span> 结果评估 (Evaluation & Quality Gate)</h2>
+  <div class="file-ref">📄 evaluation/quality_profiles.py · evaluation/harness.py · evaluation/metrics.py</div>
+
+  <div class="flow">
+    <div class="step">
+      <div class="step-title">加载评测题集</div>
+      <div class="step-detail">读取 system_eval_questions.jsonl 中的标准问答对 (question + ground_truth)</div>
+      <div class="step-code">system_eval_questions.jsonl</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">批量运行 QA</div>
+      <div class="step-detail">对每个问题分别跑 RAG 和 GraphRAG 管线, 捕获 answer + citations</div>
+      <div class="step-code">runner.py batch_evaluate()</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">计算评测指标</div>
+      <div class="step-detail">召回率 Recall, 精确率 Precision, 事实一致性 Faithfulness, 引用覆盖</div>
+      <div class="step-code">metrics.py</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">质量门禁检查</div>
+      <div class="step-detail">综合评分是否达到 quality_profiles 中定义的最低通过线 (如 90%)</div>
+      <div class="step-code">benchmark_quality_gate.py</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step">
+      <div class="step-title">生成评测报告</div>
+      <div class="step-detail">输出 Markdown/HTML 评测报告, 含 RAG vs GraphRAG 对比表和失败归因</div>
+      <div class="step-code">evaluation/reports/</div>
+    </div>
+  </div>
+</div>
+
+<p style="text-align:center; margin-top:12px; color:#555; font-size:12px;">
+  PowerRAG GraphRAG 核心模块实操流程图 · 基于项目源码 · 2026-07-06
+</p>
+
+</body>
+</html>

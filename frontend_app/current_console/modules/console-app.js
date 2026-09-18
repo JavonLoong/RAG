@@ -1,0 +1,20553 @@
+// Configure pdf.js worker: prefer local, fallback to CDN.
+
+if (globalThis.pdfjsLib?.GlobalWorkerOptions) {
+
+  const _workerLocal = "libs/pdf.worker.min.js";
+
+  const _workerCDN = "https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js";
+
+  // If running from local server (http://localhost or file://), try local path
+
+  globalThis.pdfjsLib.GlobalWorkerOptions.workerSrc =
+
+    (location.protocol === "file:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")
+
+      ? _workerLocal : _workerCDN;
+
+}
+
+
+
+const FORCE_LOCAL_RUNTIME = window.location.protocol === "file:" || /\.github\.io$/i.test(window.location.hostname);
+
+const API_BASE = "";
+
+const RETRIEVAL_POLICY_AUTH_STORAGE_KEY = "rag_retrieval_policy_bearer_token";
+
+const LOCAL_COLLECTION_NAME = "browser_local_index";
+
+const ENGINE_DEFAULTS = { chunkSize: 680, overlap: 120, dimension: 384 };
+
+const LOCAL_WORKSPACE_DB_NAME = "rag_local_workspace_v1";
+
+const LOCAL_WORKSPACE_DB_VERSION = 1;
+
+const LOCAL_WORKSPACE_STORE_NAME = "snapshots";
+
+const LOCAL_WORKSPACE_SNAPSHOT_KEY = "workspace";
+
+
+
+// Pre-load ppu-paddle-ocr in background so it's ready when user drops a PDF
+
+// Skips if local OCR server is detected (faster + no download needed)
+
+setTimeout(async () => {
+
+  if (typeof _checkLocalOcr === "function" && typeof _preloadPaddleOcr === "function") {
+
+    const hasLocal = await _checkLocalOcr();
+
+    if (!hasLocal) {
+
+      console.log("[OCR] 本地 OCR 服务器不可用，开始预加载 ppu-paddle-ocr 浏览器引擎...");
+
+      _preloadPaddleOcr();
+
+      // Show a subtle info banner
+
+      _showOcrServerBanner(false);
+
+    } else {
+
+      console.log(`[OCR] 本地 OCR 服务器可用 (${_localOcrEngines.join('+')}), 跳过浏览器引擎预加载`);
+
+      _showOcrServerBanner(true);
+
+    }
+
+  }
+
+}, 3000);
+
+
+
+function _showOcrServerBanner(available) {
+
+  // Remove existing banner if any
+
+  const existing = document.getElementById("ocr-server-banner");
+
+  if (existing) existing.remove();
+
+  const banner = document.createElement("div");
+
+  banner.id = "ocr-server-banner";
+
+  if (available) {
+
+    const engines = (typeof _localOcrEngines !== 'undefined' ? _localOcrEngines : []).join(' + ') || 'RapidOCR';
+
+    banner.innerHTML = `<div style="position:fixed;right:18px;bottom:18px;z-index:99998;max-width:min(520px,calc(100vw - 36px));padding:10px 14px;border-radius:8px;background:rgba(20,83,45,0.96);color:#c8e6c9;font-size:12px;display:flex;gap:12px;align-items:center;justify-content:space-between;font-family:system-ui,sans-serif;box-shadow:0 10px 28px rgba(0,0,0,0.32);">
+
+      <span>OCR 服务器已就绪 · 引擎: <b>${engines}</b> · 并发: ${typeof _localOcrConcurrency !== 'undefined' ? _localOcrConcurrency : '?'}x</span>
+
+      <button type="button" aria-label="隐藏 OCR 状态提示" title="隐藏 OCR 状态提示" onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#a5d6a7;cursor:pointer;font-size:16px;padding:0 4px;">×</button>
+
+    </div>`;
+
+  } else {
+
+    const isFile = window.location.protocol === "file:";
+
+    const hint = isFile
+
+      ? `file:// 页面无法连接 OCR 服务。请启动本地服务后打开 <a href="http://127.0.0.1:8766" style="color:#fff;text-decoration:underline;font-weight:bold;">http://127.0.0.1:8766</a>。`
+
+      : `OCR 服务未运行。请启动本地 OCR 服务，或运行 <code style="background:rgba(255,255,255,0.15);padding:1px 5px;border-radius:3px;">python app.py</code>。`;
+
+    banner.innerHTML = `<div style="position:fixed;right:18px;bottom:18px;z-index:99998;max-width:min(560px,calc(100vw - 36px));padding:10px 14px;border-radius:8px;background:rgba(127,29,29,0.96);color:#ffcdd2;font-size:12px;display:flex;gap:12px;align-items:center;justify-content:space-between;font-family:system-ui,sans-serif;box-shadow:0 10px 28px rgba(0,0,0,0.32);">
+
+      <span>${hint}</span>
+
+      <span style="display:flex;gap:6px;align-items:center;">
+
+        <button onclick="_retryOcrServerCheck()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;cursor:pointer;font-size:11px;padding:2px 10px;border-radius:4px;">🔄 重试检</button>
+
+        <button type="button" aria-label="关闭 OCR 服务提示" title="关闭 OCR 服务提示" onclick="this.closest('#ocr-server-banner').remove()" style="background:none;border:none;color:#ef9a9a;cursor:pointer;font-size:16px;padding:0 4px;">×</button>
+
+      </span>
+
+    </div>`;
+
+    // Auto-retry every 5 seconds
+
+    banner._retryTimer = setInterval(async () => {
+
+      _localOcrAvailable = null;
+
+      const ok = await _checkLocalOcr();
+
+      if (ok) {
+
+        clearInterval(banner._retryTimer);
+
+        _showOcrServerBanner(true);
+
+      }
+
+    }, 5000);
+
+  }
+
+  document.body.appendChild(banner);
+
+  // Auto-dismiss success banner after 8 seconds
+
+  if (available) setTimeout(() => banner.remove(), 8000);
+
+}
+
+
+
+async function _retryOcrServerCheck() {
+
+  _localOcrAvailable = null;
+
+  const ok = await _checkLocalOcr();
+
+  if (ok) {
+
+    _showOcrServerBanner(true);
+
+    showToast("OCR 服务器已连接。", "success");
+
+    // If on file://, redirect to HTTP version
+
+    if (window.location.protocol === "file:") {
+
+      showToast("正在跳转到 HTTP 版本...", "success");
+
+      setTimeout(() => { window.location.replace("http://127.0.0.1:8766/index.html"); }, 1000);
+
+    }
+
+  } else {
+
+    showToast("Still cannot connect to the OCR server. Confirm the local server is running.", "danger");
+
+  }
+
+}
+
+
+
+const SOURCE_LABELS = {
+
+  PDF: "PDF",
+
+  Text: "文本",
+
+  JSON: "JSON",
+
+  Markdown: "Markdown",
+
+  Code: "??",
+
+  CSV: "CSV",
+
+  TSV: "TSV",
+
+  DOCX: "DOCX",
+
+  Log: "日志",
+
+  Other: "其他"
+
+};
+
+
+
+const SOURCE_COLORS = {
+
+  PDF: "#0A84FF",
+
+  Text: "#FF9F0A",
+
+  JSON: "#30D158",
+
+  Markdown: "#BF5AF2",
+
+  Code: "#64D2FF",
+
+  CSV: "#FFD60A",
+
+  TSV: "#FF9F0A",
+
+  DOCX: "#5E5CE6",
+
+  Log: "#8E8E93",
+
+  Other: "#48484A"
+
+};
+
+
+
+const BENCHMARK_CARDS = [
+
+  { key: "insert_seconds", label: "写入耗时", icon: "lucide:clock-3", formatter: (value) => `${formatDecimal(value, 3)} s` },
+
+  { key: "insert_docs_per_second", label: "写入吞吐", icon: "lucide:database", formatter: (value) => `${formatDecimal(value, 2)} docs/s` },
+
+  { key: "query_seconds", label: "查询耗时", icon: "lucide:timer-reset", formatter: (value) => `${formatDecimal(value, 3)} s` },
+
+  { key: "query_qps", label: "检索 QPS", icon: "lucide:bar-chart-3", formatter: (value) => `${formatDecimal(value, 2)} qps` },
+
+  { key: "avg_query_latency_ms", label: "平均延迟", icon: "lucide:activity", formatter: (value) => `${formatDecimal(value, 3)} ms` },
+
+  { key: "p95_query_latency_ms", label: "P95 延迟", icon: "lucide:gauge", formatter: (value) => `${formatDecimal(value, 3)} ms` },
+
+  { key: "embedding_backend", label: "向量后端", icon: "lucide:workflow", formatter: (value) => String(value || "-") },
+
+  { key: "embedding_model", label: "模型标识", icon: "lucide:database-zap", formatter: (value) => String(value || "-") }
+
+];
+
+
+
+const MODEL_CATALOG = [
+
+  {
+
+    id: "openai",
+
+    label: "OpenAI",
+
+    endpoint: "https://api.openai.com/v1",
+
+    requiresKey: true,
+
+    models: [
+
+      { name: "gpt-5.5", desc: "flagship reasoning and coding" },
+
+      { name: "gpt-5.4", desc: "lower cost frontier model" },
+
+      { name: "gpt-5.4-mini", desc: "fast and economical" },
+
+      { name: "gpt-5.4-nano", desc: "lowest latency/cost" }
+
+    ]
+
+  },
+
+  {
+
+    id: "gemini",
+
+    label: "Google Gemini",
+
+    endpoint: "https://generativelanguage.googleapis.com/v1beta/openai",
+
+    requiresKey: true,
+
+    models: [
+
+      { name: "gemini-3.5-flash", desc: "stable frontier flash" },
+
+      { name: "gemini-3.1-pro-preview", desc: "advanced reasoning preview" },
+
+      { name: "gemini-3-flash-preview", desc: "frontier flash preview" },
+
+      { name: "gemini-2.5-pro", desc: "strong reasoning" },
+
+      { name: "gemini-2.5-flash", desc: "balanced price/performance" }
+
+    ]
+
+  },
+
+  {
+
+    id: "deepseek",
+
+    label: "DeepSeek",
+
+    endpoint: "https://api.deepseek.com",
+
+    requiresKey: true,
+
+    models: [
+
+      { name: "deepseek-v4-pro", desc: "thinking / high quality" },
+
+      { name: "deepseek-v4-flash", desc: "fast / cost effective" }
+
+    ]
+
+  },
+
+  {
+
+    id: "kimi",
+
+    label: "Kimi",
+
+    endpoint: "https://api.moonshot.cn/v1",
+
+    requiresKey: true,
+
+    models: [
+
+      { name: "kimi-k2.5", desc: "agent, coding, long context" },
+
+      { name: "kimi-k2-turbo-preview", desc: "fast K2 preview" },
+
+      { name: "kimi-k2-thinking", desc: "thinking mode" }
+
+    ]
+
+  },
+
+  {
+
+    id: "qwen",
+
+    label: "Qwen / DashScope",
+
+    endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+
+    requiresKey: true,
+
+    models: [
+
+      { name: "qwen-max", desc: "flagship" },
+
+      { name: "qwen-plus", desc: "balanced" },
+
+      { name: "qwen-turbo", desc: "fast" }
+
+    ]
+
+  },
+
+  {
+
+    id: "zhipu",
+
+    label: "Zhipu GLM",
+
+    endpoint: "https://open.bigmodel.cn/api/paas/v4",
+
+    requiresKey: true,
+
+    models: [
+
+      { name: "glm-5.1", desc: "latest GLM" },
+
+      { name: "glm-5-turbo", desc: "fast GLM" },
+
+      { name: "glm-4-flash", desc: "lightweight GLM" }
+
+    ]
+
+  },
+
+  {
+
+    id: "doubao",
+
+    label: "Doubao / Ark",
+
+    endpoint: "https://ark.cn-beijing.volces.com/api/v3",
+
+    requiresKey: true,
+
+    models: [
+
+      { name: "doubao-seed-2.0-pro", desc: "Seed 2.0 Pro" },
+
+      { name: "doubao-seed-2.0-lite", desc: "Seed 2.0 Lite" }
+
+    ]
+
+  },
+
+  {
+
+    id: "ollama",
+
+    label: "Local Ollama",
+
+    endpoint: "http://localhost:11434/v1",
+
+    requiresKey: false,
+
+    models: [
+
+      { name: "qwen3", desc: "local Qwen" },
+
+      { name: "deepseek-r1", desc: "local reasoning" },
+
+      { name: "llama3.3", desc: "local Llama" },
+
+      { name: "mistral", desc: "local Mistral" }
+
+    ]
+
+  }
+
+];
+
+
+
+const LLM_STORAGE_KEY = "rag_llm_settings_v1";
+
+
+
+
+
+function cleanLLMEndpoint(value) {
+
+  return String(value || "").trim().replace(/\s*\(.+$/, "").replace(/\/+$/, "");
+
+}
+
+
+
+function normalizeKnownLLMEndpoint(value) {
+
+  const endpoint = cleanLLMEndpoint(value);
+
+  if (endpoint === "https://generativelanguage.googleapis.com/v1beta") {
+
+    return "https://generativelanguage.googleapis.com/v1beta/openai";
+
+  }
+
+  return endpoint;
+
+}
+
+
+
+function getLLMProvider(providerId) {
+
+  if (providerId === "custom") {
+
+    return { id: "custom", label: "Custom", endpoint: "", requiresKey: true };
+
+  }
+
+  return MODEL_CATALOG.find((provider) => provider.id === providerId) || null;
+
+}
+
+
+
+function inferLLMProvider(modelName) {
+
+  const model = String(modelName || "").toLowerCase();
+
+  if (!model) return null;
+
+  if (model.startsWith("gemini-")) return getLLMProvider("gemini");
+
+  if (model.startsWith("deepseek-")) return getLLMProvider("deepseek");
+
+  if (model.startsWith("kimi-") || model.startsWith("moonshot-")) return getLLMProvider("kimi");
+
+  if (model.startsWith("qwen")) return getLLMProvider("qwen");
+
+  if (model.startsWith("glm-")) return getLLMProvider("zhipu");
+
+  if (model.startsWith("doubao-")) return getLLMProvider("doubao");
+
+  if (["llama", "mistral", "qwen", "deepseek-r1"].some((prefix) => model.startsWith(prefix))) return getLLMProvider("ollama");
+
+  if (model.startsWith("gpt-") || /^o\d/.test(model) || model.startsWith("chatgpt-")) return getLLMProvider("openai");
+
+  return null;
+
+}
+
+
+
+function getLLMProviderMeta(cfg) {
+
+  const selected = getLLMProvider(cfg?.provider);
+
+  if (selected) return selected;
+
+  return inferLLMProvider(cfg?.model) || selected || getLLMProvider("openai");
+
+}
+
+
+
+function resolveLLMEndpoint(cfg) {
+
+  const custom = cleanLLMEndpoint(cfg?.baseUrl);
+
+  if (custom) return custom;
+
+  const provider = getLLMProviderMeta(cfg);
+
+  return cleanLLMEndpoint(provider?.endpoint || "https://api.openai.com/v1");
+
+}
+
+
+
+function providerNeedsKey(provider) {
+
+  return provider?.requiresKey !== false;
+
+}
+
+
+
+const JSON_TEXT_KEYS = new Set(["text", "content", "body", "description", "summary", "abstract", "caption", "paragraph", "sentence", "question", "answer", "source", "input", "output"]);
+
+const CODE_EXTENSIONS = new Set(["py", "js", "mjs", "cjs", "ts", "tsx", "jsx", "java", "c", "cc", "cpp", "cxx", "h", "hh", "hpp", "hxx", "cs", "go", "rs", "php", "rb", "swift", "kt", "kts", "scala", "sql", "sh", "bash", "zsh", "ps1", "bat", "cmd", "html", "htm", "css", "scss", "sass", "less", "xml", "yaml", "yml", "toml", "ini", "cfg", "conf", "properties", "vue", "svelte"]);
+
+const SUPPORTED_EXTENSIONS = new Set(["json", "jsonl", "ndjson", "ipynb", "pdf", "docx", "txt", "md", "markdown", "csv", "tsv", "log", ...CODE_EXTENSIONS]);
+
+const DEFAULT_STATS = { status: "idle", collections: [], total_documents: 0, total_tokens_estimate: 0, storage_size_mb: 0, embedding_dim: ENGINE_DEFAULTS.dimension, source_type_breakdown: {} };
+const ACTIVE_COLLECTION_STORAGE_KEY = "powerrag.active_collection";
+const POWER_EQUIPMENT_DEMO_COLLECTION = "power_equipment_demo";
+const OFF_DOMAIN_COLLECTION_PATTERNS = [
+  "we" + "chat",
+  "\\u5fae\\u4fe1",
+  "\\u79c1\\u804a",
+  "\\u66a7\\u6627",
+  "\\u79df\\u623f",
+  "\\u5f3a\\u57fa",
+  "affec" + "tion",
+  "priv" + "ate_chat",
+  "priv" + "ate_chunks"
+];
+const OFF_DOMAIN_COLLECTION_RE = new RegExp(OFF_DOMAIN_COLLECTION_PATTERNS.join("|"), "i");
+
+const state = {
+
+  online: false,
+
+  localMode: FORCE_LOCAL_RUNTIME,
+
+  publicDemo: false,
+
+  version: "",
+
+  page: "overview",
+
+  stats: null,
+
+  primaryCollection: "",
+
+  primaryStats: null,
+
+  uploads: [],
+
+  pendingUploads: [],
+
+  processedUploads: [],
+
+  records: [],
+
+  chunks: [],
+
+  selectedUploads: new Set(),
+
+  selectedProcessedUploads: new Set(),
+
+  processedEditMode: false,
+
+  lastProcess: null,
+
+  publicBooksJson: null,
+
+  lastSearch: null,
+
+  benchmark: null,
+
+  activity: [],
+
+  timeline: [],
+
+  expandedResults: new Set(),
+
+  trendMode: "balance",
+
+  activityFilter: "all",
+
+  kgGraphDbPath: "",
+
+  kgSchemaRecommendation: null,
+
+  lastActiveCollectionReason: null,
+
+  delivery: globalThis.PowerRAGDeliveryState.create(),
+
+  toastTimer: null
+
+};
+
+
+
+const $ = (id) => document.getElementById(id);
+
+
+
+let els = {};
+
+function cleanCollectionName(value) {
+
+  return String(value ?? "").trim();
+
+}
+
+function rememberActiveCollection(collection) {
+
+  try {
+
+    const name = cleanCollectionName(collection);
+
+    if (name) localStorage.setItem(ACTIVE_COLLECTION_STORAGE_KEY, name);
+
+    else localStorage.removeItem(ACTIVE_COLLECTION_STORAGE_KEY);
+
+  } catch {}
+
+}
+
+function readRememberedActiveCollection() {
+
+  try {
+
+    return cleanCollectionName(localStorage.getItem(ACTIVE_COLLECTION_STORAGE_KEY));
+
+  } catch {
+
+    return "";
+
+  }
+
+}
+
+function collectionExistsInList(collection, collections = state.stats?.collections) {
+
+  const name = cleanCollectionName(collection);
+
+  return Boolean(name && Array.isArray(collections) && visibleConsoleCollections(collections).some((item) => cleanCollectionName(item?.name) === name));
+
+}
+
+function shouldHideCollectionFromConsole(collection) {
+  return OFF_DOMAIN_COLLECTION_RE.test(cleanCollectionName(collection));
+}
+
+function visibleConsoleCollections(collections = []) {
+  return (Array.isArray(collections) ? collections : [])
+    .filter((item) => !shouldHideCollectionFromConsole(item?.name));
+}
+
+function syncActiveCollectionInputs(collection) {
+
+  const name = cleanCollectionName(collection);
+
+  if (!name) return;
+
+  ["kgPublicBooksJsonCollection", "publicBooksJsonCollection"].forEach((id) => {
+
+    const element = $(id);
+
+    if (element && "value" in element && element.value !== name) {
+
+      element.value = name;
+
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+
+      element.dispatchEvent(new Event("change", { bubbles: true }));
+
+    }
+
+  });
+
+}
+
+function activateRagCollection(collection, options = {}) {
+
+  const name = cleanCollectionName(collection);
+
+  if (!name) return false;
+
+  const previous = state.primaryCollection;
+
+  state.primaryCollection = name;
+
+  state.lastActiveCollectionReason = {
+
+    collection: name,
+
+    reason: options.reason || "manual",
+
+    activated_at: new Date().toISOString()
+
+  };
+
+  rememberActiveCollection(name);
+
+  syncActiveCollectionInputs(name);
+
+  if (options.primaryStats) state.primaryStats = options.primaryStats;
+
+  if (options.render !== false) {
+
+    renderCollectionSpectrum();
+
+    renderCollectionList();
+
+    renderSummaryMetrics();
+
+  }
+
+  if (options.activity) addActivity("success", options.activity, name);
+
+  if (options.persist) void saveLocalWorkspaceSnapshot(options.reason || "active-collection");
+
+  return previous !== name;
+
+}
+
+
+
+function normalizeText(value) {
+
+  return String(value ?? "")
+
+    .replace(/\r\n/g, "\n")
+
+    .replace(/\u00a0/g, " ")
+
+    .replace(/[ \t]+/g, " ")
+
+    .replace(/\n{3,}/g, "\n\n")
+
+    .trim();
+
+}
+
+
+
+function stripBom(text) {
+
+  return String(text ?? "").replace(/^\uFEFF/, "");
+
+}
+
+
+
+function decodeArrayBuffer(buffer, encoding) {
+
+  try {
+
+    return new TextDecoder(encoding, { fatal: false }).decode(buffer);
+
+  } catch {
+
+    return "";
+
+  }
+
+}
+
+
+
+function hasUtf16Bom(bytes) {
+
+  return bytes?.length >= 2 && (
+
+    (bytes[0] === 0xFF && bytes[1] === 0xFE) ||
+
+    (bytes[0] === 0xFE && bytes[1] === 0xFF)
+
+  );
+
+}
+
+
+
+function scoreDecodedText(text) {
+
+  const candidate = stripBom(String(text ?? ""));
+
+  if (!candidate.trim()) return Number.NEGATIVE_INFINITY;
+
+  const total = candidate.length || 1;
+
+  const replacementCount = (candidate.match(/\uFFFD/g) || []).length;
+
+  const nullCount = (candidate.match(/\u0000/g) || []).length;
+
+  const controlCount = (candidate.match(/[\u0001-\u0008\u000B\u000C\u000E-\u001F]/g) || []).length;
+
+  const readableCount = (candidate.match(/[\p{L}\p{N}\p{P}\p{S}\s]/gu) || []).length;
+
+  const cjkCount = (candidate.match(/[\u3400-\u9FFF]/g) || []).length;
+
+  return (readableCount / total) + Math.min(cjkCount / total, 0.24) - ((replacementCount * 5) + (nullCount * 5) + (controlCount * 3)) / total;
+
+}
+
+
+
+function inferPreferredEncodings(buffer) {
+
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+
+  if (hasUtf16Bom(bytes)) return ["utf-16le", "utf-8", "gb18030", "big5"];
+
+  const probeLength = Math.min(bytes.length, 128);
+
+  let oddNulls = 0;
+
+  let evenNulls = 0;
+
+  for (let index = 0; index < probeLength; index += 1) {
+
+    if (bytes[index] !== 0) continue;
+
+    if (index % 2 === 0) evenNulls += 1;
+
+    else oddNulls += 1;
+
+  }
+
+  if (oddNulls >= 8 && oddNulls > evenNulls * 3) return ["utf-16le", "utf-8", "gb18030", "big5"];
+
+  return ["utf-8", "gb18030", "big5", "utf-16le"];
+
+}
+
+
+
+async function readFileTextSafely(file) {
+
+  const buffer = await file.arrayBuffer();
+
+  const best = inferPreferredEncodings(buffer)
+
+    .map((encoding) => ({ encoding, text: decodeArrayBuffer(buffer, encoding) }))
+
+    .filter((candidate) => candidate.text)
+
+    .sort((a, b) => scoreDecodedText(b.text) - scoreDecodedText(a.text))[0];
+
+  return stripBom(best?.text || "");
+
+}
+
+
+
+async function parseJsonWithEncodingFallback(file) {
+
+  const buffer = await file.arrayBuffer();
+
+  const attempts = inferPreferredEncodings(buffer)
+
+    .map((encoding) => ({ encoding, text: stripBom(decodeArrayBuffer(buffer, encoding)) }))
+
+    .filter((candidate) => candidate.text);
+
+  let lastError = null;
+
+  for (const candidate of attempts) {
+
+    try {
+
+      return JSON.parse(candidate.text);
+
+    } catch (error) {
+
+      lastError = error;
+
+    }
+
+  }
+
+  throw lastError || new Error("JSON 解析失败");
+
+}
+
+
+
+function pushUniqueLine(lines, seen, text) {
+
+  const cleaned = normalizeText(text);
+
+  if (!cleaned || cleaned.length < 2) return;
+
+  if (seen.has(cleaned)) return;
+
+  seen.add(cleaned);
+
+  lines.push(cleaned);
+
+}
+
+
+
+function looksLikeAnnotationTask(value) {
+
+  return !!value && typeof value === "object" && (
+
+    Array.isArray(value.annotations) ||
+
+    Array.isArray(value.predictions)
+
+  );
+
+}
+
+
+
+function extractAnnotationPayload(payload) {
+
+  const tasks = Array.isArray(payload) ? payload : [payload];
+
+  const lines = [];
+
+  const seen = new Set();
+
+  tasks.forEach((task) => {
+
+    const filename = normalizeText(task?.data?.filename || "");
+
+    if (filename) pushUniqueLine(lines, seen, filename);
+
+    const groups = [
+
+      ...(Array.isArray(task?.annotations) ? task.annotations : []),
+
+      ...(Array.isArray(task?.predictions) ? task.predictions : [])
+
+    ];
+
+    groups.forEach((group) => {
+
+      const results = Array.isArray(group?.result) ? group.result : [];
+
+      results.forEach((item) => {
+
+        const values = item?.value || {};
+
+        const textCandidates = [
+
+          ...(Array.isArray(values.text) ? values.text : []),
+
+          ...(Array.isArray(values.choices) ? values.choices : []),
+
+          ...(Array.isArray(values.labels) ? values.labels : [])
+
+        ];
+
+        textCandidates.forEach((entry) => pushUniqueLine(lines, seen, entry));
+
+      });
+
+    });
+
+  });
+
+  return lines;
+
+}
+
+
+
+function flattenMeaningfulJson(value, lines = [], seen = new Set()) {
+
+  if (value == null) return lines;
+
+  if (typeof value === "string") {
+
+    pushUniqueLine(lines, seen, value);
+
+    return lines;
+
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") return lines;
+
+  if (Array.isArray(value)) {
+
+    value.forEach((item) => flattenMeaningfulJson(item, lines, seen));
+
+    return lines;
+
+  }
+
+  if (typeof value === "object") {
+
+    Object.entries(value).forEach(([key, nested]) => {
+
+      const keyName = String(key || "").toLowerCase();
+
+      if (JSON_TEXT_KEYS.has(keyName)) {
+
+        flattenMeaningfulJson(nested, lines, seen);
+
+        return;
+
+      }
+
+      if (["title", "heading", "name", "section", "chapter", "keywords"].includes(keyName)) {
+
+        flattenMeaningfulJson(nested, lines, seen);
+
+      }
+
+      if (nested && typeof nested === "object") flattenMeaningfulJson(nested, lines, seen);
+
+    });
+
+  }
+
+  return lines;
+
+}
+
+
+
+function extractJsonTextLines(payload) {
+
+  if (looksLikeAnnotationTask(payload) || (Array.isArray(payload) && payload.some(looksLikeAnnotationTask))) {
+
+    return extractAnnotationPayload(payload);
+
+  }
+
+  return flattenMeaningfulJson(payload);
+
+}
+
+function isMetadataScalar(value) {
+
+  return value == null || ["string", "number", "boolean"].includes(typeof value);
+
+}
+
+function normalizeMetadataField(value) {
+
+  if (isMetadataScalar(value)) return value ?? "";
+
+  if (Array.isArray(value) && value.every(isMetadataScalar)) return value.filter((item) => item != null).join(",");
+
+  return null;
+
+}
+
+function extractObjectMetadata(item, excludeKeys = new Set()) {
+
+  const metadata = {};
+
+  if (!item || typeof item !== "object" || Array.isArray(item)) return metadata;
+
+  Object.entries(item).forEach(([key, value]) => {
+
+    if (excludeKeys.has(key)) return;
+
+    const normalized = normalizeMetadataField(value);
+
+    if (normalized !== null && normalized !== "") metadata[key] = normalized;
+
+  });
+
+  return metadata;
+
+}
+
+function recordFromStructuredJsonItem(item, file, index) {
+
+  if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+
+  const rawText = item.text ?? item.content ?? item.body ?? item.summary ?? "";
+
+  const text = normalizeText(rawText);
+
+  if (!text) return null;
+
+  const sourceName = relativePathOf(file);
+
+  const rawId = item.record_id || item.id || item.chunk_id || `${sourceName}::json::${index + 1}`;
+
+  const metadata = extractObjectMetadata(item, new Set(["text", "content", "body", "summary", "metadata"]));
+
+  if (item.metadata && typeof item.metadata === "object" && !Array.isArray(item.metadata)) {
+
+    Object.assign(metadata, extractObjectMetadata(item.metadata));
+
+  }
+
+  return {
+
+    record_id: String(rawId),
+
+    chunk_id: item.chunk_id ? String(item.chunk_id) : (item.id ? String(item.id) : ""),
+
+    filename: sourceName,
+
+    source_file: sourceName,
+
+    source_kind: item.source_kind || metadata.source_kind || "JSON",
+
+    page_num: item.page_num ?? null,
+
+    text,
+
+    metadata
+
+  };
+
+}
+
+function extractStructuredJsonRecords(payload, file) {
+
+  const candidates = Array.isArray(payload)
+
+    ? payload
+
+    : Array.isArray(payload?.chunks)
+
+      ? payload.chunks
+
+      : Array.isArray(payload?.records)
+
+        ? payload.records
+
+        : Array.isArray(payload?.documents)
+
+          ? payload.documents
+
+          : [];
+
+  if (!candidates.length) return [];
+
+  return candidates
+
+    .map((item, index) => recordFromStructuredJsonItem(item, file, index))
+
+    .filter(Boolean);
+
+}
+
+
+
+function tokenize(text) {
+
+  return normalizeText(text).toLowerCase().match(/[\p{L}\p{N}_-]+/gu) || [];
+
+}
+
+
+
+function cjkNgrams(text, min = 2, max = 4) {
+
+  const chars = normalizeText(text).replace(/[^\u3400-\u9FFF]/g, "");
+
+  const grams = [];
+
+  for (let size = min; size <= max; size += 1) {
+
+    for (let index = 0; index <= chars.length - size; index += 1) {
+
+      grams.push(chars.slice(index, index + size));
+
+    }
+
+  }
+
+  return grams;
+
+}
+
+
+
+function estimateTokens(text) {
+
+  return Math.max(1, Math.round(normalizeText(text).length / 1.7));
+
+}
+
+
+
+function simpleHash(input) {
+
+  let hash = 2166136261;
+
+  for (let index = 0; index < input.length; index += 1) {
+
+    hash ^= input.charCodeAt(index);
+
+    hash = Math.imul(hash, 16777619);
+
+  }
+
+  return hash >>> 0;
+
+}
+
+
+
+function createEmbedding(text, dimension = ENGINE_DEFAULTS.dimension) {
+
+  const vector = new Float32Array(dimension);
+
+  const tokens = tokenize(text);
+
+  if (!tokens.length) return vector;
+
+  for (const token of tokens) {
+
+    const hash = simpleHash(token);
+
+    const index = hash % dimension;
+
+    const sign = ((hash >>> 1) & 1) === 0 ? 1 : -1;
+
+    const weight = 1 + Math.min(token.length, 8) / 8;
+
+    vector[index] += sign * weight;
+
+  }
+
+  let norm = 0;
+
+  for (const value of vector) norm += value * value;
+
+  norm = Math.sqrt(norm);
+
+  if (!norm) return vector;
+
+  for (let index = 0; index < vector.length; index += 1) {
+
+    vector[index] /= norm;
+
+  }
+
+  return vector;
+
+}
+
+
+
+function cosineSimilarity(a, b) {
+
+  let dot = 0;
+
+  let normA = 0;
+
+  let normB = 0;
+
+  const size = Math.min(a.length, b.length);
+
+  for (let index = 0; index < size; index += 1) {
+
+    dot += a[index] * b[index];
+
+    normA += a[index] * a[index];
+
+    normB += b[index] * b[index];
+
+  }
+
+  const denom = Math.sqrt(normA) * Math.sqrt(normB) || 1;
+
+  return dot / denom;
+
+}
+
+
+
+function relativePathOf(file) {
+
+  return file.webkitRelativePath || file.__relativePath || file.relativePath || file.name;
+
+}
+
+
+
+function fileExtension(name) {
+
+  const parts = String(name || "").toLowerCase().split(".");
+
+  return parts.length > 1 ? parts.pop() : "";
+
+}
+
+
+
+function splitTextWithOverlap(text, chunkSize = ENGINE_DEFAULTS.chunkSize, overlap = ENGINE_DEFAULTS.overlap) {
+
+  const cleaned = normalizeText(text);
+
+  if (!cleaned) return [];
+
+  if (cleaned.length <= chunkSize) return [cleaned];
+
+  const markers = ["\n\n", "\n", "。", "；", "，", "、", ";", ".", ",", " "];
+
+  const output = [];
+
+  let start = 0;
+
+  while (start < cleaned.length) {
+
+    const maxEnd = Math.min(cleaned.length, start + chunkSize);
+
+    let end = maxEnd;
+
+    if (maxEnd < cleaned.length) {
+
+      const minEnd = Math.min(maxEnd, start + Math.max(Math.floor(chunkSize / 2), chunkSize - overlap));
+
+      let best = -1;
+
+      for (const marker of markers) {
+
+        const idx = cleaned.lastIndexOf(marker, maxEnd);
+
+        if (idx >= minEnd) best = Math.max(best, idx + marker.length);
+
+      }
+
+      if (best > start) end = best;
+
+    }
+
+    const piece = cleaned.slice(start, end).trim();
+
+    if (piece) output.push(piece);
+
+    if (end >= cleaned.length) break;
+
+    start = Math.max(start + 1, end - overlap);
+
+    while (/\s/.test(cleaned[start] || "")) start += 1;
+
+  }
+
+  return output;
+
+}
+
+
+
+function parseTabularText(text, delimiter) {
+
+  const parsed = globalThis.Papa?.parse(text, { delimiter, skipEmptyLines: true })?.data || [];
+
+  if (!parsed.length) return "";
+
+  const header = parsed[0];
+
+  const rows = parsed.slice(1).map((row, rowIndex) => {
+
+    const pairs = row.map((cell, index) => `${header[index] || `字段 ${index + 1}`}: ${normalizeText(cell)}`).join(" | ");
+
+    return `第 ${rowIndex + 1} 行 · ${pairs}`;
+
+  });
+
+  return normalizeText([`字段: ${header.join(" | ")}`, ...rows].join("\n\n"));
+
+}
+
+
+
+// ── Render a single PDF page to a canvas for OCR ──
+
+async function _renderPdfPageToCanvas(page, scale = 2.0) {
+
+  const viewport = page.getViewport({ scale });
+
+  const canvas = document.createElement("canvas");
+
+  canvas.width = viewport.width;
+
+  canvas.height = viewport.height;
+
+  const ctx = canvas.getContext("2d");
+
+  await page.render({ canvasContext: ctx, viewport }).promise;
+
+  return canvas;
+
+}
+
+
+
+// ── Local OCR server detection (multi-engine backend) ──
+
+let _localOcrAvailable = null; // null = unchecked, true/false
+
+const LOCAL_OCR_URL = "http://127.0.0.1:8765";
+
+let _localOcrConcurrency = 1;
+
+let _localOcrEngines = [];  // ['rapidocr', 'tesseract']
+
+let _localOcrHasRapid = false;
+
+let _localOcrHasTesseract = false;
+
+
+
+async function _checkLocalOcr() {
+
+  if (_localOcrAvailable !== null) return _localOcrAvailable;
+
+  try {
+
+    const resp = await fetch(`${LOCAL_OCR_URL}/health`, { signal: AbortSignal.timeout(2000) });
+
+    const data = await resp.json();
+
+    _localOcrAvailable = data.status === "ok";
+
+    _localOcrConcurrency = data.concurrency || 1;
+
+    _localOcrEngines = data.engines || [];
+
+    _localOcrHasRapid = data.rapidocr === true || _localOcrEngines.includes('rapidocr');
+
+    _localOcrHasTesseract = data.tesseract === true || _localOcrEngines.includes('tesseract');
+
+    if (_localOcrAvailable) {
+
+      console.log(`[OCR] local OCR server available; engines=${_localOcrEngines.join('+')}, concurrency=${_localOcrConcurrency}, cpu=${data.cpu_cores || '?'}`);
+
+    }
+
+  } catch {
+
+    _localOcrAvailable = false;
+
+    _localOcrEngines = [];
+
+    _localOcrHasRapid = false;
+
+    _localOcrHasTesseract = false;
+
+    console.log("[OCR] 本地 OCR 服务器未启动，将使用浏览器端 ppu-paddle-ocr");
+
+  }
+
+  return _localOcrAvailable;
+
+}
+
+
+
+// OCR processing flow.
+
+async function _ocrPdfViaServer(file, progressCallback, engineName) {
+
+  const pdfBuf = await file.arrayBuffer();
+
+  const engineParam = engineName ? `?engine=${engineName}` : '';
+
+
+
+  // OCR processing flow.
+
+  const startResp = await fetch(`${LOCAL_OCR_URL}/ocr/pdf/start${engineParam}`, {
+
+    method: "POST",
+
+    headers: { "Content-Type": "application/octet-stream" },
+
+    body: pdfBuf
+
+  });
+
+  if (!startResp.ok) throw new Error(`OCR 上传失败: ${startResp.status}`);
+
+  const startData = await startResp.json();
+
+  if (startData.error) throw new Error(startData.error);
+
+
+
+  const { session_id, total_pages, concurrency } = startData;
+
+  const serverEngine = startData.engine || engineName || 'RapidOCR';
+
+  console.log(`[OCR] 开始 session=${session_id}, ${total_pages} 页, 引擎=${serverEngine}, ${concurrency}x 并发`);
+
+  if (progressCallback) progressCallback({ phase: "started", done: 0, total: total_pages, concurrency, engine: serverEngine });
+
+
+
+  // 2) 轮询进度直到完成
+
+  let retries = 0;
+
+  while (true) {
+
+    await new Promise(r => setTimeout(r, 1000));
+
+
+
+    let progResp;
+
+    try {
+
+      progResp = await fetch(`${LOCAL_OCR_URL}/ocr/pdf/progress?session=${session_id}`);
+
+      retries = 0; // reset retries on success
+
+    } catch (e) {
+
+      retries++;
+
+      console.warn(`[OCR] 轮询异常 (尝试 ${retries}/5):`, e.message);
+
+      if (retries > 5) throw new Error(`OCR 服务器断开连接: ${e.message}`);
+
+      continue;
+
+    }
+
+
+
+    if (!progResp.ok) throw new Error(`服务器返回异常状态: ${progResp.status}`);
+
+    const prog = await progResp.json();
+
+    if (prog.error) throw new Error(prog.error);
+
+
+
+    if (progressCallback) progressCallback({ phase: "processing", ...prog });
+
+
+
+    if (prog.complete) {
+
+      console.log(`[OCR] 完成: ${total_pages} 页, 引擎=${serverEngine}, ${prog.elapsed_s}s, 置信度 ${(prog.avg_confidence*100).toFixed(0)}%`);
+
+      return prog;  // { full_text, pages, avg_confidence, elapsed_s, ... }
+
+    }
+
+  }
+
+}
+
+
+
+// ── Browser-side PaddleOCR (paddleocr v1.1.1 + PP-OCRv5 Chinese models) ──
+
+// Uses onnxruntime-web WASM backend + explicit Chinese detection/recognition models
+
+// Models & dictionary loaded from jsDelivr CDN (~4MB + ~12MB + dict)
+
+let _paddleOcrInstance = null;
+
+let _paddleOcrPromise = null;
+
+let _paddleOrtModule = null;
+
+
+
+// CDN URLs for PP-OCRv5 Chinese mobile models (from GitHub, npm pkg doesn't include assets)
+
+const _PADDLE_MODEL_BASE = "https://cdn.jsdelivr.net/gh/X3ZvaWQ/paddleocr.js@main/assets";
+
+const _PADDLE_DET_URL = `${_PADDLE_MODEL_BASE}/PP-OCRv5_mobile_det_infer.onnx`;   // ~4.6MB
+
+const _PADDLE_REC_URL = `${_PADDLE_MODEL_BASE}/PP-OCRv5_mobile_rec_infer.onnx`;   // ~15.8MB
+
+const _PADDLE_DICT_URL = `${_PADDLE_MODEL_BASE}/ppocrv5_dict.txt`;                // ~74KB, 18385 chars
+
+
+
+async function _loadPaddleOcr() {
+
+  if (_paddleOcrInstance) return _paddleOcrInstance;
+
+  if (_paddleOcrPromise) return _paddleOcrPromise;
+
+
+
+  _paddleOcrPromise = (async () => {
+
+    console.log("[OCR] 正在加载 PaddleOCR 中文识别引擎 (PP-OCRv5)...");
+
+    showToast("正在加载 PaddleOCR 中文引擎（首次约 30-60 秒下载模型）...", "success");
+
+
+
+    // 1. Load onnxruntime-web
+
+    if (!_paddleOrtModule) {
+
+      console.log("[OCR] 加载 onnxruntime-web...");
+
+      _paddleOrtModule = await import("https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.all.mjs");
+
+      // Use WASM backend (most compatible, no special headers needed)
+
+      _paddleOrtModule.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/";
+
+    }
+
+
+
+    // 2. Load paddleocr library
+
+    console.log("[OCR] 加载 paddleocr...");
+
+    const { PaddleOcrService } = await import("https://esm.sh/paddleocr@1.1.1");
+
+
+
+    // 3. Download Chinese models and dictionary in parallel
+
+    console.log("[OCR] 下载中文 PP-OCRv5 模型和字典...");
+
+    const [detBuf, recBuf, dictText] = await Promise.all([
+
+      fetch(_PADDLE_DET_URL).then(r => { if (!r.ok) throw new Error(`Det model: ${r.status}`); return r.arrayBuffer(); }),
+
+      fetch(_PADDLE_REC_URL).then(r => { if (!r.ok) throw new Error(`Rec model: ${r.status}`); return r.arrayBuffer(); }),
+
+      fetch(_PADDLE_DICT_URL).then(r => { if (!r.ok) throw new Error(`Dict: ${r.status}`); return r.text(); }),
+
+    ]);
+
+
+
+    // 4. Parse dictionary into string array
+
+    const dictArray = dictText.split("\n").filter(line => line.length > 0);
+
+    console.log(`[OCR] dictionary loaded: ${dictArray.length} entries`);
+
+
+
+    // 5. Initialize PaddleOCR with Chinese models
+
+    const ocr = await PaddleOcrService.createInstance({
+
+      ort: _paddleOrtModule,
+
+      detection: {
+
+        modelBuffer: detBuf,
+
+        minimumAreaThreshold: 24,
+
+        textPixelThreshold: 0.55,
+
+        paddingBoxVertical: 0.3,
+
+        paddingBoxHorizontal: 0.5,
+
+      },
+
+      recognition: {
+
+        modelBuffer: recBuf,
+
+        charactersDictionary: dictArray,
+
+        imageHeight: 48,
+
+      },
+
+    });
+
+
+
+    _paddleOcrInstance = ocr;
+
+    console.log("[OCR] PaddleOCR 中文引擎就绪 (PP-OCRv5 mobile, " + dictArray.length + " 字符字典)");
+
+    showToast("PaddleOCR 中文引擎就绪", "success");
+
+    return _paddleOcrInstance;
+
+  })();
+
+
+
+  return _paddleOcrPromise;
+
+}
+
+
+
+function _preloadPaddleOcr() {
+
+  _loadPaddleOcr().catch(e => {
+
+    console.warn("[OCR] PaddleOCR 预加载失败", e.message);
+
+    _paddleOcrPromise = null; // Allow retry
+
+  });
+
+}
+
+
+
+// ── OCR a single canvas via paddleocr browser engine (Chinese PP-OCRv5) ──
+
+async function _ocrViaPaddleJs(canvas) {
+
+  const ocr = await _loadPaddleOcr();
+
+
+
+  // Extract image data from canvas
+
+  const ctx = canvas.getContext("2d");
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+  const input = {
+
+    data: imageData.data,
+
+    width: canvas.width,
+
+    height: canvas.height,
+
+  };
+
+
+
+  // Run OCR with progress tracking
+
+  let lastText = "";
+
+  const result = await ocr.recognize(input, {
+
+    onProgress(event) {
+
+      if (event.type === "rec" && event.stage === "item" && event.result?.text) {
+
+        lastText = event.result.text;
+
+      }
+
+    },
+
+    ordering: { sortByReadingOrder: true },
+
+  });
+
+
+
+  // Process results
+
+  const processed = ocr.processRecognition(result, {
+
+    lineMergeThresholdRatio: 0.8,
+
+  });
+
+
+
+  const lines = processed?.lines || result?.lines || [];
+
+  const texts = lines.map(line => line.text || "");
+
+  const confs = lines.map(line => line.score ?? line.confidence ?? 0);
+
+  const avgConf = confs.length ? confs.reduce((a, b) => a + b, 0) / confs.length : 0;
+
+
+
+  return {
+
+    text: processed?.text || texts.join("\n"),
+
+    confidence: Math.round(avgConf * 100),
+
+    lines: texts.length,
+
+    engine: "PaddleOCR (PP-OCRv5 Chinese)"
+
+  };
+
+}
+
+
+
+// Baidu Cloud OCR configuration.
+
+// Uses Baidu's accurate_basic endpoint for high-precision Chinese OCR
+
+// API calls are proxied through local ocr_server.py to avoid CORS issues
+
+const _BAIDU_OCR_CONFIG = {
+
+  apiKey: "HFLj7zYStPUykkbP3G3FfR4b",
+
+  secretKey: "j3T7uDs8zxxyUaoBvKoFQd4sVrWnNegF",
+
+  tokenUrl: "https://aip.baidubce.com/oauth/2.0/token",
+
+  ocrUrl: "https://aip.baidubce.com/rest/2.0/ocr/v1/accurate_basic",
+
+  _cachedToken: null,
+
+  _tokenExpiry: 0,
+
+};
+
+
+
+async function _getBaiduAccessToken() {
+
+  const cfg = _BAIDU_OCR_CONFIG;
+
+  // Return cached token if still valid (30 day expiry, refresh 1 hour early)
+
+  if (cfg._cachedToken && Date.now() < cfg._tokenExpiry) {
+
+    return cfg._cachedToken;
+
+  }
+
+  const url = `${cfg.tokenUrl}?grant_type=client_credentials&client_id=${cfg.apiKey}&client_secret=${cfg.secretKey}`;
+
+
+
+  // Try via local proxy first (avoids CORS), then try direct
+
+  let resp;
+
+  try {
+
+    resp = await fetch(`http://127.0.0.1:8765/proxy?url=${encodeURIComponent(url)}`, { method: 'POST' });
+
+    if (!resp.ok) throw new Error('proxy failed');
+
+  } catch {
+
+    // Try direct (may fail due to CORS on file:// protocol)
+
+    resp = await fetch(url, { method: 'POST' });
+
+  }
+
+
+
+  const data = await resp.json();
+
+  if (data.error) throw new Error(`百度 Token 获取失败: ${data.error_description || data.error}`);
+
+  cfg._cachedToken = data.access_token;
+
+  cfg._tokenExpiry = Date.now() + (data.expires_in - 3600) * 1000; // refresh 1hr early
+
+  console.log("[OCR] 百度 access_token 获取成功, 有效期", Math.round(data.expires_in/3600), "小时");
+
+  return cfg._cachedToken;
+
+}
+
+
+
+async function _ocrViaBaiduCloud(canvas) {
+
+  // Convert canvas to base64 JPEG
+
+  const jpegDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+
+  const base64 = jpegDataUrl.split(",")[1]; // Remove "data:image/jpeg;base64," prefix
+
+
+
+  const token = await _getBaiduAccessToken();
+
+  const ocrUrl = `${_BAIDU_OCR_CONFIG.ocrUrl}?access_token=${token}`;
+
+  const body = `image=${encodeURIComponent(base64)}`;
+
+
+
+  // Try via local proxy first, then direct
+
+  let resp;
+
+  try {
+
+    resp = await fetch(`http://127.0.0.1:8765/proxy?url=${encodeURIComponent(ocrUrl)}`, {
+
+      method: 'POST',
+
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+
+      body: body
+
+    });
+
+    if (!resp.ok) throw new Error('proxy failed');
+
+  } catch {
+
+    resp = await fetch(ocrUrl, {
+
+      method: 'POST',
+
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+
+      body: body
+
+    });
+
+  }
+
+
+
+  const data = await resp.json();
+
+  if (data.error_code) {
+
+    throw new Error(`百度OCR错误 ${data.error_code}: ${data.error_msg}`);
+
+  }
+
+
+
+  const words = (data.words_result || []).map(w => w.words);
+
+  return {
+
+    text: words.join("\n"),
+
+    confidence: 95, // Baidu doesn't return per-word confidence in basic mode
+
+    lines: words.length,
+
+    engine: "百度云OCR (accurate_basic)"
+
+  };
+
+}
+
+
+
+// ── Real-time OCR text preview helpers ──
+
+// Updates the floating overlay's live text area with the latest recognized line
+
+function _updateOcrLiveText(ocrText, pageNum) {
+
+  const liveEl = document.getElementById("ocr-p-live");
+
+  if (!liveEl || !ocrText) return;
+
+  // Get the last non-empty line (most recently recognized)
+
+  const lines = ocrText.split("\n").filter(l => l.trim().length > 2);
+
+  if (!lines.length) return;
+
+  const lastLine = lines[lines.length - 1].trim();
+
+  // Show last 2 lines for context
+
+  const showLines = lines.slice(-2);
+
+  liveEl.innerHTML = showLines.map(line =>
+
+    `<div class="ocr-live-line"><span class="ocr-live-label">P${pageNum}</span>${_escLiveText(line)}</div>`
+
+  ).join("");
+
+  liveEl.scrollTop = liveEl.scrollHeight;
+
+}
+
+
+
+// Updates the inline per-file panel's live text area
+
+function _updateInlineLiveText(el, ocrText, pageNum) {
+
+  if (!el || !ocrText) return;
+
+  const lines = ocrText.split("\n").filter(l => l.trim().length > 2);
+
+  if (!lines.length) return;
+
+  const lastLine = lines[lines.length - 1].trim();
+
+  el.innerHTML = `<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:ocr-line-in 0.3s ease-out;"><span style="color:#4fc3f7;font-weight:600;margin-right:4px;font-size:9px;">P${pageNum}</span>${_escLiveText(lastLine)}</div>`;
+
+}
+
+
+
+// Escape HTML for live text display
+
+function _escLiveText(t) {
+
+  return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").slice(0, 120);
+
+}
+
+
+
+// PDF parse cache: avoid repeated OCR.
+
+const _pdfParseCache = new Map();
+
+
+
+async function parsePdfFile(file) {
+
+  // Cache key: name + size + lastModified to detect same file
+
+  const cacheKey = `${file.name}|${file.size}|${file.lastModified}`;
+
+  if (_pdfParseCache.has(cacheKey)) {
+
+    console.log(`[PDF] 使用缓存: ${file.name} (${_pdfParseCache.get(cacheKey).length} records)`);
+
+    return _pdfParseCache.get(cacheKey);
+
+  }
+
+
+
+  if (!globalThis.pdfjsLib) {
+
+    throw new Error("PDF.js is not loaded; cannot parse PDF in the browser.");
+
+  }
+
+  let pdf;
+
+  try {
+
+    const data = await file.arrayBuffer();
+
+    pdf = await globalThis.pdfjsLib.getDocument({ data }).promise;
+
+  } catch (loadErr) {
+
+    throw new Error(`PDF read failed: ${loadErr.message || "unknown format error"}. Confirm the file is not corrupted.`);
+
+  }
+
+
+
+  const records = [];
+
+  const ocrPages = [];  // pages that need OCR (scanned)
+
+  let totalChars = 0;
+
+
+
+  // ── Pass 1: try native text extraction ──
+
+  for (let pageIndex = 1; pageIndex <= pdf.numPages; pageIndex += 1) {
+
+    try {
+
+      const page = await pdf.getPage(pageIndex);
+
+      const textContent = await page.getTextContent();
+
+      const pageText = normalizeText(textContent.items.map((item) => item.str).join(" "));
+
+      if (pageText && pageText.length > 20) {
+
+        // Native text found.
+
+        totalChars += pageText.length;
+
+        records.push({
+
+          record_id: `${relativePathOf(file)}::page-${pageIndex}`,
+
+          filename: relativePathOf(file),
+
+          source_file: relativePathOf(file),
+
+          source_kind: "PDF",
+
+          page_num: pageIndex,
+
+          text: pageText
+
+        });
+
+      } else {
+
+        // No native text found; OCR is needed.
+
+        ocrPages.push({ pageIndex, page });
+
+      }
+
+    } catch { /* skip corrupt pages */ }
+
+  }
+
+
+
+  // ── Pass 2: OCR for scanned pages ──
+
+  if (ocrPages.length > 0) {
+
+    const useLocalOcr = await _checkLocalOcr();
+
+
+
+    // Determine OCR engine: local RapidOCR > ppu-paddle-ocr browser
+
+    let engineName, engineMode;
+
+    if (useLocalOcr) {
+
+      engineName = "RapidOCR (本地高精度)";
+
+      engineMode = "local";
+
+    } else {
+
+      engineName = "ppu-paddle-ocr (PP-OCRv5 浏览器端)";
+
+      engineMode = "paddle";
+
+    }
+
+
+
+    // ── Create persistent OCR progress bar ──
+
+    let ocrProgressEl = document.getElementById("ocr-progress-overlay");
+
+    if (!ocrProgressEl) {
+
+      ocrProgressEl = document.createElement("div");
+
+      ocrProgressEl.id = "ocr-progress-overlay";
+
+      ocrProgressEl.innerHTML = `
+
+        <style>
+
+          #ocr-progress-overlay {
+
+            position: fixed; bottom: 24px; right: 24px; z-index: 99999;
+
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+
+            border: 1px solid rgba(100,200,255,0.3);
+
+            border-radius: 16px; padding: 18px 24px; min-width: 380px;
+
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5); font-family: system-ui, sans-serif;
+
+            color: #e0e0e0; backdrop-filter: blur(12px);
+
+          }
+
+          #ocr-progress-overlay .ocr-title {
+
+            font-size: 14px; font-weight: 700; margin-bottom: 6px;
+
+            display: flex; align-items: center; gap: 8px;
+
+          }
+
+          #ocr-progress-overlay .ocr-engine {
+
+            font-size: 12px; color: #64b5f6; margin-bottom: 10px;
+
+          }
+
+          #ocr-progress-overlay .ocr-bar-bg {
+
+            background: rgba(255,255,255,0.1); border-radius: 8px;
+
+            height: 10px; overflow: hidden; margin-bottom: 8px;
+
+          }
+
+          #ocr-progress-overlay .ocr-bar-fill {
+
+            height: 100%; border-radius: 8px; transition: width 0.3s ease;
+
+            background: linear-gradient(90deg, #4fc3f7, #0288d1);
+
+          }
+
+          #ocr-progress-overlay .ocr-stats {
+
+            display: flex; justify-content: space-between; font-size: 12px; color: #90a4ae;
+
+          }
+
+          #ocr-progress-overlay .ocr-stats .conf { color: #81c784; font-weight: 600; }
+
+          #ocr-progress-overlay .ocr-spinner {
+
+            display: inline-block; width: 14px; height: 14px;
+
+            border: 2px solid rgba(100,200,255,0.3); border-top-color: #4fc3f7;
+
+            border-radius: 50%; animation: ocr-spin 0.8s linear infinite;
+
+          }
+
+          @keyframes ocr-spin { to { transform: rotate(360deg); } }
+
+          #ocr-progress-overlay .ocr-live-text {
+
+            margin-top: 10px; padding: 8px 10px; border-radius: 8px;
+
+            background: rgba(0,0,0,0.35); border: 1px solid rgba(100,200,255,0.12);
+
+            font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+
+            font-size: 11px; line-height: 1.6; color: #b0bec5;
+
+            max-height: 54px; overflow: hidden; position: relative;
+
+            transition: opacity 0.2s ease;
+
+          }
+
+          #ocr-progress-overlay .ocr-live-text::after {
+
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 18px;
+
+            background: linear-gradient(transparent, rgba(0,0,0,0.5));
+
+            pointer-events: none;
+
+          }
+
+          #ocr-progress-overlay .ocr-live-text .ocr-live-line {
+
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+
+            animation: ocr-line-in 0.3s ease-out;
+
+          }
+
+          #ocr-progress-overlay .ocr-live-text .ocr-live-label {
+
+            color: #4fc3f7; font-weight: 600; margin-right: 6px; font-size: 10px;
+
+          }
+
+          @keyframes ocr-line-in {
+
+            from { opacity: 0; transform: translateY(6px); }
+
+            to { opacity: 1; transform: translateY(0); }
+
+          }
+
+        </style>
+
+        <div class="ocr-title"><span class="ocr-spinner"></span><span id="ocr-p-title">OCR 处理中...</span></div>
+
+        <div class="ocr-engine" id="ocr-p-engine"></div>
+
+        <div class="ocr-bar-bg"><div class="ocr-bar-fill" id="ocr-p-bar" style="width:0%"></div></div>
+
+        <div class="ocr-stats">
+
+          <span id="ocr-p-pages">0/0 </span>
+
+          <span id="ocr-p-chars">0 字符</span>
+
+          <span>置信度 <span class="conf" id="ocr-p-conf">-</span></span>
+
+        </div>
+
+        <div class="ocr-live-text" id="ocr-p-live"><div class="ocr-live-line" style="color:#546e7a;font-style:italic;">等待识别结果...</div></div>
+
+      `;
+
+      document.body.appendChild(ocrProgressEl);
+
+    }
+
+    const pTitle = document.getElementById("ocr-p-title");
+
+    const pEngine = document.getElementById("ocr-p-engine");
+
+    const pBar = document.getElementById("ocr-p-bar");
+
+    const pPages = document.getElementById("ocr-p-pages");
+
+    const pChars = document.getElementById("ocr-p-chars");
+
+    const pConf = document.getElementById("ocr-p-conf");
+
+
+
+    pTitle.textContent = `OCR: ${relativePathOf(file)}`;
+
+    pEngine.textContent = `engine: ${engineName}` + (engineMode === "local" ? ` (${_localOcrConcurrency}x concurrency)` : "");
+
+    pPages.textContent = `0/${ocrPages.length} pages`;
+
+
+
+    const ocrReport = [];
+
+
+
+    if (engineMode === "local") {
+
+      // Cleaned comment.
+
+      // LOCAL MODE: 一键式全量并发 OCR
+
+      // OCR processing flow.
+
+      // Cleaned comment.
+
+      pEngine.textContent = `engine: ${engineName} - uploading PDF...`;
+
+
+
+      const result = await _ocrPdfViaServer(file, (prog) => {
+
+        // Cleaned comment.
+
+        if (prog.phase === "started") {
+
+          pEngine.textContent = `engine: ${engineName} (${prog.concurrency}x concurrency)`;
+
+        }
+
+        const pct = prog.pct || 0;
+
+        const done = prog.done || 0;
+
+        const total = prog.total || ocrPages.length;
+
+        pBar.style.width = `${pct}%`;
+
+        pPages.textContent = `${done}/${total} 页 (${pct}%)`;
+
+        // Cleaned comment.
+
+        const liveEl = document.getElementById("ocr-p-live");
+
+        if (liveEl && !prog.complete && done > 0) {
+
+          if (prog.latest_text) {
+
+            // Cleaned comment.
+
+            liveEl.innerHTML = `<div class="ocr-live-line"><span class="ocr-live-label">P${prog.latest_page || '?'}</span>${_escLiveText(prog.latest_text)}</div>`;
+
+          } else {
+
+            liveEl.innerHTML = `<div class="ocr-live-line"><span class="ocr-live-label"></span>服务器并发处理中... 已完成 ${done}/${total}</div>`;
+
+          }
+
+        }
+
+        if (prog.complete) {
+
+          const chars = (prog.full_text || "").length;
+
+          pChars.textContent = `${chars.toLocaleString()} 字符`;
+
+          const c = Math.round((prog.avg_confidence || 0) * 100);
+
+          pConf.textContent = `${c}%`;
+
+          pConf.style.color = c >= 80 ? "#81c784" : c >= 60 ? "#ffb74d" : "#ef5350";
+
+          // Cleaned comment.
+
+          if (liveEl && prog.full_text) {
+
+            const previewLines = prog.full_text.split("\n").filter(l => l.trim().length > 2).slice(-2);
+
+            liveEl.innerHTML = previewLines.map(line =>
+
+              `<div class="ocr-live-line"><span class="ocr-live-label"></span>${_escLiveText(line)}</div>`
+
+            ).join("");
+
+          }
+
+        }
+
+      });
+
+
+
+      // Cleaned comment.
+
+      const fullText = result.full_text || "";
+
+      const avgConf = Math.round((result.avg_confidence || 0) * 100);
+
+
+
+      // Cleaned comment.
+
+      if (result.pages) {
+
+        for (const pg of result.pages) {
+
+          ocrReport.push({
+
+            page: pg.page, confidence: Math.round((pg.confidence || 0) * 100),
+
+            chars: pg.chars || 0, lines: pg.lines || 0, engine: pg.engine || engineName
+
+          });
+
+        }
+
+      }
+
+
+
+      // OCR processing flow.
+
+      if (fullText.length > 10) {
+
+        totalChars += fullText.length;
+
+        records.push({
+
+          record_id: `${relativePathOf(file)}::ocr-full`,
+
+          filename: relativePathOf(file),
+
+          source_file: relativePathOf(file),
+
+          source_kind: "PDF-OCR",
+
+          page_num: 0,
+
+          ocr_confidence: avgConf,
+
+          ocr_engine: engineName,
+
+          text: normalizeText(fullText)
+
+        });
+
+      }
+
+
+
+    } else {
+
+      // Cleaned comment.
+
+      // BROWSER MODE: 逐页 OCR (ppu-paddle-ocr)
+
+      // Cleaned comment.
+
+      let doneCount = 0;
+
+      let runningChars = 0;
+
+      let runningConfSum = 0;
+
+
+
+      for (let i = 0; i < ocrPages.length; i++) {
+
+        const { pageIndex, page } = ocrPages[i];
+
+        try {
+
+          let ocr;
+
+          const canvas = await _renderPdfPageToCanvas(page, 2.0);
+
+          try {
+
+            ocr = await _ocrViaPaddleJs(canvas);
+
+          } catch (paddleErr) {
+
+            console.warn("[OCR] ppu-paddle-ocr failed:", paddleErr.message);
+
+            // 不降级到 Tesseract.js（中文识别率 <5%，产生乱码）
+
+            // OCR processing flow.
+
+            showToast("Browser OCR failed. Start the local RapidOCR service for better recognition.", "warning");
+
+            throw new Error(`Browser OCR engine failed: ${paddleErr.message}. Start the local OCR server with python ocr_server.py.`);
+
+          }
+
+
+
+          const ocrText = normalizeText(ocr.text || "");
+
+          runningChars += ocrText.length;
+
+          runningConfSum += (ocr.confidence || 0);
+
+          doneCount++;
+
+
+
+          ocrReport.push({
+
+            page: pageIndex, confidence: ocr.confidence || 0,
+
+            chars: ocrText.length, lines: ocr.lines || 0, engine: ocr.engine || engineName
+
+          });
+
+
+
+          // 实时显示识别到的文字
+
+          _updateOcrLiveText(ocrText, pageIndex);
+
+
+
+          if (ocrText && ocrText.length > 10) {
+
+            totalChars += ocrText.length;
+
+            records.push({
+
+              record_id: `${relativePathOf(file)}::ocr-page-${pageIndex}`,
+
+              filename: relativePathOf(file),
+
+              source_file: relativePathOf(file),
+
+              source_kind: "PDF-OCR",
+
+              page_num: pageIndex,
+
+              ocr_confidence: ocr.confidence || 0,
+
+              ocr_engine: ocr.engine || engineName,
+
+              text: ocrText
+
+            });
+
+          }
+
+        } catch (err) {
+
+          ocrReport.push({ page: pageIndex, confidence: 0, chars: 0, error: err.message });
+
+          doneCount++;
+
+        }
+
+
+
+        // 更新进度
+
+        const pct = Math.round((doneCount / ocrPages.length) * 100);
+
+        const avgC = doneCount ? Math.round(runningConfSum / doneCount) : 0;
+
+        pBar.style.width = `${pct}%`;
+
+        pPages.textContent = `${doneCount}/${ocrPages.length} 页 (${pct}%)`;
+
+        pChars.textContent = `${runningChars.toLocaleString()} 字符`;
+
+        pConf.textContent = `${avgC}%`;
+
+        pConf.style.color = avgC >= 80 ? "#81c784" : avgC >= 60 ? "#ffb74d" : "#ef5350";
+
+      }
+
+    }
+
+
+
+    // ── OCR Quality Report ──
+
+    const avgConf = ocrReport.length
+
+      ? Math.round(ocrReport.reduce((s, r) => s + r.confidence, 0) / ocrReport.length)
+
+      : 0;
+
+    const totalOcrChars = ocrReport.reduce((s, r) => s + r.chars, 0);
+
+    const failedPages = ocrReport.filter(r => r.chars < 10).length;
+
+
+
+    let qualityLevel, qualityEmoji;
+
+    if (avgConf >= 80) { qualityLevel = "excellent"; qualityEmoji = "OK"; }
+
+    else if (avgConf >= 60) { qualityLevel = "good"; qualityEmoji = "OK"; }
+
+    else if (avgConf >= 40) { qualityLevel = "fair"; qualityEmoji = "WARN"; }
+
+    else { qualityLevel = "poor"; qualityEmoji = "LOW"; }
+
+
+
+    // Cleaned comment.
+
+    pTitle.innerHTML = `${qualityEmoji} OCR complete`;
+
+    pBar.style.width = "100%";
+
+    pBar.style.background = avgConf >= 80 ? "linear-gradient(90deg, #66bb6a, #43a047)" :
+
+                             avgConf >= 60 ? "linear-gradient(90deg, #ffa726, #ef6c00)" :
+
+                             "linear-gradient(90deg, #ef5350, #c62828)";
+
+    pEngine.textContent = `engine: ${engineName}`;
+
+    pEngine.style.color = avgConf >= 80 ? "#81c784" : "#ffb74d";
+
+    pConf.textContent = `${avgConf}% (${qualityLevel})`;
+
+
+
+    const reportMsg = [
+
+      `${qualityEmoji} OCR complete: ${relativePathOf(file)}`,
+
+      `  engine: ${engineName}`,
+
+      `  average confidence: ${avgConf}% (${qualityLevel})`,
+
+      `  recognized pages: ${ocrReport.length - failedPages}/${ocrPages.length}`,
+
+      `  total characters: ${totalOcrChars.toLocaleString()}`,
+
+      failedPages ? `  ${failedPages} pages failed or had too little content` : ""
+
+    ].filter(Boolean).join("\n");
+
+
+
+    console.log("[OCR Report]", reportMsg);
+
+    showToast(reportMsg, avgConf >= 60 ? "success" : "warning");
+
+
+
+    setTimeout(() => {
+
+      if (ocrProgressEl && ocrProgressEl.parentNode) {
+
+        ocrProgressEl.style.transition = "opacity 0.5s";
+
+        ocrProgressEl.style.opacity = "0";
+
+        setTimeout(() => ocrProgressEl.remove(), 500);
+
+      }
+
+    }, 8000);
+
+
+
+    if (!window._ocrReports) window._ocrReports = [];
+
+    window._ocrReports.push({
+
+      file: relativePathOf(file), pages: ocrReport,
+
+      avgConfidence: avgConf, quality: qualityLevel, engine: engineName
+
+    });
+
+  }
+
+
+
+  if (!records.length) {
+
+    records.push({
+
+      record_id: `${relativePathOf(file)}::pdf-empty`,
+
+      filename: relativePathOf(file),
+
+      source_file: relativePathOf(file),
+
+      source_kind: "PDF",
+
+      page_num: null,
+
+      text: `[empty PDF] ${relativePathOf(file)}, ${pdf.numPages} pages, no text content extracted.`,
+
+    });
+
+  }
+
+
+
+  // Cache the results so subsequent calls (e.g. KG build) don't re-OCR
+
+  _pdfParseCache.set(cacheKey, records);
+
+  console.log(`[PDF] 缓存已保存 ${file.name} · ${records.length} records`);
+
+
+
+  return records;
+
+}
+
+
+
+async function parseDocxFile(file) {
+
+  const arrayBuffer = await file.arrayBuffer();
+
+  let raw = "";
+
+  if (globalThis.mammoth?.extractRawText) {
+
+    raw = (await globalThis.mammoth.extractRawText({ arrayBuffer })).value || "";
+
+  } else if (globalThis.mammoth?.convertToHtml) {
+
+    raw = (await globalThis.mammoth.convertToHtml({ arrayBuffer })).value || "";
+
+  }
+
+  const text = normalizeText(raw.replace(/<[^>]+>/g, " "));
+
+  if (!text) throw new Error("DOCX 未提取到可用文本");
+
+  return [{
+
+    record_id: `${relativePathOf(file)}::doc`,
+
+    filename: relativePathOf(file),
+
+    source_file: relativePathOf(file),
+
+    source_kind: "DOCX",
+
+    page_num: null,
+
+    text
+
+  }];
+
+}
+
+
+
+async function parseJsonFile(file) {
+
+  const payload = await parseJsonWithEncodingFallback(file);
+
+  const structuredRecords = extractStructuredJsonRecords(payload, file);
+
+  if (structuredRecords.length) return structuredRecords;
+
+  const text = normalizeText(extractJsonTextLines(payload).join("\n\n"));
+
+  if (!text) throw new Error("JSON 未提取到可用文本");
+
+  return [{
+
+    record_id: `${relativePathOf(file)}::json`,
+
+    filename: relativePathOf(file),
+
+    source_file: relativePathOf(file),
+
+    source_kind: "JSON",
+
+    page_num: null,
+
+    text
+
+  }];
+
+}
+
+
+
+async function parseTextLikeFile(file) {
+
+  const text = normalizeText(await readFileTextSafely(file));
+
+  if (!text) throw new Error("文本文件为空");
+
+  return [{
+
+    record_id: `${relativePathOf(file)}::text`,
+
+    filename: relativePathOf(file),
+
+    source_file: relativePathOf(file),
+
+    source_kind: sourceKindFromName(relativePathOf(file)),
+
+    page_num: null,
+
+    text
+
+  }];
+
+}
+
+
+
+async function parseTabularFile(file, delimiter) {
+
+  const text = parseTabularText(await readFileTextSafely(file), delimiter);
+
+  if (!text) throw new Error("表格文件为空");
+
+  return [{
+
+    record_id: `${relativePathOf(file)}::table`,
+
+    filename: relativePathOf(file),
+
+    source_file: relativePathOf(file),
+
+    source_kind: sourceKindFromName(relativePathOf(file)),
+
+    page_num: null,
+
+    text
+
+  }];
+
+}
+
+
+
+async function parseFileRecords(file) {
+
+  const ext = fileExtension(relativePathOf(file));
+
+  if (ext === "pdf") return parsePdfFile(file);
+
+  if (ext === "docx") return parseDocxFile(file);
+
+  if (ext === "json") return parseJsonFile(file);
+
+  if (ext === "csv") return parseTabularFile(file, ",");
+
+  if (ext === "tsv") return parseTabularFile(file, "\t");
+
+  return parseTextLikeFile(file);
+
+}
+
+
+
+function metadataFromRecord(record) {
+
+  const metadata = {};
+
+  if (record?.metadata && typeof record.metadata === "object" && !Array.isArray(record.metadata)) {
+
+    Object.assign(metadata, extractObjectMetadata(record.metadata));
+
+  }
+
+  if (record && typeof record === "object") {
+
+    Object.assign(metadata, extractObjectMetadata(record, new Set(["text", "vector", "tokens", "normalizedText", "metadata"])));
+
+  }
+
+  return metadata;
+
+}
+
+function chunkFromRecordPiece(record, piece, index, pieceCount) {
+
+  const metadata = {
+
+    ...metadataFromRecord(record),
+
+    source_file: record.source_file,
+
+    filename: record.filename,
+
+    source_kind: record.source_kind,
+
+    page_num: record.page_num,
+
+    record_id: record.record_id,
+
+    source_chunk_id: record.chunk_id || "",
+
+    chunk_index: index,
+
+    char_count: piece.length,
+
+    estimated_tokens: estimateTokens(piece)
+
+  };
+
+  const chunkId = record.chunk_id && pieceCount === 1
+
+    ? String(record.chunk_id)
+
+    : `${record.record_id}::${index}`;
+
+  metadata.chunk_id = chunkId;
+
+  return {
+
+    chunk_id: chunkId,
+
+    text: piece,
+
+    vector: createEmbedding(piece),
+
+    tokens: Array.from(new Set(tokenize(piece))),
+
+    normalizedText: piece.toLowerCase(),
+
+    metadata
+
+  };
+
+}
+
+function estimateChunkTotal(records) {
+
+  const chars = (records || []).reduce((sum, record) => sum + String(record?.text || "").length, 0);
+
+  const stride = Math.max(1, ENGINE_DEFAULTS.chunkSize - ENGINE_DEFAULTS.overlap);
+
+  return Math.max(1, Math.ceil(chars / stride));
+
+}
+
+function makeChunks(records) {
+
+  const chunks = [];
+
+  records.forEach((record) => {
+
+    const pieces = splitTextWithOverlap(record.text);
+
+    pieces.forEach((piece, index) => {
+
+      chunks.push(chunkFromRecordPiece(record, piece, index, pieces.length));
+
+    });
+
+  });
+
+  return chunks;
+
+}
+
+async function makeChunksProgressive(records, options = {}) {
+
+  const chunks = [];
+
+  const estimatedChunks = estimateChunkTotal(records);
+
+  const startedAt = performance.now();
+
+  let lastYieldAt = startedAt;
+
+  let lastReportAt = startedAt;
+
+  const reportEveryMs = Number(options.reportEveryMs || 100);
+
+  const onProgress = typeof options.onProgress === "function" ? options.onProgress : null;
+
+  for (let recordIndex = 0; recordIndex < records.length; recordIndex += 1) {
+
+    const record = records[recordIndex];
+
+    const pieces = splitTextWithOverlap(record.text);
+
+    for (let pieceIndex = 0; pieceIndex < pieces.length; pieceIndex += 1) {
+
+      chunks.push(chunkFromRecordPiece(record, pieces[pieceIndex], pieceIndex, pieces.length));
+
+      const now = performance.now();
+
+      if (now - lastReportAt >= reportEveryMs && onProgress) {
+
+        onProgress({
+
+          recordsProcessed: recordIndex + 1,
+
+          recordsTotal: records.length,
+
+          chunksCreated: chunks.length,
+
+          estimatedChunks,
+
+          currentFile: record.filename || record.source_file || "",
+
+          elapsedMs: now - startedAt
+
+        });
+
+        lastReportAt = now;
+
+      }
+
+      if (now - lastYieldAt >= reportEveryMs) {
+
+        await yieldToUi();
+
+        lastYieldAt = performance.now();
+
+      }
+
+    }
+
+  }
+
+  if (onProgress) {
+
+    onProgress({
+
+      recordsProcessed: records.length,
+
+      recordsTotal: records.length,
+
+      chunksCreated: chunks.length,
+
+      estimatedChunks,
+
+      currentFile: records.at(-1)?.filename || records.at(-1)?.source_file || "",
+
+      elapsedMs: performance.now() - startedAt
+
+    });
+
+  }
+
+  return chunks;
+
+}
+
+
+
+function buildQualityReport(records, chunks) {
+
+  const docs = records.map((record, index) => {
+
+    const shortBlocks = splitTextWithOverlap(record.text, 40, 0).filter((item) => item.length < 5).length;
+
+    return {
+
+      doc_id: index + 1,
+
+      filenames: [record.filename],
+
+      block_count: splitTextWithOverlap(record.text, 160, 0).length,
+
+      short_blocks: shortBlocks
+
+    };
+
+  });
+
+  const issues = docs.filter((item) => item.short_blocks > 0).map((item) => `文档 ${item.doc_id}: ${item.short_blocks} 个极短文本块（少于 5 个字符）`);
+
+  return {
+
+    documents: docs,
+
+    chunks: {
+
+      total_chunks: chunks.length,
+
+      avg_length: chunks.length ? Math.round(chunks.reduce((sum, chunk) => sum + chunk.text.length, 0) / chunks.length) : 0,
+
+      min_length: chunks.length ? Math.min(...chunks.map((chunk) => chunk.text.length)) : 0,
+
+      max_length: chunks.length ? Math.max(...chunks.map((chunk) => chunk.text.length)) : 0
+
+    },
+
+    issues,
+
+    issue_count: issues.length
+
+  };
+
+}
+
+
+
+function dedupeFiles(files) {
+
+  const seen = new Set();
+
+  return files.filter((file) => {
+
+    const key = `${relativePathOf(file)}__${file.size}__${file.lastModified}`;
+
+    if (seen.has(key)) return false;
+
+    seen.add(key);
+
+    return true;
+
+  });
+
+}
+
+
+
+function walkEntry(entry, prefix = "") {
+
+  return new Promise((resolve) => {
+
+    if (!entry) {
+
+      resolve([]);
+
+      return;
+
+    }
+
+    if (entry.isFile) {
+
+      entry.file((file) => {
+
+        file.__relativePath = `${prefix}${file.name}`;
+
+        resolve([file]);
+
+      }, () => resolve([]));
+
+      return;
+
+    }
+
+    if (!entry.isDirectory) {
+
+      resolve([]);
+
+      return;
+
+    }
+
+    const reader = entry.createReader();
+
+    const collected = [];
+
+    const basePrefix = `${prefix}${entry.name}/`;
+
+    const readBatch = () => {
+
+      reader.readEntries(async (entries) => {
+
+        if (!entries.length) {
+
+          const nested = await Promise.all(collected.map((child) => walkEntry(child, basePrefix)));
+
+          resolve(nested.flat());
+
+          return;
+
+        }
+
+        collected.push(...entries);
+
+        readBatch();
+
+      }, () => resolve([]));
+
+    };
+
+    readBatch();
+
+  });
+
+}
+
+
+
+async function filesFromDrop(dataTransfer) {
+
+  const items = Array.from(dataTransfer?.items || []);
+
+  const supportsEntries = items.some((item) => typeof item.webkitGetAsEntry === "function");
+
+  if (supportsEntries) {
+
+    const entries = items.map((item) => item.webkitGetAsEntry()).filter(Boolean);
+
+    const nested = await Promise.all(entries.map((entry) => walkEntry(entry)));
+
+    return dedupeFiles(nested.flat());
+
+  }
+
+  return dedupeFiles(Array.from(dataTransfer?.files || []));
+
+}
+
+
+
+
+
+function cloneDefaultStats() { return typeof structuredClone === "function" ? structuredClone(DEFAULT_STATS) : JSON.parse(JSON.stringify(DEFAULT_STATS)); }
+
+function clonePublicDemoStats() { return cloneDefaultStats(); }
+
+function sourceKindFromName(name) { const ext = fileExtension(name); if (["json", "ipynb"].includes(ext)) return "JSON"; if (ext === "pdf") return "PDF"; if (ext === "docx") return "DOCX"; if (ext === "md" || ext === "markdown") return "Markdown"; if (ext === "csv") return "CSV"; if (ext === "tsv") return "TSV"; if (ext === "log") return "Log"; if (CODE_EXTENSIONS.has(ext)) return "Code"; return "Text"; }
+
+function purgeLocalVectorsByFilename(filenames) { const selected = new Set((filenames || []).filter(Boolean)); if (!selected.size) return; state.records = state.records.filter((record) => !selected.has(record.stored_filename)); state.chunks = state.chunks.filter((chunk) => !selected.has(chunk.metadata?.stored_filename)); state.lastSearch = null; }
+
+function buildLocalStats() { if (!state.chunks.length) return cloneDefaultStats(); const byKind = {}; state.chunks.forEach((chunk) => { const kind = chunk.metadata?.source_kind || "Other"; byKind[kind] = (byKind[kind] || 0) + 1; }); const totalTokens = state.chunks.reduce((sum, chunk) => sum + Number(chunk.metadata?.estimated_tokens || 0), 0); const totalChars = state.chunks.reduce((sum, chunk) => sum + Number(chunk.text?.length || 0), 0); const storageBytes = state.uploads.reduce((sum, item) => sum + Number(item.file?.size || 0), 0) + state.chunks.reduce((sum, chunk) => sum + Number(chunk.text?.length || 0) * 2 + Number(chunk.vector?.byteLength || 0), 0); const sources = getProcessedUploads().map((item) => item.display_name || item.filename); const localCollection = cleanCollectionName(state.primaryCollection) || readRememberedActiveCollection() || LOCAL_COLLECTION_NAME; return { status: "ok", collections: [{ name: localCollection, count: state.chunks.length, estimated_tokens: totalTokens, estimated_chars: totalChars, source_type_counts: byKind, sources }], total_documents: state.records.length, total_tokens_estimate: totalTokens, storage_size_mb: Number((storageBytes / (1024 * 1024)).toFixed(3)), embedding_dim: ENGINE_DEFAULTS.dimension, source_type_breakdown: byKind }; }
+
+
+
+function buildPublicDemoUploads() { return []; }
+
+function buildPublicDemoProcessResult() { return null; }
+
+function activatePublicDemoSnapshot() {
+
+  state.publicDemo = false;
+
+  return false;
+
+}
+
+function activateDemoSnapshotForEmptyLocalIndex() { return false; }
+
+async function refreshPublicDemoStats() {
+
+  state.publicDemo = false;
+
+  await refreshLocalStats();
+
+}
+function buildLocalUploadItem(file) {
+
+  const displayName = relativePathOf(file);
+
+  const now = Math.floor(Date.now() / 1000);
+
+  return {
+
+    file,
+
+    filename: displayName.split("\\").join("/").split("/").join("__"),
+
+    display_name: displayName,
+
+    size_kb: Number((file.size / 1024).toFixed(1)),
+
+    modified: Math.floor((file.lastModified || Date.now()) / 1000),
+
+    uploaded_at: now,
+
+    processed_at: null,
+
+    source_kind: sourceKindFromName(displayName),
+
+    status: "uploaded",
+
+    last_collection: null,
+
+    last_records: 0,
+
+    last_chunks: 0,
+
+    last_error: null,
+
+    last_log_file: null
+
+  };
+
+}
+
+
+
+function upsertUploadItem(item) { state.uploads = [item, ...(state.uploads || []).filter((entry) => entry.filename !== item.filename)]; }
+
+function refreshLocalUploadBuckets() { state.uploads = Array.isArray(state.uploads) ? state.uploads.slice().sort((a, b) => Number(b.uploaded_at || b.modified || 0) - Number(a.uploaded_at || a.modified || 0)) : []; state.pendingUploads = state.uploads.filter((item) => item.status !== "processed"); state.processedUploads = state.uploads.filter((item) => item.status === "processed"); syncUploadSelections(); }
+
+async function refreshLocalStats() { state.stats = buildLocalStats(); state.primaryCollection = choosePrimaryCollection(state.stats.collections); if (state.primaryCollection) { rememberActiveCollection(state.primaryCollection); syncActiveCollectionInputs(state.primaryCollection); } state.primaryStats = state.primaryCollection ? { record_count: state.records.length, chunk_count: state.chunks.length } : null; rememberTimeline("stats"); renderCollectionSpectrum(); renderCollectionList(); renderTrendChart(); renderSummaryMetrics(); }
+
+
+
+async function deleteLocalUpload(filename, options = {}) {
+
+  state.uploads = (state.uploads || []).filter((item) => item.filename !== filename);
+
+  if (options.purgeVectors) {
+
+    purgeLocalVectorsByFilename([filename]);
+
+    if (state.publicDemo) await refreshPublicDemoStats();
+
+    else await refreshLocalStats();
+
+  }
+
+  refreshLocalUploadBuckets();
+
+  renderUploads();
+
+  renderProcessedUploads();
+
+  renderProcessSummary();
+
+  renderPublicBooksJsonSummary();
+
+  renderQualityReport();
+
+  renderSearchResults();
+
+  const label = splitUploadPath(uploadDisplayName(filename)).file;
+
+  addActivity("success", options.purgeVectors ? "Processed file removed" : "Removed from upload directory", label);
+
+  showToast(options.purgeVectors ? `Removed ${label} and cleared local index.` : `Removed ${label}.`, "success");
+
+  void saveLocalWorkspaceSnapshot("upload-delete");
+
+}
+
+
+
+
+
+async function deleteLocalProcessedUploads(filenames) {
+
+  const selected = Array.from(new Set((filenames || []).filter(Boolean)));
+
+  if (!selected.length) {
+
+    showToast("请先选择已处理文件。", "warning");
+
+    return;
+
+  }
+
+  if (!window.confirm(`Delete ${selected.length} processed files and clear their local vectors?`)) return;
+
+  purgeLocalVectorsByFilename(selected);
+
+  state.uploads = (state.uploads || []).filter((item) => !selected.includes(item.filename));
+
+  state.selectedProcessedUploads.clear();
+
+  state.processedEditMode = false;
+
+  refreshLocalUploadBuckets();
+
+  if (state.publicDemo) await refreshPublicDemoStats();
+
+  else await refreshLocalStats();
+
+  renderProcessSummary();
+
+  renderQualityReport();
+
+  renderSearchResults();
+
+  addActivity("success", "Processed files removed", `Deleted ${selected.length} files and cleared local vectors.`);
+
+  showToast(`Deleted ${selected.length} processed files.`, "success");
+
+  void saveLocalWorkspaceSnapshot("processed-delete");
+
+}
+
+
+
+
+
+async function deleteLocalCollection(name) {
+
+  state.records = [];
+
+  state.chunks = [];
+
+  state.timeline = [];
+
+  state.lastProcess = null;
+
+  state.lastSearch = null;
+
+  state.expandedResults = new Set();
+
+  state.benchmark = null;
+
+  state.uploads = (state.uploads || []).map((item) => ({
+
+    ...item,
+
+    status: "uploaded",
+
+    processed_at: null,
+
+    last_collection: null,
+
+    last_records: 0,
+
+    last_chunks: 0,
+
+    last_error: null,
+
+    last_log_file: null
+
+  }));
+
+  refreshLocalUploadBuckets();
+
+  await refreshLocalStats();
+
+  renderProcessSummary();
+
+  renderQualityReport();
+
+  renderSearchResults();
+
+  renderBenchmark();
+
+  addActivity("warning", "Local index cleared", `${name} was removed from this browser session.`);
+
+  showToast("Local index cleared.", "warning");
+
+  void saveLocalWorkspaceSnapshot("collection-delete");
+
+}
+
+
+
+
+
+async function runLocalProcess() {
+
+  const selectedItems = getPendingUploads().filter((item) => state.selectedUploads.has(item.filename));
+
+  if (!selectedItems.length) {
+
+    showToast("Select files to process first.", "warning");
+
+    return;
+
+  }
+
+
+
+  // Show collection selection dialog
+
+  const collectionName = await openCollectionDialog();
+
+  if (!collectionName) return; // User cancelled
+
+
+
+  if (els.btnProcess) {
+
+    els.btnProcess.disabled = true;
+
+    els.btnProcess.dataset.busy = "true";
+
+  }
+
+  if (els.processFill) els.processFill.style.width = "18%";
+
+  if (els.processLog) renderEmpty(els.processLog, "Browser-local processing is running...");
+
+  const started = performance.now();
+
+  const fileSummaries = [];
+
+  const nextRecords = [];
+
+  const nextChunks = [];
+
+  const succeeded = [];
+
+  let failed = 0;
+
+  try {
+
+    addActivity("warning", "本地处理开始", `正在处理 ${selectedItems.length} 个已选文件 -> ${collectionName}。`);
+
+    for (let index = 0; index < selectedItems.length; index += 1) {
+
+      const item = selectedItems[index];
+
+      try {
+
+        const parsed = await parseFileRecords(item.file);
+
+        const records = parsed.map((record) => ({
+
+          ...record,
+
+          stored_filename: item.filename,
+
+          filename: item.display_name || record.filename || item.filename,
+
+          source_file: item.display_name || record.source_file || item.filename,
+
+          source_kind: record.source_kind || item.source_kind
+
+        }));
+
+        const chunks = makeChunks(records);
+
+        nextRecords.push(...records);
+
+        nextChunks.push(...chunks);
+
+        succeeded.push(item.filename);
+
+        fileSummaries.push({ source_file: item.filename, source_kind: item.source_kind, status: "ok", records_extracted: records.length, error: null });
+
+        Object.assign(item, { status: "processed", processed_at: Math.floor(Date.now() / 1000), last_collection: collectionName, last_records: records.length, last_chunks: chunks.length, last_error: null });
+
+      } catch (error) {
+
+        failed += 1;
+
+        fileSummaries.push({ source_file: item.filename, source_kind: item.source_kind, status: "error", records_extracted: 0, error: error.message || String(error) });
+
+        Object.assign(item, { status: "uploaded", processed_at: null, last_collection: null, last_records: 0, last_chunks: 0, last_error: error.message || String(error) });
+
+      }
+
+      if (els.processFill) els.processFill.style.width = `${Math.min(100, 18 + Math.round(((index + 1) / selectedItems.length) * 82))}%`;
+
+    }
+
+    purgeLocalVectorsByFilename(succeeded);
+
+    state.records = [...state.records, ...nextRecords];
+
+    state.chunks = [...state.chunks, ...nextChunks];
+
+    refreshLocalUploadBuckets();
+
+    state.selectedUploads.clear();
+
+    state.lastProcess = {
+
+      collection: collectionName,
+
+      requested_filenames: selectedItems.map((item) => item.filename),
+
+      skipped_already_processed: [],
+
+      files_succeeded: succeeded.length,
+
+      files_failed: failed,
+
+      records_processed: nextRecords.length,
+
+      chunks_written: nextChunks.length,
+
+      elapsed_s: Number(((performance.now() - started) / 1000).toFixed(2)),
+
+      file_summaries: fileSummaries,
+
+      quality_report: buildQualityReport(nextRecords, nextChunks),
+
+      embedding_backend: "browser-local"
+
+    };
+
+    if (state.publicDemo) await refreshPublicDemoStats();
+
+    else await refreshLocalStats();
+
+    renderUploads();
+
+    renderProcessedUploads();
+
+    renderProcessSummary();
+
+    renderQualityReport();
+
+    renderSummaryMetrics();
+
+    addActivity(failed ? "warning" : "success", "Local processing finished", `Succeeded on ${succeeded.length} files and generated ${nextChunks.length} chunks.`);
+
+    showToast(`Local processing finished. Success: ${succeeded.length}, failed: ${failed}.`, failed ? "warning" : "success");
+
+    void saveLocalWorkspaceSnapshot("process");
+
+  } catch (error) {
+
+    if (els.processFill) els.processFill.style.width = "0%";
+
+    addActivity("danger", "Processing failed", error.message || String(error));
+
+    renderProcessSummary();
+
+    showToast(error.message || "Processing failed.", "danger");
+
+  } finally {
+
+    if (els.btnProcess) {
+
+      delete els.btnProcess.dataset.busy;
+
+      els.btnProcess.disabled = false;
+
+    }
+
+    renderUploads();
+
+  }
+
+}
+
+
+
+
+
+async function runLocalSearch() {
+
+  const query = String(els.searchInput?.value || "").trim();
+
+  if (!query) {
+
+    showToast("Enter a search question first.", "warning");
+
+    return;
+
+  }
+
+  if (els.searchMeta) els.searchMeta.textContent = "Searching locally...";
+
+  const topK = Number(els.searchTopK?.value || 20);
+
+  const started = performance.now();
+
+  if (!state.chunks.length) {
+
+    state.lastSearch = { query, collection: LOCAL_COLLECTION_NAME, latency_ms: 0, results: [], embedding_backend: "browser-local", message: "No local index is available. Upload and process files first." };
+
+    renderSearchResults();
+
+    showToast("No local index is available. Process files first.", "warning");
+
+    return;
+
+  }
+
+  const queryVector = createEmbedding(query);
+
+  const normalizedQuery = normalizeText(query).toLowerCase();
+
+  const queryTokens = Array.from(new Set(tokenize(query))).filter((token) => token.length > 1);
+
+  const results = state.chunks.map((chunk) => {
+
+    const similarity = cosineSimilarity(queryVector, chunk.vector);
+
+    const semanticScore = (similarity + 1) / 2;
+
+    const overlapCount = queryTokens.reduce((sum, token) => sum + (chunk.tokens?.includes(token) ? 1 : 0), 0);
+
+    const overlapScore = queryTokens.length ? overlapCount / queryTokens.length : 0;
+
+    const phraseBonus = normalizedQuery && chunk.normalizedText.includes(normalizedQuery) ? 0.12 : 0;
+
+    const score = Math.min(0.9999, semanticScore * 0.7 + overlapScore * 0.24 + phraseBonus);
+
+    return { text: chunk.text, distance: Number((1 - score).toFixed(4)), score: Number(score.toFixed(4)), metadata: chunk.metadata };
+
+  }).sort((a, b) => b.score - a.score).slice(0, topK);
+
+  state.lastSearch = { query, collection: LOCAL_COLLECTION_NAME, latency_ms: Number((performance.now() - started).toFixed(2)), results, embedding_backend: "browser-local" };
+
+  rememberTimeline("search");
+
+  renderSearchResults();
+
+  renderTrendChart();
+
+  renderSummaryMetrics();
+
+  addActivity(results.length ? "success" : "warning", "Local search finished", `Query ?${query}? returned ${results.length} results.`);
+
+  showToast(`Search finished. ${results.length} results returned.`, "success");
+
+  void saveLocalWorkspaceSnapshot("search");
+
+}
+
+
+
+
+
+async function runLocalBenchmark() {
+
+  const payload = { document_count: Number(els.benchDocs?.value || 500), query_count: Number(els.benchQueries?.value || 50), top_k: Number(els.benchTopK?.value || 5) };
+
+  if (els.btnBench) els.btnBench.disabled = true;
+
+  if (els.benchFill) els.benchFill.style.width = "18%";
+
+  if (els.benchLog) els.benchLog.textContent = "Running browser-local benchmark...";
+
+  try {
+
+    addActivity("warning", "Local benchmark started", `${payload.document_count} docs / ${payload.query_count} queries`);
+
+    const synthetic = Array.from({ length: payload.document_count }, (_, i) => ({ text: `Power equipment benchmark sample ${i} with turbine, engine and maintenance content.` }));
+
+    const insertStarted = performance.now();
+
+    const embedded = synthetic.map((item) => ({ ...item, vector: createEmbedding(item.text) }));
+
+    const insertSeconds = (performance.now() - insertStarted) / 1000;
+
+    if (els.benchFill) els.benchFill.style.width = "58%";
+
+    const latencies = [];
+
+    const queryStarted = performance.now();
+
+    for (let i = 0; i < payload.query_count; i += 1) {
+
+      const query = createEmbedding(`Local benchmark query ${i}`);
+
+      const started = performance.now();
+
+      embedded.map((item) => cosineSimilarity(query, item.vector)).sort((a, b) => b - a).slice(0, payload.top_k);
+
+      latencies.push(performance.now() - started);
+
+    }
+
+    const querySeconds = (performance.now() - queryStarted) / 1000;
+
+    const ordered = [...latencies].sort((a, b) => a - b);
+
+    const p95 = ordered[Math.max(0, Math.min(ordered.length - 1, Math.round((ordered.length - 1) * 0.95)))] || 0;
+
+    state.benchmark = { collection: `${LOCAL_COLLECTION_NAME}_benchmark`, insert_seconds: Number(insertSeconds.toFixed(4)), insert_docs_per_second: Number((payload.document_count / Math.max(insertSeconds, 0.001)).toFixed(2)), query_seconds: Number(querySeconds.toFixed(4)), query_qps: Number((payload.query_count / Math.max(querySeconds, 0.001)).toFixed(2)), avg_query_latency_ms: Number((latencies.reduce((sum, value) => sum + value, 0) / Math.max(latencies.length, 1)).toFixed(3)), p95_query_latency_ms: Number(p95.toFixed(3)), embedding_backend: "browser-local", embedding_model: `hash-${ENGINE_DEFAULTS.dimension}d` };
+
+    if (els.benchFill) els.benchFill.style.width = "100%";
+
+    rememberTimeline("benchmark");
+
+    renderBenchmark();
+
+    renderTrendChart();
+
+    renderSummaryMetrics();
+
+    addActivity("success", "Local benchmark finished", `Average latency ${formatDecimal(state.benchmark.avg_query_latency_ms, 3)} ms.`);
+
+    showToast("Browser-local benchmark finished.", "success");
+
+  } catch (error) {
+
+    if (els.benchFill) els.benchFill.style.width = "0%";
+
+    addActivity("danger", "Benchmark failed", error.message || String(error));
+
+    showToast(error.message || "Benchmark failed.", "danger");
+
+  } finally {
+
+    if (els.btnBench) els.btnBench.disabled = false;
+
+  }
+
+}
+
+
+
+function resolveEls() {
+
+  els = {
+
+    globalModeToggle: $("globalModeToggle"),
+
+    navList: $("navList"),
+
+    pages: Array.from(document.querySelectorAll(".page")),
+
+    deliveryProjectSelect: $("deliveryProjectSelect"),
+    deliveryActor: $("deliveryActor"),
+    deliveryHealth: $("deliveryHealth"),
+    deliveryProjectId: $("deliveryProjectId"),
+    deliveryProjectName: $("deliveryProjectName"),
+    btnDeliveryCreateProject: $("btnDeliveryCreateProject"),
+    btnDeliveryCopyProjectTemplate: $("btnDeliveryCopyProjectTemplate"),
+    btnDeliveryExportProject: $("btnDeliveryExportProject"),
+    deliveryRestoreFile: $("deliveryRestoreFile"),
+    deliveryRestoreProjectId: $("deliveryRestoreProjectId"),
+    deliveryRestoreProjectName: $("deliveryRestoreProjectName"),
+    btnDeliveryRestoreProject: $("btnDeliveryRestoreProject"),
+    btnDeliveryRefresh: $("btnDeliveryRefresh"),
+    deliveryUploadFile: $("deliveryUploadFile"),
+    deliveryDocumentId: $("deliveryDocumentId"),
+    deliveryParserBackend: $("deliveryParserBackend"),
+    deliveryUseOcr: $("deliveryUseOcr"),
+    deliveryAllowDuplicate: $("deliveryAllowDuplicate"),
+    btnDeliveryUpload: $("btnDeliveryUpload"),
+    deliveryMetricProjects: $("deliveryMetricProjects"),
+    deliveryMetricDocuments: $("deliveryMetricDocuments"),
+    deliveryMetricTasks: $("deliveryMetricTasks"),
+    deliveryMetricReview: $("deliveryMetricReview"),
+    deliveryMetricFmea: $("deliveryMetricFmea"),
+    deliveryTaskFilter: $("deliveryTaskFilter"),
+    btnDeliveryBatchRetry: $("btnDeliveryBatchRetry"),
+    btnDeliveryRebuildIndex: $("btnDeliveryRebuildIndex"),
+    deliveryTaskList: $("deliveryTaskList"),
+    deliveryProviderList: $("deliveryProviderList"),
+    deliveryDocumentList: $("deliveryDocumentList"),
+    btnDeliveryBatchApproveDocuments: $("btnDeliveryBatchApproveDocuments"),
+    deliverySearchInput: $("deliverySearchInput"),
+    deliverySearchMode: $("deliverySearchMode"),
+    btnDeliverySearch: $("btnDeliverySearch"),
+    deliverySearchResults: $("deliverySearchResults"),
+    deliveryReviewList: $("deliveryReviewList"),
+    deliveryPublishedDocuments: $("deliveryPublishedDocuments"),
+    deliveryGraphBackend: $("deliveryGraphBackend"),
+    deliveryGraphProvider: $("deliveryGraphProvider"),
+    btnDeliveryExtractGraph: $("btnDeliveryExtractGraph"),
+    deliveryGraphList: $("deliveryGraphList"),
+    deliveryFmeaGraph: $("deliveryFmeaGraph"),
+    deliveryFmeaTemplate: $("deliveryFmeaTemplate"),
+    deliveryFmeaTemplateId: $("deliveryFmeaTemplateId"),
+    deliveryFmeaTemplateVersion: $("deliveryFmeaTemplateVersion"),
+    deliveryFmeaTemplateDefinition: $("deliveryFmeaTemplateDefinition"),
+    btnDeliveryRegisterFmeaTemplate: $("btnDeliveryRegisterFmeaTemplate"),
+    btnDeliveryApproveFmeaTemplate: $("btnDeliveryApproveFmeaTemplate"),
+    btnDeliveryRunFmea: $("btnDeliveryRunFmea"),
+    deliveryFmeaList: $("deliveryFmeaList"),
+    deliveryEvidencePreview: $("deliveryEvidencePreview"),
+
+    refreshBtn: $("refreshBtn"),
+
+    refreshStamp: $("refreshStamp"),
+
+    statusText: $("statusText"),
+
+    sysStatus: $("sysStatus"),
+
+    statusPill: $("statusPill"),
+
+    collectionSummaryPill: $("collectionSummaryPill"),
+
+    collectionSpectrum: $("collectionSpectrum"),
+
+    collList: $("collList"),
+
+    trendSummaryPill: $("trendSummaryPill"),
+
+    trendModeGroup: $("trendModeGroup"),
+
+    trendChart: $("trendChart"),
+
+    miniThroughput: $("miniThroughput"),
+
+    miniPrecision: $("miniPrecision"),
+
+    activityFilterGroup: $("activityFilterGroup"),
+
+    activityFeed: $("activityFeed"),
+
+    searchPulse: $("searchPulse"),
+
+    statDocs: $("statDocs"),
+
+    sparkDocs: $("sparkDocs"),
+
+    docsPdf: $("docsPdf"),
+
+    docsText: $("docsText"),
+
+    docsJson: $("docsJson"),
+
+    docsOther: $("docsOther"),
+
+    statTokens: $("statTokens"),
+
+    sparkTokens: $("sparkTokens"),
+
+    statSize: $("statSize"),
+
+    statDim: $("statDim"),
+
+    statRecordCount: $("statRecordCount"),
+
+    statChunkCount: $("statChunkCount"),
+
+    statColls: $("statColls"),
+
+    sparkColls: $("sparkColls"),
+
+    statPrimaryCollection: $("statPrimaryCollection"),
+
+    statSuccessFiles: $("statSuccessFiles"),
+
+    statFailedFiles: $("statFailedFiles"),
+
+    statStorageLive: $("statStorageLive"),
+
+    statLatency: $("statLatency"),
+
+    sparkLatency: $("sparkLatency"),
+
+    statLastResults: $("statLastResults"),
+
+    statP95: $("statP95"),
+
+    statPrecision: $("statPrecision"),
+
+    statQuality: $("statQuality"),
+
+    dropZone: $("dropZone"),
+
+    pickFilesButton: $("pickFilesButton"),
+
+    pickFolderButton: $("pickFolderButton"),
+
+    dropBrowseButton: $("dropBrowseButton"),
+
+    dropFolderButton: $("dropFolderButton"),
+
+    fileInput: $("fileInput"),
+
+    folderInput: $("folderInput"),
+
+    uploadQueueMeta: $("uploadQueueMeta"),
+
+    reloadQueueButton: $("reloadQueueButton"),
+
+    selectAllUploads: $("selectAllUploads"),
+
+    clearUploadSelection: $("clearUploadSelection"),
+
+    btnProcess: $("btnProcess"),
+
+    processProgress: $("processProgress"),
+
+    processFill: $("processFill"),
+
+    processLog: $("processLog"),
+
+    publicBooksJsonCollection: $("publicBooksJsonCollection"),
+
+    publicBooksJsonMode: $("publicBooksJsonMode"),
+
+    publicBooksJsonChunkSize: $("publicBooksJsonChunkSize"),
+
+    publicBooksJsonOverlap: $("publicBooksJsonOverlap"),
+
+    btnPublicBooksJsonIngest: $("btnPublicBooksJsonIngest"),
+
+    btnPublicBooksExportChroma: $("btnPublicBooksExportChroma"),
+
+    publicBooksJsonSummary: $("publicBooksJsonSummary"),
+
+    queueCountPill: $("queueCountPill"),
+
+    queueList: $("queueList"),
+
+    processedMeta: $("processedMeta"),
+
+    processedCountPill: $("processedCountPill"),
+
+    processedEditButton: $("processedEditButton"),
+
+    processedDeleteButton: $("processedDeleteButton"),
+
+    processedList: $("processedList"),
+
+    qualityReport: $("qualityReport"),
+
+    searchInput: $("searchInput"),
+
+    searchTopK: $("searchTopK"),
+
+    btnSearch: $("btnSearch"),
+
+    searchMeta: $("searchMeta"),
+
+    searchResults: $("searchResults"),
+
+    retrievalPolicySettings: $("retrievalPolicySettings"),
+
+    retrievalPolicyReviewer: $("retrievalPolicyReviewer"),
+
+    retrievalPolicyReviewerRole: $("retrievalPolicyReviewerRole"),
+
+    retrievalPolicyReviewNote: $("retrievalPolicyReviewNote"),
+
+    retrievalPolicySourceReport: $("retrievalPolicySourceReport"),
+
+    retrievalPolicyAssignedTo: $("retrievalPolicyAssignedTo"),
+
+    retrievalPolicyDueAt: $("retrievalPolicyDueAt"),
+
+    retrievalPolicyNotificationRecipient: $("retrievalPolicyNotificationRecipient"),
+
+    retrievalPolicyDeliveryMode: $("retrievalPolicyDeliveryMode"),
+
+    retrievalPolicyOutboxPath: $("retrievalPolicyOutboxPath"),
+
+    retrievalPolicyWebhookUrl: $("retrievalPolicyWebhookUrl"),
+
+    retrievalPolicyWebhookTemplate: $("retrievalPolicyWebhookTemplate"),
+
+    retrievalPolicyWebhookSigningSecretEnv: $("retrievalPolicyWebhookSigningSecretEnv"),
+
+    retrievalPolicyWebhookRoutingKeyEnv: $("retrievalPolicyWebhookRoutingKeyEnv"),
+
+    retrievalPolicyWebhookAuthHeaderName: $("retrievalPolicyWebhookAuthHeaderName"),
+
+    retrievalPolicyWebhookAuthTokenEnv: $("retrievalPolicyWebhookAuthTokenEnv"),
+
+    retrievalPolicyWebhookAuthScheme: $("retrievalPolicyWebhookAuthScheme"),
+
+    retrievalPolicySmtpHost: $("retrievalPolicySmtpHost"),
+
+    retrievalPolicySmtpPort: $("retrievalPolicySmtpPort"),
+
+    retrievalPolicySmtpFrom: $("retrievalPolicySmtpFrom"),
+
+    retrievalPolicySmtpTo: $("retrievalPolicySmtpTo"),
+
+    retrievalPolicySmtpSubject: $("retrievalPolicySmtpSubject"),
+
+    retrievalPolicySmtpUseTls: $("retrievalPolicySmtpUseTls"),
+
+    retrievalPolicySmtpUsernameEnv: $("retrievalPolicySmtpUsernameEnv"),
+
+    retrievalPolicySmtpPasswordEnv: $("retrievalPolicySmtpPasswordEnv"),
+
+    retrievalPolicyProposalId: $("retrievalPolicyProposalId"),
+
+    retrievalPolicyApprover: $("retrievalPolicyApprover"),
+
+    retrievalPolicyApproverRole: $("retrievalPolicyApproverRole"),
+
+    retrievalPolicyApprovalNote: $("retrievalPolicyApprovalNote"),
+
+    retrievalPolicyRejectionNote: $("retrievalPolicyRejectionNote"),
+
+    retrievalPolicyRoleSubject: $("retrievalPolicyRoleSubject"),
+
+    retrievalPolicyRoleNames: $("retrievalPolicyRoleNames"),
+
+    retrievalPolicyRoleCollections: $("retrievalPolicyRoleCollections"),
+
+    retrievalPolicyRoleUpdatedBy: $("retrievalPolicyRoleUpdatedBy"),
+
+    retrievalPolicyRecipientSubject: $("retrievalPolicyRecipientSubject"),
+
+    retrievalPolicyRecipientEmail: $("retrievalPolicyRecipientEmail"),
+
+    retrievalPolicyRecipientWebhookUrl: $("retrievalPolicyRecipientWebhookUrl"),
+
+    retrievalPolicyRecipientWebhookTemplate: $("retrievalPolicyRecipientWebhookTemplate"),
+
+    retrievalPolicyRecipientWebhookSigningSecretEnv: $("retrievalPolicyRecipientWebhookSigningSecretEnv"),
+
+    retrievalPolicyRecipientWebhookRoutingKeyEnv: $("retrievalPolicyRecipientWebhookRoutingKeyEnv"),
+
+    retrievalPolicyRecipientWebhookAuthHeaderName: $("retrievalPolicyRecipientWebhookAuthHeaderName"),
+
+    retrievalPolicyRecipientWebhookAuthTokenEnv: $("retrievalPolicyRecipientWebhookAuthTokenEnv"),
+
+    retrievalPolicyRecipientWebhookAuthScheme: $("retrievalPolicyRecipientWebhookAuthScheme"),
+
+    retrievalPolicyRecipientPreferredDeliveryMode: $("retrievalPolicyRecipientPreferredDeliveryMode"),
+
+    retrievalPolicyRecipientUpdatedBy: $("retrievalPolicyRecipientUpdatedBy"),
+
+    retrievalPolicyRecipientNote: $("retrievalPolicyRecipientNote"),
+
+    retrievalPolicyDirectoryJson: $("retrievalPolicyDirectoryJson"),
+
+    retrievalPolicyDirectoryRoleMappings: $("retrievalPolicyDirectoryRoleMappings"),
+
+    retrievalPolicyDirectoryRecipientDefaults: $("retrievalPolicyDirectoryRecipientDefaults"),
+
+    retrievalPolicyDirectoryUpdatedBy: $("retrievalPolicyDirectoryUpdatedBy"),
+
+    retrievalPolicyDirectoryNote: $("retrievalPolicyDirectoryNote"),
+
+    retrievalPolicyIdpEnabled: $("retrievalPolicyIdpEnabled"),
+
+    retrievalPolicyIdpIssuer: $("retrievalPolicyIdpIssuer"),
+
+    retrievalPolicyIdpAudience: $("retrievalPolicyIdpAudience"),
+
+    retrievalPolicyIdpJwksUrl: $("retrievalPolicyIdpJwksUrl"),
+
+    retrievalPolicyIdpAuthorizationEndpoint: $("retrievalPolicyIdpAuthorizationEndpoint"),
+
+    retrievalPolicyIdpTokenEndpoint: $("retrievalPolicyIdpTokenEndpoint"),
+
+    retrievalPolicyIdpClientId: $("retrievalPolicyIdpClientId"),
+
+    retrievalPolicyIdpClientSecretEnv: $("retrievalPolicyIdpClientSecretEnv"),
+
+    retrievalPolicyIdpRedirectUri: $("retrievalPolicyIdpRedirectUri"),
+
+    retrievalPolicyIdpScopes: $("retrievalPolicyIdpScopes"),
+
+    retrievalPolicyIdpSubjectClaim: $("retrievalPolicyIdpSubjectClaim"),
+
+    retrievalPolicyIdpGroupsClaim: $("retrievalPolicyIdpGroupsClaim"),
+
+    retrievalPolicyIdpAlgorithms: $("retrievalPolicyIdpAlgorithms"),
+
+    retrievalPolicyIdpUpdatedBy: $("retrievalPolicyIdpUpdatedBy"),
+
+    retrievalPolicyIdpNote: $("retrievalPolicyIdpNote"),
+
+    retrievalPolicyIdpLoginUrl: $("retrievalPolicyIdpLoginUrl"),
+
+    retrievalPolicyIdpAuthCode: $("retrievalPolicyIdpAuthCode"),
+
+    retrievalPolicyIdpCodeVerifier: $("retrievalPolicyIdpCodeVerifier"),
+
+    retrievalPolicySessionId: $("retrievalPolicySessionId"),
+
+    retrievalPolicySessionSummary: $("retrievalPolicySessionSummary"),
+
+    retrievalPolicySessionTable: $("retrievalPolicySessionTable"),
+
+    retrievalPolicySessionAudit: $("retrievalPolicySessionAudit"),
+
+    retrievalPolicySessionKeyStatus: $("retrievalPolicySessionKeyStatus"),
+
+    retrievalPolicyBearerToken: $("retrievalPolicyBearerToken"),
+
+    retrievalPolicyBearerStatus: $("retrievalPolicyBearerStatus"),
+
+    retrievalPolicyStatus: $("retrievalPolicyStatus"),
+
+    retrievalPolicyDiff: $("retrievalPolicyDiff"),
+
+    btnProposeRetrievalPolicy: $("btnProposeRetrievalPolicy"),
+
+    btnApproveRetrievalPolicy: $("btnApproveRetrievalPolicy"),
+
+    btnRejectRetrievalPolicy: $("btnRejectRetrievalPolicy"),
+
+    btnUpsertRetrievalPolicyRole: $("btnUpsertRetrievalPolicyRole"),
+
+    btnUpsertRetrievalPolicyRecipient: $("btnUpsertRetrievalPolicyRecipient"),
+
+    btnLoadRetrievalPolicyRecipients: $("btnLoadRetrievalPolicyRecipients"),
+
+    btnSyncRetrievalPolicyDirectory: $("btnSyncRetrievalPolicyDirectory"),
+
+    btnSaveRetrievalPolicyIdp: $("btnSaveRetrievalPolicyIdp"),
+
+    btnLoadRetrievalPolicyIdp: $("btnLoadRetrievalPolicyIdp"),
+
+    btnBuildRetrievalPolicyOidcLoginUrl: $("btnBuildRetrievalPolicyOidcLoginUrl"),
+
+    btnOpenRetrievalPolicyOidcLoginUrl: $("btnOpenRetrievalPolicyOidcLoginUrl"),
+
+    btnExchangeRetrievalPolicyOidcCode: $("btnExchangeRetrievalPolicyOidcCode"),
+
+    btnStartRetrievalPolicyOidcSession: $("btnStartRetrievalPolicyOidcSession"),
+
+    btnRefreshRetrievalPolicyOidcSession: $("btnRefreshRetrievalPolicyOidcSession"),
+
+    btnLoadRetrievalPolicyOidcSessions: $("btnLoadRetrievalPolicyOidcSessions"),
+
+    btnRevokeRetrievalPolicyOidcSession: $("btnRevokeRetrievalPolicyOidcSession"),
+
+    btnRotateRetrievalPolicyOidcSessionKeys: $("btnRotateRetrievalPolicyOidcSessionKeys"),
+
+    btnLoadRetrievalPolicyOidcSessionKeyStatus: $("btnLoadRetrievalPolicyOidcSessionKeyStatus"),
+
+    btnLogoutRetrievalPolicyOidcSession: $("btnLogoutRetrievalPolicyOidcSession"),
+
+    btnSaveRetrievalPolicyBearerToken: $("btnSaveRetrievalPolicyBearerToken"),
+
+    btnClearRetrievalPolicyBearerToken: $("btnClearRetrievalPolicyBearerToken"),
+
+    btnPromoteRetrievalPolicy: $("btnPromoteRetrievalPolicy"),
+
+    btnRollbackRetrievalPolicy: $("btnRollbackRetrievalPolicy"),
+
+    btnLoadRetrievalPolicyHistory: $("btnLoadRetrievalPolicyHistory"),
+
+    btnLoadRetrievalPolicyNotifications: $("btnLoadRetrievalPolicyNotifications"),
+
+    btnDispatchRetrievalPolicyNotifications: $("btnDispatchRetrievalPolicyNotifications"),
+
+    llmBaseUrl: $("llmBaseUrl"),
+
+    llmProvider: $("llmProvider"),
+
+    llmApiKey: $("llmApiKey"),
+
+    llmModel: $("llmModel"),
+
+    llmTemperature: $("llmTemperature"),
+
+    llmMaxTokens: $("llmMaxTokens"),
+
+    llmStatus: $("llmStatus"),
+
+    btnModelCatalog: $("btnModelCatalog"),
+
+    modelCatalog: $("modelCatalog"),
+
+    modelCatalogBody: $("modelCatalogBody"),
+
+    askInput: $("askInput"),
+
+    btnAsk: $("btnAsk"),
+
+    btnClearAnswer: $("btnClearAnswer"),
+
+    askAnswer: $("askAnswer"),
+
+    kgStats: $("kgStats"),
+
+    kgFlow: $("kgFlow"),
+
+    kgBookList: $("kgBookList"),
+
+    kgBookShowcase: $("kgBookShowcase"),
+
+    kgMethodNotes: $("kgMethodNotes"),
+
+    kgEntities: $("kgEntities"),
+
+    kgEntityCloud: $("kgEntityCloud"),
+
+    kgRelations: $("kgRelations"),
+
+    kgTriples: $("kgTriples"),
+
+    kgArtifacts: $("kgArtifacts"),
+
+    kgGraphImage: $("kgGraphImage"),
+
+    kgEvidenceOpen: $("kgEvidenceOpen"),
+
+    kgSvgOpen: $("kgSvgOpen"),
+
+    benchDocs: $("benchDocs"),
+
+    benchBatch: $("benchBatch"),
+
+    benchQueries: $("benchQueries"),
+
+    benchTopK: $("benchTopK"),
+
+    benchFill: $("benchFill"),
+
+    btnBench: $("btnBench"),
+
+    benchLog: $("benchLog"),
+
+    benchEmpty: $("benchEmpty"),
+
+    benchGrid: $("benchGrid"),
+
+    toast: $("toast")
+
+  };
+
+}
+
+function escapeHtml(value) {
+
+  return String(value ?? "")
+
+    .replaceAll("&", "&amp;")
+
+    .replaceAll("<", "&lt;")
+
+    .replaceAll(">", "&gt;")
+
+    .replaceAll('"', "&quot;")
+
+    .replaceAll("'", "&#39;");
+
+}
+
+
+
+function formatNumber(value) {
+
+  return new Intl.NumberFormat("zh-CN").format(Number(value || 0));
+
+}
+
+function renderIngestProgress(target, options = {}) {
+
+  if (!target) return;
+
+  const total = Math.max(Number(options.total || 0), 1);
+
+  const current = Math.min(Math.max(Number(options.current || 0), 0), total);
+
+  const rawPercent = Number.isFinite(Number(options.percent))
+
+    ? Number(options.percent)
+
+    : Math.round((current / total) * 100);
+
+  const percent = Math.max(0, Math.min(100, rawPercent));
+
+  const startedAt = Number(options.startedAt || 0);
+
+  const elapsed = startedAt ? ((performance.now() - startedAt) / 1000).toFixed(1) : "0.0";
+
+  const phase = options.phase || "Processing";
+
+  const fileName = options.fileName ? escapeHtml(options.fileName) : "Waiting for file";
+
+  const detail = options.detail ? escapeHtml(options.detail) : `Processing ${current}/${total}`;
+
+  const isIndeterminate = options.indeterminate === true;
+
+  const updatedAt = options.updatedAt ? new Date(options.updatedAt) : new Date();
+
+  const logs = Array.isArray(options.logs) ? options.logs.slice(-10) : [];
+
+  const logHtml = logs.length
+
+    ? logs.map((item) => {
+
+      const elapsedText = Number.isFinite(Number(item.elapsedMs))
+
+        ? `+${(Number(item.elapsedMs) / 1000).toFixed(1)}s`
+
+        : formatProgressClock(item.ts);
+
+      return `
+
+        <div class="ingest-log-row">
+
+          <span>${escapeHtml(elapsedText)}</span>
+
+          <strong>${escapeHtml(item.phase || "Processing")}</strong>
+
+          <div>${escapeHtml(item.detail || "")}</div>
+
+        </div>
+
+      `;
+
+    }).join("")
+
+    : `<div class="ingest-log-row"><span>${formatProgressClock(updatedAt)}</span><strong>${escapeHtml(phase)}</strong><div>${escapeHtml(detail)}</div></div>`;
+
+  target.innerHTML = `
+
+    <article class="ingest-progress-card" role="status" aria-live="polite">
+
+      <div class="ingest-progress-head">
+
+        <div class="ingest-progress-title">
+
+          <strong>${escapeHtml(phase)}</strong>
+
+          <span title="${fileName}">${fileName}</span>
+
+        </div>
+
+        <div class="ingest-progress-percent">${Math.round(percent)}%</div>
+
+      </div>
+
+      <div class="progress" aria-label="入库进度">
+
+        <div class="progress-bar ${isIndeterminate ? "is-indeterminate" : ""}" style="width:${isIndeterminate ? 35 : percent}%"></div>
+
+      </div>
+
+      <div class="ingest-progress-meta">
+
+        <span class="pill">${escapeHtml(detail)}</span>
+
+        <span class="pill">耗时 ${elapsed}s</span>
+
+        <span class="pill">刷新 ${escapeHtml(formatProgressClock(updatedAt))}</span>
+
+        ${options.records != null ? `<span class="pill">${formatNumber(options.records)} 条记</span>` : ""}
+
+        ${options.chunks != null ? `<span class="pill">${formatNumber(options.chunks)} 个 chunk</span>` : ""}
+
+      </div>
+
+      <div class="ingest-progress-log" aria-label="入库实时日志">${logHtml}</div>
+
+    </article>
+
+  `;
+
+}
+
+function formatProgressClock(value = Date.now()) {
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  return date.toLocaleTimeString("zh-CN", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+}
+
+function waitForUiFrame() {
+
+  return new Promise((resolve) => {
+
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => resolve());
+
+    else setTimeout(resolve, 0);
+
+  });
+
+}
+
+async function yieldToUi() {
+
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  await waitForUiFrame();
+
+}
+
+function createIngestProgressReporter(target, initial = {}) {
+
+  const state = {
+
+    ...initial,
+
+    startedAt: initial.startedAt || performance.now(),
+
+    updatedAt: Date.now(),
+
+    logs: []
+
+  };
+
+  const pushLog = (phase, detail) => {
+
+    state.logs.push({
+
+      ts: Date.now(),
+
+      elapsedMs: performance.now() - state.startedAt,
+
+      phase,
+
+      detail
+
+    });
+
+    if (state.logs.length > 10) state.logs = state.logs.slice(-10);
+
+  };
+
+  const update = (next = {}, logDetail = "") => {
+
+    Object.assign(state, next);
+
+    state.updatedAt = Date.now();
+
+    if (logDetail) pushLog(state.phase || next.phase || "Processing", logDetail);
+
+    renderIngestProgress(target, state);
+
+  };
+
+  const timer = setInterval(() => {
+
+    state.updatedAt = Date.now();
+
+    state.heartbeat = Number(state.heartbeat || 0) + 1;
+
+    renderIngestProgress(target, state);
+
+  }, 100);
+
+  update(initial, initial.detail || "");
+
+  return {
+
+    update,
+
+    log(phase, detail, next = {}) {
+
+      update({ ...next, phase }, detail);
+
+    },
+
+    stop(final = {}) {
+
+      clearInterval(timer);
+
+      update(final);
+
+    }
+
+  };
+
+}
+
+
+function formatDecimal(value, digits = 2) {
+
+  const numeric = Number(value || 0);
+
+  return Number.isFinite(numeric) ? numeric.toFixed(digits) : "0.00";
+
+}
+
+
+
+function formatPercent(value, digits = 1) {
+
+  const numeric = Number(value || 0);
+
+  return `${(numeric * 100).toFixed(digits)}%`;
+
+}
+
+
+
+function formatMegabytes(value) {
+
+  return `${formatDecimal(value || 0, 2)} MB`;
+
+}
+
+
+
+function normalizeTime(value) {
+
+  const numeric = Number(value || 0);
+
+  if (!numeric) return null;
+
+  return numeric < 1e12 ? numeric * 1000 : numeric;
+
+}
+
+
+
+function formatClock(value) {
+
+  const time = normalizeTime(value);
+
+  if (!time) return "--";
+
+  return new Date(time).toLocaleTimeString("zh-CN", {
+
+    hour: "2-digit",
+
+    minute: "2-digit",
+
+    second: "2-digit",
+
+    hour12: false
+
+  });
+
+}
+
+
+
+function snapshotClock() {
+
+  return new Date().toLocaleTimeString("zh-CN", {
+
+    hour: "2-digit",
+
+    minute: "2-digit",
+
+    hour12: false
+
+  });
+
+}
+
+
+
+function normalizeKind(kind) {
+
+  const raw = String(kind || "").trim();
+
+  if (!raw) return "Other";
+
+  const normalized = raw.toLowerCase();
+
+  if (normalized === "pdf") return "PDF";
+
+  if (["text", "txt", "plain"].includes(normalized)) return "Text";
+
+  if (normalized === "json") return "JSON";
+
+  if (["markdown", "md"].includes(normalized)) return "Markdown";
+
+  if (normalized === "code") return "Code";
+
+  if (normalized === "csv") return "CSV";
+
+  if (normalized === "tsv") return "TSV";
+
+  if (normalized === "docx") return "DOCX";
+
+  if (normalized === "log") return "Log";
+
+  return raw in SOURCE_LABELS ? raw : "Other";
+
+}
+
+
+
+function kindLabel(kind) {
+
+  return SOURCE_LABELS[normalizeKind(kind)] || SOURCE_LABELS.Other;
+
+}
+
+
+
+function sourceColor(kind) {
+
+  return SOURCE_COLORS[normalizeKind(kind)] || SOURCE_COLORS.Other;
+
+}
+
+
+
+function iconMarkup(icon, className = "") {
+
+  return icon ? `<iconify-icon class="${className}" icon="${icon}"></iconify-icon>` : "";
+
+}
+
+
+
+function summarizeName(filename) {
+
+  return String(filename || "").replaceAll("__", " / ");
+
+}
+
+
+
+function uploadDisplayName(itemOrFilename) {
+
+  if (typeof itemOrFilename === "string") {
+
+    const found = (state.uploads || []).find((item) => item.filename === itemOrFilename);
+
+    return found?.display_name ? String(found.display_name) : summarizeName(itemOrFilename);
+
+  }
+
+  if (itemOrFilename?.display_name) return String(itemOrFilename.display_name);
+
+  return summarizeName(itemOrFilename?.filename || "");
+
+}
+
+
+
+function splitUploadPath(value) {
+
+  const normalized = String(value || "").replaceAll("\\", "/");
+
+  const parts = normalized.split("/").filter(Boolean);
+
+  return {
+
+    file: parts.length ? parts[parts.length - 1] : normalized,
+
+    folder: parts.length > 1 ? parts.slice(0, -1).join(" / ") : "root"
+
+  };
+
+}
+
+
+
+function statusTagMarkup(status) {
+
+  const normalized = status === "processed" ? "processed" : "uploaded";
+
+  const label = normalized === "processed" ? "processed" : "uploaded";
+
+  const cls = normalized === "processed" ? "status-tag success" : "status-tag";
+
+  return `<span class="${cls}">${label}</span>`;
+
+}
+
+
+
+function getPendingUploads() {
+
+  return Array.isArray(state.pendingUploads) ? state.pendingUploads : [];
+
+}
+
+
+
+function getProcessedUploads() {
+
+  return Array.isArray(state.processedUploads) ? state.processedUploads : [];
+
+}
+
+
+
+function syncUploadSelections() {
+
+  const pendingNames = new Set(getPendingUploads().map((item) => item.filename));
+
+  const processedNames = new Set(getProcessedUploads().map((item) => item.filename));
+
+  state.selectedUploads = new Set(Array.from(state.selectedUploads).filter((name) => pendingNames.has(name)));
+
+  state.selectedProcessedUploads = new Set(Array.from(state.selectedProcessedUploads).filter((name) => processedNames.has(name)));
+
+  if (!getProcessedUploads().length) {
+
+    state.processedEditMode = false;
+
+    state.selectedProcessedUploads.clear();
+
+  }
+
+}
+
+function averageScore(results) {
+
+  if (!Array.isArray(results) || !results.length) return 0;
+
+  return results.reduce((sum, item) => sum + Number(item?.score || 0), 0) / results.length;
+
+}
+
+
+
+function choosePrimaryCollection(collections) {
+
+  const list = visibleConsoleCollections(collections);
+
+  if (!list.length) return "";
+
+  if (state.primaryCollection && list.some((item) => item.name === state.primaryCollection)) {
+
+    return state.primaryCollection;
+
+  }
+
+  const remembered = readRememberedActiveCollection();
+
+  if (remembered && list.some((item) => item.name === remembered)) {
+
+    return remembered;
+
+  }
+
+  const demo = list.find((item) => item.name === POWER_EQUIPMENT_DEMO_COLLECTION);
+  if (demo) return demo.name;
+
+  const nonBenchmark = list
+
+    .filter((item) => !String(item.name || "").startsWith("benchmark"))
+
+    .sort((left, right) => Number(right.count || 0) - Number(left.count || 0));
+
+  if (nonBenchmark.length) return nonBenchmark[0].name;
+
+  list.sort((left, right) => Number(right.count || 0) - Number(left.count || 0));
+
+  return list[0]?.name || "";
+
+}
+
+
+
+function statsBreakdown(stats) {
+
+  const raw = stats?.source_type_breakdown || {};
+
+  const breakdown = { PDF: 0, Text: 0, JSON: 0, Other: 0 };
+
+  Object.entries(raw).forEach(([key, value]) => {
+
+    const kind = normalizeKind(key);
+
+    if (kind === "PDF") breakdown.PDF += Number(value || 0);
+
+    else if (kind === "Text" || kind === "Markdown" || kind === "DOCX" || kind === "Log" || kind === "Code") breakdown.Text += Number(value || 0);
+
+    else if (kind === "JSON") breakdown.JSON += Number(value || 0);
+
+    else breakdown.Other += Number(value || 0);
+
+  });
+
+  return breakdown;
+
+}
+
+
+
+function dotClass(level) {
+
+  return level === "success" ? "status-dot" : `status-dot ${level}`;
+
+}
+
+
+
+function setStatusLevel(level) {
+
+  const pillDot = els.statusPill?.querySelector(".status-dot");
+
+  if (els.sysStatus) els.sysStatus.className = dotClass(level);
+
+  if (pillDot) pillDot.className = dotClass(level);
+
+}
+
+
+
+function showToast(message, level = "success") {
+
+  if (!els.toast) return;
+
+  clearTimeout(state.toastTimer);
+
+  els.toast.textContent = message;
+
+  els.toast.className = `toast ${level} show`.trim();
+
+  state.toastTimer = window.setTimeout(() => {
+
+    els.toast.className = "toast";
+
+  }, 2800);
+
+}
+
+
+
+function addActivity(level, title, detail) {
+
+  state.activity.unshift({
+
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+
+    level,
+
+    title,
+
+    detail,
+
+    at: Date.now()
+
+  });
+
+  state.activity = state.activity.slice(0, 30);
+
+  renderActivityFeed();
+
+}
+
+
+
+function rememberTimeline(reason) {
+
+  if (!state.stats) return;
+
+  const breakdown = statsBreakdown(state.stats);
+
+  const snapshot = {
+
+    reason,
+
+    label: snapshotClock(),
+
+    docs: Number(state.stats.total_documents || 0),
+
+    tokens: Number(state.stats.total_tokens_estimate || 0),
+
+    collections: Number((state.stats.collections || []).length),
+
+    latency: Number(state.lastSearch?.latency_ms || state.benchmark?.avg_query_latency_ms || 0),
+
+    pdf: Number(breakdown.PDF || 0),
+
+    text: Number(breakdown.Text || 0),
+
+    json: Number(breakdown.JSON || 0),
+
+    other: Number(breakdown.Other || 0)
+
+  };
+
+
+
+  const last = state.timeline[state.timeline.length - 1];
+
+  if (
+
+    last &&
+
+    last.docs === snapshot.docs &&
+
+    last.tokens === snapshot.tokens &&
+
+    last.collections === snapshot.collections &&
+
+    Math.abs(last.latency - snapshot.latency) < 0.001 &&
+
+    last.reason === snapshot.reason
+
+  ) {
+
+    return;
+
+  }
+
+
+
+  state.timeline.push(snapshot);
+
+  state.timeline = state.timeline.slice(-10);
+
+}
+
+
+
+function apiUrl(path) {
+
+  return `${API_BASE}${path}`;
+
+}
+
+
+function readRetrievalPolicyBearerToken() {
+
+  const inputToken = String(els.retrievalPolicyBearerToken?.value || "").trim();
+
+  if (inputToken) return inputToken;
+
+  try {
+
+    return String(sessionStorage.getItem(RETRIEVAL_POLICY_AUTH_STORAGE_KEY) || "").trim();
+
+  } catch {
+
+    return "";
+
+  }
+
+}
+
+
+function withRetrievalPolicyAuthorization(path, options = {}) {
+
+  if (!String(path || "").startsWith("/api/retrieval/policies")) return options;
+
+  const token = readRetrievalPolicyBearerToken();
+
+  if (!token) return options;
+
+  const headers = new Headers(options.headers || {});
+
+  if (!headers.has("Authorization")) headers.set("Authorization", `Bearer ${token}`);
+
+  return { ...options, headers };
+
+}
+
+
+function updateRetrievalPolicyBearerStatus(hasToken) {
+
+  if (!els.retrievalPolicyBearerStatus) return;
+
+  els.retrievalPolicyBearerStatus.textContent = hasToken
+
+    ? "OIDC bearer token is active for retrieval policy requests in this tab."
+
+    : "No OIDC bearer token stored for this tab.";
+
+}
+
+
+function loadRetrievalPolicyBearerTokenSession() {
+
+  let token = "";
+
+  try {
+
+    token = String(sessionStorage.getItem(RETRIEVAL_POLICY_AUTH_STORAGE_KEY) || "").trim();
+
+  } catch {
+
+    token = "";
+
+  }
+
+  if (els.retrievalPolicyBearerToken) els.retrievalPolicyBearerToken.value = token;
+
+  updateRetrievalPolicyBearerStatus(Boolean(token));
+
+}
+
+
+function saveRetrievalPolicyBearerToken() {
+
+  const token = String(els.retrievalPolicyBearerToken?.value || "").trim();
+
+  if (!token) {
+
+    showToast("Paste an OIDC bearer token before saving the session.", "warning");
+
+    updateRetrievalPolicyBearerStatus(false);
+
+    return;
+
+  }
+
+  try {
+
+    sessionStorage.setItem(RETRIEVAL_POLICY_AUTH_STORAGE_KEY, token);
+
+    updateRetrievalPolicyBearerStatus(true);
+
+    showToast("OIDC bearer token saved for this tab.", "success");
+
+  } catch (error) {
+
+    updateRetrievalPolicyBearerStatus(false);
+
+    showToast(error.message || "OIDC bearer token save failed.", "danger");
+
+  }
+
+}
+
+
+function clearRetrievalPolicyBearerToken() {
+
+  try {
+
+    sessionStorage.removeItem(RETRIEVAL_POLICY_AUTH_STORAGE_KEY);
+
+  } catch {}
+
+  if (els.retrievalPolicyBearerToken) els.retrievalPolicyBearerToken.value = "";
+
+  updateRetrievalPolicyBearerStatus(false);
+
+  showToast("OIDC bearer token cleared.", "success");
+
+}
+
+
+
+async function requestJson(path, options = {}, timeoutMs = 120000) {
+
+  const controller = new AbortController();
+
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+
+    const requestOptions = withRetrievalPolicyAuthorization(path, options);
+
+    const response = await fetch(apiUrl(path), {
+
+      ...requestOptions,
+
+      signal: controller.signal
+
+    });
+
+    const isJson = response.headers.get("content-type")?.includes("application/json");
+
+    const payload = isJson ? await response.json() : await response.text();
+
+    if (!response.ok) {
+
+      const rawDetail = typeof payload === "object" ? (payload.detail || payload.message || payload) : payload;
+
+      const detail = typeof rawDetail === "string" ? rawDetail : (rawDetail?.message || rawDetail?.error || JSON.stringify(rawDetail));
+
+      const error = new Error(detail || `请求失败: ${response.status}`);
+
+      error.status = response.status;
+
+      error.payload = payload;
+
+      if (payload && typeof payload === "object") error.detail = payload.detail;
+
+      throw error;
+
+    }
+
+    return payload;
+
+  } finally {
+
+    window.clearTimeout(timer);
+
+  }
+
+}
+
+
+const DELIVERY_PROJECT_STORAGE_KEY = "powerrag.delivery.project";
+
+function deliveryActor() {
+  return String(els.deliveryActor?.value || "local-user").trim() || "local-user";
+}
+
+function deliveryProjectId() {
+  return String(state.delivery?.projectId || "default").trim() || "default";
+}
+
+function deliveryStatus(status) {
+  return globalThis.PowerRAGDeliveryComponents.status(status, escapeHtml);
+}
+
+async function deliveryRequest(path, options = {}, timeoutMs = 120000) {
+  return globalThis.PowerRAGDeliveryApi.request(path, options, timeoutMs, {
+    projectId: deliveryProjectId(),
+    requestJson
+  });
+}
+
+function deliveryJsonOptions(method, payload, headers = {}) {
+  return globalThis.PowerRAGDeliveryApi.jsonOptions(method, payload, headers);
+}
+
+function deliveryRow({ title, status, meta, actions = "" }) {
+  return globalThis.PowerRAGDeliveryComponents.row({ title, status, meta, actions }, escapeHtml);
+}
+
+function renderDeliveryConsole() {
+  const delivery = state.delivery;
+  if (!delivery) return;
+  if (els.deliveryProjectSelect) {
+    els.deliveryProjectSelect.innerHTML = delivery.projects.map((item) => (
+      `<option value="${escapeHtml(item.project_id)}">${escapeHtml(item.name)} · ${escapeHtml(item.project_id)}</option>`
+    )).join("");
+    els.deliveryProjectSelect.value = delivery.projectId;
+  }
+  if (els.deliveryActor && delivery.identity?.actor) {
+    els.deliveryActor.value = delivery.identity.actor;
+    els.deliveryActor.title = `${delivery.identity.identity_source || "local"} · ${(delivery.identity.groups || []).join(", ") || "无用户组"}`;
+  }
+  if (els.deliveryHealth) {
+    const status = delivery.health?.status || (delivery.lastError ? "degraded" : "warning");
+    els.deliveryHealth.dataset.status = status;
+    els.deliveryHealth.textContent = delivery.loading ? "正在刷新" : status;
+    els.deliveryHealth.title = delivery.lastError || JSON.stringify(delivery.health?.checks || {});
+  }
+  if (els.deliveryMetricProjects) els.deliveryMetricProjects.textContent = formatNumber(delivery.projects.length);
+  if (els.deliveryMetricDocuments) els.deliveryMetricDocuments.textContent = formatNumber(delivery.documents.length);
+  if (els.deliveryMetricTasks) els.deliveryMetricTasks.textContent = formatNumber(delivery.tasks.length);
+  if (els.deliveryMetricReview) els.deliveryMetricReview.textContent = formatNumber(delivery.reviewQueue.length);
+  if (els.deliveryMetricFmea) els.deliveryMetricFmea.textContent = formatNumber(delivery.fmeaTasks.length);
+
+  if (els.deliveryTaskList) {
+    const tasks = delivery.tasks;
+    els.deliveryTaskList.innerHTML = tasks.length ? tasks.map((task) => {
+      const actions = [
+        task.status === "failed" && task.retryable
+          ? `<label class="delivery-check" style="padding:6px 8px"><input type="checkbox" data-delivery-task-select value="${escapeHtml(task.task_id)}" ${delivery.selectedTaskIds.has(task.task_id) ? "checked" : ""}><span>批量重试</span></label>`
+          : "",
+        `<button class="ghost-btn" type="button" data-delivery-action="collaborate-task" data-id="${escapeHtml(task.task_id)}">指派/评论</button>`,
+        !["completed", "published", "failed", "cancelled"].includes(task.status)
+          ? `<button class="ghost-btn" type="button" data-delivery-action="cancel-task" data-id="${escapeHtml(task.task_id)}">取消</button>`
+          : "",
+        task.status === "failed" && task.retryable
+          ? `<button class="ghost-btn" type="button" data-delivery-action="retry-task" data-id="${escapeHtml(task.task_id)}">重试</button>`
+          : ""
+      ].join("");
+      const error = task.error_code ? ` · ${task.error_code}: ${task.error_message || ""}` : "";
+      return deliveryRow({
+        title: `${task.task_type} · ${task.task_id}`,
+        status: task.status,
+        meta: `${task.stage} · ${(Number(task.progress || 0) * 100).toFixed(0)}% · ${task.created_by} · 指派 ${task.assigned_to || "未指派"}${error}`,
+        actions
+      });
+    }).join("") : `<div class="empty-state">当前筛选条件下没有任务。</div>`;
+  }
+
+  if (els.deliveryProviderList) {
+    els.deliveryProviderList.innerHTML = delivery.providers.length ? delivery.providers.map((provider) => deliveryRow({
+      title: `${provider.capability} · ${provider.provider_id}`,
+      status: provider.enabled ? provider.health_status : "disabled",
+      meta: `${provider.provider_type} · ${provider.model || "未配置模型"}@${provider.version || "-"} · timeout ${provider.timeout_seconds}s · ${provider.cost_class} · ${provider.capabilities?.test_only ? "仅测试" : "可登记使用"}`
+    })).join("") : `<div class="empty-state">当前项目没有 provider 登记。</div>`;
+  }
+  if (els.deliveryGraphProvider) {
+    const graphProviders = delivery.providers.filter((provider) => provider.capability === "graph_extraction" && provider.enabled);
+    const previous = els.deliveryGraphProvider.value;
+    els.deliveryGraphProvider.innerHTML = graphProviders.length
+      ? graphProviders.map((provider) => `<option value="${escapeHtml(provider.provider_id)}">${escapeHtml(provider.provider_id)} · ${escapeHtml(provider.model || "未配置")}</option>`).join("")
+      : `<option value="">没有可用图谱 provider</option>`;
+    els.deliveryGraphProvider.value = graphProviders.some((provider) => provider.provider_id === previous)
+      ? previous
+      : (els.deliveryGraphBackend?.value === "rules" && graphProviders.some((provider) => provider.provider_id === "rules-graph") ? "rules-graph" : (graphProviders[0]?.provider_id || ""));
+  }
+
+  if (els.deliveryDocumentList) {
+    els.deliveryDocumentList.innerHTML = delivery.documents.length ? delivery.documents.map((doc) => {
+      const previousVersion = delivery.documents
+        .filter((item) => item.document_id === doc.document_id && Number(item.version) < Number(doc.version))
+        .sort((left, right) => Number(right.version) - Number(left.version))[0];
+      const ocrQuality = doc.metadata?.ocr_quality || {};
+      const recoverablePages = [...new Set([
+        ...(ocrQuality.failed_pages || []),
+        ...(ocrQuality.timeout_pages || []),
+        ...(ocrQuality.missing_pages || [])
+      ])].sort((a, b) => Number(a) - Number(b));
+      const actions = [
+        `<button class="ghost-btn" type="button" data-delivery-action="preview-document" data-id="${escapeHtml(doc.version_id)}">核对证据</button>`,
+        recoverablePages.length && doc.metadata?.ocr_job_id
+          ? `<button class="ghost-btn" type="button" data-delivery-action="retry-ocr-pages" data-id="${escapeHtml(doc.metadata.ocr_job_id)}" data-pages="${escapeHtml(recoverablePages.join(","))}">重试失败页 ${escapeHtml(recoverablePages.join(","))}</button>`
+          : "",
+        !["published", "retired"].includes(doc.status)
+          ? `<button class="ghost-btn" type="button" data-delivery-action="approve-document" data-id="${escapeHtml(doc.version_id)}">审核通过</button>`
+          : "",
+        doc.status !== "published"
+          ? `<button class="btn" type="button" data-delivery-action="publish-document" data-id="${escapeHtml(doc.version_id)}" data-version="${escapeHtml(String(doc.version))}">发布</button>`
+          : "",
+        doc.status === "published" && previousVersion
+          ? `<button class="ghost-btn" type="button" data-delivery-action="rollback-document" data-id="${escapeHtml(doc.document_id)}" data-target="${escapeHtml(previousVersion.version_id)}">回滚到 v${escapeHtml(String(previousVersion.version))}</button>`
+          : ""
+      ].join("");
+      const issues = (doc.quality_issues || []).filter((item) => !item.resolved).map((item) => item.code).join(", ") || "无未解决质量问题";
+      return deliveryRow({
+        title: `${doc.source_name} · v${doc.version}`,
+        status: doc.status,
+        meta: `${doc.document_id} · ${doc.version_id} · 证据 ${doc.evidence_count || 0} · ${issues}`,
+        actions
+      });
+    }).join("") : `<div class="empty-state">当前项目还没有资料版本。</div>`;
+  }
+
+  if (els.deliveryReviewList) {
+    els.deliveryReviewList.innerHTML = delivery.reviewQueue.length ? delivery.reviewQueue.map((item) => deliveryRow({
+      title: `${item.target_type || "document"} · ${item.target_id || item.document_version_id}`,
+      status: item.status,
+      meta: (item.reasons || []).map((reason) => reason.code || reason.message || reason).join(", ") || "等待人工判断"
+    })).join("") : `<div class="empty-state">没有待审核对象。</div>`;
+  }
+
+  const published = delivery.documents.filter((doc) => doc.status === "published");
+  if (els.deliveryPublishedDocuments) {
+    els.deliveryPublishedDocuments.innerHTML = published.length ? published.map((doc) => `
+      <label class="delivery-check">
+        <input type="checkbox" data-delivery-doc-select value="${escapeHtml(doc.version_id)}" ${delivery.selectedDocumentVersions.has(doc.version_id) ? "checked" : ""}>
+        <span><strong>${escapeHtml(doc.source_name)}</strong><span class="delivery-row-meta">${escapeHtml(doc.version_id)}</span></span>
+      </label>`).join("") : `<div class="empty-state">先审核并发布至少一个资料版本。</div>`;
+  }
+
+  if (els.deliveryGraphList) {
+    els.deliveryGraphList.innerHTML = delivery.graphs.length ? delivery.graphs.map((graph) => {
+      const previousGraph = delivery.graphs
+        .filter((item) => Number(item.version) < Number(graph.version))
+        .sort((left, right) => Number(right.version) - Number(left.version))[0];
+      const actions = [
+        !["published", "retired"].includes(graph.status)
+          ? `<button class="ghost-btn" type="button" data-delivery-action="review-graph-statements" data-id="${escapeHtml(graph.graph_version_id)}">逐语句审核</button>`
+          : "",
+        graph.status !== "published"
+          ? `<button class="btn" type="button" data-delivery-action="publish-graph" data-id="${escapeHtml(graph.graph_version_id)}" data-version="${escapeHtml(String(graph.version))}">发布</button>`
+          : "",
+        graph.status === "published"
+          ? `<button class="ghost-btn" type="button" data-delivery-action="resync-graph" data-id="${escapeHtml(graph.graph_version_id)}">重同步 GraphStore</button>`
+          : "",
+        graph.status === "published"
+          ? `<button class="ghost-btn" type="button" data-delivery-action="open-graphrag-query" data-id="${escapeHtml(graph.graph_version_id)}">GraphRAG 有证据问答</button>`
+          : "",
+        graph.status === "published"
+          ? `<button class="ghost-btn" type="button" data-delivery-action="build-community-summaries" data-id="${escapeHtml(graph.graph_version_id)}">后台生成社区摘要</button><button class="ghost-btn" type="button" data-delivery-action="view-community-summaries" data-id="${escapeHtml(graph.graph_version_id)}">查看社区摘要</button>`
+          : "",
+        graph.status === "published" && previousGraph
+          ? `<button class="ghost-btn" type="button" data-delivery-action="rollback-graph" data-id="${escapeHtml(previousGraph.graph_version_id)}">回滚到图 v${escapeHtml(String(previousGraph.version))}</button>`
+          : ""
+      ].join("");
+      return deliveryRow({
+        title: `${graph.graph_version_id} · ${graph.statement_count || 0} 条语句`,
+        status: graph.status,
+        meta: `来源 ${graph.source_document_version_ids?.join(", ") || "-"} · Schema 置信度 ${graph.schema?.min_confidence ?? "-"}`,
+        actions
+      });
+    }).join("") : `<div class="empty-state">还没有图谱版本。</div>`;
+  }
+
+  const publishedGraphs = delivery.graphs.filter((graph) => graph.status === "published");
+  if (els.deliveryFmeaGraph) {
+    els.deliveryFmeaGraph.innerHTML = publishedGraphs.length
+      ? publishedGraphs.map((graph) => `<option value="${escapeHtml(graph.graph_version_id)}">${escapeHtml(graph.graph_version_id)} · ${graph.statement_count || 0} 条</option>`).join("")
+      : `<option value="">先发布图谱</option>`;
+    if (delivery.activeGraphVersionId && publishedGraphs.some((item) => item.graph_version_id === delivery.activeGraphVersionId)) {
+      els.deliveryFmeaGraph.value = delivery.activeGraphVersionId;
+    }
+  }
+
+  if (els.deliveryFmeaTemplate) {
+    const selectedTemplate = els.deliveryFmeaTemplate.value;
+    const approvedTemplates = delivery.fmeaTemplates.filter((item) => item.status === "approved");
+    els.deliveryFmeaTemplate.innerHTML = approvedTemplates.length
+      ? approvedTemplates.map((item) => (
+          `<option value="${escapeHtml(`${item.template_id}@@${item.version}`)}">${escapeHtml(item.template_id)}@${escapeHtml(item.version)}</option>`
+        )).join("")
+      : `<option value="">没有已批准模板</option>`;
+    if (approvedTemplates.some((item) => `${item.template_id}@@${item.version}` === selectedTemplate)) {
+      els.deliveryFmeaTemplate.value = selectedTemplate;
+    } else {
+      const defaultTemplate = approvedTemplates.find((item) => item.template_id === "gas_turbine_minimum_v1");
+      if (defaultTemplate) {
+        els.deliveryFmeaTemplate.value = `${defaultTemplate.template_id}@@${defaultTemplate.version}`;
+      }
+    }
+    if (els.deliveryFmeaTemplateDefinition && !els.deliveryFmeaTemplateDefinition.value.trim()) {
+      fillDeliveryFmeaTemplateEditor();
+    }
+  }
+
+  if (els.deliveryFmeaList) {
+    els.deliveryFmeaList.innerHTML = delivery.fmeaTasks.length ? delivery.fmeaTasks.map((task) => {
+      const actions = [
+        !["approved", "published"].includes(task.status)
+          ? `<button class="ghost-btn" type="button" data-delivery-action="review-fmea-fields" data-id="${escapeHtml(task.task_id)}">逐字段审核</button>`
+          : "",
+        task.status !== "published"
+          ? `<button class="btn" type="button" data-delivery-action="publish-fmea" data-id="${escapeHtml(task.task_id)}" data-version="${escapeHtml(task.updated_at || task.task_id)}">发布</button>`
+          : "",
+        task.status === "published"
+          ? `<button class="ghost-btn" type="button" data-delivery-action="export-fmea" data-id="${escapeHtml(task.task_id)}">导出 CSV</button>`
+          : "",
+        task.status === "published"
+          ? `<button class="ghost-btn" type="button" data-delivery-action="export-fmea-docx" data-id="${escapeHtml(task.task_id)}">导出正式 DOCX</button>`
+          : "",
+        task.status === "published"
+          ? `<button class="ghost-btn" type="button" data-delivery-action="open-fmea-feedback" data-id="${escapeHtml(task.task_id)}">反馈与回流</button>`
+          : ""
+      ].join("");
+      return deliveryRow({
+        title: `${task.task_id} · ${(task.items || []).length} 行`,
+        status: task.status,
+        meta: `图谱 ${task.request?.graph_version_id || "-"} · 模板 ${task.request?.template || "-"}@${task.request?.template_version || "latest"}`,
+        actions
+      });
+    }).join("") : `<div class="empty-state">还没有 FMEA 任务。</div>`;
+  }
+}
+
+async function refreshDeliveryConsole(options = {}) {
+  if (!state.delivery || state.delivery.loading) return;
+  state.delivery.loading = true;
+  state.delivery.lastError = "";
+  renderDeliveryConsole();
+  try {
+    const projectsPayload = await requestJson("/api/delivery/projects?limit=200", {}, 30000);
+    state.delivery.projects = Array.isArray(projectsPayload.items) ? projectsPayload.items : [];
+    const saved = options.keepProject === false ? "" : (localStorage.getItem(DELIVERY_PROJECT_STORAGE_KEY) || "");
+    const preferred = options.projectId || state.delivery.projectId || saved || "default";
+    state.delivery.projectId = state.delivery.projects.some((item) => item.project_id === preferred)
+      ? preferred
+      : (state.delivery.projects[0]?.project_id || "default");
+    localStorage.setItem(DELIVERY_PROJECT_STORAGE_KEY, state.delivery.projectId);
+    const taskStatus = String(els.deliveryTaskFilter?.value || "");
+    const suffix = `project_id=${encodeURIComponent(state.delivery.projectId)}`;
+    const [identity, health, providers, tasks, documents, review, graphs, fmeaTemplates, fmea] = await Promise.all([
+      deliveryRequest("/api/delivery/identity", {}, 30000),
+      deliveryRequest(`/api/delivery/projects/${encodeURIComponent(state.delivery.projectId)}/health`, {}, 30000),
+      deliveryRequest(`/api/delivery/projects/${encodeURIComponent(state.delivery.projectId)}/providers`, {}, 30000),
+      deliveryRequest(`/api/delivery/projects/${encodeURIComponent(state.delivery.projectId)}/tasks?limit=100${taskStatus ? `&status=${encodeURIComponent(taskStatus)}` : ""}`, {}, 30000),
+      deliveryRequest(`/api/delivery/documents?${suffix}&limit=100`, {}, 30000),
+      deliveryRequest(`/api/delivery/review-queue?${suffix}&limit=100`, {}, 30000),
+      deliveryRequest("/api/delivery/graphs", {}, 30000),
+      deliveryRequest(`/api/delivery/projects/${encodeURIComponent(state.delivery.projectId)}/fmea-templates`, {}, 30000),
+      deliveryRequest(`/api/delivery/fmea/tasks?${suffix}&limit=100`, {}, 30000)
+    ]);
+    state.delivery.identity = identity;
+    state.delivery.health = health;
+    state.delivery.providers = providers.items || [];
+    state.delivery.tasks = tasks.items || [];
+    state.delivery.documents = documents.items || [];
+    state.delivery.reviewQueue = review.items || [];
+    state.delivery.graphs = graphs.items || [];
+    state.delivery.fmeaTemplates = fmeaTemplates.items || [];
+    state.delivery.fmeaTasks = fmea.items || [];
+    const visiblePublishedIds = new Set(state.delivery.documents.filter((doc) => doc.status === "published").map((doc) => doc.version_id));
+    state.delivery.selectedDocumentVersions = new Set([...state.delivery.selectedDocumentVersions].filter((id) => visiblePublishedIds.has(id)));
+  } catch (error) {
+    state.delivery.lastError = error.message || String(error);
+    if (options.silent !== true) showToast(`可信交付刷新失败：${state.delivery.lastError}`, "danger");
+  } finally {
+    state.delivery.loading = false;
+    renderDeliveryConsole();
+  }
+}
+
+async function createDeliveryProject() {
+  const projectId = String(els.deliveryProjectId?.value || "").trim().toLowerCase();
+  const name = String(els.deliveryProjectName?.value || "").trim();
+  if (!projectId || !name) return showToast("请填写项目 ID 和名称。", "warning");
+  try {
+    await requestJson("/api/delivery/projects", deliveryJsonOptions("POST", {
+      project_id: projectId,
+      name,
+      created_by: deliveryActor(),
+      domain: "gas_turbine",
+      data_policy: { external_providers_allowed: false }
+    }), 30000);
+    state.delivery.projectId = projectId;
+    localStorage.setItem(DELIVERY_PROJECT_STORAGE_KEY, projectId);
+    await refreshDeliveryConsole({ projectId, keepProject: false });
+    showToast("项目已创建并完成隔离目录初始化。", "success");
+  } catch (error) {
+    showToast(error.message || "项目创建失败。", "danger");
+  }
+}
+
+async function copyDeliveryProjectTemplate() {
+  const projectId = String(els.deliveryProjectId?.value || "").trim().toLowerCase();
+  const name = String(els.deliveryProjectName?.value || "").trim();
+  if (!projectId || !name) return showToast("请填写新项目 ID 和名称。", "warning");
+  const sourceProjectId = deliveryProjectId();
+  await deliveryRequest(
+    `/api/delivery/projects/${encodeURIComponent(sourceProjectId)}/copy-template`,
+    deliveryJsonOptions("POST", {
+      project_id: projectId,
+      name,
+      description: `从 ${sourceProjectId} 复制项目模板`,
+      created_by: deliveryActor()
+    }),
+    30000
+  );
+  state.delivery.projectId = projectId;
+  state.delivery.selectedDocumentVersions = new Set();
+  state.delivery.selectedReviewDocumentIds = new Set();
+  state.delivery.selectedTaskIds = new Set();
+  localStorage.setItem(DELIVERY_PROJECT_STORAGE_KEY, projectId);
+  await refreshDeliveryConsole({ projectId, keepProject: false });
+  showToast("项目模板已复制；配置与 Provider 元数据已继承，凭据未复制。", "success");
+}
+
+async function exportDeliveryProject() {
+  const projectId = deliveryProjectId();
+  const response = await fetch(apiUrl(`/api/delivery/projects/${encodeURIComponent(projectId)}/export-package`), {
+    method: "POST",
+    headers: {
+      "X-Project-ID": projectId,
+      "X-Correlation-ID": crypto.randomUUID ? crypto.randomUUID() : `ui-${Date.now()}`
+    }
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload?.detail?.message || `项目备份失败: ${response.status}`);
+  }
+  const blob = await response.blob();
+  const disposition = response.headers.get("content-disposition") || "";
+  const matched = disposition.match(/filename="?([^";]+)"?/i);
+  const filename = matched?.[1] || `${projectId}-backup.zip`;
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function restoreDeliveryProject() {
+  const file = els.deliveryRestoreFile?.files?.[0];
+  const projectId = String(els.deliveryRestoreProjectId?.value || "").trim().toLowerCase();
+  const name = String(els.deliveryRestoreProjectName?.value || "").trim();
+  if (!file || !projectId || !name) return showToast("请选择备份包并填写新项目 ID 和名称。", "warning");
+  const form = new FormData();
+  form.set("file", file, file.name);
+  form.set("project_id", projectId);
+  form.set("name", name);
+  form.set("actor", deliveryActor());
+  const response = await fetch(apiUrl("/api/delivery/projects/restore"), {
+    method: "POST",
+    headers: { "X-Correlation-ID": crypto.randomUUID ? crypto.randomUUID() : `ui-${Date.now()}` },
+    body: form
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload?.detail?.message || `项目恢复失败: ${response.status}`);
+  }
+  state.delivery.projectId = projectId;
+  state.delivery.selectedDocumentVersions = new Set();
+  localStorage.setItem(DELIVERY_PROJECT_STORAGE_KEY, projectId);
+  await refreshDeliveryConsole({ projectId, keepProject: false });
+}
+
+async function uploadDeliveryDocument() {
+  const file = els.deliveryUploadFile?.files?.[0];
+  const documentId = String(els.deliveryDocumentId?.value || "").trim();
+  if (!file || !documentId) return showToast("请选择文件并填写资料 ID。", "warning");
+  const form = new FormData();
+  form.set("file", file, file.name);
+  form.set("document_id", documentId);
+  form.set("created_by", deliveryActor());
+  form.set("idempotency_key", `upload:${documentId}:${file.name}:${file.size}:${file.lastModified}`);
+  form.set("parser_backend", els.deliveryParserBackend?.value || "auto");
+  form.set("use_ocr", els.deliveryUseOcr?.value || "auto");
+  form.set("chunk_size", "500");
+  form.set("overlap", "50");
+  form.set("allow_duplicate", els.deliveryAllowDuplicate?.value || "false");
+  try {
+    els.btnDeliveryUpload.disabled = true;
+    const result = await deliveryRequest(
+      `/api/delivery/projects/${encodeURIComponent(deliveryProjectId())}/documents/upload`,
+      { method: "POST", body: form },
+      600000
+    );
+    showToast(`资料已接入，任务 ${result.task?.task_id || ""} 已创建。`, "success");
+    await refreshDeliveryConsole();
+  } catch (error) {
+    showToast(error.message || "资料接入失败。", "danger");
+  } finally {
+    els.btnDeliveryUpload.disabled = false;
+  }
+}
+
+async function reviewDeliveryTarget(targetType, targetId, decision = "approve") {
+  const path = targetType === "document"
+    ? `/api/delivery/documents/${encodeURIComponent(targetId)}/review`
+    : targetType === "graph"
+      ? `/api/delivery/graphs/${encodeURIComponent(targetId)}/review`
+      : `/api/delivery/fmea/tasks/${encodeURIComponent(targetId)}/review`;
+  return deliveryRequest(path, deliveryJsonOptions("POST", {
+    reviewer: deliveryActor(),
+    decision,
+    comment: "通过可信交付界面完成审核",
+    corrections: {},
+    expected_version: targetId
+  }), 120000);
+}
+
+async function publishDeliveryTarget(targetType, targetId, expectedVersion) {
+  const path = targetType === "document"
+    ? `/api/delivery/documents/${encodeURIComponent(targetId)}/publish`
+    : targetType === "graph"
+      ? `/api/delivery/graphs/${encodeURIComponent(targetId)}/publish`
+      : `/api/delivery/fmea/tasks/${encodeURIComponent(targetId)}/publish`;
+  return deliveryRequest(path, deliveryJsonOptions("POST", {
+    actor: deliveryActor(),
+    comment: "通过可信交付界面发布",
+    idempotency_key: `publish:${targetType}:${targetId}`,
+    expected_version: expectedVersion || targetId
+  }), 180000);
+}
+
+async function previewDeliveryDocument(versionId, page = 1) {
+  try {
+    const payload = await deliveryRequest(`/api/delivery/documents/${encodeURIComponent(versionId)}/review-package?page=${encodeURIComponent(page)}`, {}, 120000);
+    const preview = payload.source_preview;
+    const image = preview?.content_base64
+      ? `<img src="data:${escapeHtml(preview.mime_type || "image/png")};base64,${preview.content_base64}" alt="${escapeHtml(preview.source_name || "源页预览")}">`
+      : `<div class="empty-state">${escapeHtml(preview?.error || "源页预览不可用")}</div>`;
+    const editable = (payload.editable_candidate || []).map((item) => `
+      <label class="field" style="display:block;margin-top:10px">
+        <span>${escapeHtml(item.block_type || "paragraph")} · ${escapeHtml(item.evidence_id)} · bbox ${escapeHtml(JSON.stringify(item.bbox || null))}</span>
+        <textarea class="form-control" rows="4" data-delivery-evidence-edit="${escapeHtml(item.evidence_id)}" data-original="${escapeHtml(item.text || "")}">${escapeHtml(item.text || "")}</textarea>
+      </label>`).join("");
+    const pageCount = Number(preview?.page_count || page || 1);
+    els.deliveryEvidencePreview.innerHTML = `
+      <div class="panel-head">
+        <div><h3>原页与解析块对照</h3><p>${escapeHtml(versionId)} · 原始证据保持不可变；保存修订会产生新版本。</p></div>
+        <div class="delivery-row-actions">
+          <input class="form-control" type="number" min="1" max="${pageCount}" value="${Number(page)}" data-delivery-preview-page style="width:90px" aria-label="预览页码">
+          <button class="ghost-btn" type="button" data-delivery-action="load-document-page" data-id="${escapeHtml(versionId)}">打开页</button>
+          <button class="btn" type="button" data-delivery-action="save-document-revision" data-id="${escapeHtml(versionId)}">保存为新版本</button>
+        </div>
+      </div>
+      ${image}
+      <div class="delivery-list">${editable || `<div class="empty-state">本页没有解析块。</div>`}</div>
+      <pre class="delivery-json">${escapeHtml(JSON.stringify({
+        quality_issues: payload.quality_issues,
+        review_history: payload.review_history
+      }, null, 2))}</pre>`;
+  } catch (error) {
+    showToast(error.message || "证据预览失败。", "danger");
+  }
+}
+
+async function searchDeliveryDocuments() {
+  const query = String(els.deliverySearchInput?.value || "").trim();
+  if (!query) return showToast("请输入检索问题或关键词。", "warning");
+  const mode = els.deliverySearchMode?.value || "hybrid";
+  const payload = await deliveryRequest(
+    `/api/delivery/documents-search?q=${encodeURIComponent(query)}&mode=${encodeURIComponent(mode)}&top_k=10`,
+    {},
+    120000
+  );
+  els.deliverySearchResults.innerHTML = (payload.results || []).map((item) => {
+    const locator = item.locator || {};
+    return deliveryRow({
+      title: `${locator.source_file || "资料"} · p.${locator.page || "-"}`,
+      status: (item.retrieval_paths || []).join("+") || mode,
+      meta: `${item.text || ""} · ${item.evidence_id}`,
+      actions: `<button class="ghost-btn" type="button" data-delivery-action="open-citation" data-id="${escapeHtml(item.evidence_id)}">打开原页与块</button>`
+    });
+  }).join("") || `<div class="empty-state">没有找到可引用的正式资料；系统不会生成无证据答案。</div>`;
+}
+
+async function openDeliveryCitation(evidenceId) {
+  const payload = await deliveryRequest(`/api/delivery/evidence/${encodeURIComponent(evidenceId)}/open`, {}, 120000);
+  const source = payload.source || {};
+  const evidence = payload.evidence || {};
+  els.deliveryEvidencePreview.innerHTML = `
+    <div class="panel-head"><div><h3>引用定位</h3><p>${escapeHtml(evidenceId)} · ${escapeHtml(evidence.source_file || "")} · p.${escapeHtml(String(source.page || "-"))}</p></div>
+      <button class="ghost-btn" type="button" data-delivery-action="preview-document-page" data-id="${escapeHtml(evidence.document_version_id || "")}" data-page="${escapeHtml(String(source.page || 1))}">进入整页审核</button>
+    </div>
+    <img src="data:${escapeHtml(source.mime_type || "image/png")};base64,${source.content_base64 || ""}" alt="引用原页">
+    <pre class="delivery-json">${escapeHtml(JSON.stringify({
+      block_id: evidence.block_id,
+      table_id: evidence.table_id,
+      image_id: evidence.image_id,
+      bbox: evidence.metadata?.bbox || null,
+      text: evidence.text
+    }, null, 2))}</pre>`;
+}
+
+async function retryDeliveryOcrPages(jobId, pageCsv) {
+  const pages = String(pageCsv || "").split(",").map((value) => Number(value)).filter((value) => value > 0);
+  if (!pages.length) return showToast("没有可重试的失败页。", "warning");
+  await deliveryRequest(
+    `/api/delivery/documents/ocr-jobs/${encodeURIComponent(jobId)}/retry-pages`,
+    deliveryJsonOptions("POST", {
+      pages,
+      idempotency_key: `ocr-page-retry:${jobId}:${pages.join(",")}:${Date.now()}`
+    }),
+    30000
+  );
+  showToast(`OCR 页 ${pages.join(", ")} 已进入后台重试。`, "success");
+  await refreshDeliveryConsole();
+}
+
+async function saveDeliveryDocumentRevision(versionId) {
+  const corrections = {};
+  for (const input of els.deliveryEvidencePreview.querySelectorAll("[data-delivery-evidence-edit]")) {
+    if (input.value !== input.dataset.original) {
+      corrections[input.dataset.deliveryEvidenceEdit] = { text: input.value };
+    }
+  }
+  if (!Object.keys(corrections).length) return showToast("没有检测到内容修改。", "warning");
+  await deliveryRequest(
+    `/api/delivery/documents/${encodeURIComponent(versionId)}/revise`,
+    deliveryJsonOptions("POST", {
+      reviewer: deliveryActor(),
+      comment: "通过原页对照界面修订解析块",
+      corrections,
+      expected_version: versionId
+    }),
+    120000
+  );
+  showToast("修订已保存为新的资料版本，原始证据未覆盖。", "success");
+  await refreshDeliveryConsole();
+}
+
+async function openGraphStatementReview(graphVersionId) {
+  const payload = await deliveryRequest(
+    `/api/delivery/graphs/${encodeURIComponent(graphVersionId)}/statements?limit=500`,
+    {},
+    120000
+  );
+  const rows = (payload.items || []).map((statement) => `
+    <div class="delivery-row">
+      <div class="delivery-row-main">
+        <div class="delivery-row-title"><strong>${escapeHtml(statement.subject)} — ${escapeHtml(statement.predicate)} → ${escapeHtml(statement.object_name)}</strong>${deliveryStatus(statement.review_decision || "pending")}</div>
+        <div class="delivery-row-meta">${escapeHtml(statement.subject_type)} → ${escapeHtml(statement.object_type)} · 置信度 ${escapeHtml(String(statement.confidence ?? "-"))} · 证据 ${escapeHtml((statement.evidence_ids || []).join(", ") || "缺失")} · 问题 ${escapeHtml((statement.issue_codes || []).join(", ") || "无")}</div>
+      </div>
+      <select class="form-control" data-graph-statement-decision="${escapeHtml(statement.statement_id)}" style="max-width:140px">
+        <option value="">待判断</option>
+        <option value="approve" ${statement.review_decision === "approve" ? "selected" : ""}>通过</option>
+        <option value="reject" ${statement.review_decision === "reject" ? "selected" : ""}>拒绝</option>
+      </select>
+    </div>`).join("");
+  els.deliveryEvidencePreview.innerHTML = `
+    <div class="panel-head"><div><h3>图谱逐语句审核</h3><p>${escapeHtml(graphVersionId)} · 每条语句都必须显式判断；任一拒绝都会阻止发布。</p></div>
+      <button class="btn" type="button" data-delivery-action="submit-graph-statements" data-id="${escapeHtml(graphVersionId)}">提交逐语句审核</button>
+    </div>
+    <div class="delivery-list">${rows || `<div class="empty-state">没有候选语句。</div>`}</div>`;
+}
+
+async function submitGraphStatementReview(graphVersionId) {
+  const selects = [...els.deliveryEvidencePreview.querySelectorAll("[data-graph-statement-decision]")];
+  const decisions = {};
+  for (const select of selects) {
+    if (!select.value) return showToast("请逐条完成判断后再提交。", "warning");
+    decisions[select.dataset.graphStatementDecision] = select.value;
+  }
+  if (!Object.keys(decisions).length) return showToast("没有可提交的图谱语句。", "warning");
+  await deliveryRequest(
+    `/api/delivery/graphs/${encodeURIComponent(graphVersionId)}/statement-reviews`,
+    deliveryJsonOptions("POST", {
+      reviewer: deliveryActor(),
+      decisions,
+      comment: "通过可信交付界面逐语句审核",
+      expected_version: graphVersionId
+    }),
+    120000
+  );
+  showToast("逐语句审核已提交；全部通过时才可发布。", "success");
+  await refreshDeliveryConsole();
+}
+
+async function openFmeaFieldReview(taskId) {
+  const payload = await deliveryRequest(`/api/delivery/fmea/tasks/${encodeURIComponent(taskId)}`, {}, 120000);
+  const fieldLabels = {
+    equipment: "设备",
+    component: "部件",
+    failure_mode: "故障模式",
+    cause: "原因",
+    effect: "影响",
+    detection_method: "检测方法",
+    recommended_action: "建议措施"
+  };
+  const rows = (payload.items || []).flatMap((item) => Object.entries(item.fields || {})
+    .filter(([, value]) => value !== null && value !== "")
+    .map(([field, value]) => {
+      const evidenceIds = item.field_evidence?.[field] || [];
+      const evidenceDetails = item.field_evidence_details?.[field] || [];
+      return `
+        <div class="delivery-row" data-fmea-review-row data-item-id="${escapeHtml(item.item_id)}" data-field="${escapeHtml(field)}">
+          <div class="delivery-row-main">
+            <div class="delivery-row-title"><strong>${escapeHtml(fieldLabels[field] || field)}</strong><span class="pill">${escapeHtml(item.item_id)}</span></div>
+            <input class="form-control" data-fmea-field-value value="${escapeHtml(String(value))}" data-original-value="${escapeHtml(String(value))}">
+            <input class="form-control" data-fmea-field-evidence value="${escapeHtml(evidenceIds.join(","))}" data-original-evidence="${escapeHtml(evidenceIds.join(","))}" aria-label="字段证据 ID">
+            <div class="delivery-row-meta">${escapeHtml(evidenceDetails.map((detail) => `${detail.source_file || ""} p.${detail.page || "-"} · ${detail.text || ""}`).join(" | ") || "缺少可解析证据")}</div>
+          </div>
+          <select class="form-control" data-fmea-field-decision style="max-width:140px">
+            <option value="">待判断</option><option value="approve">通过</option><option value="reject">拒绝</option>
+          </select>
+        </div>`;
+    })).join("");
+  els.deliveryEvidencePreview.innerHTML = `
+    <div class="panel-head"><div><h3>FMEA 逐字段审核</h3><p>${escapeHtml(taskId)} · 修改字段时必须同时保留或替换证据 ID；所有非空字段均须明确判断。</p></div>
+      <button class="btn" type="button" data-delivery-action="submit-fmea-fields" data-id="${escapeHtml(taskId)}">提交逐字段审核</button>
+    </div>
+    <div class="delivery-list">${rows || `<div class="empty-state">没有非空专业字段。</div>`}</div>`;
+}
+
+async function submitFmeaFieldReview(taskId) {
+  const rows = [...els.deliveryEvidencePreview.querySelectorAll("[data-fmea-review-row]")];
+  const decisions = {};
+  const corrections = { items: {} };
+  for (const row of rows) {
+    const itemId = row.dataset.itemId;
+    const field = row.dataset.field;
+    const decision = row.querySelector("[data-fmea-field-decision]").value;
+    if (!decision) return showToast("请逐字段完成判断后再提交。", "warning");
+    decisions[itemId] ||= {};
+    decisions[itemId][field] = decision;
+    const valueInput = row.querySelector("[data-fmea-field-value]");
+    const evidenceInput = row.querySelector("[data-fmea-field-evidence]");
+    if (valueInput.value !== valueInput.dataset.originalValue || evidenceInput.value !== evidenceInput.dataset.originalEvidence) {
+      corrections.items[itemId] ||= {};
+      corrections.items[itemId][field] = {
+        value: valueInput.value.trim() || null,
+        evidence_ids: evidenceInput.value.split(",").map((value) => value.trim()).filter(Boolean)
+      };
+    }
+  }
+  if (!Object.keys(decisions).length) return showToast("没有可提交的 FMEA 字段。", "warning");
+  await deliveryRequest(
+    `/api/delivery/fmea/tasks/${encodeURIComponent(taskId)}/field-reviews`,
+    deliveryJsonOptions("POST", {
+      reviewer: deliveryActor(),
+      decisions,
+      corrections: Object.keys(corrections.items).length ? corrections : {},
+      comment: "通过可信交付界面逐字段审核",
+      expected_version: state.delivery.fmeaTasks.find((item) => item.task_id === taskId)?.content_hash || taskId
+    }),
+    120000
+  );
+  showToast("FMEA 逐字段审核已提交。", "success");
+  await refreshDeliveryConsole();
+}
+
+async function extractDeliveryGraph() {
+  const selected = [...state.delivery.selectedDocumentVersions];
+  if (!selected.length) return showToast("请选择至少一个已发布资料版本。", "warning");
+  try {
+    const backend = els.deliveryGraphBackend?.value || "rules";
+    const providerId = String(els.deliveryGraphProvider?.value || "");
+    if (!providerId) return showToast("请先登记并选择图谱抽取 provider。", "warning");
+    const operationKey = `graph:${[...selected].sort().join(",")}:${backend}:${providerId}`;
+    await deliveryRequest("/api/delivery/graphs/extract?background=true", deliveryJsonOptions("POST", {
+      source_document_version_ids: selected,
+      backend,
+      provider_id: providerId,
+      metadata: { actor: deliveryActor(), source: "current_console", idempotency_key: operationKey }
+    }, { "Idempotency-Key": operationKey }), 30000);
+    showToast("图谱抽取已进入任务中心，完成后进入逐语句审核。", "success");
+    await refreshDeliveryConsole();
+  } catch (error) {
+    showToast(error.message || "图谱抽取失败。", "danger");
+  }
+}
+
+function selectedDeliveryFmeaTemplate() {
+  const [templateId = "", version = ""] = String(els.deliveryFmeaTemplate?.value || "").split("@@");
+  return state.delivery.fmeaTemplates.find(
+    (item) => item.template_id === templateId && item.version === version
+  ) || null;
+}
+
+function fillDeliveryFmeaTemplateEditor() {
+  const template = selectedDeliveryFmeaTemplate();
+  if (!template) return;
+  if (els.deliveryFmeaTemplateId) els.deliveryFmeaTemplateId.value = template.template_id;
+  if (els.deliveryFmeaTemplateVersion) els.deliveryFmeaTemplateVersion.value = template.version;
+  if (els.deliveryFmeaTemplateDefinition) {
+    els.deliveryFmeaTemplateDefinition.value = JSON.stringify(template.definition || {}, null, 2);
+  }
+}
+
+async function registerDeliveryFmeaTemplate() {
+  const templateId = String(els.deliveryFmeaTemplateId?.value || "").trim();
+  const version = String(els.deliveryFmeaTemplateVersion?.value || "").trim();
+  if (!templateId || !version) return showToast("请填写模板 ID 和版本。", "warning");
+  let definition;
+  try {
+    definition = JSON.parse(String(els.deliveryFmeaTemplateDefinition?.value || "{}"));
+  } catch (error) {
+    return showToast(`模板定义不是有效 JSON：${error.message}`, "danger");
+  }
+  await deliveryRequest(
+    `/api/delivery/projects/${encodeURIComponent(deliveryProjectId())}/fmea-templates`,
+    deliveryJsonOptions("POST", {
+      template_id: templateId,
+      version,
+      definition,
+      actor: deliveryActor(),
+      status: "draft"
+    }, { "Idempotency-Key": `fmea-template-register:${templateId}:${version}` }),
+    30000
+  );
+  showToast(`模板 ${templateId}@${version} 已登记为不可变草稿。`, "success");
+  await refreshDeliveryConsole();
+}
+
+async function approveDeliveryFmeaTemplate() {
+  const templateId = String(els.deliveryFmeaTemplateId?.value || "").trim();
+  const version = String(els.deliveryFmeaTemplateVersion?.value || "").trim();
+  if (!templateId || !version) return showToast("请填写要批准的模板 ID 和版本。", "warning");
+  await deliveryRequest(
+    `/api/delivery/projects/${encodeURIComponent(deliveryProjectId())}/fmea-templates/${encodeURIComponent(templateId)}/${encodeURIComponent(version)}/approve`,
+    deliveryJsonOptions("POST", { actor: deliveryActor() }, {
+      "Idempotency-Key": `fmea-template-approve:${templateId}:${version}`
+    }),
+    30000
+  );
+  showToast(`模板 ${templateId}@${version} 已批准。`, "success");
+  await refreshDeliveryConsole();
+}
+
+async function runDeliveryFmea() {
+  const graphId = String(els.deliveryFmeaGraph?.value || "");
+  const graph = state.delivery.graphs.find((item) => item.graph_version_id === graphId);
+  if (!graphId || !graph) return showToast("请先选择已发布图谱。", "warning");
+  const template = selectedDeliveryFmeaTemplate();
+  if (!template) return showToast("请先选择已批准的 FMEA 模板。", "warning");
+  try {
+    const operationKey = `fmea:${graphId}:${template.template_id}:${template.version}`;
+    await deliveryRequest("/api/delivery/fmea/tasks?background=true", deliveryJsonOptions("POST", {
+      requested_by: deliveryActor(),
+      graph_version_id: graphId,
+      document_version_ids: graph.source_document_version_ids || [],
+      template: template.template_id,
+      template_version: template.version,
+      metadata: { source: "current_console", idempotency_key: operationKey }
+    }, { "Idempotency-Key": operationKey }), 30000);
+    showToast("FMEA 生成已进入任务中心，完成后等待领域审核。", "success");
+    await refreshDeliveryConsole();
+  } catch (error) {
+    showToast(error.message || "FMEA 生成失败。", "danger");
+  }
+}
+
+async function rebuildDeliveryIndex() {
+  const operationKey = `index-rebuild:${deliveryProjectId()}:${Date.now()}`;
+  await deliveryRequest(
+    "/api/delivery/documents-index/rebuild?background=true",
+    { method: "POST", headers: { "Idempotency-Key": operationKey } },
+    30000
+  );
+  showToast("正式资料索引重建已进入任务中心。", "success");
+  await refreshDeliveryConsole();
+}
+
+async function exportDeliveryFmea(taskId, format = "csv") {
+  const response = await fetch(apiUrl(`/api/delivery/fmea/tasks/${encodeURIComponent(taskId)}/export?format=${encodeURIComponent(format)}`), {
+    headers: {
+      "X-Project-ID": deliveryProjectId(),
+      "X-Correlation-ID": crypto.randomUUID ? crypto.randomUUID() : `ui-${Date.now()}`
+    }
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload?.detail?.message || `导出失败: ${response.status}`);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `${taskId}.${format}`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function rollbackDeliveryDocument(documentId, targetVersionId) {
+  await deliveryRequest(
+    `/api/delivery/documents/${encodeURIComponent(documentId)}/rollback`,
+    deliveryJsonOptions("POST", {
+      target_version_id: targetVersionId,
+      reviewer: deliveryActor(),
+      comment: "通过可信交付界面执行资料回滚"
+    }),
+    180000
+  );
+  showToast(`资料已按 ${targetVersionId} 内容生成并发布新的回滚版本。`, "success");
+  await refreshDeliveryConsole();
+}
+
+async function rollbackDeliveryGraph(targetGraphVersionId) {
+  await deliveryRequest(
+    "/api/delivery/graphs/rollback",
+    deliveryJsonOptions("POST", {
+      target_graph_version_id: targetGraphVersionId,
+      reviewer: deliveryActor(),
+      comment: "通过可信交付界面执行图谱回滚"
+    }),
+    180000
+  );
+  showToast(`图谱已回滚到 ${targetGraphVersionId} 的内容并同步 GraphStore。`, "success");
+  await refreshDeliveryConsole();
+}
+
+async function resyncDeliveryGraph(graphVersionId) {
+  const result = await deliveryRequest(
+    `/api/delivery/graphs/${encodeURIComponent(graphVersionId)}/resync`,
+    { method: "POST" },
+    180000
+  );
+  showToast(`GraphStore 重同步完成：${result.graph_store_sync?.edge_count || 0} 条边。`, "success");
+  await refreshDeliveryConsole();
+}
+
+async function buildDeliveryCommunitySummaries(graphVersionId) {
+  const result = await deliveryRequest(
+    `/api/delivery/graphs/${encodeURIComponent(graphVersionId)}/community-summaries`,
+    deliveryJsonOptions("POST", { actor: deliveryActor(), level: 0 }, {
+      "Idempotency-Key": `community-summary:${graphVersionId}:0`
+    }),
+    30000
+  );
+  showToast(`社区摘要已进入任务中心：${result.task?.task_id || "已提交"}。`, "success");
+  await refreshDeliveryConsole();
+}
+
+async function viewDeliveryCommunitySummaries(graphVersionId) {
+  const payload = await deliveryRequest(
+    `/api/delivery/graphs/${encodeURIComponent(graphVersionId)}/community-summaries`,
+    {},
+    30000
+  );
+  const rows = (payload.items || []).map((item) => deliveryRow({
+    title: `${item.community_id} · ${item.title || "社区摘要"}`,
+    status: "ready",
+    meta: `${item.entity_count || 0} 实体 · ${item.edge_count || 0} 关系 · ${item.summary || ""}`
+  })).join("");
+  els.deliveryEvidencePreview.innerHTML = `
+    <div class="panel-head"><div><h3>证据约束社区摘要</h3><p>${escapeHtml(graphVersionId)} · 摘要只复述已发布图中的关系，并保留 triple ID。</p></div></div>
+    <div class="delivery-list">${rows || `<div class="empty-state">尚未生成社区摘要。</div>`}</div>`;
+}
+
+function openDeliveryGraphQuery(graphVersionId) {
+  els.deliveryEvidencePreview.innerHTML = `
+    <div class="panel-head"><div><h3>GraphRAG 有证据问答</h3><p>${escapeHtml(graphVersionId)} · 显示图路径、图语句/文本证据、图版本、实际路由与回退原因。</p></div></div>
+    <div class="export-bar">
+      <input class="form-control" data-delivery-graphrag-question type="search" placeholder="例如：过滤器堵塞的原因、影响和检测方法是什么？" style="min-width:360px">
+      <button class="btn" type="button" data-delivery-action="submit-graphrag-query" data-id="${escapeHtml(graphVersionId)}">查询</button>
+    </div>
+    <div class="form-group" style="margin-top:12px">
+      <label>同题集批量评测（每行一个问题）</label>
+      <textarea class="form-control" data-delivery-graphrag-evaluation rows="4" placeholder="过滤器堵塞的原因是什么？&#10;如何检测过滤器堵塞？"></textarea>
+      <div class="export-bar" style="margin-top:8px">
+        <button class="ghost-btn" type="button" data-delivery-action="submit-graphrag-evaluation" data-id="${escapeHtml(graphVersionId)}">普通 RAG / GraphRAG 后台对比</button>
+      </div>
+    </div>
+    <div data-delivery-graphrag-result><div class="empty-state">等待问题。</div></div>`;
+}
+
+async function submitDeliveryGraphQuery(graphVersionId) {
+  const question = String(els.deliveryEvidencePreview.querySelector("[data-delivery-graphrag-question]")?.value || "").trim();
+  if (!question) return showToast("请输入 GraphRAG 问题。", "warning");
+  const payload = await deliveryRequest(
+    `/api/delivery/graphs/${encodeURIComponent(graphVersionId)}/query`,
+    deliveryJsonOptions("POST", { question, top_k: 8, max_hops: 4, allow_fallback: true }),
+    180000
+  );
+  const citations = (payload.citations || []).map((item) => deliveryRow({
+    title: `${item.source_type || "evidence"} · ${item.id || item.evidence_id || ""}`,
+    status: item.evidence_id ? "bound" : "missing",
+    meta: `${item.source || item.locator?.source_file || ""} p.${item.page || item.locator?.page || "-"} · ${item.text || ""}`,
+    actions: item.evidence_id
+      ? `<button class="ghost-btn" type="button" data-delivery-action="open-citation" data-id="${escapeHtml(item.evidence_id)}">打开原页与块</button>`
+      : ""
+  })).join("");
+  els.deliveryEvidencePreview.querySelector("[data-delivery-graphrag-result]").innerHTML = `
+    <article class="panel"><h3>${escapeHtml(payload.answer || "证据不足")}</h3>
+      <p class="delivery-row-meta">图版本 ${escapeHtml(payload.graph_version_id || graphVersionId)} · 路由 ${escapeHtml(payload.mode_used || "-")} · 回退 ${escapeHtml(payload.fallback?.reason || "未触发")}</p>
+      <pre class="delivery-json">${escapeHtml(JSON.stringify({ paths: payload.paths || [], quality: payload.quality || {} }, null, 2))}</pre>
+    </article>
+    <div class="delivery-list">${citations || `<div class="empty-state">没有可展示引用；系统已停止确定性回答。</div>`}</div>`;
+}
+
+async function submitDeliveryGraphEvaluation(graphVersionId) {
+  const raw = String(els.deliveryEvidencePreview.querySelector("[data-delivery-graphrag-evaluation]")?.value || "");
+  const questions = raw.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+  if (!questions.length) return showToast("请至少输入一个评测问题。", "warning");
+  const result = await deliveryRequest(
+    `/api/delivery/graphs/${encodeURIComponent(graphVersionId)}/compare-rag?background=true`,
+    deliveryJsonOptions("POST", { questions, top_k: 8 }, {
+      "Idempotency-Key": `graphrag-eval:${graphVersionId}:${questions.join("|")}`
+    }),
+    30000
+  );
+  showToast(`同题集评测已进入任务中心：${result.task?.task_id || "已提交"}。`, "success");
+  await refreshDeliveryConsole();
+}
+
+async function openDeliveryFmeaFeedback(taskId) {
+  const [task, feedback] = await Promise.all([
+    deliveryRequest(`/api/delivery/fmea/tasks/${encodeURIComponent(taskId)}`, {}, 120000),
+    deliveryRequest(`/api/delivery/fmea/tasks/${encodeURIComponent(taskId)}/feedback`, {}, 120000)
+  ]);
+  const feedbackRows = (feedback.items || []).map((item) => deliveryRow({
+    title: `${item.code} · ${item.routed_module}`,
+    status: item.status,
+    meta: `${item.message} · ${item.created_by} · ${item.created_at}`,
+    actions: item.status !== "resolved"
+      ? `<button class="ghost-btn" type="button" data-delivery-action="remediate-feedback" data-id="${escapeHtml(item.feedback_id)}" data-task="${escapeHtml(taskId)}">执行回流修复</button>`
+      : ""
+  })).join("");
+  els.deliveryEvidencePreview.innerHTML = `
+    <div class="panel-head"><div><h3>FMEA 反馈与回流修复</h3><p>${escapeHtml(taskId)} · 反馈按 M1–M5 路由，修复会生成可审计的运行记录和新版本/新任务。</p></div></div>
+    <div class="llm-form">
+      <div class="field"><label>反馈代码</label><input class="form-control" data-fmea-feedback-code value="fmea_content_issue"></div>
+      <div class="field field--wide"><label>反馈内容</label><textarea class="form-control" rows="3" data-fmea-feedback-message placeholder="说明需要修复的字段、证据或结果"></textarea></div>
+      <button class="btn" type="button" data-delivery-action="submit-fmea-feedback" data-id="${escapeHtml(taskId)}">提交反馈</button>
+    </div>
+    <div class="delivery-list">${feedbackRows || `<div class="empty-state">还没有反馈记录。</div>`}</div>`;
+}
+
+async function submitDeliveryFmeaFeedback(taskId) {
+  const code = String(els.deliveryEvidencePreview.querySelector("[data-fmea-feedback-code]")?.value || "").trim();
+  const message = String(els.deliveryEvidencePreview.querySelector("[data-fmea-feedback-message]")?.value || "").trim();
+  if (!code || !message) return showToast("请填写反馈代码和内容。", "warning");
+  await deliveryRequest(
+    `/api/delivery/fmea/tasks/${encodeURIComponent(taskId)}/feedback`,
+    deliveryJsonOptions("POST", { code, message, created_by: deliveryActor() }),
+    120000
+  );
+  showToast("反馈已提交并完成模块路由。", "success");
+  await openDeliveryFmeaFeedback(taskId);
+}
+
+async function remediateDeliveryFeedback(feedbackId, taskId) {
+  const task = await deliveryRequest(`/api/delivery/fmea/tasks/${encodeURIComponent(taskId)}`, {}, 120000);
+  const result = await deliveryRequest(
+    `/api/delivery/fmea/feedback/${encodeURIComponent(feedbackId)}/remediate?background=true`,
+    deliveryJsonOptions("POST", {
+      actor: deliveryActor(),
+      document_version_id: task.request?.document_version_ids?.[0] || null,
+      graph_version_id: task.request?.graph_version_id || null,
+      corrections: {}
+    }),
+    180000
+  );
+  showToast(`反馈修复任务已进入任务中心：${result.task?.task_id || "已提交"}。`, "success");
+  await refreshDeliveryConsole();
+  await openDeliveryFmeaFeedback(taskId);
+}
+
+async function batchRetryDeliveryTasks() {
+  const taskIds = [...state.delivery.selectedTaskIds];
+  if (!taskIds.length) return showToast("请先勾选可重试的失败任务。", "warning");
+  const result = await deliveryRequest(
+    "/api/delivery/tasks/batch-retry",
+    deliveryJsonOptions("POST", {
+      task_ids: taskIds,
+      actor: deliveryActor(),
+      idempotency_key: `batch-retry:${taskIds.sort().join(",")}:${Date.now()}`
+    }),
+    30000
+  );
+  state.delivery.selectedTaskIds = new Set();
+  showToast(`已创建 ${result.items?.length || 0} 个重试任务；失败 ${result.errors?.length || 0} 个。`, result.errors?.length ? "warning" : "success");
+  await refreshDeliveryConsole();
+}
+
+async function batchApproveDeliveryDocuments() {
+  const versionIds = [...state.delivery.selectedReviewDocumentIds];
+  if (!versionIds.length) return showToast("请先勾选待审核资料版本。", "warning");
+  const result = await deliveryRequest(
+    "/api/delivery/documents/batch-review",
+    deliveryJsonOptions("POST", {
+      version_ids: versionIds,
+      decision: "approve",
+      reviewer: deliveryActor(),
+      comment: "通过可信交付界面批量审核；每个版本仍单独执行发布门禁",
+      idempotency_key: `batch-document-review:${versionIds.sort().join(",")}:${Date.now()}`
+    }),
+    120000
+  );
+  state.delivery.selectedReviewDocumentIds = new Set();
+  showToast(`已审核 ${result.items?.length || 0} 个版本；未发布，仍需逐项通过证据门禁。`, result.errors?.length ? "warning" : "success");
+  await refreshDeliveryConsole();
+}
+
+async function openDeliveryTaskCollaboration(taskId) {
+  const [task, comments] = await Promise.all([
+    deliveryRequest(`/api/delivery/tasks/${encodeURIComponent(taskId)}`, {}, 30000),
+    deliveryRequest(`/api/delivery/tasks/${encodeURIComponent(taskId)}/comments`, {}, 30000)
+  ]);
+  const commentRows = (comments.items || []).map((item) => deliveryRow({
+    title: item.actor,
+    status: "comment",
+    meta: `${item.message} · ${item.created_at}`
+  })).join("");
+  els.deliveryEvidencePreview.innerHTML = `
+    <div class="panel-head"><div><h3>任务指派与评论</h3><p>${escapeHtml(taskId)} · 当前指派：${escapeHtml(task.assigned_to || "未指派")}</p></div></div>
+    <div class="llm-form">
+      <div class="field"><label>指派给</label><input class="form-control" data-delivery-task-assignee value="${escapeHtml(task.assigned_to || "")}" placeholder="知识工程师或审核人"></div>
+      <button class="ghost-btn" type="button" data-delivery-action="assign-task" data-id="${escapeHtml(taskId)}">保存指派</button>
+      <div class="field field--wide"><label>评论</label><textarea class="form-control" rows="3" data-delivery-task-comment placeholder="补充问题、验收结论或下一步"></textarea></div>
+      <button class="btn" type="button" data-delivery-action="comment-task" data-id="${escapeHtml(taskId)}">发表评论</button>
+    </div>
+    <div class="delivery-list">${commentRows || `<div class="empty-state">还没有任务评论。</div>`}</div>`;
+}
+
+async function assignDeliveryTask(taskId) {
+  const assignee = String(els.deliveryEvidencePreview.querySelector("[data-delivery-task-assignee]")?.value || "").trim();
+  if (!assignee) return showToast("请填写指派对象。", "warning");
+  await deliveryRequest(
+    `/api/delivery/tasks/${encodeURIComponent(taskId)}/assign`,
+    deliveryJsonOptions("POST", { assignee, actor: deliveryActor() }),
+    30000
+  );
+  showToast("任务指派已保存。", "success");
+  await refreshDeliveryConsole();
+  await openDeliveryTaskCollaboration(taskId);
+}
+
+async function commentDeliveryTask(taskId) {
+  const message = String(els.deliveryEvidencePreview.querySelector("[data-delivery-task-comment]")?.value || "").trim();
+  if (!message) return showToast("请输入评论内容。", "warning");
+  await deliveryRequest(
+    `/api/delivery/tasks/${encodeURIComponent(taskId)}/comments`,
+    deliveryJsonOptions("POST", { message, actor: deliveryActor() }),
+    30000
+  );
+  showToast("任务评论已记录。", "success");
+  await openDeliveryTaskCollaboration(taskId);
+}
+
+async function handleDeliveryAction(button) {
+  const action = button.dataset.deliveryAction;
+  const id = button.dataset.id;
+  try {
+    button.disabled = true;
+    if (action === "preview-document") return await previewDeliveryDocument(id);
+    if (action === "preview-document-page") return await previewDeliveryDocument(id, Number(button.dataset.page || 1));
+    if (action === "open-citation") return await openDeliveryCitation(id);
+    if (action === "load-document-page") {
+      const page = Number(els.deliveryEvidencePreview.querySelector("[data-delivery-preview-page]")?.value || 1);
+      return await previewDeliveryDocument(id, page);
+    }
+    if (action === "save-document-revision") return await saveDeliveryDocumentRevision(id);
+    if (action === "retry-ocr-pages") return await retryDeliveryOcrPages(id, button.dataset.pages);
+    if (action === "rollback-document") return await rollbackDeliveryDocument(id, button.dataset.target);
+    if (action === "rollback-graph") return await rollbackDeliveryGraph(id);
+    if (action === "resync-graph") return await resyncDeliveryGraph(id);
+    if (action === "build-community-summaries") return await buildDeliveryCommunitySummaries(id);
+    if (action === "view-community-summaries") return await viewDeliveryCommunitySummaries(id);
+    if (action === "open-graphrag-query") return openDeliveryGraphQuery(id);
+    if (action === "submit-graphrag-query") return await submitDeliveryGraphQuery(id);
+    if (action === "submit-graphrag-evaluation") return await submitDeliveryGraphEvaluation(id);
+    if (action === "open-fmea-feedback") return await openDeliveryFmeaFeedback(id);
+    if (action === "submit-fmea-feedback") return await submitDeliveryFmeaFeedback(id);
+    if (action === "remediate-feedback") return await remediateDeliveryFeedback(id, button.dataset.task);
+    if (action === "collaborate-task") return await openDeliveryTaskCollaboration(id);
+    if (action === "assign-task") return await assignDeliveryTask(id);
+    if (action === "comment-task") return await commentDeliveryTask(id);
+    if (action === "review-graph-statements") return await openGraphStatementReview(id);
+    if (action === "submit-graph-statements") return await submitGraphStatementReview(id);
+    if (action === "review-fmea-fields") return await openFmeaFieldReview(id);
+    if (action === "submit-fmea-fields") return await submitFmeaFieldReview(id);
+    if (action === "approve-document") await reviewDeliveryTarget("document", id);
+    if (action === "publish-document") await publishDeliveryTarget("document", id, id);
+    if (action === "publish-graph") await publishDeliveryTarget("graph", id, button.dataset.version || id);
+    if (action === "publish-fmea") await publishDeliveryTarget("fmea", id, button.dataset.version || id);
+    if (action === "cancel-task") await deliveryRequest(`/api/delivery/tasks/${encodeURIComponent(id)}/cancel`, deliveryJsonOptions("POST", { actor: deliveryActor(), reason: "用户从任务中心取消" }));
+    if (action === "retry-task") await deliveryRequest(`/api/delivery/tasks/${encodeURIComponent(id)}/retry`, deliveryJsonOptions("POST", { actor: deliveryActor(), idempotency_key: `retry:${id}:${Date.now()}` }));
+    if (action === "export-fmea") {
+      await exportDeliveryFmea(id);
+      showToast("FMEA CSV 已导出。", "success");
+      return;
+    }
+    if (action === "export-fmea-docx") {
+      await exportDeliveryFmea(id, "docx");
+      showToast("FMEA 正式 DOCX 已导出。", "success");
+      return;
+    }
+    showToast("操作已完成。", "success");
+    await refreshDeliveryConsole();
+  } catch (error) {
+    showToast(error.message || "可信交付操作失败。", "danger");
+  } finally {
+    button.disabled = false;
+  }
+}
+
+
+
+function renderEmpty(container, message) {
+
+  if (!container) return;
+
+  container.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
+
+}
+
+
+
+function normalizePageName(page) {
+
+  return globalThis.PowerRAGPages.normalize(page, "overview");
+
+}
+
+
+
+function initialPageName() {
+
+  const params = new URLSearchParams(window.location.search || "");
+
+  return normalizePageName(params.get("page") || window.location.hash.slice(1) || "overview");
+
+}
+
+
+
+function setPage(page, options = {}) {
+
+  const nextPage = normalizePageName(page);
+
+  state.page = nextPage;
+
+  els.pages.forEach((element) => {
+
+    const isActive = element.id === `page-${nextPage}`;
+
+    element.classList.toggle("active", isActive);
+    element.hidden = !isActive;
+
+    if (isActive) {
+
+      element.style.animation = "none";
+
+      element.offsetHeight;
+
+      element.style.animation = "";
+
+    }
+
+  });
+
+  els.navList?.querySelectorAll(".nav-item").forEach((button) => {
+
+    const isActive = button.dataset.page === nextPage;
+    button.classList.toggle("active", isActive);
+    if (isActive) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+
+  });
+
+  if (options.updateHash !== false && window.location.hash.slice(1) !== nextPage) {
+
+    history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${nextPage}`);
+
+  }
+
+  globalThis.PowerRAGPages.enter(nextPage);
+
+}
+
+function setWorkspaceMode(mode, options = {}) {
+
+  const nextMode = mode === "graphrag" ? "graphrag" : "rag";
+
+  activateGroupButton(els.globalModeToggle, (el) => el.dataset.mode === nextMode);
+
+  els.navList?.querySelectorAll(".nav-item").forEach((button) => {
+
+    const isHidden = button.dataset.modeTag !== nextMode;
+    button.classList.toggle("is-hidden", isHidden);
+    button.hidden = isHidden;
+    button.setAttribute("aria-hidden", String(isHidden));
+
+  });
+
+  const isRag = nextMode === "rag";
+
+  if (options.keepPage !== true) {
+
+    if (isRag) {
+
+      if (globalThis.PowerRAGPages.idsForMode("graphrag").includes(state.page)) setPage(options.page || "overview");
+
+    } else if (globalThis.PowerRAGPages.idsForMode("rag").includes(state.page)) {
+
+      setPage(options.page || "kg");
+
+    }
+
+  }
+
+  return nextMode;
+
+}
+
+function moveAdminPanelsToSystemPage() {
+  const policyPanel = $("retrievalPolicyPanel");
+  const mount = $("adminPolicyMount");
+  if (policyPanel && mount && policyPanel.parentElement !== mount) {
+    mount.appendChild(policyPanel);
+  }
+}
+
+
+
+function renderSparkline(svg, values, color) {
+
+  if (!svg) return;
+
+  const points = Array.isArray(values) ? values : [];
+
+  if (!points.length) {
+
+    svg.innerHTML = "";
+
+    return;
+
+  }
+
+  const width = 96;
+
+  const height = 32;
+
+  const max = Math.max(...points, 1);
+
+  const min = Math.min(...points, 0);
+
+  const span = max - min || 1;
+
+  const coordinates = points.map((value, index) => {
+
+    const x = points.length === 1 ? width / 2 : (index / (points.length - 1)) * width;
+
+    const y = height - ((value - min) / span) * (height - 6) - 3;
+
+    return `${x},${y}`;
+
+  }).join(" ");
+
+  svg.innerHTML = `
+
+    <polyline
+
+      points="${coordinates}"
+
+      fill="none"
+
+      stroke="${color}"
+
+      stroke-width="3"
+
+      stroke-linecap="round"
+
+      stroke-linejoin="round"
+
+    ></polyline>
+
+  `;
+
+}
+
+
+
+
+
+
+
+function renderStatus() {
+
+  if (!els.refreshStamp) return;
+
+  let statusMessage;
+
+  let stamp;
+
+  let level;
+
+  if (state.publicDemo) {
+
+    statusMessage = "Demo snapshot loaded. Connect the backend service to use full vector ingestion and retrieval.";
+
+    stamp = `Demo snapshot ${snapshotClock()}`;
+
+    level = "success";
+
+  } else if (state.localMode) {
+
+    statusMessage = "Browser-local runtime is ready. No localhost:8000 server is required.";
+
+    stamp = `Local session ${snapshotClock()}`;
+
+    level = "success";
+
+  } else if (state.online) {
+
+    statusMessage = `Backend connected${state.version ? ` · v${state.version}` : ""}. Upload and retrieval are available.`;
+
+    stamp = `Last sync ${snapshotClock()}`;
+
+    level = "success";
+
+  } else {
+
+    statusMessage = "Backend is not connected. Start the backend service to use the full feature set.";
+
+    stamp = "Waiting for backend";
+
+    level = "danger";
+
+  }
+
+  if (els.statusText) els.statusText.textContent = statusMessage;
+
+  els.refreshStamp.textContent = stamp;
+
+  if (els.statusPill) els.statusPill.title = statusMessage;
+
+  setStatusLevel(level);
+
+}
+
+
+
+function renderCollectionSpectrum() {
+
+  if (!els.collectionSpectrum || !els.collectionSummaryPill) return;
+
+  const collections = visibleConsoleCollections(state.stats?.collections || []);
+
+  if (!collections.length) {
+
+    els.collectionSummaryPill.textContent = "暂无动力装备集合";
+
+    renderEmpty(els.collectionSpectrum, "暂无可展示的动力装备向量集合。请在“资料接入”中载入演示数据或上传资料后入库。");
+
+    return;
+
+  }
+
+
+
+  const total = collections.reduce((sum, item) => sum + Number(item.count || 0), 0) || 1;
+
+  els.collectionSummaryPill.textContent = `${collections.length} 个集合`;
+
+
+
+  const bars = collections.map((item) => {
+
+    const count = Number(item.count || 0);
+
+    const width = Math.max(8, Math.round((count / total) * 100));
+
+    const active = item.name === state.primaryCollection;
+
+    return `
+
+      <div
+
+        title="${escapeHtml(item.name)}: ${formatNumber(count)}"
+
+        style="flex:${width} 1 0;min-width:28px;height:10px;border-radius:999px;background:${active ? "var(--accent)" : "var(--line-strong)"}"
+
+      ></div>
+
+    `;
+
+  }).join("");
+
+
+
+  const labels = collections.map((item) => `
+
+    <span>
+
+      ${escapeHtml(item.name)}
+
+      ${item.name === state.primaryCollection ? " - 当前" : ""}
+
+    </span>
+
+  `).join("");
+
+
+
+  els.collectionSpectrum.innerHTML = `
+
+    <div style="display:flex;gap:8px;align-items:center;">${bars}</div>
+
+    <div class="metric-subgrid">${labels}</div>
+
+  `;
+
+}
+
+
+
+function renderCollectionList() {
+
+  if (!els.collList) return;
+
+  const collections = visibleConsoleCollections(state.stats?.collections || []);
+
+  if (!collections.length) {
+
+    renderEmpty(els.collList, "暂无可管理的动力装备集合。演示时建议先载入 power_equipment_demo。");
+
+    return;
+
+  }
+
+
+
+  els.collList.innerHTML = collections.map((item) => {
+
+    const typeCounts = item.source_type_counts || {};
+
+    const meta = Object.entries(typeCounts)
+
+      .slice(0, 4)
+
+      .map(([kind, count]) => `<span>${escapeHtml(kindLabel(kind))}: ${formatNumber(count)}</span>`)
+
+      .join("");
+
+
+
+    return `
+
+      <article class="collection-item">
+
+        <div class="collection-head">
+
+          <div>
+
+            <div class="queue-name">${escapeHtml(item.name)}</div>
+
+            <p>${formatNumber(item.count || 0)} 个向量片段 · 约 ${formatNumber(item.estimated_tokens || 0)} tokens</p>
+
+          </div>
+
+          <span class="pill">${item.name === state.primaryCollection ? "当前集合" : `${formatNumber((item.sources || []).length)} 个来源`}</span>
+
+        </div>
+
+        <div class="queue-meta">
+
+          <span>估算字符 ${formatNumber(item.estimated_chars || 0)}</span>
+
+          <span>${meta || "来源 metadata 待生成"}</span>
+
+        </div>
+
+        <div class="queue-actions">
+
+          <button class="ghost-btn" type="button" data-export-collection="${escapeHtml(item.name)}"><iconify-icon icon="lucide:download"></iconify-icon> 导出 JSON</button>
+
+          <button class="ghost-btn" type="button" data-set-collection="${escapeHtml(item.name)}">设为默认</button>
+
+          <button class="ghost-btn" type="button" data-delete-collection="${escapeHtml(item.name)}" aria-label="删除集合 ${escapeHtml(item.name)}">删除集合</button>
+
+        </div>
+
+      </article>
+
+    `;
+
+  }).join("");
+
+}
+
+
+
+function renderTrendChart() {
+
+  if (!els.trendChart || !els.trendSummaryPill) return;
+
+  if (!state.timeline.length) {
+
+    els.trendSummaryPill.textContent = "Waiting for data";
+
+    renderEmpty(els.trendChart, "Refresh stats, search, or run a benchmark to show trends here.");
+
+    renderSparkline(els.sparkDocs, [], "#0A84FF");
+
+    renderSparkline(els.sparkTokens, [], "#BF5AF2");
+
+    renderSparkline(els.sparkColls, [], "#30D158");
+
+    renderSparkline(els.sparkLatency, [], "#FF9F0A");
+
+    return;
+
+  }
+
+
+
+  const timeline = state.timeline.slice(-8);
+
+  const docsValues = timeline.map((item) => item.docs);
+
+  const tokenValues = timeline.map((item) => item.tokens);
+
+  const collectionValues = timeline.map((item) => item.collections);
+
+  const latencyValues = timeline.map((item) => item.latency);
+
+
+
+  renderSparkline(els.sparkDocs, docsValues, "#0A84FF");
+
+  renderSparkline(els.sparkTokens, tokenValues, "#BF5AF2");
+
+  renderSparkline(els.sparkColls, collectionValues, "#30D158");
+
+  renderSparkline(els.sparkLatency, latencyValues, "#FF9F0A");
+
+
+
+  let series;
+
+  let summary;
+
+  if (state.trendMode === "volume") {
+
+    series = timeline.map((item) => item.docs);
+
+    summary = "Document growth";
+
+  } else if (state.trendMode === "latency") {
+
+    series = timeline.map((item) => item.latency);
+
+    summary = "Retrieval latency";
+
+  } else {
+
+    series = timeline.map((item) => item.tokens);
+
+    summary = "Vector scale";
+
+  }
+
+
+
+  els.trendSummaryPill.textContent = summary;
+
+  const max = Math.max(...series, 1);
+
+  const bars = timeline.map((item, index) => {
+
+    const value = series[index];
+
+    const height = Math.max(18, Math.round((value / max) * 160));
+
+    const label = state.trendMode === "latency"
+
+      ? `${formatDecimal(value, 2)} ms`
+
+      : state.trendMode === "volume"
+
+        ? `${formatNumber(value)} docs`
+
+        : `${formatNumber(value)} tk`;
+
+
+
+    return `
+
+      <div style="display:grid;gap:10px;align-content:end;">
+
+        <div style="height:180px;display:flex;align-items:flex-end;">
+
+          <div style="width:100%;min-width:36px;height:${height}px;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#5AC8FA,#0A84FF);"></div>
+
+        </div>
+
+        <div class="queue-meta">
+
+          <span>${escapeHtml(item.label)}</span>
+
+          <span>${escapeHtml(label)}</span>
+
+        </div>
+
+      </div>
+
+    `;
+
+  }).join("");
+
+
+
+  els.trendChart.innerHTML = `
+
+    <div style="display:grid;grid-template-columns:repeat(${timeline.length}, minmax(48px, 1fr));gap:14px;align-items:end;">
+
+      ${bars}
+
+    </div>
+
+  `;
+
+}
+
+
+
+function renderActivityFeed() {
+
+  if (!els.activityFeed) return;
+
+  const items = state.activityFilter === "all"
+
+    ? state.activity
+
+    : state.activity.filter((item) => item.level === state.activityFilter);
+
+  if (!items.length) {
+
+    renderEmpty(els.activityFeed, "No activity logs yet.");
+
+    return;
+
+  }
+
+
+
+  els.activityFeed.innerHTML = items.map((item) => `
+
+    <article class="activity-item">
+
+      <div class="activity-head">
+
+        <span class="${dotClass(item.level)}"></span>
+
+        <div class="activity-title">${escapeHtml(item.title)}</div>
+
+      </div>
+
+      <p>${escapeHtml(item.detail)}</p>
+
+      <div class="activity-meta">
+
+        <span>${formatClock(item.at)}</span>
+
+        <span>${item.level === "success" ? "成功" : item.level === "warning" ? "提醒" : "异常"}</span>
+
+      </div>
+
+    </article>
+
+  `).join("");
+
+}
+
+
+
+function renderSummaryMetrics() {
+
+  const stats = state.stats || {};
+
+  const primary = state.primaryStats || {};
+
+  const breakdown = statsBreakdown(stats);
+
+  const searchResults = state.lastSearch?.results || [];
+
+  const searchScore = averageScore(searchResults);
+
+  const throughput = state.benchmark?.insert_docs_per_second
+
+    ? `${formatDecimal(state.benchmark.insert_docs_per_second, 1)} docs/s`
+
+    : state.lastProcess?.chunks_written && state.lastProcess?.elapsed_s
+
+      ? `${formatDecimal(Number(state.lastProcess.chunks_written) / Math.max(Number(state.lastProcess.elapsed_s), 1), 1)} chunks/s`
+
+      : "--";
+
+
+
+  if (els.statDocs) els.statDocs.textContent = formatNumber(stats.total_documents || 0);
+
+  if (els.docsPdf) els.docsPdf.textContent = `PDF: ${formatNumber(breakdown.PDF || 0)}`;
+
+  if (els.docsText) els.docsText.textContent = `Text: ${formatNumber(breakdown.Text || 0)}`;
+
+  if (els.docsJson) els.docsJson.textContent = `JSON: ${formatNumber(breakdown.JSON || 0)}`;
+
+  if (els.docsOther) els.docsOther.textContent = `Other: ${formatNumber(breakdown.Other || 0)}`;
+
+  if (els.statTokens) els.statTokens.textContent = formatNumber(stats.total_tokens_estimate || 0);
+
+  if (els.statSize) els.statSize.textContent = formatMegabytes(stats.storage_size_mb || 0);
+
+  if (els.statDim) els.statDim.textContent = `${formatNumber(stats.embedding_dim || 0)} dimensions`;
+
+  if (els.statRecordCount) els.statRecordCount.textContent = `records: ${formatNumber(primary.record_count || 0)}`;
+
+  if (els.statChunkCount) els.statChunkCount.textContent = `chunks: ${formatNumber(primary.chunk_count || 0)}`;
+
+  if (els.statColls) els.statColls.textContent = formatNumber((stats.collections || []).length);
+
+  if (els.statPrimaryCollection) els.statPrimaryCollection.textContent = `current collection: ${state.primaryCollection || "-"}`;
+
+  if (els.statSuccessFiles) els.statSuccessFiles.textContent = `successful files: ${formatNumber(state.lastProcess?.files_succeeded || 0)}`;
+
+  if (els.statFailedFiles) els.statFailedFiles.textContent = `失败文件: ${formatNumber(state.lastProcess?.files_failed || 0)}`;
+
+  if (els.statStorageLive) els.statStorageLive.textContent = `实时存储 ${formatMegabytes(stats.storage_size_mb || 0)}`;
+
+
+
+  if (els.statLatency) {
+
+    const latency = state.lastSearch?.latency_ms ?? state.benchmark?.avg_query_latency_ms;
+
+    els.statLatency.textContent = Number.isFinite(latency) ? `${formatDecimal(latency, 2)} ms` : "--";
+
+  }
+
+  if (els.statLastResults) els.statLastResults.textContent = `结果数 ${formatNumber(searchResults.length)}`;
+
+  if (els.statP95) {
+
+    const p95 = state.benchmark?.p95_query_latency_ms;
+
+    els.statP95.textContent = `P95: ${Number.isFinite(p95) ? `${formatDecimal(p95, 2)} ms` : "--"}`;
+
+  }
+
+  if (els.statPrecision) els.statPrecision.textContent = `精度: ${searchResults.length ? formatPercent(searchScore, 1) : "--"}`;
+
+  if (els.statQuality) els.statQuality.textContent = state.lastProcess?.quality_report?.issue_count ? `quality warnings: ${state.lastProcess.quality_report.issue_count}` : "quality OK";
+
+  if (els.miniThroughput) els.miniThroughput.textContent = throughput;
+
+  if (els.miniPrecision) els.miniPrecision.textContent = searchResults.length ? formatPercent(searchScore, 1) : "--";
+
+  if (els.searchPulse) els.searchPulse.textContent = searchResults.length ? `${searchResults.length} hits` : (state.online ? "waiting for search" : "backend offline");
+
+}
+
+
+
+/*
+function renderUploads() {
+
+  if (!els.queueList || !els.uploadQueueMeta || !els.queueCountPill) return;
+
+
+
+  const uploads = Array.isArray(state.uploads) ? state.uploads : [];
+
+  const pending = getPendingUploads();
+
+  const processed = getProcessedUploads();
+
+  const selectedCount = Array.from(state.selectedUploads).filter((name) => pending.some((item) => item.filename === name)).length;
+
+
+
+  els.queueCountPill.textContent = `${formatNumber(uploads.length)} files`;
+
+  if (els.selectAllUploads) els.selectAllUploads.disabled = !pending.length;
+
+  if (els.clearUploadSelection) els.clearUploadSelection.disabled = !selectedCount;
+
+  if (els.btnProcess && els.btnProcess.dataset.busy !== "true") {
+
+    els.btnProcess.disabled = !selectedCount;
+
+  }
+
+
+
+  els.uploadQueueMeta.textContent = uploads.length
+
+    ? `uploaded ${formatNumber(uploads.length)} files, pending ${formatNumber(pending.length)}, processed ${formatNumber(processed.length)}${selectedCount ? `, selected ${formatNumber(selectedCount)}` : ""}`
+
+    : "Upload files or folders to show the upload queue here.";
+
+
+
+  if (!uploads.length) {
+
+    renderEmpty(els.queueList, "Upload files to show the queue here; select pending files before ingestion.");
+
+    return;
+
+  }
+
+
+
+  els.queueList.innerHTML = uploads.map((item) => {
+
+    const displayName = uploadDisplayName(item);
+
+    const pathInfo = splitUploadPath(displayName);
+
+    const isProcessed = item.status === "processed";
+
+    const isSelected = !isProcessed && state.selectedUploads.has(item.filename);
+
+    const stamp = isProcessed ? (item.processed_at || item.modified) : (item.uploaded_at || item.modified);
+
+  const recordMeta = isProcessed
+
+      ? `${formatNumber(item.last_records || 0)} 条记录 · ${formatNumber(item.last_chunks || 0)} 个片段`
+
+      : "勾选后可加入本次处理";
+
+
+
+    return `
+
+      <article class="queue-item ${isSelected ? "is-selected" : ""} ${isProcessed ? "is-processed" : ""}">
+
+        <div class="queue-head">
+
+          <div class="queue-title-row">
+
+            <label class="check-chip ${isProcessed ? "is-disabled" : ""}">
+
+              <input type="checkbox" aria-label="选择待入库文件 ${escapeHtml(pathInfo.file)}" data-upload-select="${escapeHtml(item.filename)}" ${isSelected ? "checked" : ""} ${isProcessed ? "disabled" : ""}>
+
+              <span></span>
+
+            </label>
+
+            <div>
+
+              <div class="queue-name">${escapeHtml(pathInfo.file)}</div>
+
+              <p>${escapeHtml(pathInfo.folder)} · ${escapeHtml(kindLabel(item.source_kind))} · ${formatDecimal(item.size_kb || 0, 1)} KB</p>
+
+            </div>
+
+          </div>
+
+          <div class="queue-badge-row">
+
+            ${statusTagMarkup(item.status)}
+
+            <span class="pill">${formatClock(stamp)}</span>
+
+          </div>
+
+        </div>
+
+        <div class="queue-meta">
+
+          <span>存储为 ${escapeHtml(item.filename)}</span>
+
+          <span>${recordMeta}</span>
+
+          ${item.last_log_file ? logLinkMarkup(item.last_log_file, "日志") : ""}
+
+        </div>
+
+        ${item.last_error ? `<div class="queue-hint danger-text">${escapeHtml(item.last_error)}</div>` : ""}
+
+        <div class="queue-actions is-tight">
+
+          ${isProcessed ? "" : `<button class="ghost-btn" type="button" data-delete-upload="${escapeHtml(item.filename)}">移出目录</button>`}
+
+        </div>
+
+      </article>
+
+    `;
+
+  }).join("");
+
+}
+
+
+
+function renderProcessedUploads() {
+
+  if (!els.processedList || !els.processedMeta || !els.processedCountPill) return;
+
+
+
+  const processed = getProcessedUploads();
+
+  if (!processed.length && state.processedEditMode) {
+
+    state.processedEditMode = false;
+
+    state.selectedProcessedUploads.clear();
+
+  }
+
+
+
+  const selectedCount = state.selectedProcessedUploads.size;
+
+  els.processedCountPill.textContent = `${formatNumber(processed.length)} 个文件`;
+
+  els.processedMeta.textContent = processed.length
+
+    ? `这里展示已经完成入库的文件。${state.processedEditMode ? ` 已勾选 ${formatNumber(selectedCount)} 个文件准备删除。` : " 删除时会同步清理对应向量。"}`
+
+    : "处理完成的文件会自动进入这里。";
+
+
+
+  if (els.processedEditButton) {
+
+    els.processedEditButton.disabled = !processed.length && !state.processedEditMode;
+
+    els.processedEditButton.innerHTML = `${iconMarkup(state.processedEditMode ? "lucide:x" : "lucide:pencil-line")}<span>${state.processedEditMode ? "完成" : "编辑"}</span>`;
+
+  }
+
+  if (els.processedDeleteButton) {
+
+    els.processedDeleteButton.hidden = !state.processedEditMode;
+
+    els.processedDeleteButton.disabled = !selectedCount;
+
+  }
+
+
+
+  if (!processed.length) {
+
+    renderEmpty(els.processedList, "处理完成的文件会显示在这里，和上传目录分开展示。");
+
+    return;
+
+  }
+
+
+
+  els.processedList.innerHTML = processed.map((item) => {
+
+    const displayName = uploadDisplayName(item);
+
+    const pathInfo = splitUploadPath(displayName);
+
+    const isSelected = state.selectedProcessedUploads.has(item.filename);
+
+
+
+    return `
+
+      <article class="queue-item ${isSelected ? "is-selected" : ""}">
+
+        <div class="queue-head">
+
+          <div class="queue-title-row">
+
+            ${state.processedEditMode ? `
+
+              <label class="check-chip">
+
+                <input type="checkbox" aria-label="选择已入库文件 ${escapeHtml(pathInfo.file)}" data-processed-select="${escapeHtml(item.filename)}" ${isSelected ? "checked" : ""}>
+
+                <span></span>
+
+              </label>
+
+            ` : ""}
+
+            <div>
+
+              <div class="queue-name">${escapeHtml(pathInfo.file)}</div>
+
+              <p>${escapeHtml(pathInfo.folder)} · ${escapeHtml(kindLabel(item.source_kind))}</p>
+
+            </div>
+
+          </div>
+
+          <div class="queue-badge-row">
+
+            ${statusTagMarkup("processed")}
+
+            <span class="pill">${formatClock(item.processed_at || item.modified)}</span>
+
+          </div>
+
+        </div>
+
+        <div class="queue-meta">
+
+          <span>集合 ${escapeHtml(item.last_collection || "power_equipment")}</span>
+
+          <span>${formatNumber(item.last_records || 0)} 条记</span>
+
+          <span>${formatNumber(item.last_chunks || 0)} 个片</span>
+
+          ${item.last_log_file ? logLinkMarkup(item.last_log_file, "日志") : ""}
+
+        </div>
+
+        <div class="queue-hint">删除时会同步移除该文件及其向量数据</div>
+
+      </article>
+
+    `;
+
+  }).join("");
+
+}
+
+
+
+function logLinkMarkup(fileName, label = "详细日志") {
+
+  if (state.localMode) return "";
+
+  const name = String(fileName || "").trim();
+
+  if (!name) return "";
+
+  const href = apiUrl(`/api/logs/${encodeURIComponent(name)}`);
+
+  return `<a class="log-link" href="${escapeHtml(href)}" target="_blank" rel="noopener" title="${escapeHtml(name)}">${escapeHtml(label)}</a>`;
+
+}
+
+
+
+function renderProcessSummary() {
+
+  if (!els.processLog) return;
+
+  const result = state.lastProcess;
+
+  if (!result) {
+
+    renderEmpty(els.processLog, "勾选待处理文件并完成入库后，这里会显示本次处理摘要。");
+
+    return;
+
+  }
+
+
+
+  const summaries = Array.isArray(result.file_summaries) ? result.file_summaries : [];
+
+  const requested = Array.isArray(result.requested_filenames) ? result.requested_filenames : [];
+
+  const skipped = Array.isArray(result.skipped_already_processed) ? result.skipped_already_processed : [];
+
+  const items = [
+
+    `
+
+      <article class="queue-item">
+
+        <div class="queue-head">
+
+          <div>
+
+            <div class="queue-name">本次处理摘要</div>
+
+            <p>${formatNumber(result.records_processed || 0)} 条记录，${formatNumber(result.chunks_written || 0)} 个片段入</p>
+
+          </div>
+
+          <span class="pill">${formatDecimal(result.elapsed_s || 0, 1)} s</span>
+
+        </div>
+
+        <div class="queue-meta">
+
+          <span>请求 ${formatNumber(requested.length)} </span>
+
+          <span>成功 ${formatNumber(result.files_succeeded || 0)} </span>
+
+          <span>失败 ${formatNumber(result.files_failed || 0)} </span>
+
+          <span>跳过 ${formatNumber(skipped.length)} </span>
+
+          ${result.log_file ? logLinkMarkup(result.log_file) : ""}
+
+        </div>
+
+      </article>
+
+    `
+
+  ];
+
+
+
+  summaries.forEach((item) => {
+
+    const displayName = uploadDisplayName(item.source_file);
+
+    const pathInfo = splitUploadPath(displayName);
+
+    items.push(`
+
+      <article class="queue-item">
+
+        <div class="queue-head">
+
+          <div>
+
+            <div class="queue-name">${escapeHtml(pathInfo.file)}</div>
+
+            <p>${escapeHtml(pathInfo.folder)} · ${escapeHtml(kindLabel(item.source_kind))} · ${item.status === "ok" ? "提取成功" : "提取失败"}</p>
+
+          </div>
+
+          <span class="pill">${item.status === "ok" ? `${formatNumber(item.records_extracted || 0)} 条` : "error"}</span>
+
+        </div>
+
+        <div class="queue-meta">
+
+          <span>${item.status === "ok" ? "已标记为已处理" : "未写入向量库"}</span>
+
+          <span>${item.status === "ok" ? `记录 ${formatNumber(item.records_extracted || 0)}` : escapeHtml(item.error || "处理失败")}</span>
+
+        </div>
+
+      </article>
+
+    `);
+
+  });
+
+
+
+  if (skipped.length) {
+
+    items.push(`
+
+      <article class="queue-item">
+
+        <div class="queue-head">
+
+          <div>
+
+            <div class="queue-name">已跳过文</div>
+
+            <p>这些文件之前已经处理过，本次不会重复扫描</p>
+
+          </div>
+
+          <span class="pill">${formatNumber(skipped.length)} </span>
+
+        </div>
+
+        <div class="queue-meta">
+
+          <span>${escapeHtml(skipped.map((name) => splitUploadPath(uploadDisplayName(name)).file).slice(0, 6).join(" / ") || "-")}</span>
+
+        </div>
+
+      </article>
+
+    `);
+
+  }
+
+
+
+  els.processLog.innerHTML = items.join("");
+
+}
+
+
+
+function renderPublicBooksJsonSummary() {
+
+  if (!els.publicBooksJsonSummary) return;
+
+  const result = state.publicBooksJson;
+
+  if (!result) {
+
+    renderEmpty(els.publicBooksJsonSummary, "还没有运行动力装备 JSON 入库。选择文件或载入演示数据后，可以执行检测并入库。");
+
+    return;
+
+  }
+
+  if (result.status === "running") {
+
+    renderEmpty(els.publicBooksJsonSummary, "正在读取 JSON 文件、筛选正文并写入 ChromaDB...");
+
+    return;
+
+  }
+
+
+
+  const decisions = result.decision_counts || {};
+
+  const summaryFiles = result.summary_files || {};
+
+  els.publicBooksJsonSummary.innerHTML = `
+
+    <article class="queue-item">
+
+      <div class="queue-head">
+
+        <div>
+
+          <div class="queue-name">${escapeHtml(result.latest_snapshot_name || "Label Studio JSON")}</div>
+
+          <p>集合 ${escapeHtml(result.collection || "-")} · ${escapeHtml(result.mode === "create" ? "新建/重建" : "追加已有")}</p>
+
+        </div>
+
+        <span class="pill">${formatNumber(result.chunks_written || 0)} chunks</span>
+
+      </div>
+
+      <div class="queue-meta">
+
+        <span>任务 ${formatNumber(result.tasks || 0)}</span>
+
+        <span>文本块 ${formatNumber(result.blocks_total || 0)}</span>
+
+        <span>记录 ${formatNumber(result.records_written || 0)}</span>
+
+        <span>耗时 ${formatDecimal(result.elapsed_s || 0, 1)} s</span>
+
+        ${result.log_file ? logLinkMarkup(result.log_file, "日志") : ""}
+
+      </div>
+
+      <div class="queue-meta">
+
+        <span>正文 ${formatNumber(decisions.accept || 0)}</span>
+
+        <span>待复核 ${formatNumber(decisions.review || 0)}</span>
+
+        <span>元数据 ${formatNumber(decisions.metadata || 0)}</span>
+
+        <span>剔除 ${formatNumber(decisions.reject || 0)}</span>
+
+      </div>
+
+      ${result.error ? `<div class="queue-hint danger-text">${escapeHtml(result.error)}</div>` : ""}
+
+      ${summaryFiles.markdown ? `<div class="queue-hint">摘要文件：${escapeHtml(summaryFiles.markdown)}</div>` : ""}
+
+    </article>
+
+  `;
+
+}
+
+
+
+function renderQualityReport() {
+
+  if (!els.qualityReport) return;
+
+  const report = state.lastProcess?.quality_report;
+
+  if (!report) {
+
+    renderEmpty(els.qualityReport, "处理完成后，会显示分块统计和质量问题摘要。");
+
+    return;
+
+  }
+
+
+
+  const chunks = report.chunks || {};
+
+  const docs = Array.isArray(report.documents) ? report.documents : [];
+
+  const issues = Array.isArray(report.issues) ? report.issues : [];
+
+  const docItems = docs.slice(0, 4).map((item) => `
+
+    <article class="queue-item">
+
+      <div class="queue-head">
+
+        <div>
+
+          <div class="queue-name">${escapeHtml((item.filenames || []).map(summarizeName).join(" / ") || `doc${item.doc_id}`)}</div>
+
+          <p>${formatNumber(item.block_count || 0)} 个 block</p>
+
+        </div>
+
+        <span class="pill">${formatNumber(item.short_blocks || 0)} 短块</span>
+
+      </div>
+
+      <div class="queue-meta">
+
+        <span>${Object.entries(item.label_distribution || {}).map(([key, value]) => `${key}:${value}`).join(" · ") || "无标签统计"}</span>
+
+      </div>
+
+    </article>
+
+  `).join("");
+
+
+
+  const issueItems = issues.slice(0, 4).map((issue) => `<span>${escapeHtml(issue)}</span>`).join("");
+
+  els.qualityReport.innerHTML = `
+
+    <article class="queue-item">
+
+      <div class="queue-head">
+
+        <div>
+
+          <div class="queue-name">分块统计</div>
+
+          <p>平均长度 ${formatNumber(chunks.avg_length || 0)}，最小 ${formatNumber(chunks.min_length || 0)}，最大 ${formatNumber(chunks.max_length || 0)}</p>
+
+        </div>
+
+        <span class="pill">${formatNumber(chunks.total_chunks || 0)} chunks</span>
+
+      </div>
+
+      <div class="queue-meta">
+
+        <span>问题 ${formatNumber(report.issue_count || 0)}</span>
+
+        <span>${issueItems || "未检测到明显质量问题"}</span>
+
+      </div>
+
+    </article>
+
+    ${docItems || '<div class="empty-state">暂无文档级质量摘要</div>'}
+
+  `;
+
+}
+
+
+
+*/
+
+function renderUploads() {
+  if (!els.queueList || !els.uploadQueueMeta || !els.queueCountPill) return;
+
+  const uploads = Array.isArray(state.uploads) ? state.uploads : [];
+  const pending = getPendingUploads();
+  const processed = getProcessedUploads();
+  const selectedCount = state.selectedUploads.size;
+
+  els.queueCountPill.textContent = `${formatNumber(uploads.length)} files`;
+  els.uploadQueueMeta.textContent = uploads.length
+    ? `${formatNumber(pending.length)} pending, ${formatNumber(processed.length)} processed, ${formatNumber(selectedCount)} selected.`
+    : "Upload files to build or refresh the local corpus.";
+
+  if (!uploads.length) {
+    renderEmpty(els.queueList, "Upload files to show the queue here; select pending files before ingestion.");
+    return;
+  }
+
+  els.queueList.innerHTML = uploads.map((item) => {
+    const displayName = uploadDisplayName(item);
+    const pathInfo = splitUploadPath(displayName);
+    const isProcessed = item.status === "processed";
+    const isSelected = !isProcessed && state.selectedUploads.has(item.filename);
+    const stamp = isProcessed ? (item.processed_at || item.modified) : (item.uploaded_at || item.modified);
+    const recordMeta = isProcessed
+      ? `${formatNumber(item.last_records || 0)} records, ${formatNumber(item.last_chunks || 0)} chunks`
+      : "Select to include in the next ingestion run";
+
+    return `
+      <article class="queue-item ${isSelected ? "is-selected" : ""} ${isProcessed ? "is-processed" : ""}">
+        <div class="queue-head">
+          <div class="queue-title-row">
+            <label class="check-chip ${isProcessed ? "is-disabled" : ""}">
+              <input type="checkbox" aria-label="选择待入库文件 ${escapeHtml(pathInfo.file)}" data-upload-select="${escapeHtml(item.filename)}" ${isSelected ? "checked" : ""} ${isProcessed ? "disabled" : ""}>
+              <span></span>
+            </label>
+            <div>
+              <div class="queue-name">${escapeHtml(pathInfo.file)}</div>
+              <p>${escapeHtml(pathInfo.folder)} · ${escapeHtml(kindLabel(item.source_kind))} · ${formatDecimal(item.size_kb || 0, 1)} KB</p>
+            </div>
+          </div>
+          <div class="queue-badge-row">
+            ${statusTagMarkup(item.status)}
+            <span class="pill">${formatClock(stamp)}</span>
+          </div>
+        </div>
+        <div class="queue-meta">
+          <span>Stored as ${escapeHtml(item.filename)}</span>
+          <span>${recordMeta}</span>
+          ${item.last_log_file ? logLinkMarkup(item.last_log_file, "log") : ""}
+        </div>
+        ${item.last_error ? `<div class="queue-hint danger-text">${escapeHtml(item.last_error)}</div>` : ""}
+        <div class="queue-actions is-tight">
+          ${isProcessed ? "" : `<button class="ghost-btn" type="button" data-delete-upload="${escapeHtml(item.filename)}">Remove</button>`}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderProcessedUploads() {
+  if (!els.processedList || !els.processedMeta || !els.processedCountPill) return;
+
+  const processed = getProcessedUploads();
+  if (!processed.length && state.processedEditMode) {
+    state.processedEditMode = false;
+    state.selectedProcessedUploads.clear();
+  }
+
+  const selectedCount = state.selectedProcessedUploads.size;
+  els.processedCountPill.textContent = `${formatNumber(processed.length)} files`;
+  els.processedMeta.textContent = processed.length
+    ? `Processed files are listed here. ${state.processedEditMode ? `${formatNumber(selectedCount)} selected for deletion.` : "Deleting a file also removes its vector records."}`
+    : "Processed files will appear here after ingestion.";
+
+  if (els.processedEditButton) {
+    els.processedEditButton.disabled = !processed.length && !state.processedEditMode;
+    els.processedEditButton.innerHTML = `${iconMarkup(state.processedEditMode ? "lucide:x" : "lucide:pencil-line")}<span>${state.processedEditMode ? "Done" : "Edit"}</span>`;
+  }
+  if (els.processedDeleteButton) {
+    els.processedDeleteButton.hidden = !state.processedEditMode;
+    els.processedDeleteButton.disabled = !selectedCount;
+  }
+
+  if (!processed.length) {
+    renderEmpty(els.processedList, "Processed files are shown here separately from the upload queue.");
+    return;
+  }
+
+  els.processedList.innerHTML = processed.map((item) => {
+    const displayName = uploadDisplayName(item);
+    const pathInfo = splitUploadPath(displayName);
+    const isSelected = state.selectedProcessedUploads.has(item.filename);
+
+    return `
+      <article class="queue-item ${isSelected ? "is-selected" : ""}">
+        <div class="queue-head">
+          <div class="queue-title-row">
+            ${state.processedEditMode ? `
+              <label class="check-chip">
+                <input type="checkbox" aria-label="选择已入库文件 ${escapeHtml(pathInfo.file)}" data-processed-select="${escapeHtml(item.filename)}" ${isSelected ? "checked" : ""}>
+                <span></span>
+              </label>
+            ` : ""}
+            <div>
+              <div class="queue-name">${escapeHtml(pathInfo.file)}</div>
+              <p>${escapeHtml(pathInfo.folder)} · ${escapeHtml(kindLabel(item.source_kind))}</p>
+            </div>
+          </div>
+          <div class="queue-badge-row">
+            ${statusTagMarkup("processed")}
+            <span class="pill">${formatClock(item.processed_at || item.modified)}</span>
+          </div>
+        </div>
+        <div class="queue-meta">
+          <span>Collection ${escapeHtml(item.last_collection || POWER_RAG_DEFAULT_COLLECTION || "-")}</span>
+          <span>${formatNumber(item.last_records || 0)} records</span>
+          <span>${formatNumber(item.last_chunks || 0)} chunks</span>
+          ${item.last_log_file ? logLinkMarkup(item.last_log_file, "log") : ""}
+        </div>
+        <div class="queue-hint">Deletion removes the file and its vector records.</div>
+      </article>
+    `;
+  }).join("");
+}
+
+function logLinkMarkup(fileName, label = "details") {
+  if (state.localMode) return "";
+  const name = String(fileName || "").trim();
+  if (!name) return "";
+  const href = apiUrl(`/api/logs/${encodeURIComponent(name)}`);
+  return `<a class="log-link" href="${escapeHtml(href)}" target="_blank" rel="noopener" title="${escapeHtml(name)}">${escapeHtml(label)}</a>`;
+}
+
+function renderProcessSummary() {
+  if (!els.processLog) return;
+  const result = state.lastProcess;
+  if (!result) {
+    renderEmpty(els.processLog, "After ingestion, this panel shows the processing summary.");
+    return;
+  }
+
+  const summaries = Array.isArray(result.file_summaries) ? result.file_summaries : [];
+  const requested = Array.isArray(result.requested_filenames) ? result.requested_filenames : [];
+  const skipped = Array.isArray(result.skipped_already_processed) ? result.skipped_already_processed : [];
+  const items = [
+    `
+      <article class="queue-item">
+        <div class="queue-head">
+          <div>
+            <div class="queue-name">Processing summary</div>
+            <p>${formatNumber(result.records_processed || 0)} records, ${formatNumber(result.chunks_written || 0)} chunks written</p>
+          </div>
+          <span class="pill">${formatDecimal(result.elapsed_s || 0, 1)} s</span>
+        </div>
+        <div class="queue-meta">
+          <span>requested ${formatNumber(requested.length)}</span>
+          <span>succeeded ${formatNumber(result.files_succeeded || 0)}</span>
+          <span>failed ${formatNumber(result.files_failed || 0)}</span>
+          <span>skipped ${formatNumber(skipped.length)}</span>
+          ${result.log_file ? logLinkMarkup(result.log_file) : ""}
+        </div>
+      </article>
+    `
+  ];
+
+  summaries.forEach((item) => {
+    const displayName = uploadDisplayName(item.source_file);
+    const pathInfo = splitUploadPath(displayName);
+    items.push(`
+      <article class="queue-item">
+        <div class="queue-head">
+          <div>
+            <div class="queue-name">${escapeHtml(pathInfo.file)}</div>
+            <p>${escapeHtml(pathInfo.folder)} · ${escapeHtml(kindLabel(item.source_kind))} · ${item.status === "ok" ? "extracted" : "failed"}</p>
+          </div>
+          <span class="pill">${item.status === "ok" ? `${formatNumber(item.records_extracted || 0)} records` : "error"}</span>
+        </div>
+        <div class="queue-meta">
+          <span>${item.status === "ok" ? "marked processed" : "not written"}</span>
+          <span>${item.status === "ok" ? `records ${formatNumber(item.records_extracted || 0)}` : escapeHtml(item.error || "processing failed")}</span>
+        </div>
+      </article>
+    `);
+  });
+
+  if (skipped.length) {
+    items.push(`
+      <article class="queue-item">
+        <div class="queue-head">
+          <div>
+            <div class="queue-name">Skipped files</div>
+            <p>These files were processed before and were not scanned again.</p>
+          </div>
+          <span class="pill">${formatNumber(skipped.length)} files</span>
+        </div>
+        <div class="queue-meta">
+          <span>${escapeHtml(skipped.map((name) => splitUploadPath(uploadDisplayName(name)).file).slice(0, 6).join(" / ") || "none")}</span>
+        </div>
+      </article>
+    `);
+  }
+
+  els.processLog.innerHTML = items.join("");
+}
+
+function renderPublicBooksJsonSummary() {
+  if (!els.publicBooksJsonSummary) return;
+  const result = state.publicBooksJson;
+  if (!result) {
+    renderEmpty(els.publicBooksJsonSummary, "尚未执行资料入库。请选择文件、文件夹或载入演示数据。");
+    return;
+  }
+  if (result.status === "running") {
+    renderEmpty(els.publicBooksJsonSummary, "正在读取最新资料快照，并写入本地向量索引...");
+    return;
+  }
+
+  const decisions = result.decision_counts || {};
+  const summaryFiles = result.summary_files || {};
+  els.publicBooksJsonSummary.innerHTML = `
+    <article class="queue-item">
+      <div class="queue-head">
+        <div>
+          <div class="queue-name">${escapeHtml(result.latest_snapshot_name || "JSON snapshot")}</div>
+          <p>Collection ${escapeHtml(result.collection || "-")} · ${escapeHtml(result.mode === "create" ? "create/rebuild" : "append")}</p>
+        </div>
+        <span class="pill">${formatNumber(result.chunks_written || 0)} chunks</span>
+      </div>
+      <div class="queue-meta">
+        <span>tasks ${formatNumber(result.tasks || 0)}</span>
+        <span>text blocks ${formatNumber(result.blocks_total || 0)}</span>
+        <span>records ${formatNumber(result.records_written || 0)}</span>
+        <span>elapsed ${formatDecimal(result.elapsed_s || 0, 1)} s</span>
+        ${result.log_file ? logLinkMarkup(result.log_file, "log") : ""}
+      </div>
+      <div class="queue-meta">
+        <span>accepted ${formatNumber(decisions.accept || 0)}</span>
+        <span>review ${formatNumber(decisions.review || 0)}</span>
+        <span>metadata ${formatNumber(decisions.metadata || 0)}</span>
+        <span>rejected ${formatNumber(decisions.reject || 0)}</span>
+      </div>
+      ${result.error ? `<div class="queue-hint danger-text">${escapeHtml(result.error)}</div>` : ""}
+      ${summaryFiles.markdown ? `<div class="queue-hint">Summary file: ${escapeHtml(summaryFiles.markdown)}</div>` : ""}
+    </article>
+  `;
+}
+
+function renderQualityReport() {
+  if (!els.qualityReport) return;
+  const report = state.lastProcess?.quality_report;
+  if (!report) {
+    renderEmpty(els.qualityReport, "After processing, chunk statistics and quality issues are shown here.");
+    return;
+  }
+
+  const chunks = report.chunks || {};
+  const docs = Array.isArray(report.documents) ? report.documents : [];
+  const issues = Array.isArray(report.issues) ? report.issues : [];
+  const docItems = docs.slice(0, 4).map((item) => `
+    <article class="queue-item">
+      <div class="queue-head">
+        <div>
+          <div class="queue-name">${escapeHtml((item.filenames || []).map(summarizeName).join(" / ") || `doc${item.doc_id}`)}</div>
+          <p>${formatNumber(item.block_count || 0)} blocks</p>
+        </div>
+        <span class="pill">${formatNumber(item.short_blocks || 0)} short blocks</span>
+      </div>
+      <div class="queue-meta">
+        <span>${Object.entries(item.label_distribution || {}).map(([key, value]) => `${key}:${value}`).join(" · ") || "no label stats"}</span>
+      </div>
+    </article>
+  `).join("");
+
+  const issueItems = issues.slice(0, 4).map((issue) => `<span>${escapeHtml(issue)}</span>`).join("");
+  els.qualityReport.innerHTML = `
+    <article class="queue-item">
+      <div class="queue-head">
+        <div>
+          <div class="queue-name">Chunk statistics</div>
+          <p>avg ${formatNumber(chunks.avg_length || 0)}, min ${formatNumber(chunks.min_length || 0)}, max ${formatNumber(chunks.max_length || 0)}</p>
+        </div>
+        <span class="pill">${formatNumber(chunks.total_chunks || 0)} chunks</span>
+      </div>
+      <div class="queue-meta">
+        <span>issues ${formatNumber(report.issue_count || 0)}</span>
+        <span>${issueItems || "No obvious quality issues detected"}</span>
+      </div>
+    </article>
+    ${docItems || '<div class="empty-state">No document-level quality summary yet.</div>'}
+  `;
+}
+
+function formatRetrievalDiagnosticsMarkdown(diagnostics) {
+
+  if (!diagnostics || typeof diagnostics !== "object") return "";
+
+  const rewritten = Array.isArray(diagnostics.rewritten_queries) ? diagnostics.rewritten_queries : [];
+
+  const retrievers = Array.isArray(diagnostics.retrievers) ? diagnostics.retrievers : [];
+
+  const retrieverText = retrievers.length
+    ? retrievers.map((item) => `${escapeHtml(item.name || "retriever")} ${formatNumber(item.candidate_count || 0)}`).join(" / ")
+    : "none";
+
+  const rerankerError = diagnostics.reranker_error || "none";
+
+  const noAnswerReason = diagnostics.no_answer_reason || "none";
+
+  return `
+    <article class="result-card">
+      <div class="result-head">
+        <div>
+          <div class="result-title">Retrieval Diagnostics</div>
+          <div class="result-meta">
+            <span>fusion_mode ${escapeHtml(diagnostics.fusion_mode || "-")}</span>
+            <span>path ${escapeHtml(diagnostics.retrieval_path || "-")}</span>
+            <span>raw ${formatNumber(diagnostics.raw_candidate_count || 0)}</span>
+            <span>final ${formatNumber(diagnostics.final_candidate_count || 0)}</span>
+          </div>
+        </div>
+        <span class="pill">${diagnostics.no_answer ? "no answer" : "answerable"}</span>
+      </div>
+      <div class="queue-meta">
+        <span>rewritten_queries ${escapeHtml(rewritten.join(" / ") || "-")}</span>
+        <span>retrievers ${retrieverText}</span>
+        <span>reranker_error ${escapeHtml(rerankerError)}</span>
+        <span>no_answer_reason ${escapeHtml(noAnswerReason)}</span>
+      </div>
+    </article>`;
+
+}
+
+function renderSearchResults() {
+
+  if (!els.searchMeta || !els.searchResults) return;
+
+  const payload = state.lastSearch;
+
+  if (!payload) {
+
+    els.searchMeta.textContent = "Waiting for a search query.";
+
+    renderEmpty(els.searchResults, "After you enter a question, matching chunks, sources, and scores appear here.");
+
+    return;
+
+  }
+
+
+
+  const results = Array.isArray(payload.results) ? payload.results : [];
+
+  const score = averageScore(results);
+
+  els.searchMeta.textContent = [
+
+    `集合 ${payload.collection || state.primaryCollection || "-"}`,
+
+    `耗时 ${formatDecimal(payload.latency_ms || 0, 2)} ms`,
+
+    `结果 ${formatNumber(results.length)}`,
+
+    payload.embedding_backend ? `后端 ${payload.embedding_backend}` : ""
+
+  ].filter(Boolean).join(" · ");
+
+
+
+  const diagnosticsHtml = formatRetrievalDiagnosticsMarkdown(payload.retrieval_diagnostics);
+
+  if (!results.length) {
+
+    els.searchResults.innerHTML = `${diagnosticsHtml}<div class="empty-state">${escapeHtml(payload.message || "未检索到结果。")}<br>建议：换一个更具体的设备/部件/故障关键词；检查当前集合是否为 power_equipment_demo；降低过滤条件；或重新执行资料入库。</div>`;
+
+    if (els.statPrecision) els.statPrecision.textContent = score ? `精度: ${formatPercent(score, 1)}` : "精度: --";
+
+    return;
+
+  }
+
+
+
+  els.searchResults.innerHTML = diagnosticsHtml + results.map((item, index) => {
+
+    const key = `${payload.query}-${index}-${item?.metadata?.chunk_index || 0}`;
+
+    const expanded = state.expandedResults.has(key);
+
+    const metadata = item.metadata || {};
+
+    return `
+
+      <article class="result-card ${expanded ? "is-expanded" : ""}">
+
+        <div class="result-head">
+
+          <div>
+
+            <div class="result-title">${escapeHtml(summarizeName(metadata.filename || metadata.source_file || `结果 ${index + 1}`))}</div>
+
+            <div class="result-meta">
+
+              <span>${escapeHtml(kindLabel(metadata.source_kind))}</span>
+
+              <span>相似度 ${formatPercent(item.score || 0, 1)}</span>
+
+              <span>距离 ${formatDecimal(item.distance || 0, 4)}</span>
+
+              <span>chunk ${formatNumber(metadata.chunk_index || 0)}</span>
+
+            </div>
+
+          </div>
+
+          <div class="result-score">${formatPercent(item.score || 0, 1)}</div>
+
+        </div>
+
+        <p class="result-body">${escapeHtml(item.text || "")}</p>
+
+        <div class="queue-meta">
+
+          <span>记录 ${escapeHtml(metadata.record_id || "-")}</span>
+
+          <span>tokens ${formatNumber(metadata.estimated_tokens || 0)}</span>
+
+          <span>页码/位置 ${escapeHtml(String(metadata.page_nums || metadata.page_num || metadata.source_page || "-"))}</span>
+
+        </div>
+
+        <button class="result-toggle" type="button" data-result-toggle="${escapeHtml(key)}">${expanded ? "收起" : "展开全文"}</button>
+
+      </article>
+
+    `;
+
+  }).join("");
+
+}
+
+
+
+function renderBenchmark() {
+
+  if (!els.benchGrid || !els.benchLog || !els.benchEmpty) return;
+
+  const benchmark = state.benchmark;
+
+  if (!benchmark) {
+
+    els.benchLog.textContent = "Waiting for benchmark.";
+
+    els.benchEmpty.style.display = "";
+
+    els.benchGrid.innerHTML = "";
+
+    return;
+
+  }
+
+
+
+  els.benchEmpty.style.display = "none";
+
+  const benchmarkLog = `collection ${escapeHtml(benchmark.collection)} · write ${formatDecimal(benchmark.insert_seconds, 3)} s · avg latency ${formatDecimal(benchmark.avg_query_latency_ms, 3)} ms`;
+
+  els.benchLog.innerHTML = `${benchmarkLog}${benchmark.log_file ? ` · ${logLinkMarkup(benchmark.log_file)}` : ""}`;
+
+  els.benchGrid.innerHTML = BENCHMARK_CARDS.map((card) => `
+
+    <article class="bench-card">
+
+      <div class="bench-label">
+
+        ${iconMarkup(card.icon)}
+
+        <span>${escapeHtml(card.label)}</span>
+
+      </div>
+
+      <div class="metric-value">${escapeHtml(card.formatter(benchmark[card.key]))}</div>
+
+    </article>
+
+  `).join("");
+
+}
+
+
+
+const KG_ARTIFACT_BASE = "/deliverables/06_四本书KG工具跑通演示/";
+
+const KG_FILE_ARTIFACT_BASE = "../../docs/project_deliverables/06_四本书KG工具跑通演示/";
+
+const KG_ARTIFACTS = [
+
+  { file: "triples.csv", title: "Triples CSV", description: "Entity and relation table extracted into graph format." },
+
+  { file: "run_report.md", title: "Run report", description: "Graph build records, checks, and key conclusions." },
+
+  { file: "knowledge_graph.svg", title: "Knowledge graph SVG", description: "Scalable graph visualization output." },
+
+  { file: "kg_evidence_viewer.html", title: "Evidence viewer", description: "Local page for checking triples and source evidence." },
+
+];
+
+function kgArtifactHref(fileName) {
+
+  const base = window.location.protocol === "file:" ? KG_FILE_ARTIFACT_BASE : KG_ARTIFACT_BASE;
+
+  return encodeURI(`${base}${String(fileName || "")}`);
+
+}
+
+function renderKgWorkflow() {
+
+  if (!els.kgArtifacts) return;
+
+  els.kgArtifacts.innerHTML = KG_ARTIFACTS.map((item) => `
+
+    <a class="kg-artifact-row" href="${kgArtifactHref(item.file)}" target="_blank" rel="noopener">
+
+      <span>
+
+        <span class="kg-artifact-title">${escapeHtml(item.title)}</span>
+
+        <span class="kg-artifact-desc">${escapeHtml(item.description)}</span>
+
+      </span>
+
+      ${iconMarkup("lucide:external-link")}
+
+    </a>
+
+  `).join("");
+
+}
+
+function renderAll() {
+
+  syncUploadSelections();
+
+  renderStatus();
+
+  renderCollectionSpectrum();
+
+  renderCollectionList();
+
+  renderTrendChart();
+
+  renderSummaryMetrics();
+
+  renderUploads();
+
+  renderProcessedUploads();
+
+  renderProcessSummary();
+
+  renderPublicBooksJsonSummary();
+
+  renderQualityReport();
+
+  renderSearchResults();
+
+  renderBenchmark();
+
+  renderActivityFeed();
+
+  renderKgWorkflow();
+
+  renderDeliveryConsole();
+
+  renderRestoredKgGraphSnapshot();
+
+}
+
+async function refreshHealth() {
+
+  if (FORCE_LOCAL_RUNTIME) {
+
+    state.localMode = true;
+
+    state.online = true;
+
+    state.version = "browser-local";
+
+    renderStatus();
+
+    return;
+
+  }
+
+  try {
+
+    const payload = await requestJson("/api/health", {}, 15000);
+
+    state.localMode = false;
+
+    state.online = payload.status === "ok";
+
+    state.version = payload.version || "";
+
+  } catch (error) {
+
+    state.localMode = true;
+
+    state.online = true;
+
+    state.version = "browser-local";
+
+  }
+
+  renderStatus();
+
+}
+
+
+
+async function refreshStats() {
+
+  if (state.publicDemo) { await refreshPublicDemoStats(); return; }
+
+  if (state.localMode) { await refreshLocalStats(); return; }
+
+  const stats = await requestJson("/api/stats");
+
+  state.stats = stats;
+
+  state.primaryCollection = choosePrimaryCollection(stats.collections);
+
+  if (state.primaryCollection) {
+
+    rememberActiveCollection(state.primaryCollection);
+
+    syncActiveCollectionInputs(state.primaryCollection);
+
+  }
+
+  state.primaryStats = state.primaryCollection
+
+    ? await requestJson(`/api/stats?collection=${encodeURIComponent(state.primaryCollection)}`)
+
+    : null;
+
+  rememberTimeline("stats");
+
+  renderCollectionSpectrum();
+
+  renderCollectionList();
+
+  renderTrendChart();
+
+  renderSummaryMetrics();
+
+}
+
+
+
+async function refreshUploads() {
+
+  if (state.publicDemo) { refreshLocalUploadBuckets(); renderUploads(); renderProcessedUploads(); return; }
+
+  if (state.localMode) { refreshLocalUploadBuckets(); renderUploads(); renderProcessedUploads(); return; }
+
+  const payload = await requestJson("/api/uploads");
+
+  state.uploads = Array.isArray(payload.files) ? payload.files : [];
+
+  state.pendingUploads = Array.isArray(payload.pending) ? payload.pending : state.uploads.filter((item) => item.status !== "processed");
+
+  state.processedUploads = Array.isArray(payload.processed) ? payload.processed : state.uploads.filter((item) => item.status === "processed");
+
+  syncUploadSelections();
+
+  renderUploads();
+
+  renderProcessedUploads();
+
+}
+
+
+
+async function refreshAll() {
+
+  setStatusLevel("warning");
+
+  if (els.refreshStamp) els.refreshStamp.textContent = "正在同步...";
+
+  try {
+
+    await refreshHealth();
+
+    if (!state.online) {
+
+      renderAll();
+
+      return;
+
+    }
+
+    await Promise.all([refreshStats(), refreshUploads()]);
+
+    renderAll();
+
+  } catch (error) {
+
+    addActivity("danger", "同步失败", error.message || String(error));
+
+    showToast(error.message || "同步失败", "danger");
+
+  } finally {
+
+    renderStatus();
+
+  }
+
+}
+
+
+
+function isSupportedFile(file) {
+
+  const ext = fileExtension(relativePathOf(file));
+
+  return SUPPORTED_EXTENSIONS.has(ext);
+
+}
+
+
+
+
+
+
+
+async function uploadFiles(fileList) {
+
+  const incoming = dedupeFiles(Array.from(fileList || []));
+
+  const files = incoming.filter(isSupportedFile);
+
+  const skippedCount = incoming.length - files.length;
+
+  if (!files.length) {
+
+    showToast("No supported files were found.", "warning");
+
+    return;
+
+  }
+
+
+
+  addActivity("warning", state.localMode ? "Local ingest started" : "Upload started", `Queued ${files.length} files${skippedCount ? `, skipped ${skippedCount} unsupported files` : ""}.`);
+
+  if (state.localMode) {
+
+    let replacedCount = 0;
+
+    files.forEach((file, index) => {
+
+      if (els.uploadQueueMeta) els.uploadQueueMeta.textContent = `Adding to local directory ${index + 1}/${files.length}: ${relativePathOf(file)}`;
+
+      const nextItem = buildLocalUploadItem(file);
+
+      const existing = (state.uploads || []).find((item) => item.filename === nextItem.filename);
+
+      if (existing?.status === "processed") {
+
+        purgeLocalVectorsByFilename([existing.filename]);
+
+        replacedCount += 1;
+
+      }
+
+      upsertUploadItem(nextItem);
+
+    });
+
+    refreshLocalUploadBuckets();
+
+    if (state.publicDemo) await refreshPublicDemoStats();
+
+    else await refreshLocalStats();
+
+    renderUploads();
+
+    renderProcessedUploads();
+
+    const summary = `Added ${files.length} files${replacedCount ? `, replaced ${replacedCount} previously processed files` : ""}${skippedCount ? `, skipped ${skippedCount} unsupported files` : ""}.`;
+
+    addActivity(skippedCount ? "warning" : "success", "Local directory updated", summary);
+
+    showToast(summary, skippedCount ? "warning" : "success");
+
+    void saveLocalWorkspaceSnapshot("upload");
+
+    return;
+
+  }
+
+
+
+  let successCount = 0;
+
+  let failedCount = 0;
+
+  for (let index = 0; index < files.length; index += 1) {
+
+    const file = files[index];
+
+    if (els.uploadQueueMeta) {
+
+      els.uploadQueueMeta.textContent = `Uploading ${index + 1}/${files.length}: ${relativePathOf(file)}`;
+
+    }
+
+
+
+    const form = new FormData();
+
+    form.append("file", file, file.name);
+
+    form.append("relative_path", relativePathOf(file));
+
+
+
+    try {
+
+      const uploaded = await requestJson("/api/upload", { method: "POST", body: form }, 120000);
+
+      successCount += 1;
+
+      const now = Math.floor(Date.now() / 1000);
+
+      const nextItem = {
+
+        filename: uploaded.filename,
+
+        display_name: uploaded.display_name || relativePathOf(file),
+
+        size_kb: uploaded.size_kb ?? Number((file.size / 1024).toFixed(1)),
+
+        source_kind: uploaded.source_kind || sourceKindFromName(relativePathOf(file)),
+
+        modified: now,
+
+        uploaded_at: now,
+
+        processed_at: null,
+
+        status: "uploaded",
+
+        last_collection: null,
+
+        last_records: 0,
+
+        last_chunks: 0,
+
+        last_error: null,
+
+        last_log_file: uploaded.log_file || null
+
+      };
+
+      state.uploads = [nextItem, ...(state.uploads || []).filter((item) => item.filename !== nextItem.filename)];
+
+      state.pendingUploads = state.uploads.filter((item) => item.status !== "processed");
+
+      state.processedUploads = state.uploads.filter((item) => item.status === "processed");
+
+      syncUploadSelections();
+
+      renderUploads();
+
+      renderProcessedUploads();
+
+    } catch (error) {
+
+      failedCount += 1;
+
+      addActivity("danger", "Upload failed", `${relativePathOf(file)}: ${error.message || error}`);
+
+    }
+
+  }
+
+
+
+  await refreshUploads();
+
+  const message = `Upload complete. Success ${successCount}, failed ${failedCount}${skippedCount ? `, skipped ${skippedCount}` : ""}.`;
+
+  addActivity(failedCount || skippedCount ? "warning" : "success", "Upload complete", message);
+
+  showToast(message, failedCount || skippedCount ? "warning" : "success");
+
+}
+
+
+
+async function deleteUpload(filename, options = {}) {
+
+  if (state.localMode) {
+
+    await deleteLocalUpload(filename, options);
+
+    return;
+
+  }
+
+  const purgeVectors = Boolean(options.purgeVectors);
+
+  const suffix = purgeVectors ? "?purge_vectors=true" : "";
+
+  await requestJson(`/api/uploads/${encodeURIComponent(filename)}${suffix}`, { method: "DELETE" });
+
+  addActivity("success", purgeVectors ? "Processed file removed" : "Removed from upload directory", splitUploadPath(uploadDisplayName(filename)).file);
+
+  if (purgeVectors) {
+
+    await Promise.all([refreshUploads(), refreshStats()]);
+
+  } else {
+
+    await refreshUploads();
+
+  }
+
+  showToast(purgeVectors ? `Removed ${splitUploadPath(uploadDisplayName(filename)).file} and cleared vectors.` : `Removed ${splitUploadPath(uploadDisplayName(filename)).file}.`, "success");
+
+}
+
+
+
+
+
+async function deleteProcessedUploads(filenames) {
+
+  if (state.localMode) {
+
+    await deleteLocalProcessedUploads(filenames);
+
+    return;
+
+  }
+
+  const selected = Array.from(new Set((filenames || []).filter(Boolean)));
+
+  if (!selected.length) {
+
+    showToast("Select processed files first.", "warning");
+
+    return;
+
+  }
+
+  if (!window.confirm(`确认删除 ${selected.length} 个已处理文件，并同步清理对应向量记录？操作不可撤销。`)) return;
+
+
+
+  const result = await requestJson("/api/uploads/delete", {
+
+    method: "POST",
+
+    headers: { "Content-Type": "application/json" },
+
+    body: JSON.stringify({ filenames: selected, purge_vectors: true })
+
+  }, 120000);
+
+
+
+  addActivity("success", "已删除处理文件", `删除 ${selected.length} 个文件，清理 ${formatNumber(result.chunks_deleted || 0)} 个 chunks。`);
+
+  state.selectedProcessedUploads.clear();
+
+  state.processedEditMode = false;
+
+  await Promise.all([refreshUploads(), refreshStats()]);
+
+  renderProcessSummary();
+
+  renderQualityReport();
+
+  renderSummaryMetrics();
+
+  showToast(`已删除 ${selected.length} 个已处理文件。`, "success");
+
+}
+
+
+
+function toggleProcessedEditMode(force) {
+
+  state.processedEditMode = typeof force === "boolean" ? force : !state.processedEditMode;
+
+  if (!state.processedEditMode) state.selectedProcessedUploads.clear();
+
+  renderProcessedUploads();
+
+}
+
+
+
+async function runProcess() {
+
+  if (state.localMode) {
+
+    await runLocalProcess();
+
+    return;
+
+  }
+
+  const selected = getPendingUploads()
+
+    .filter((item) => state.selectedUploads.has(item.filename))
+
+    .map((item) => item.filename);
+
+
+
+  if (!selected.length) {
+
+    showToast("Select files in the upload queue before processing.", "warning");
+
+    return;
+
+  }
+
+
+
+  // Show collection selection dialog
+
+  const collectionName = await openCollectionDialog();
+
+  if (!collectionName) return; // User cancelled
+
+
+
+  if (els.btnProcess) {
+
+    els.btnProcess.disabled = true;
+
+    els.btnProcess.dataset.busy = "true";
+
+  }
+
+  if (els.processFill) els.processFill.style.width = "18%";
+
+  if (els.processLog) renderEmpty(els.processLog, "Processing selected files...");
+
+
+
+  try {
+
+    addActivity("warning", "Processing started", `Processing ${selected.length} selected files into collection ${collectionName}`);
+
+    const result = await requestJson("/api/process", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+      body: JSON.stringify({
+
+        filenames: selected,
+
+        collection: collectionName
+
+      })
+
+    }, 300000);
+
+
+
+    state.lastProcess = result;
+
+    activateRagCollection(result.collection || collectionName, { reason: "process", render: false, persist: true });
+
+    if (els.processFill) els.processFill.style.width = "100%";
+
+
+
+    addActivity(
+
+      result.files_failed ? "warning" : "success",
+
+      "Processing finished",
+
+      `Succeeded ${result.files_succeeded || 0} files; wrote ${result.chunks_written || 0} chunks.`
+
+    );
+
+
+
+    await Promise.all([refreshStats(), refreshUploads()]);
+
+    renderProcessSummary();
+
+    renderQualityReport();
+
+    renderSummaryMetrics();
+
+    showToast(`Processing finished: ${result.files_succeeded || 0} succeeded, ${((result.skipped_already_processed || []).length || 0)} skipped.`, "success");
+
+  } catch (error) {
+
+    if (els.processFill) els.processFill.style.width = "0%";
+
+    addActivity("danger", "Processing failed", error.message || String(error));
+
+    renderProcessSummary();
+
+    showToast(error.message || "Processing failed", "danger");
+
+  } finally {
+
+    if (els.btnProcess) {
+
+      delete els.btnProcess.dataset.busy;
+
+      els.btnProcess.disabled = false;
+
+    }
+
+    renderUploads();
+
+  }
+
+}
+
+
+
+// ── Shared state for file pickers ──
+
+const _pendingJsonFiles = { standard: [], kgCorpus: [] };
+
+async function loadPowerEquipmentDemoFile() {
+  const response = await fetch("demo_data/power_equipment_demo.json", { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`演示数据加载失败: HTTP ${response.status}`);
+  }
+  const blob = await response.blob();
+  return new File([blob], "power_equipment_demo.json", {
+    type: "application/json",
+    lastModified: Date.now()
+  });
+}
+
+async function loadDemoDatasetInto(listKey = "standard") {
+  const file = await loadPowerEquipmentDemoFile();
+  if (listKey === "kgCorpus") {
+    addKgCorpusFiles([file], { replace: true });
+    applyPowerRagGraphPreset();
+  } else {
+    _pendingJsonFiles.standard = [file];
+    renderPendingListByKey("standard");
+    syncActiveCollectionInputs(POWER_EQUIPMENT_DEMO_COLLECTION);
+  }
+  activateRagCollection(POWER_EQUIPMENT_DEMO_COLLECTION, { reason: "demo-dataset", persist: true });
+  addActivity("success", "已载入演示数据", "power_equipment_demo.json -> power_equipment_demo");
+  showToast("已载入动力装备演示数据，请点击“检测并入库”。", "success");
+}
+
+function updateJsonIngestButtonState(listKey = "standard") {
+  const files = _pendingJsonFiles[listKey] || [];
+  const ids = listKey === "kgCorpus" ? ["btnKgPublicBooksJsonIngest"] : ["btnPublicBooksJsonIngest"];
+  ids.forEach((id) => {
+    const button = $(id);
+    if (!button || button.dataset.busy === "true") return;
+    button.disabled = !files.length;
+    button.title = files.length ? "开始解析、OCR/分块并写入向量库" : "请先选择文件、文件夹或载入演示数据";
+  });
+}
+
+
+
+function renderPendingFileList(files, containerEl) {
+
+  if (!containerEl) return;
+
+  if (!files.length) { containerEl.innerHTML = ""; return; }
+
+
+
+  // Determine which pending list this container belongs to
+
+  const listKey = ["kgFileList", "kgJsonIngestFileList"].includes(containerEl.id) ? "kgCorpus" : "standard";
+
+
+
+  containerEl.innerHTML = files.map((f, i) => {
+
+    const ext = (f.name.split('.').pop() || '').toLowerCase();
+
+    const isPdf = ext === 'pdf';
+
+    const isTxt = ext === 'txt';
+
+    const isOcrGenerated = f._ocrGenerated === true;
+
+    const cacheKey = `${f.name}|${f.size}|${f.lastModified}`;
+
+    const isCached = _pdfParseCache.has(cacheKey);
+
+    const sizeStr = f.size > 1048576 ? `${(f.size / 1048576).toFixed(1)} MB` : `${(f.size / 1024).toFixed(1)} KB`;
+
+
+
+    // Choose icon color based on file type
+
+    const iconName = isPdf ? 'lucide:file-text' : isTxt ? 'lucide:file-type' : 'lucide:file';
+
+    const iconColor = isPdf ? '#ef5350' : isOcrGenerated ? '#42a5f5' : '#81c784';
+
+
+
+    return `
+
+    <article class="queue-item file-item" data-file-index="${i}" style="padding:8px 12px;margin-bottom:4px;${isOcrGenerated ? 'border-left:3px solid #42a5f5;' : ''}">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+
+        <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1;">
+
+          <iconify-icon icon="${iconName}" style="color:${iconColor};flex-shrink:0;"></iconify-icon>
+
+          <span class="queue-name" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(f.name)}</span>
+
+          ${isOcrGenerated ? '<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(66,165,245,0.15);color:#42a5f5;font-weight:600;margin-left:4px;white-space:nowrap;">OCR 结果</span>' : ''}
+
+        </div>
+
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+
+          ${isCached ? '<span style="color:#81c784;font-size:11px;" title="OCR 已完成并缓存">已识别</span>' : ''}
+
+          ${isPdf ? `<button class="btn btn--xs" onclick="openOcrPanel(${i}, '${listKey}')" title="OCR 识别"
+
+            style="font-size:11px;padding:2px 8px;border-radius:4px;background:linear-gradient(135deg,#1e88e5,#1565c0);color:#fff;border:none;cursor:pointer;">
+
+            <iconify-icon icon="lucide:scan" style="font-size:12px;vertical-align:middle;"></iconify-icon> OCR
+
+          </button>` : ''}
+
+          <button class="btn btn--xs" onclick="downloadPendingFile(${i}, '${escapeHtml(listKey)}')" title="下载文件"
+
+            style="font-size:11px;padding:2px 8px;border-radius:4px;background:linear-gradient(135deg,#43a047,#2e7d32);color:#fff;border:none;cursor:pointer;">
+
+            <iconify-icon icon="lucide:download" style="font-size:12px;vertical-align:middle;"></iconify-icon> 下载
+
+          </button>
+
+          <button class="btn btn--xs" onclick="removeFileFromList(${i}, '${escapeHtml(listKey)}')" title="删除文件"
+
+            style="font-size:11px;padding:2px 8px;border-radius:4px;background:linear-gradient(135deg,#e53935,#c62828);color:#fff;border:none;cursor:pointer;">
+
+            <iconify-icon icon="lucide:trash-2" style="font-size:12px;vertical-align:middle;"></iconify-icon> 删除
+
+          </button>
+
+          <span class="muted" style="font-size:11px;">${sizeStr}</span>
+
+        </div>
+
+      </div>
+
+      ${isPdf ? `<div class="ocr-panel" id="ocrPanel_${listKey}_${i}" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid var(--line);">
+
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+
+          <label for="ocrEngine_${listKey}_${i}" style="font-size:11px;color:var(--ink-soft);">引擎:</label>
+
+          <select id="ocrEngine_${listKey}_${i}" style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);">
+
+            <option value="local">RapidOCR (本地高精度, 12x 并发, 推荐)</option>
+
+            <option value="tesseract">🔤 Tesseract (本地, chi_sim+eng)</option>
+
+            <option value="baidu">☁️ 百度云OCR (99%+ 中文精度)</option>
+
+            <option value="paddle">🌐 PaddleOCR (浏览器端, PP-OCRv5)</option>
+
+          </select>
+
+          <label for="ocrConc_${listKey}_${i}" style="font-size:11px;color:var(--ink-soft);">并发:</label>
+
+          <input type="number" id="ocrConc_${listKey}_${i}" value="12" min="1" max="24" style="width:50px;font-size:11px;padding:2px 4px;border-radius:4px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);">
+
+          <button class="btn btn--xs" onclick="startFileOcr(${i}, '${listKey}')"
+
+            style="font-size:11px;padding:3px 12px;border-radius:4px;background:linear-gradient(135deg,#43a047,#2e7d32);color:#fff;border:none;cursor:pointer;">
+
+            开始 OCR
+
+          </button>
+
+        </div>
+
+        <div id="ocrProgress_${listKey}_${i}" style="display:none;margin-top:6px;">
+
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px;">
+
+            <div style="flex:1;height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden;">
+
+              <div id="ocrBar_${listKey}_${i}" style="height:100%;width:0%;background:linear-gradient(90deg,#42a5f5,#1e88e5);transition:width 0.3s;border-radius:3px;"></div>
+
+            </div>
+
+            <span id="ocrPct_${listKey}_${i}" style="color:var(--ink-soft);">0%</span>
+
+          </div>
+
+          <div id="ocrStatus_${listKey}_${i}" style="font-size:11px;color:var(--ink-soft);margin-top:4px;"></div>
+
+          <div id="ocrLive_${listKey}_${i}" style="margin-top:6px;padding:6px 8px;border-radius:6px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);font-family:var(--font-mono);font-size:10px;line-height:1.5;color:var(--ink-soft);max-height:44px;overflow:hidden;position:relative;display:none;"><span style="color:var(--muted);font-style:italic;">等待识别结果...</span></div>
+
+        </div>
+
+      </div>` : ''}
+
+    </article>`;
+
+  }).join("");
+
+}
+
+
+
+function renderPendingListByKey(listKey) {
+
+  const ids = listKey === "kgCorpus" ? ["kgFileList", "kgJsonIngestFileList"] : ["jsonIngestFileList"];
+
+  ids.forEach((id) => {
+
+    const containerEl = $(id);
+
+    if (containerEl) renderPendingFileList(_pendingJsonFiles[listKey] || [], containerEl);
+
+  });
+  updateJsonIngestButtonState(listKey);
+
+}
+
+
+
+// ── Remove a file from a pending list ──
+
+function removeFileFromList(fileIndex, listKey) {
+
+  const list = _pendingJsonFiles[listKey];
+
+  if (!list || fileIndex < 0 || fileIndex >= list.length) return;
+
+  const removed = list[fileIndex];
+
+  _pendingJsonFiles[listKey] = list.filter((_, idx) => idx !== fileIndex);
+
+  renderPendingListByKey(listKey);
+
+  showToast(`已删除文件：${removed.name}`, 'success');
+
+}
+
+
+
+// ── Download a file from a pending list ──
+
+function downloadPendingFile(fileIndex, listKey) {
+
+  const list = _pendingJsonFiles[listKey];
+
+  if (!list || fileIndex < 0 || fileIndex >= list.length) return;
+
+  const file = list[fileIndex];
+
+  const url = URL.createObjectURL(file);
+
+  const a = document.createElement('a');
+
+  a.href = url;
+
+  a.download = file.name;
+
+  document.body.appendChild(a);
+
+  a.click();
+
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+
+}
+
+
+
+function pendingFileIdentity(file) {
+
+  return `${relativePathOf(file)}|${file.size || 0}|${file.lastModified || 0}`;
+
+}
+
+const POWER_RAG_DEFAULT_COLLECTION = POWER_EQUIPMENT_DEMO_COLLECTION;
+
+const POWER_RAG_DEFAULT_QUESTION = `Please run a comprehensive PowerRAG analysis over the current knowledge base. Do not rely only on top-k chunks.
+Tasks:
+1. First classify the question as local fact, entity relation, global summary, multi-hop causal analysis, comparison, or partition-wide analysis.
+2. Explain which evidence sources were used: text retrieval, graph retrieval, community summaries, full scan, or partition scan.
+3. Output the main findings, causal chains, risks or impacts, and recommended actions.
+4. Every conclusion must cite original evidence with source, chunk_id or record_id when available.
+5. If evidence is insufficient, say so explicitly; do not replace source evidence with graph-only relations.`;
+
+const POWER_RAG_GENERIC_SCHEMA = {
+  entityTypes: [
+    "Equipment",
+    "Component",
+    "Fault",
+    "Risk",
+    "Cause",
+    "Measure",
+    "Metric",
+    "Event",
+    "Time",
+    "Source",
+    "Evidence"
+  ],
+  relationTypes: [
+    "HAS_COMPONENT",
+    "HAS_FAULT",
+    "HAS_RISK",
+    "CAUSED_BY",
+    "LEADS_TO",
+    "HAS_MEASURE",
+    "HAS_METRIC",
+    "OCCURRED_AT",
+    "MENTIONS",
+    "HAS_EVIDENCE",
+    "MENTIONED_IN",
+    "RELATES_TO"
+  ]
+};
+
+function setFormValue(id, value) {
+
+  const el = $(id);
+
+  if (!el) return;
+
+  el.value = value;
+
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+
+  el.dispatchEvent(new Event("change", { bubbles: true }));
+
+}
+
+function applyPowerRagGraphPreset() {
+
+  setFormValue("kgPublicBooksJsonCollection", POWER_RAG_DEFAULT_COLLECTION);
+
+  activateRagCollection(POWER_RAG_DEFAULT_COLLECTION, { reason: "power-rag-preset", persist: true });
+
+  setFormValue("kgPublicBooksJsonMode", "create");
+
+  setFormValue("kgPublicBooksJsonChunkSize", "900");
+
+  setFormValue("kgPublicBooksJsonOverlap", "120");
+
+  setFormValue("kgSchemaDataType", "general_technical_corpus");
+
+  setFormValue("kgSchemaGoal", "PowerRAG general knowledge analysis. Preserve source, partition, date, chunk_id/record_id, and verbatim evidence. Extract equipment, components, faults, risks, causes, measures, metrics, and event relationships.");
+
+  setFormValue("kgEntityTypes", POWER_RAG_GENERIC_SCHEMA.entityTypes.join(", "));
+
+  setFormValue("kgRelationTypes", POWER_RAG_GENERIC_SCHEMA.relationTypes.join(", "));
+
+  setFormValue("kgExtractEngine", "generative");
+
+  setFormValue("kgCommunityAlgo", "leiden");
+
+  setFormValue("kgSearchTopK", "20");
+
+  setFormValue("kgSearchMode", "global");
+
+  setFormValue("kgMaxHops", "2");
+
+}
+
+function desktopBytesToUint8Array(value) {
+
+  if (value instanceof Uint8Array) return value;
+
+  if (value instanceof ArrayBuffer) return new Uint8Array(value);
+
+  if (ArrayBuffer.isView(value)) return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+
+  if (value && value.type === "Buffer" && Array.isArray(value.data)) return Uint8Array.from(value.data);
+
+  if (Array.isArray(value)) return Uint8Array.from(value);
+
+  throw new Error("Electron returned an unsupported file content format.");
+
+}
+
+function fileFromDesktopDescriptor(descriptor) {
+
+  if (!descriptor?.bytes) return null;
+
+  const bytes = desktopBytesToUint8Array(descriptor.bytes);
+
+  const file = new File([bytes], descriptor.name || "power_equipment_demo.json", {
+
+    type: "application/json;charset=utf-8",
+
+    lastModified: descriptor.lastModified || Date.now(),
+
+  });
+
+  file.__relativePath = descriptor.path || descriptor.name || file.name;
+
+  file.__desktopPath = descriptor.path || "";
+
+  return file;
+
+}
+
+async function pickPowerRagCorpusFile(options = {}) {
+
+  const desktopApi = window.powerRagDesktop;
+
+  const pickCorpus = desktopApi?.pickPowerRagCorpus;
+
+  if (!pickCorpus) {
+
+    $("kgFileInput")?.click();
+
+    throw new Error("This is not the Electron desktop runtime. The file picker has been opened; select a RAG JSON file before running one-click detection.");
+
+  }
+
+  const descriptor = await pickCorpus(options);
+
+  return fileFromDesktopDescriptor(descriptor);
+
+}
+
+function addKgCorpusFiles(fileList, options = {}) {
+
+  const picked = Array.from(fileList || []).filter(Boolean);
+
+  if (!picked.length) return [];
+
+  if (options.replace) _pendingJsonFiles.kgCorpus = [];
+
+  const existing = new Set((_pendingJsonFiles.kgCorpus || []).map(pendingFileIdentity));
+
+  const added = [];
+
+  for (const file of picked) {
+
+    const key = pendingFileIdentity(file);
+
+    if (existing.has(key)) continue;
+
+    existing.add(key);
+
+    _pendingJsonFiles.kgCorpus.push(file);
+
+    added.push(file);
+
+  }
+
+  renderPendingListByKey("kgCorpus");
+
+  if (added.length && !options.silent) {
+
+    const exts = {};
+
+    added.forEach((file) => {
+
+      const ext = (file.name.split(".").pop() || "").toLowerCase() || "file";
+
+      exts[ext] = (exts[ext] || 0) + 1;
+
+    });
+
+    const summary = Object.entries(exts).map(([ext, count]) => `${count} .${ext}`).join(", ");
+
+    showToast(`Selected ${added.length} corpus files (${summary}).`, "success");
+
+  }
+
+  return added;
+
+}
+
+function setKgOneClickStatus(text, tone = "neutral") {
+
+  const el = $("kgPowerRagOneClickStatus");
+
+  if (!el) return;
+
+  el.textContent = text;
+
+  el.dataset.tone = tone;
+
+}
+
+function appendKgOneClickLog(title, detail = "", icon = "lucide:check-circle") {
+
+  const logEl = $("kgPowerRagOneClickLog");
+
+  if (!logEl) return;
+
+  const row = document.createElement("div");
+
+  row.className = "queue-item";
+
+  const time = new Date().toLocaleTimeString();
+
+  row.innerHTML = `<span>${escapeHtml(time)}</span><iconify-icon icon="${icon}" style="margin-right:6px;vertical-align:middle;"></iconify-icon><strong>${escapeHtml(title)}</strong>${detail ? ` <em style="color:var(--muted);font-style:normal">${escapeHtml(detail)}</em>` : ""}`;
+
+  logEl.prepend(row);
+
+}
+
+function clearKgOneClickLog() {
+
+  const logEl = $("kgPowerRagOneClickLog");
+
+  if (logEl) logEl.innerHTML = "";
+
+}
+
+async function runKgCorpusIngestForCurrentFiles() {
+
+  return runBrowserJsonIngest("kgCorpus", {
+
+    collection: $("kgPublicBooksJsonCollection"),
+
+    mode: $("kgPublicBooksJsonMode"),
+
+    chunkSize: $("kgPublicBooksJsonChunkSize"),
+
+    overlap: $("kgPublicBooksJsonOverlap"),
+
+    btn: $("btnKgPublicBooksJsonIngest"),
+
+    summary: $("kgPublicBooksJsonSummary")
+
+  });
+
+}
+
+async function clickButtonAndWaitForIdle(buttonId, timeoutMs = 900000) {
+
+  const btn = $(buttonId);
+
+  if (!btn) throw new Error(`Cannot find button: ${buttonId}`);
+
+  btn.click();
+
+  await new Promise((resolve) => setTimeout(resolve, 80));
+
+  const startedAt = Date.now();
+
+  while (btn.dataset.busy === "true" || btn.disabled) {
+
+    if (Date.now() - startedAt > timeoutMs) {
+
+      throw new Error(`Timed out waiting for ${buttonId} to finish.`);
+
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
+  }
+
+}
+
+
+
+function ocrResultFileName(sourceFileName) {
+
+  return sourceFileName.replace(/\.[^.]+$/, '') + '_OCR_result.txt';
+
+}
+
+
+
+function addOcrTextFileToPendingList(listKey, sourceFile, fullText, meta = {}) {
+
+  if (!fullText || fullText.trim().length <= 10) return null;
+
+  const list = _pendingJsonFiles[listKey];
+
+  if (!Array.isArray(list)) return null;
+
+
+
+  const sourceKey = pendingFileIdentity(sourceFile);
+
+  const txtName = ocrResultFileName(sourceFile.name || relativePathOf(sourceFile));
+
+  const txtFile = new File([fullText], txtName, {
+
+    type: 'text/plain;charset=utf-8',
+
+    lastModified: Date.now()
+
+  });
+
+  txtFile._ocrGenerated = true;
+
+  txtFile._sourcePdfName = sourceFile.name || relativePathOf(sourceFile);
+
+  txtFile._sourcePdfKey = sourceKey;
+
+  txtFile._ocrEngine = meta.engine || "";
+
+  txtFile._ocrConfidence = meta.confidence ?? null;
+
+
+
+  const sourceIndex = list.findIndex((item) => pendingFileIdentity(item) === sourceKey);
+
+  const existingIndex = list.findIndex((item) => item._ocrGenerated === true && item._sourcePdfKey === sourceKey);
+
+  if (existingIndex >= 0) {
+
+    list.splice(existingIndex, 1);
+
+  }
+
+  const insertAt = sourceIndex >= 0 ? sourceIndex + 1 : list.length;
+
+  list.splice(insertAt, 0, txtFile);
+
+  return txtFile;
+
+}
+
+
+
+// ── Auto-download OCR result as .txt file ──
+
+function _autoDownloadOcrText(fullText, sourceFileName) {
+
+  if (!fullText || fullText.length <= 10) return;
+
+  const txtName = ocrResultFileName(sourceFileName);
+
+  const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+
+  a.href = url;
+
+  a.download = txtName;
+
+  document.body.appendChild(a);
+
+  a.click();
+
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+
+  console.log(`[OCR] 自动下载: ${txtName} (${fullText.length.toLocaleString()} 字符)`);
+
+}
+
+
+
+// ── Export OCR results as .txt downloads (from _pdfParseCache) ──
+
+async function exportKgPdfTexts() {
+
+  const files = _pendingJsonFiles.kgCorpus;
+
+  if (!files || !files.length) {
+
+    alert('Please add or select files first.');
+
+    return;
+
+  }
+
+  const pdfFiles = files.filter(f => (f.name.split('.').pop() || '').toLowerCase() === 'pdf');
+
+  if (!pdfFiles.length) {
+
+    alert('No PDF files were found in the file list.');
+
+    return;
+
+  }
+
+
+
+  let exported = 0;
+
+  let noCacheFiles = [];
+
+
+
+  for (const pdfFile of pdfFiles) {
+
+    const cacheKey = `${pdfFile.name}|${pdfFile.size}|${pdfFile.lastModified}`;
+
+    const cached = _pdfParseCache.get(cacheKey);
+
+
+
+    if (!cached || !cached.length) {
+
+      noCacheFiles.push(pdfFile.name);
+
+      continue;
+
+    }
+
+
+
+    // Cleaned comment.
+
+    const fullText = cached.map(r => r.text || '').join('\n\n').trim();
+
+    if (fullText.length <= 10) {
+
+      noCacheFiles.push(pdfFile.name);
+
+      continue;
+
+    }
+
+
+
+    // Cleaned comment.
+
+    const txtName = pdfFile.name.replace(/\.pdf$/i, '') + '_OCR_result.txt';
+
+    const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+
+    a.href = url;
+
+    a.download = txtName;
+
+    document.body.appendChild(a);
+
+    a.click();
+
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
+
+    exported++;
+
+  }
+
+
+
+  if (exported > 0) {
+
+    alert(`Exported OCR text for ${exported} files.`);
+
+  }
+
+  if (noCacheFiles.length > 0) {
+
+    alert(`These files do not have OCR text yet. Run detection/ingestion first:\n${noCacheFiles.join('\n')}`);
+
+  }
+
+}
+
+
+
+// ── Export OCR results from the standard (数据接入) pending list ──
+
+// This reads directly from _pdfParseCache and OCR-generated .txt files,
+
+// so it works immediately after OCR without needing "检测并入库".
+
+function exportOcrResultsFromStandard() {
+
+  const files = _pendingJsonFiles.standard;
+
+  if (!files || !files.length) {
+
+    showToast('Please add or select files first.', 'warning');
+
+    return;
+
+  }
+
+
+
+  let exported = 0;
+
+
+
+  // Strategy 1: Export OCR-generated .txt files directly from the pending list
+
+  const ocrTxtFiles = files.filter(f => f._ocrGenerated === true);
+
+  for (const txtFile of ocrTxtFiles) {
+
+    const url = URL.createObjectURL(txtFile);
+
+    const a = document.createElement('a');
+
+    a.href = url;
+
+    a.download = txtFile.name;
+
+    document.body.appendChild(a);
+
+    a.click();
+
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+
+    exported++;
+
+  }
+
+
+
+  // Strategy 2: For PDFs that have been OCR'd but might not have a .txt in the list,
+
+  // check _pdfParseCache
+
+  const pdfFiles = files.filter(f => (f.name.split('.').pop() || '').toLowerCase() === 'pdf');
+
+  for (const pdfFile of pdfFiles) {
+
+    const cacheKey = `${pdfFile.name}|${pdfFile.size}|${pdfFile.lastModified}`;
+
+    const cached = _pdfParseCache.get(cacheKey);
+
+    if (!cached || !cached.length) continue;
+
+
+
+    // Check if we already exported a .txt for this PDF via strategy 1
+
+    const alreadyExported = ocrTxtFiles.some(f => f._sourcePdfName === pdfFile.name);
+
+    if (alreadyExported) continue;
+
+
+
+    const fullText = cached.map(r => r.text || '').join('\n\n').trim();
+
+    if (fullText.length <= 10) continue;
+
+
+
+    const txtName = pdfFile.name.replace(/\.pdf$/i, '') + '_OCR_result.txt';
+
+    const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+
+    a.href = url;
+
+    a.download = txtName;
+
+    document.body.appendChild(a);
+
+    a.click();
+
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+
+    exported++;
+
+  }
+
+
+
+  if (exported > 0) {
+
+    showToast(`Exported ${exported} OCR results.`, 'success');
+
+  } else {
+
+    showToast('No completed OCR results were found. Run OCR on PDF files first.', 'warning');
+
+  }
+
+}
+
+
+
+// ── OCR panel toggle ──
+
+function openOcrPanel(fileIndex, listKey) {
+
+  const panel = document.getElementById(`ocrPanel_${listKey}_${fileIndex}`);
+
+  if (!panel) return;
+
+  const isVisible = panel.style.display !== 'none';
+
+  // Close all other panels
+
+  document.querySelectorAll('.ocr-panel').forEach(p => p.style.display = 'none');
+
+  panel.style.display = isVisible ? 'none' : 'block';
+
+}
+
+
+
+// ── Start OCR for a specific file ──
+
+async function startFileOcr(fileIndex, listKey) {
+
+  // Look up the file from the specific pending list
+
+  const list = _pendingJsonFiles[listKey];
+
+  if (!list || fileIndex < 0 || fileIndex >= list.length) {
+
+    showToast("File not found.", "warning");
+
+    return;
+
+  }
+
+  const file = list[fileIndex];
+
+
+
+  const idPrefix = `${listKey}_${fileIndex}`;
+
+  const engine = document.getElementById(`ocrEngine_${idPrefix}`)?.value || "local";
+
+  // Reset server detection cache so user can start server mid-session
+
+  if (engine === "local" || engine === "tesseract") _localOcrAvailable = null;
+
+  const conc = parseInt(document.getElementById(`ocrConc_${idPrefix}`)?.value || "12");
+
+  const progressDiv = document.getElementById(`ocrProgress_${idPrefix}`);
+
+  const barEl = document.getElementById(`ocrBar_${idPrefix}`);
+
+  const pctEl = document.getElementById(`ocrPct_${idPrefix}`);
+
+  const statusEl = document.getElementById(`ocrStatus_${idPrefix}`);
+
+
+
+  if (progressDiv) progressDiv.style.display = 'block';
+
+
+
+  function updateProgress(done, total, text) {
+
+    const pct = total ? Math.round(done / total * 100) : 0;
+
+    if (barEl) barEl.style.width = `${pct}%`;
+
+    if (pctEl) pctEl.textContent = `${pct}%`;
+
+    if (statusEl) statusEl.textContent = text || `${done}/${total} pages`;
+
+  }
+
+
+
+
+
+  try {
+
+    const engineLabels = {
+
+      local: 'RapidOCR local', tesseract: 'Tesseract local',
+
+      baidu: 'Baidu OCR', paddle: 'PaddleOCR (PP-OCRv5)'
+
+    };
+
+    updateProgress(0, 1, `Preparing OCR (${engineLabels[engine] || engine})...`);
+
+
+
+    if (engine === "local" || engine === "tesseract") {
+
+      // Local server engines: RapidOCR or Tesseract
+
+      const serverEngine = engine === "tesseract" ? "tesseract" : "rapidocr";
+
+      const available = await _checkLocalOcr();
+
+      if (!available) {
+
+        const batPath = "frontend_app/current_console/start_ocr_server.bat";
+
+        showToast(`Local OCR server is not running.\n\nOption 1: run ${batPath}\nOption 2: run python ocr_server.py`, "danger");
+
+        updateProgress(0, 0, "");
+
+        if (statusEl) statusEl.innerHTML = `Local OCR server unavailable<br><span style="font-size:10px;color:#64b5f6;">Start it with <b>start_ocr_server.bat</b> or <code style="background:rgba(255,255,255,0.1);padding:1px 4px;border-radius:3px;">python ocr_server.py</code></span>`;
+
+        return;
+
+      }
+
+      // Check if the requested engine is available on the server
+
+      if (engine === "local" && !_localOcrHasRapid) {
+
+        showToast("RapidOCR is not installed on the server. Try Tesseract.", "warning");
+
+        updateProgress(0, 0, "RapidOCR is unavailable. Select Tesseract.");
+
+        return;
+
+      }
+
+      if (engine === "tesseract" && !_localOcrHasTesseract) {
+
+        showToast("Tesseract was not detected on the server. Install Tesseract OCR.", "warning");
+
+        updateProgress(0, 0, "Tesseract is unavailable.");
+
+        return;
+
+      }
+
+
+
+      const engineLabel = engine === "tesseract" ? "Tesseract" : "RapidOCR";
+
+
+
+      // 获取内联实时文字预览元素
+
+      const inlineLiveEl = document.getElementById(`ocrLive_${idPrefix}`);
+
+      if (inlineLiveEl) inlineLiveEl.style.display = 'block';
+
+
+
+      const result = await _ocrPdfViaServer(file, (prog) => {
+
+        updateProgress(prog.done || 0, prog.total || 0,
+
+          prog.complete ? `Done. ${prog.elapsed_s}s, confidence ${Math.round((prog.avg_confidence||0)*100)}%`
+
+          : `${prog.done || 0}/${prog.total || 0} pages (${engineLabel}, ${prog.concurrency || conc}x concurrency)`);
+
+        // 实时文字预览
+
+        if (inlineLiveEl && !prog.complete && prog.latest_text) {
+
+          _updateInlineLiveText(inlineLiveEl, prog.latest_text, prog.latest_page || '?');
+
+        }
+
+      }, serverEngine);
+
+
+
+      // Cache the result as parsed records
+
+      const cacheKey = `${file.name}|${file.size}|${file.lastModified}`;
+
+      const records = [];
+
+      const fullText = result.full_text || "";
+
+      if (fullText.length > 10) {
+
+        records.push({
+
+          record_id: `${file.name}::ocr-full`,
+
+          filename: file.name, source_file: file.name,
+
+          source_kind: "PDF-OCR", page_num: 0,
+
+          ocr_confidence: Math.round((result.avg_confidence || 0) * 100),
+
+          ocr_engine: engineLabel, text: fullText
+
+        });
+
+      }
+
+      _pdfParseCache.set(cacheKey, records);
+
+      updateProgress(result.total || 1, result.total || 1,
+        `Done. ${(result.full_text||'').length.toLocaleString()} chars, ${result.elapsed_s || 0}s`);
+
+      const txtFile = addOcrTextFileToPendingList(listKey, file, fullText, {
+
+        engine: engineLabel,
+
+        confidence: Math.round((result.avg_confidence || 0) * 100)
+
+      });
+
+      // OCR processing flow.
+
+      _autoDownloadOcrText(fullText, file.name);
+
+      showToast(
+
+        txtFile
+
+          ? `OCR finished (${engineLabel}); result downloaded: ${txtFile.name}`
+
+          : `OCR finished (${engineLabel}): ${file.name} - ${(result.full_text||'').length.toLocaleString()} chars`,
+
+        "success"
+
+      );
+
+
+
+    } else if (engine === "baidu" || engine === "paddle") {
+
+      // Browser-side OCR: Baidu Cloud API or PaddleOCR WASM
+
+      const isBaidu = engine === "baidu";
+
+      const engineLabel = isBaidu ? "Baidu OCR" : "PaddleOCR PP-OCRv5";
+
+      if (!globalThis.pdfjsLib) { showToast("PDF.js is not loaded.", "danger"); return; }
+
+      const data = await file.arrayBuffer();
+
+      const pdf = await globalThis.pdfjsLib.getDocument({ data }).promise;
+
+      const total = pdf.numPages;
+
+      const allTexts = [];
+
+      let totalConf = 0;
+
+
+
+      // 获取内联实时文字预览元素
+
+      const inlineLiveEl = document.getElementById(`ocrLive_${idPrefix}`);
+
+      if (inlineLiveEl) inlineLiveEl.style.display = 'block';
+
+
+
+      for (let p = 1; p <= total; p++) {
+
+        updateProgress(p - 1, total, `${p}/${total} pages (${engineLabel})`);
+
+        const page = await pdf.getPage(p);
+
+        const canvas = await _renderPdfPageToCanvas(page, 2.0);
+
+        try {
+
+          const ocr = isBaidu ? await _ocrViaBaiduCloud(canvas) : await _ocrViaPaddleJs(canvas);
+
+          if (ocr?.text) {
+
+            allTexts.push(ocr.text);
+
+            // 实时显示识别到的文字（内联面板）
+
+            _updateInlineLiveText(inlineLiveEl, ocr.text, p);
+
+          }
+
+          totalConf += (ocr?.confidence || 0);
+
+        } catch (e) {
+
+          console.warn(`Page ${p} OCR failed:`, e);
+
+          if (p === 1) {
+
+            if (isBaidu) {
+
+              showToast(`Baidu OCR failed: ${e.message}`, "danger");
+
+            } else {
+
+              showToast("Browser PaddleOCR failed to load. Try Baidu OCR or start the local OCR server.", "warning");
+
+            }
+
+          }
+
+        }
+
+      }
+
+
+
+      const fullText = allTexts.join("\n\n");
+
+      const avgConf = total ? Math.round(totalConf / total) : 0;
+
+      const cacheKey = `${file.name}|${file.size}|${file.lastModified}`;
+
+      const records = [];
+
+      if (fullText.length > 10) {
+
+        records.push({
+
+          record_id: `${file.name}::ocr-full`,
+
+          filename: file.name, source_file: file.name,
+
+          source_kind: "PDF-OCR", page_num: 0,
+
+          ocr_confidence: avgConf,
+
+          ocr_engine: engineLabel,
+
+          text: fullText
+
+        });
+
+      }
+
+      _pdfParseCache.set(cacheKey, records);
+
+      updateProgress(total, total, `Done. ${fullText.length.toLocaleString()} chars, confidence ${avgConf}%`);
+
+      const txtFile = addOcrTextFileToPendingList(listKey, file, fullText, {
+
+        engine: engineLabel,
+
+        confidence: avgConf
+
+      });
+
+      // OCR processing flow.
+
+      _autoDownloadOcrText(fullText, file.name);
+
+      showToast(
+
+        txtFile
+
+          ? `OCR finished; result downloaded: ${txtFile.name}`
+
+          : `OCR finished: ${file.name} - ${fullText.length.toLocaleString()} chars`,
+
+        "success"
+
+      );
+
+    }
+
+
+
+    // Re-render file list to show cached status and the new .txt file
+
+    renderPendingListByKey(listKey);
+
+
+
+  } catch (err) {
+
+    updateProgress(0, 0, `Failed: ${err.message}`);
+
+    showToast(`OCR failed: ${err.message}`, "danger");
+
+  }
+
+}
+
+
+
+function collectJsonFiles(fileList) {
+
+  return Array.from(fileList || []).filter(f => isSupportedFile(f));
+
+}
+
+async function deleteBackendCollectionIfExists(collection, progress = null, started = performance.now()) {
+
+  const name = cleanCollectionName(collection);
+
+  if (!name || state.localMode || state.publicDemo) return false;
+
+  progress?.log?.("Clearing backend RAG collection", `Clearing ${name} before rebuild`, {
+
+    fileName: name,
+
+    detail: "Clearing backend Chroma collection",
+
+    percent: 90,
+
+    startedAt: started
+
+  });
+
+  try {
+
+    await requestJson(`/api/collections/${encodeURIComponent(name)}`, { method: "DELETE" }, 120000);
+
+    return true;
+
+  } catch (error) {
+
+    if (error?.status === 404) return false;
+
+    throw error;
+
+  }
+
+}
+
+async function syncFilesToBackendRagIndex(files, options = {}) {
+
+  if (state.localMode || state.publicDemo) return null;
+
+  const collection = cleanCollectionName(options.collection) || state.primaryCollection || POWER_RAG_DEFAULT_COLLECTION;
+
+  const fileList = Array.from(files || []).filter(isSupportedFile);
+
+  if (!collection || !fileList.length) return null;
+
+  const started = options.startedAt || performance.now();
+
+  const progress = options.progress || null;
+
+  if (options.mode === "create") {
+
+    await deleteBackendCollectionIfExists(collection, progress, started);
+
+  }
+
+  const form = new FormData();
+
+  fileList.forEach((file) => {
+
+    form.append("files", file, file.name || relativePathOf(file));
+
+  });
+
+  form.append("collection", collection);
+
+  form.append("chunk_size", String(Math.max(100, Number(options.chunkSize || 900))));
+
+  form.append("overlap", String(Math.max(0, Number(options.overlap || 120))));
+
+  form.append("parser_backend", "auto");
+
+  progress?.log?.("Writing backend RAG index", `Embedding ${formatNumber(fileList.length)} files into ${collection}`, {
+
+    fileName: collection,
+
+    detail: "Calling /api/ingest so unified RAG can retrieve this corpus",
+
+    percent: 94,
+
+    startedAt: started
+
+  });
+
+  const result = await requestJson("/api/ingest", {
+
+    method: "POST",
+
+    body: form
+
+  }, options.timeoutMs || 900000);
+
+  progress?.log?.("Backend RAG index ready", `${formatNumber(result?.chunks_written || 0)} backend chunks available`, {
+
+    fileName: result?.collection || collection,
+
+    detail: "Backend Chroma collection is ready for RAG / GraphRAG query",
+
+    percent: 96,
+
+    startedAt: started,
+
+    records: result?.records_processed,
+
+    chunks: result?.chunks_written
+
+  });
+
+  return result;
+
+}
+
+
+
+
+
+async function runBrowserJsonIngest(pendingKey, panelEls) {
+  const files = [...(_pendingJsonFiles[pendingKey] || [])];
+  if (!files.length) {
+    showToast("请先选择文件、文件夹或载入演示数据。", "warning");
+    return;
+  }
+
+  const collectionEl = panelEls.collection;
+  const modeEl = panelEls.mode;
+  const chunkSizeEl = panelEls.chunkSize;
+  const overlapEl = panelEls.overlap;
+  const btnEl = panelEls.btn;
+  const summaryEl = panelEls.summary;
+
+  const collection = String(collectionEl?.value || POWER_EQUIPMENT_DEMO_COLLECTION).trim() || POWER_EQUIPMENT_DEMO_COLLECTION;
+  const mode = String(modeEl?.value || "append");
+  const chunkSize = Number(chunkSizeEl?.value || 900);
+  const overlap = Number(overlapEl?.value || 120);
+  const started = performance.now();
+
+  activateRagCollection(collection, { reason: `${pendingKey}-ingest-start`, render: false, persist: true });
+
+  if (btnEl) { btnEl.disabled = true; btnEl.dataset.busy = "true"; }
+  if (summaryEl) renderEmpty(summaryEl, "正在解析文件、生成 chunk 并写入本地向量索引...");
+  addActivity("warning", "入库开始", `${mode === "create" ? "新建/重建" : "追加"} -> ${collection}; ${files.length} 个文件`);
+
+  const progress = createIngestProgressReporter(summaryEl, {
+    phase: "准备入库",
+    fileName: files[0]?.name || "",
+    detail: `${formatNumber(files.length)} 个文件 -> ${collection}`,
+    current: 0,
+    total: files.length,
+    percent: 2,
+    startedAt: started
+  });
+
+  try {
+    if (mode === "create") {
+      progress.log("清理集合", "正在清空本地记录与 chunk", {
+        fileName: collection,
+        detail: "正在清空本地记录与 chunk",
+        current: 0,
+        total: files.length,
+        percent: 5,
+        startedAt: started
+      });
+      state.chunks = [];
+      state.records = [];
+      await yieldToUi();
+    }
+
+    const allRecords = [];
+    const allChunks = [];
+    let succeeded = 0;
+    let failed = 0;
+    const fileSummaries = [];
+
+    for (let fi = 0; fi < files.length; fi++) {
+      const file = files[fi];
+      progress.log("读取并解析文件", `正在处理 ${fi + 1}/${files.length}: ${file.name}`, {
+        fileName: file.name,
+        detail: `正在处理 ${fi + 1}/${files.length}`,
+        current: fi,
+        total: files.length,
+        percent: 8 + Math.round((fi / files.length) * 68),
+        startedAt: started,
+        records: allRecords.length,
+        chunks: allChunks.length
+      });
+      await yieldToUi();
+
+      try {
+        const records = await parseFileRecords(file);
+        progress.log("生成 chunk", `解析完成 ${formatNumber(records.length)} 条记录，开始生成 chunk`, {
+          fileName: file.name,
+          detail: `已解析 ${formatNumber(records.length)} 条记录`,
+          current: fi + 0.55,
+          total: files.length,
+          percent: 8 + Math.round(((fi + 0.55) / files.length) * 68),
+          startedAt: started,
+          records: allRecords.length + records.length,
+          chunks: allChunks.length
+        });
+
+        let lastChunkLogAt = 0;
+        const chunks = await makeChunksProgressive(records, {
+          reportEveryMs: 100,
+          onProgress(info) {
+            const ratio = Math.min(0.98, info.chunksCreated / Math.max(info.estimatedChunks, info.chunksCreated, 1));
+            const percent = 8 + Math.round(((fi + 0.25 + ratio * 0.70) / files.length) * 68);
+            const detail = `已生成 ${formatNumber(info.chunksCreated)} / 约 ${formatNumber(info.estimatedChunks)} 个 chunk`;
+            const now = performance.now();
+            const payload = {
+              fileName: file.name,
+              detail,
+              current: fi + Math.min(0.98, 0.25 + ratio * 0.70),
+              total: files.length,
+              percent,
+              startedAt: started,
+              records: allRecords.length + info.recordsProcessed,
+              chunks: allChunks.length + info.chunksCreated
+            };
+            if (now - lastChunkLogAt >= 600 || info.chunksCreated >= info.estimatedChunks) {
+              lastChunkLogAt = now;
+              progress.log("生成 chunk", detail, payload);
+            } else {
+              progress.update({ phase: "生成 chunk", ...payload });
+            }
+          }
+        });
+
+        allRecords.push(...records);
+        allChunks.push(...chunks);
+        progress.log("文件处理完成", `完成 ${fi + 1}/${files.length}: ${file.name}`, {
+          fileName: file.name,
+          detail: `完成 ${fi + 1}/${files.length}`,
+          current: fi + 1,
+          total: files.length,
+          percent: 8 + Math.round(((fi + 1) / files.length) * 68),
+          startedAt: started,
+          records: allRecords.length,
+          chunks: allChunks.length
+        });
+        succeeded++;
+        fileSummaries.push({ source_file: file.name, source_kind: "JSON", status: "ok", records_extracted: records.length });
+
+        const ext = (file.name.split(".").pop() || "").toLowerCase();
+        if (ext === "pdf" && records.length > 0) {
+          const fullText = records.map((r) => r.text || "").join("\n\n").trim();
+          if (fullText.length > 10) {
+            addOcrTextFileToPendingList(pendingKey, file, fullText, {
+              engine: records.find((r) => r.ocr_engine)?.ocr_engine || "PDF.js",
+              confidence: records.find((r) => r.ocr_confidence != null)?.ocr_confidence ?? null
+            });
+          }
+        }
+      } catch (err) {
+        failed++;
+        fileSummaries.push({ source_file: file.name, source_kind: "JSON", status: "error", records_extracted: 0, error: err.message || String(err) });
+        progress.log("文件处理失败", `${file.name}: ${err.message || String(err)}`, {
+          fileName: file.name,
+          detail: err.message || String(err),
+          current: fi + 1,
+          total: files.length,
+          percent: 8 + Math.round(((fi + 1) / files.length) * 68),
+          startedAt: started,
+          records: allRecords.length,
+          chunks: allChunks.length
+        });
+      }
+    }
+
+    if (!allChunks.length && !allRecords.length) {
+      throw new Error("所有文件解析失败，未生成记录或 chunk。");
+    }
+
+    progress.log("写入本地索引", "正在更新 records / chunks", {
+      fileName: collection,
+      detail: "正在更新 records / chunks",
+      current: files.length,
+      total: files.length,
+      percent: 84,
+      startedAt: started,
+      records: allRecords.length,
+      chunks: allChunks.length
+    });
+    await yieldToUi();
+
+    state.records = [...state.records, ...allRecords];
+    state.chunks = [...state.chunks, ...allChunks];
+    const elapsed = Number(((performance.now() - started) / 1000).toFixed(2));
+
+    progress.log("生成质量报告", "正在统计文档与 chunk 质量", {
+      fileName: collection,
+      detail: "正在统计文档与 chunk 质量",
+      current: files.length,
+      total: files.length,
+      percent: 88,
+      startedAt: started,
+      records: allRecords.length,
+      chunks: allChunks.length
+    });
+    await yieldToUi();
+
+    const qualityReport = buildQualityReport(allRecords, allChunks);
+    state.publicBooksJson = {
+      status: "ok",
+      latest_snapshot_name: files.map((f) => f.name).join(", "),
+      collection,
+      mode,
+      chunks_written: allChunks.length,
+      records_written: allRecords.length,
+      tasks: files.length,
+      blocks_total: allRecords.length,
+      elapsed_s: elapsed,
+      decision_counts: { accept: allRecords.length, review: 0, metadata: 0, reject: 0 }
+    };
+    state.primaryCollection = collection;
+    state.lastProcess = {
+      collection,
+      requested_filenames: files.map((f) => f.name),
+      skipped_already_processed: [],
+      files_succeeded: succeeded,
+      files_failed: failed,
+      records_processed: allRecords.length,
+      chunks_written: allChunks.length,
+      elapsed_s: elapsed,
+      file_summaries: fileSummaries,
+      quality_report: qualityReport,
+      embedding_backend: "browser-local"
+    };
+    let backendIngestResult = null;
+    if (!state.localMode && !state.publicDemo) {
+      backendIngestResult = await syncFilesToBackendRagIndex(files, {
+        collection,
+        mode,
+        chunkSize,
+        overlap,
+        progress,
+        startedAt: started
+      });
+      if (backendIngestResult) {
+        const backendCollection = backendIngestResult.collection || collection;
+        state.lastProcess.backend_ingest = backendIngestResult;
+        state.publicBooksJson.backend_ingest = {
+          collection: backendCollection,
+          chunks_written: backendIngestResult.chunks_written || 0,
+          records_processed: backendIngestResult.records_processed || 0,
+          log_file: backendIngestResult.log_file || null
+        };
+        activateRagCollection(backendCollection, { reason: `${pendingKey}-backend-ingest`, render: false, persist: true });
+      }
+    }
+
+    progress.log("刷新统计", "正在刷新集合状态与处理摘要", {
+      fileName: collection,
+      detail: "正在刷新集合状态与处理摘要",
+      current: files.length,
+      total: files.length,
+      percent: 92,
+      startedAt: started,
+      records: allRecords.length,
+      chunks: allChunks.length
+    });
+    await yieldToUi();
+    if (state.publicDemo) await refreshPublicDemoStats();
+    else if (state.localMode) await refreshLocalStats();
+    else await Promise.all([refreshStats(), refreshUploads()]);
+
+    progress.stop({
+      phase: "入库完成",
+      fileName: collection,
+      detail: `完成：${formatNumber(allRecords.length)} 条记录 / ${formatNumber(allChunks.length)} 个 chunk`,
+      percent: 100,
+      records: allRecords.length,
+      chunks: allChunks.length
+    });
+    await yieldToUi();
+
+    renderPublicBooksJsonSummary();
+    renderProcessSummary();
+    renderSummaryMetrics();
+    renderSearchResults();
+    addActivity("success", "JSON 入库完成", `成功处理 ${succeeded} 个文件，生成 ${formatNumber(allChunks.length)} 个 chunk。`);
+    showToast(`JSON 入库完成，写入 ${formatNumber(allChunks.length)} 个 chunk。`, "success");
+    setTimeout(() => { void saveLocalWorkspaceSnapshot("json-ingest"); }, 250);
+
+    const fileListContainerId = pendingKey === "kgCorpus" ? "kgFileList" : "jsonIngestFileList";
+    const fileListEl = $(fileListContainerId);
+    if (fileListEl) renderPendingFileList(_pendingJsonFiles[pendingKey], fileListEl);
+  } catch (error) {
+    const errorMessage = error.message || String(error);
+    state.publicBooksJson = {
+      status: "error",
+      latest_snapshot_name: "入库失败",
+      collection,
+      mode,
+      chunks_written: 0,
+      records_written: 0,
+      elapsed_s: 0,
+      decision_counts: {},
+      error: errorMessage
+    };
+    progress.stop({
+      phase: "入库失败",
+      fileName: collection,
+      detail: errorMessage,
+      percent: 0,
+      records: 0,
+      chunks: 0
+    });
+    await yieldToUi();
+    renderPublicBooksJsonSummary();
+    addActivity("danger", "JSON 入库失败", errorMessage);
+    showToast(errorMessage || "JSON 入库失败", "danger");
+  } finally {
+    if (btnEl) { delete btnEl.dataset.busy; btnEl.disabled = false; }
+  }
+}
+
+async function runPublicBooksJsonIngest() {
+
+  await runBrowserJsonIngest("standard", {
+
+    collection: els.publicBooksJsonCollection,
+
+    mode: els.publicBooksJsonMode,
+
+    chunkSize: els.publicBooksJsonChunkSize,
+
+    overlap: els.publicBooksJsonOverlap,
+
+    btn: els.btnPublicBooksJsonIngest,
+
+    summary: els.publicBooksJsonSummary
+
+  });
+
+}
+
+
+
+
+
+function exportChromaFromPublicBooksPanel() {
+
+  if (state.localMode || state.publicDemo) {
+
+    exportLocalChunksAsChromaZip();
+
+    return;
+
+  }
+
+  showToast("Packaging ChromaDB ZIP...", "success");
+
+  const link = document.createElement("a");
+
+  link.href = apiUrl("/api/chroma/export");
+
+  link.download = "";
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  document.body.removeChild(link);
+
+  addActivity("success", "ChromaDB export started", "Database ZIP");
+
+}
+
+
+function downloadBlobAsFile(blob, filename) {
+
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+
+  link.href = url;
+
+  link.download = filename;
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+
+}
+
+
+
+function filenameFromContentDisposition(headerValue, fallback) {
+
+  const match = /filename="?([^";]+)"?/i.exec(headerValue || "");
+
+  return match?.[1] || fallback;
+
+}
+
+
+
+function graphEndpointId(value) {
+
+  if (value && typeof value === "object") return value.id || value.name || value.label || "";
+
+  return value == null ? "" : String(value);
+
+}
+
+
+
+function openLocalWorkspaceDb() {
+
+  if (!("indexedDB" in window)) return Promise.resolve(null);
+
+  return new Promise((resolve) => {
+
+    const request = indexedDB.open(LOCAL_WORKSPACE_DB_NAME, LOCAL_WORKSPACE_DB_VERSION);
+
+    request.onupgradeneeded = () => {
+
+      const db = request.result;
+
+      if (!db.objectStoreNames.contains(LOCAL_WORKSPACE_STORE_NAME)) {
+
+        db.createObjectStore(LOCAL_WORKSPACE_STORE_NAME, { keyPath: "key" });
+
+      }
+
+    };
+
+    request.onsuccess = () => resolve(request.result);
+
+    request.onerror = () => resolve(null);
+
+  });
+
+}
+
+
+
+async function readLocalWorkspaceSnapshot() {
+
+  const db = await openLocalWorkspaceDb();
+
+  if (!db) return null;
+
+  return new Promise((resolve) => {
+
+    const tx = db.transaction(LOCAL_WORKSPACE_STORE_NAME, "readonly");
+
+    const request = tx.objectStore(LOCAL_WORKSPACE_STORE_NAME).get(LOCAL_WORKSPACE_SNAPSHOT_KEY);
+
+    request.onsuccess = () => resolve(request.result?.snapshot || null);
+
+    request.onerror = () => resolve(null);
+
+    tx.oncomplete = () => db.close();
+
+    tx.onerror = () => db.close();
+
+  });
+
+}
+
+
+
+async function writeLocalWorkspaceSnapshot(snapshot) {
+
+  const db = await openLocalWorkspaceDb();
+
+  if (!db) return false;
+
+  return new Promise((resolve) => {
+
+    const tx = db.transaction(LOCAL_WORKSPACE_STORE_NAME, "readwrite");
+
+    tx.objectStore(LOCAL_WORKSPACE_STORE_NAME).put({
+
+      key: LOCAL_WORKSPACE_SNAPSHOT_KEY,
+
+      saved_at: snapshot.saved_at,
+
+      snapshot
+
+    });
+
+    tx.oncomplete = () => { db.close(); resolve(true); };
+
+    tx.onerror = () => { db.close(); resolve(false); };
+
+  });
+
+}
+
+
+
+function serializableUploadItem(item) {
+
+  if (!item) return null;
+
+  const { file, ...rest } = item;
+
+  return { ...rest, persisted: true, file: null };
+
+}
+
+
+
+function serializableChunk(chunk) {
+
+  if (!chunk) return null;
+
+  return {
+
+    chunk_id: chunk.chunk_id,
+
+    text: chunk.text || "",
+
+    vector: Array.from(chunk.vector || []),
+
+    tokens: Array.isArray(chunk.tokens) ? chunk.tokens : [],
+
+    normalizedText: chunk.normalizedText || String(chunk.text || "").toLowerCase(),
+
+    metadata: { ...(chunk.metadata || {}) }
+
+  };
+
+}
+
+
+
+function hydrateChunk(chunk) {
+
+  const vectorValues = Array.isArray(chunk?.vector) ? chunk.vector : [];
+
+  return {
+
+    ...chunk,
+
+    vector: Float32Array.from(vectorValues),
+
+    tokens: Array.isArray(chunk?.tokens) ? chunk.tokens : [],
+
+    normalizedText: chunk?.normalizedText || String(chunk?.text || "").toLowerCase(),
+
+    metadata: { ...(chunk?.metadata || {}) }
+
+  };
+
+}
+
+
+
+function serializeKgGraphSnapshot() {
+
+  const kg = window._kgGraph;
+
+  if (!kg || !Array.isArray(kg.nodes) || !kg.nodes.length) return null;
+
+  const rawLinks = Array.isArray(kg.links) ? kg.links : Array.from(kg.edges?.values?.() || []);
+
+  const entities = kg.entities instanceof Map
+
+    ? Array.from(kg.entities.entries()).map(([name, data]) => ({ name, ...(data || {}) }))
+
+    : Array.isArray(kg.entities) ? kg.entities : [];
+
+  return {
+
+    version: 1,
+
+    engineMode: kg.engineMode || null,
+
+    schema: kg.schema || null,
+
+    nodes: kg.nodes.map((node) => ({
+
+      id: node.id,
+
+      type: node.type || null,
+
+      count: Number(node.count || 0),
+
+      color: node.color || null,
+
+      radius: Number(node.radius || 8),
+
+      x: Number.isFinite(node.x) ? node.x : null,
+
+      y: Number.isFinite(node.y) ? node.y : null
+
+    })),
+
+    links: rawLinks.map((edge, index) => ({
+
+      id: edge.id || edge.triple_id || `edge-${index}`,
+
+      source: graphEndpointId(edge.source),
+
+      target: graphEndpointId(edge.target),
+
+      relation: edge.relation || edge.predicate || "RELATES_TO",
+
+      weight: Number(edge.weight || 1),
+
+      confidence: edge.confidence ?? null,
+
+      evidence: edge.evidence || null,
+
+      source_file: edge.source_file || null,
+
+      source_page: edge.source_page ?? null,
+
+      source_chunk_id: edge.source_chunk_id || edge.chunk_id || null
+
+    })),
+
+    entities
+
+  };
+
+}
+
+
+
+async function syncKgGraphToBackend(reason = "manual") {
+
+  if (state.localMode || state.publicDemo) return null;
+
+  const graph = serializeKgGraphSnapshot();
+
+  if (!graph) return null;
+
+  try {
+
+    const result = await requestJson("/api/graphrag/import", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+      body: JSON.stringify({
+
+        graph,
+
+        graph_db_path: "graph_store.sqlite",
+
+        reset: true,
+
+        preserve_isolated_nodes: false,
+
+        reason
+
+      })
+
+    }, 120000);
+
+    state.kgGraphDbPath = result.graph_db_path || "graph_store.sqlite";
+
+    addActivity("success", "Graph synced to backend", `${result.node_count || 0} nodes / ${result.edge_count || 0} edges`);
+
+    return result;
+
+  } catch (error) {
+
+    const message = error?.message || String(error);
+
+    console.warn("[kg] failed to sync graph to backend", error);
+
+    addActivity("warning", "Graph backend sync failed", message.slice(0, 140));
+
+    return null;
+
+  }
+
+}
+
+
+const KG_GRAPH_RENDER_NODE_LIMIT = 2500;
+
+const KG_GRAPH_RENDER_EDGE_LIMIT = 25000;
+
+const KG_MAX_GENERATIVE_ENTITIES = 50000;
+
+const KG_MAX_JSON_KEY_ENTITIES = 300;
+
+const KG_RELATION_ENTITY_LIMIT = 1500;
+
+const KG_MAX_RELATION_SENTENCES = 6000;
+
+const KG_RELATION_BATCH_SIZE = 200;
+
+const KG_MAX_GRAPH_EDGES = 25000;
+
+const KG_RUNTIME_SOURCE_FILES = new Set(["kg-build", "kg-graph-summary"]);
+
+const KG_COMMUNITY_TARGET_MIN = 12;
+
+const KG_COMMUNITY_TARGET_MAX = 48;
+
+const KG_COMMUNITY_SUBGRAPH_NODE_LIMIT = 700;
+
+const KG_COMMUNITY_SUBGRAPH_EDGE_LIMIT = 5000;
+
+
+
+function shouldRenderKgGraph(nodes, links) {
+
+  return (Array.isArray(nodes) ? nodes.length : 0) <= KG_GRAPH_RENDER_NODE_LIMIT
+
+    && (Array.isArray(links) ? links.length : 0) <= KG_GRAPH_RENDER_EDGE_LIMIT;
+
+}
+
+
+function buildKgCommunityGraph(nodes, links) {
+
+  const sourceNodes = Array.isArray(nodes) ? nodes : [];
+
+  const sourceLinks = Array.isArray(links) ? links : [];
+
+  const nodeMap = new Map(sourceNodes.map((node) => [String(node.id), node]));
+
+  const adjacency = new Map(sourceNodes.map((node) => [String(node.id), []]));
+
+  const degree = new Map(sourceNodes.map((node) => [String(node.id), 0]));
+
+  for (const edge of sourceLinks) {
+
+    const source = graphEndpointId(edge.source);
+
+    const target = graphEndpointId(edge.target);
+
+    if (!nodeMap.has(source) || !nodeMap.has(target) || source === target) continue;
+
+    const weight = Math.max(1, Number(edge.weight || 1));
+
+    adjacency.get(source)?.push(target);
+
+    adjacency.get(target)?.push(source);
+
+    degree.set(source, Number(degree.get(source) || 0) + weight);
+
+    degree.set(target, Number(degree.get(target) || 0) + weight);
+
+  }
+
+  const targetCommunityCount = Math.max(
+    KG_COMMUNITY_TARGET_MIN,
+    Math.min(KG_COMMUNITY_TARGET_MAX, Math.round(Math.sqrt(Math.max(sourceNodes.length, 1))))
+  );
+
+  const targetSize = Math.max(20, Math.ceil(sourceNodes.length / targetCommunityCount));
+
+  const orderedNodes = sourceNodes.slice().sort((a, b) => {
+
+    const degreeDelta = Number(degree.get(String(b.id)) || 0) - Number(degree.get(String(a.id)) || 0);
+
+    if (degreeDelta) return degreeDelta;
+
+    return Number(b.count || 0) - Number(a.count || 0);
+
+  });
+
+  const assigned = new Map();
+
+  const communities = [];
+
+  for (const seed of orderedNodes) {
+
+    const seedId = String(seed.id);
+
+    if (assigned.has(seedId)) continue;
+
+    const queue = [seedId];
+
+    const queued = new Set(queue);
+
+    const memberIds = [];
+
+    while (queue.length && memberIds.length < targetSize) {
+
+      const nodeId = queue.shift();
+
+      if (!nodeId || assigned.has(nodeId)) continue;
+
+      assigned.set(nodeId, communities.length);
+
+      memberIds.push(nodeId);
+
+      const neighbors = (adjacency.get(nodeId) || [])
+        .filter((neighborId) => !assigned.has(neighborId) && !queued.has(neighborId))
+        .sort((a, b) => Number(degree.get(b) || 0) - Number(degree.get(a) || 0))
+        .slice(0, 48);
+
+      for (const neighborId of neighbors) {
+
+        queued.add(neighborId);
+
+        queue.push(neighborId);
+
+      }
+
+    }
+
+    if (!memberIds.length) continue;
+
+    communities.push({ id: `C${communities.length + 1}`, memberIds });
+
+  }
+
+  for (const node of sourceNodes) {
+
+    const nodeId = String(node.id);
+
+    if (assigned.has(nodeId)) continue;
+
+    const community = communities[communities.length - 1];
+
+    if (community && community.memberIds.length < targetSize) {
+
+      assigned.set(nodeId, communities.length - 1);
+
+      community.memberIds.push(nodeId);
+
+    } else {
+
+      assigned.set(nodeId, communities.length);
+
+      communities.push({ id: `C${communities.length + 1}`, memberIds: [nodeId] });
+
+    }
+
+  }
+
+  const communityNodes = communities.map((community, index) => {
+
+    const members = community.memberIds.map((id) => nodeMap.get(id)).filter(Boolean);
+
+    const typeCounts = {};
+
+    let weight = 0;
+
+    for (const member of members) {
+
+      typeCounts[member.type || "Entity"] = (typeCounts[member.type || "Entity"] || 0) + 1;
+
+      weight += Math.max(1, Number(member.count || 1));
+
+    }
+
+    const dominantType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "Entity";
+
+    const topMembers = members.slice()
+      .sort((a, b) => {
+
+        const countDelta = Number(b.count || 0) - Number(a.count || 0);
+
+        if (countDelta) return countDelta;
+
+        return Number(degree.get(String(b.id)) || 0) - Number(degree.get(String(a.id)) || 0);
+
+      })
+      .slice(0, 8);
+
+    const angle = (index / Math.max(communities.length, 1)) * Math.PI * 2 - Math.PI / 2;
+
+    const ring = 150 + (index % 3) * 56;
+
+    return {
+
+      id: community.id,
+
+      type: dominantType,
+
+      count: members.length,
+
+      memberIds: community.memberIds,
+
+      memberCount: members.length,
+
+      edgeCount: 0,
+
+      weight,
+
+      color: topMembers[0]?.color || "#4fc3f7",
+
+      radius: Math.max(18, Math.min(56, 12 + Math.sqrt(members.length) * 2.2)),
+
+      label: `${community.id} · ${members.length}`,
+
+      title: topMembers.map((item) => item.id).join(" / "),
+
+      x: 400 + Math.cos(angle) * ring,
+
+      y: 240 + Math.sin(angle) * ring,
+
+    };
+
+  });
+
+  const communityByNode = new Map();
+
+  communityNodes.forEach((community, index) => {
+
+    for (const memberId of community.memberIds) communityByNode.set(memberId, index);
+
+  });
+
+  const aggregateLinks = new Map();
+
+  for (const edge of sourceLinks) {
+
+    const source = graphEndpointId(edge.source);
+
+    const target = graphEndpointId(edge.target);
+
+    const sourceCommunity = communityByNode.get(source);
+
+    const targetCommunity = communityByNode.get(target);
+
+    if (sourceCommunity == null || targetCommunity == null) continue;
+
+    if (sourceCommunity === targetCommunity) {
+
+      communityNodes[sourceCommunity].edgeCount += 1;
+
+      continue;
+
+    }
+
+    const lo = Math.min(sourceCommunity, targetCommunity);
+
+    const hi = Math.max(sourceCommunity, targetCommunity);
+
+    const key = `${lo}->${hi}`;
+
+    const current = aggregateLinks.get(key);
+
+    if (current) current.weight += Math.max(1, Number(edge.weight || 1));
+
+    else {
+
+      aggregateLinks.set(key, {
+
+        source: communityNodes[lo].id,
+
+        target: communityNodes[hi].id,
+
+        relation: "COMMUNITY_LINK",
+
+        weight: Math.max(1, Number(edge.weight || 1)),
+
+      });
+
+    }
+
+  }
+
+  return {
+
+    nodes: communityNodes,
+
+    links: Array.from(aggregateLinks.values()).sort((a, b) => Number(b.weight || 0) - Number(a.weight || 0)),
+
+    communities: communityNodes,
+
+    communityByNode,
+
+    nodeMap,
+
+    degree,
+
+    targetCommunityCount,
+
+    targetSize,
+
+  };
+
+}
+
+
+function normalizeKgDrawableLinks(nodes, links) {
+
+  const nodeMap = new Map((Array.isArray(nodes) ? nodes : []).map((node) => [String(node.id), node]));
+
+  return (Array.isArray(links) ? links : []).map((edge) => {
+
+    const source = nodeMap.get(graphEndpointId(edge.source));
+
+    const target = nodeMap.get(graphEndpointId(edge.target));
+
+    return source && target ? { ...edge, source, target } : null;
+
+  }).filter(Boolean);
+
+}
+
+
+function renderKgD3GraphView(nodes, links, options = {}) {
+
+  const graphEmpty = $("kgGraphEmpty");
+
+  const graphSvg = $("kgGraphSvg");
+
+  const graphStats = $("kgGraphStats");
+
+  const container = $("kgGraphContainer");
+
+  if (!graphSvg || !globalThis.d3) return false;
+
+  if (graphEmpty) graphEmpty.style.display = "none";
+
+  graphSvg.style.display = "block";
+
+  if (graphStats) {
+
+    graphStats.textContent = options.statsText || `nodes: ${formatNumber(nodes.length)} · edges: ${formatNumber(links.length)}`;
+
+  }
+
+  const btnLP = $("btnKgLongestPath");
+
+  const btnCP = $("btnKgClearPath");
+
+  if (btnLP) btnLP.style.display = options.allowLongestPath ? "inline-block" : "none";
+
+  if (btnCP) btnCP.style.display = "none";
+
+  const width = container?.clientWidth || 800;
+
+  const height = container?.clientHeight || 480;
+
+  const drawableLinks = normalizeKgDrawableLinks(nodes, links);
+
+  const svg = d3.select("#kgGraphSvg");
+
+  svg.selectAll("*").remove();
+
+  svg.attr("viewBox", [0, 0, width, height]);
+
+  const g = svg.append("g");
+
+  svg.call(d3.zoom().scaleExtent([0.2, 5]).on("zoom", (event) => {
+
+    g.attr("transform", event.transform);
+
+  }));
+
+  if (options.layout === "force") {
+
+    const simulation = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(drawableLinks).id((node) => node.id).distance(options.linkDistance || 80).strength(0.25))
+      .force("charge", d3.forceManyBody().strength(options.chargeStrength || -120).distanceMax(420))
+      .force("center", d3.forceCenter(width / 2, height / 2).strength(0.08))
+      .force("collision", d3.forceCollide().radius((node) => Number(node.radius || 10) + 8))
+      .stop();
+
+    const ticks = Math.min(180, Math.max(40, Number(options.layoutTicks || Math.round(2600 / Math.max(nodes.length, 1)))));
+
+    for (let index = 0; index < ticks; index++) simulation.tick();
+
+  }
+
+  const link = g.append("g")
+    .selectAll("line")
+    .data(drawableLinks)
+    .join("line")
+    .attr("stroke", options.linkColor || "#555")
+    .attr("stroke-opacity", options.linkOpacity ?? 0.3)
+    .attr("stroke-width", (edge) => Math.max(0.5, Math.min(5, Math.sqrt(Number(edge.weight || 1)) * 0.35)))
+    .attr("x1", (edge) => edge.source.x)
+    .attr("y1", (edge) => edge.source.y)
+    .attr("x2", (edge) => edge.target.x)
+    .attr("y2", (edge) => edge.target.y);
+
+  const node = g.append("g")
+    .selectAll("circle")
+    .data(nodes)
+    .join("circle")
+    .attr("r", (item) => item.radius)
+    .attr("fill", (item) => item.color || "#aaa")
+    .attr("stroke", "#222")
+    .attr("stroke-width", 1)
+    .attr("opacity", 0.86)
+    .attr("cx", (item) => item.x)
+    .attr("cy", (item) => item.y)
+    .attr("cursor", options.onNodeClick ? "pointer" : "default")
+    .on("click", (_event, item) => {
+
+      if (typeof options.onNodeClick === "function") options.onNodeClick(item);
+
+    });
+
+  const labelSource = nodes.slice().sort((a, b) => Number(b.count || b.memberCount || 0) - Number(a.count || a.memberCount || 0));
+
+  const labelCutoff = options.labelCutoff ?? (labelSource.length > 28 ? Number(labelSource[27]?.count || labelSource[27]?.memberCount || 0) : 0);
+
+  const label = g.append("g")
+    .selectAll("text")
+    .data(nodes)
+    .join("text")
+    .attr("fill", "#eee")
+    .attr("font-size", (item) => Math.max(9, Math.min(14, Number(item.radius || 10) * 0.58)) + "px")
+    .attr("text-anchor", "middle")
+    .attr("x", (item) => item.x)
+    .attr("y", (item) => item.y + Number(item.radius || 10) + 14)
+    .attr("opacity", (item) => Number(item.count || item.memberCount || 0) >= labelCutoff ? 1 : 0)
+    .text((item) => item.label || item.id);
+
+  node.on("mouseenter", function (_event, item) {
+
+    d3.select(this).attr("stroke", "#fff").attr("stroke-width", 2.5);
+
+    label.filter((candidate) => candidate.id === item.id).attr("opacity", 1).attr("fill", "#fff").attr("font-weight", "bold");
+
+    link.attr("stroke-opacity", (edge) => edge.source.id === item.id || edge.target.id === item.id ? 0.9 : 0.05);
+
+  }).on("mouseleave", function () {
+
+    d3.select(this).attr("stroke", "#222").attr("stroke-width", 1);
+
+    label.attr("opacity", (item) => Number(item.count || item.memberCount || 0) >= labelCutoff ? 1 : 0)
+      .attr("fill", "#eee")
+      .attr("font-weight", "normal");
+
+    link.attr("stroke-opacity", options.linkOpacity ?? 0.3);
+
+  });
+
+  node.append("title").text((item) => {
+
+    if (typeof options.nodeTitle === "function") return options.nodeTitle(item);
+
+    return `${item.id}\ntype: ${item.type || "Entity"}\ncount: ${item.count || item.memberCount || 1}`;
+
+  });
+
+  if (options.note) {
+
+    svg.append("text")
+      .attr("x", 16)
+      .attr("y", 24)
+      .attr("fill", "#ddd")
+      .attr("font-size", "12px")
+      .attr("font-weight", 600)
+      .text(options.note);
+
+  }
+
+  if (options.backToOverview) {
+
+    const back = svg.append("g")
+      .attr("transform", "translate(16, 38)")
+      .attr("cursor", "pointer")
+      .on("click", () => renderKgCommunityOverview());
+
+    back.append("rect")
+      .attr("width", 128)
+      .attr("height", 28)
+      .attr("rx", 6)
+      .attr("fill", "rgba(10,132,255,0.92)");
+
+    back.append("text")
+      .attr("x", 64)
+      .attr("y", 18)
+      .attr("fill", "#fff")
+      .attr("font-size", "12px")
+      .attr("text-anchor", "middle")
+      .text("Back to overview");
+
+  }
+
+  if (window._kgGraph) {
+
+    window._kgGraph.d3Selections = { node, link, label, g, labelThreshold: labelCutoff };
+
+  }
+
+  return true;
+
+}
+
+
+function kgCommunityTopMembers(community, communityView, limit = 12) {
+
+  const nodeMap = communityView?.nodeMap || new Map();
+
+  const degree = communityView?.degree || new Map();
+
+  return (community?.memberIds || [])
+    .map((id) => nodeMap.get(String(id)))
+    .filter(Boolean)
+    .sort((a, b) => {
+
+      const degreeDelta = Number(degree.get(String(b.id)) || 0) - Number(degree.get(String(a.id)) || 0);
+
+      if (degreeDelta) return degreeDelta;
+
+      return Number(b.count || 0) - Number(a.count || 0);
+
+    })
+    .slice(0, limit);
+
+}
+
+
+function renderKgCommunityDetails(detail = {}) {
+
+  const panel = $("kgGraphDetails");
+
+  if (!panel) return;
+
+  if (detail.mode === "community") {
+
+    const community = detail.community || {};
+
+    const topMembers = kgCommunityTopMembers(community, detail.communityView, 16);
+
+    panel.innerHTML = `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div>
+          <strong>${escapeHtml(community.id || "Community")}</strong>
+          <div style="color:var(--muted);font-size:12px;margin-top:4px;">
+            ${formatNumber(community.memberCount || community.memberIds?.length || 0)} source nodes ·
+            ${formatNumber(community.edgeCount || 0)} internal edges ·
+            showing ${formatNumber((detail.selectedNodes || []).length)} nodes / ${formatNumber((detail.selectedLinks || []).length)} edges
+          </div>
+        </div>
+        <button class="ghost-btn" type="button" onclick="renderKgCommunityOverview()"><iconify-icon icon="lucide:arrow-left"></iconify-icon><span>回到社区总览</span></button>
+      </div>
+      <div style="margin-top:10px;color:var(--muted);font-size:12px;">这个圆圈代表一个社区容器；上方画布已经展开为该社区内部的局部知识图。</div>
+      <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">
+        ${topMembers.map((node) => `<span class="tag">${escapeHtml(node.id)}</span>`).join("") || `<span class="tag">No member nodes</span>`}
+      </div>
+      ${detail.truncated ? `<div style="margin-top:10px;color:var(--warning);font-size:12px;">社区过大，当前只显示最高连接度的一部分节点；完整数据仍保留在导出和后端 GraphStore 中。</div>` : ""}
+    `;
+
+    return;
+
+  }
+
+  const communityGraph = detail.communityGraph || {};
+
+  panel.innerHTML = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+      <div>
+        <strong>社区总览</strong>
+        <div style="color:var(--muted);font-size:12px;margin-top:4px;">
+          ${formatNumber(communityGraph.nodes?.length || 0)} communities ·
+          ${formatNumber(detail.sourceNodeCount || 0)} source nodes ·
+          ${formatNumber(detail.sourceEdgeCount || 0)} source edges ·
+          ${formatNumber(communityGraph.links?.length || 0)} cross-community links
+        </div>
+      </div>
+      <span class="tag">点击圆圈展开局部知识图</span>
+    </div>
+    <div style="margin-top:10px;color:var(--muted);font-size:12px;">大图只显示社区容器和社区之间的聚合连接；进入社区后才显示该社区内部的实体和关系。</div>
+  `;
+
+}
+
+
+function renderKgCommunityOverview(nodesArg, linksArg) {
+
+  const kg = window._kgGraph || {};
+
+  const nodes = Array.isArray(nodesArg) ? nodesArg : kg.nodes;
+
+  const links = Array.isArray(linksArg) ? linksArg : kg.links;
+
+  if (!Array.isArray(nodes) || !nodes.length) return false;
+
+  const communityGraph = buildKgCommunityGraph(nodes, links);
+
+  if (window._kgGraph) window._kgGraph.communityView = communityGraph;
+
+  renderKgCommunityDetails({
+
+    mode: "overview",
+
+    communityGraph,
+
+    sourceNodeCount: nodes.length,
+
+    sourceEdgeCount: (links || []).length,
+
+  });
+
+  const rendered = renderKgD3GraphView(communityGraph.nodes, communityGraph.links, {
+
+    layout: "force",
+
+    layoutTicks: 120,
+
+    chargeStrength: -260,
+
+    linkDistance: 110,
+
+    allowLongestPath: false,
+
+    statsText: `communities: ${formatNumber(communityGraph.nodes.length)} · source nodes: ${formatNumber(nodes.length)} · edges: ${formatNumber((links || []).length)}`,
+
+    note: `Community overview: ${formatNumber(nodes.length)} nodes / ${formatNumber((links || []).length)} edges`,
+
+    nodeTitle: (item) => `${item.id}\nmember nodes: ${item.memberCount}\ninternal edges: ${item.edgeCount}\ntop nodes: ${item.title || "none"}`,
+
+    onNodeClick: (item) => renderKgCommunitySubgraph(item.id),
+
+  });
+
+  if (rendered) {
+
+    const graphEmpty = $("kgGraphEmpty");
+
+    if (graphEmpty) graphEmpty.style.display = "none";
+
+  }
+
+  return rendered;
+
+}
+
+
+function renderKgCommunitySubgraph(communityId) {
+
+  const kg = window._kgGraph || {};
+
+  const communityView = kg.communityView || buildKgCommunityGraph(kg.nodes || [], kg.links || []);
+
+  if (kg && !kg.communityView) kg.communityView = communityView;
+
+  const community = (communityView.communities || []).find((item) => item.id === communityId);
+
+  if (!community) return false;
+
+  const memberSet = new Set(community.memberIds || []);
+
+  const degree = communityView.degree || new Map();
+
+  const selectedNodes = (kg.nodes || [])
+    .filter((node) => memberSet.has(String(node.id)))
+    .sort((a, b) => {
+
+      const degreeDelta = Number(degree.get(String(b.id)) || 0) - Number(degree.get(String(a.id)) || 0);
+
+      if (degreeDelta) return degreeDelta;
+
+      return Number(b.count || 0) - Number(a.count || 0);
+
+    })
+    .slice(0, KG_COMMUNITY_SUBGRAPH_NODE_LIMIT)
+    .map((node, index) => {
+
+      const angle = (index / Math.max(Math.min(community.memberIds.length, KG_COMMUNITY_SUBGRAPH_NODE_LIMIT), 1)) * Math.PI * 2 - Math.PI / 2;
+
+      const ring = 120 + (index % 9) * 18;
+
+      return {
+
+        ...node,
+
+        x: 400 + Math.cos(angle) * ring,
+
+        y: 250 + Math.sin(angle) * ring,
+
+      };
+
+    });
+
+  const selectedIds = new Set(selectedNodes.map((node) => String(node.id)));
+
+  const selectedLinks = (kg.links || [])
+    .filter((edge) => selectedIds.has(graphEndpointId(edge.source)) && selectedIds.has(graphEndpointId(edge.target)))
+    .sort((a, b) => Number(b.weight || 0) - Number(a.weight || 0))
+    .slice(0, KG_COMMUNITY_SUBGRAPH_EDGE_LIMIT);
+
+  renderKgCommunityDetails({
+
+    mode: "community",
+
+    community,
+
+    communityView,
+
+    selectedNodes,
+
+    selectedLinks,
+
+    truncated: selectedNodes.length < (community.memberIds || []).length,
+
+  });
+
+  return renderKgD3GraphView(selectedNodes, selectedLinks, {
+
+    layout: "force",
+
+    layoutTicks: selectedNodes.length > 600 ? 60 : 120,
+
+    chargeStrength: selectedNodes.length > 600 ? -28 : -80,
+
+    linkDistance: 70,
+
+    allowLongestPath: false,
+
+    backToOverview: true,
+
+    statsText: `${community.id}: ${formatNumber(selectedNodes.length)}/${formatNumber(community.memberIds.length)} nodes · ${formatNumber(selectedLinks.length)} edges`,
+
+    note: `${community.id} local subgraph`,
+
+    nodeTitle: (item) => `${item.id}\ntype: ${item.type || "Entity"}\ncount: ${item.count || 1}`,
+
+  });
+
+}
+
+
+
+function isInformativeKgTerm(term) {
+
+  const value = String(term || "").trim();
+
+  if (value.length < 2 || value.length > 24) return false;
+
+  if (/^[\d\s._:/\\-]+$/.test(value)) return false;
+
+  if (/^[{}[\],:;'"`]+$/.test(value)) return false;
+
+  return true;
+
+}
+
+
+
+function selectTopGenerativeTerms(wordCounts, limit = KG_MAX_GENERATIVE_ENTITIES) {
+
+  return Object.entries(wordCounts || {})
+
+    .filter(([term, count]) => Number(count) >= 3 && isInformativeKgTerm(term))
+
+    .sort((a, b) => {
+
+      const countDelta = Number(b[1] || 0) - Number(a[1] || 0);
+
+      if (countDelta) return countDelta;
+
+      return String(a[0]).length - String(b[0]).length;
+
+    })
+
+    .slice(0, limit);
+
+}
+
+
+
+function selectRelationEntityNames(entities, limit = KG_RELATION_ENTITY_LIMIT) {
+
+  return Array.from((entities || new Map()).entries())
+
+    .sort((a, b) => Number(b[1]?.count || 0) - Number(a[1]?.count || 0))
+
+    .slice(0, limit)
+
+    .map(([name]) => name);
+
+}
+
+
+
+function selectRelationSentences(sentences, limit = KG_MAX_RELATION_SENTENCES) {
+
+  const cleaned = (Array.isArray(sentences) ? sentences : [])
+
+    .map((item) => {
+
+      if (typeof item === "string") return { sentence: item.trim() };
+
+      return { ...(item || {}), sentence: String(item?.sentence || item?.text || "").trim() };
+
+    })
+
+    .filter((item) => item.sentence.length > 5);
+
+  if (cleaned.length <= limit) return cleaned;
+
+  const stride = Math.ceil(cleaned.length / limit);
+
+  return cleaned.filter((_, index) => index % stride === 0).slice(0, limit);
+
+}
+
+
+
+function matchSentenceEntities(sentence, entityNames) {
+
+  const found = [];
+
+  for (const entityName of entityNames) {
+
+    if (sentence.includes(entityName)) found.push(entityName);
+
+    if (found.length >= 12) break;
+
+  }
+
+  return found;
+
+}
+
+
+
+function isKgRuntimeArtifact(item) {
+
+  const metadata = item?.metadata || {};
+
+  const source = String(item?.source_file || item?.filename || item?.source || metadata.source_file || metadata.filename || metadata.source || "").trim();
+
+  const kind = String(item?.source_kind || metadata.source_kind || "").trim();
+
+  const recordId = String(item?.record_id || item?.id || metadata.record_id || "").trim();
+
+  return KG_RUNTIME_SOURCE_FILES.has(source) || kind === "GraphSummary" || recordId.startsWith("kg-summary-");
+
+}
+
+
+
+function stripKgRuntimeArtifacts(items) {
+
+  if (!Array.isArray(items)) return [];
+
+  return items.filter((item) => !isKgRuntimeArtifact(item));
+
+}
+
+
+
+function clearKgGraphView(reason = "manual") {
+
+  delete window._kgGraph;
+
+  state.kgGraphDbPath = "";
+
+  const graphEmpty = $("kgGraphEmpty");
+
+  const graphSvg = $("kgGraphSvg");
+
+  const graphStats = $("kgGraphStats");
+
+  const graphDetails = $("kgGraphDetails");
+
+  const btnLP = $("btnKgLongestPath");
+
+  const btnCP = $("btnKgClearPath");
+
+  if (graphSvg) {
+
+    graphSvg.innerHTML = "";
+
+    graphSvg.style.display = "none";
+
+  }
+
+  if (graphEmpty) {
+
+    graphEmpty.style.display = "flex";
+
+    graphEmpty.textContent = reason === "restore"
+      ? "Previous graph snapshot was ignored. Rebuild the graph for the current corpus."
+      : "Choose a corpus and start graph construction; the graph will render here.";
+
+  }
+
+  if (graphStats) graphStats.textContent = "nodes: 0 · edges: 0";
+
+  if (graphDetails) graphDetails.textContent = "社区总览会在图谱构建后显示。点击社区圆圈可展开该社区内部知识图。";
+
+  if (btnLP) btnLP.style.display = "none";
+
+  if (btnCP) btnCP.style.display = "none";
+
+}
+
+
+
+function renderKgGraphLimitNotice(nodes, links) {
+
+  const nodeCount = Array.isArray(nodes) ? nodes.length : 0;
+
+  const edgeCount = Array.isArray(links) ? links.length : 0;
+
+  if (globalThis.d3 && nodeCount > 0) {
+
+    const rendered = renderKgCommunityOverview(nodes, links);
+
+    if (rendered) {
+
+      addActivity("warning", "Graph rendered as community overview", `${formatNumber(nodeCount)} nodes / ${formatNumber(edgeCount)} edges grouped for interactive viewing.`);
+
+      return true;
+
+    }
+
+  }
+
+  const graphEmpty = $("kgGraphEmpty");
+
+  const graphSvg = $("kgGraphSvg");
+
+  const graphStats = $("kgGraphStats");
+
+  const btnLP = $("btnKgLongestPath");
+
+  const btnCP = $("btnKgClearPath");
+
+  if (graphSvg) {
+
+    graphSvg.innerHTML = "";
+
+    graphSvg.style.display = "none";
+
+  }
+
+  if (graphEmpty) {
+
+    graphEmpty.style.display = "flex";
+
+    graphEmpty.textContent = `Graph is too large for full browser rendering (${formatNumber(nodeCount)} nodes / ${formatNumber(edgeCount)} edges). QA, export, and backend graph sync still use the full data.`;
+
+  }
+
+  if (graphStats) graphStats.textContent = `nodes: ${formatNumber(nodeCount)} · edges: ${formatNumber(edgeCount)}`;
+
+  if (btnLP) btnLP.style.display = "none";
+
+  if (btnCP) btnCP.style.display = "none";
+
+  return false;
+
+}
+
+
+
+async function resetKgBackendGraph(reason = "manual") {
+
+  if (state.localMode || state.publicDemo) return null;
+
+  try {
+
+    const result = await requestJson("/api/graphrag/reset", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+      body: JSON.stringify({ graph_db_path: "graph_store.sqlite" })
+
+    }, 30000);
+
+    if (result?.deleted) addActivity("warning", "Graph backend reset", `Cleared stale graph store before ${reason}.`);
+
+    return result;
+
+  } catch (error) {
+
+    const message = error?.message || String(error);
+
+    console.warn("[kg] failed to reset backend graph", error);
+
+    addActivity("warning", "Graph backend reset failed", message.slice(0, 140));
+
+    return null;
+
+  }
+
+}
+
+
+
+async function clearKgRuntimeState(reason = "manual", options = {}) {
+
+  const beforeRecords = Array.isArray(state.records) ? state.records.length : 0;
+
+  const beforeChunks = Array.isArray(state.chunks) ? state.chunks.length : 0;
+
+  state.records = stripKgRuntimeArtifacts(state.records);
+
+  state.chunks = stripKgRuntimeArtifacts(state.chunks);
+
+  clearKgGraphView(reason);
+
+  if (options.backend !== false) await resetKgBackendGraph(reason);
+
+  const removedRecords = beforeRecords - state.records.length;
+
+  const removedChunks = beforeChunks - state.chunks.length;
+
+  if (removedRecords || removedChunks) {
+
+    addActivity("warning", "KG runtime state cleared", `${formatNumber(removedRecords)} records / ${formatNumber(removedChunks)} chunks removed.`);
+
+  }
+
+}
+
+
+
+function hydrateKgGraphSnapshot(snapshot) {
+
+  if (!snapshot || !Array.isArray(snapshot.nodes) || !snapshot.nodes.length) return null;
+
+  const nodes = snapshot.nodes.map((node, index) => ({
+
+    ...node,
+
+    id: String(node.id || `node-${index}`),
+
+    type: node.type || "Equipment",
+
+    count: Number(node.count || 1),
+
+    radius: Number(node.radius || 8),
+
+    color: node.color || (typeof TYPE_COLORS !== "undefined" ? TYPE_COLORS[node.type] : null) || "#aaa",
+
+    x: Number.isFinite(node.x) ? node.x : 120 + index * 24,
+
+    y: Number.isFinite(node.y) ? node.y : 120 + (index % 12) * 24
+
+  }));
+
+  const links = (snapshot.links || []).map((edge, index) => ({
+
+    ...edge,
+
+    id: edge.id || `edge-${index}`,
+
+    source: String(edge.source || ""),
+
+    target: String(edge.target || ""),
+
+    relation: edge.relation || "RELATES_TO",
+
+    weight: Number(edge.weight || 1)
+
+  })).filter((edge) => edge.source && edge.target);
+
+  const entities = new Map();
+
+  for (const item of snapshot.entities || []) {
+
+    if (!item?.name) continue;
+
+    const { name, ...data } = item;
+
+    entities.set(name, data);
+
+  }
+
+  if (!entities.size) {
+
+    for (const node of nodes) entities.set(node.id, { type: node.type, count: node.count });
+
+  }
+
+  const edges = new Map(links.map((edge, index) => [edge.id || `edge-${index}`, edge]));
+
+  return { nodes, links, entities, edges, engineMode: snapshot.engineMode || null, d3Selections: null };
+
+}
+
+
+
+function serializeLocalWorkspaceSnapshot(reason = "manual") {
+
+  return {
+
+    version: 1,
+
+    reason,
+
+    saved_at: new Date().toISOString(),
+
+    uploads: (state.uploads || []).map(serializableUploadItem).filter(Boolean),
+
+    records: stripKgRuntimeArtifacts(state.records || []).map((record) => ({ ...(record || {}) })),
+
+    chunks: stripKgRuntimeArtifacts(state.chunks || []).map(serializableChunk).filter(Boolean),
+
+    primaryCollection: state.primaryCollection || "",
+
+    lastProcess: state.lastProcess ? { ...state.lastProcess } : null,
+
+    publicBooksJson: state.publicBooksJson ? { ...state.publicBooksJson } : null,
+
+    lastSearch: state.lastSearch ? { ...state.lastSearch } : null,
+
+    benchmark: state.benchmark ? { ...state.benchmark } : null
+
+  };
+
+}
+
+
+
+async function saveLocalWorkspaceSnapshot(reason = "manual") {
+
+  try {
+
+    const snapshot = serializeLocalWorkspaceSnapshot(reason);
+
+    return await writeLocalWorkspaceSnapshot(snapshot);
+
+  } catch (error) {
+
+    console.warn("[workspace] failed to save snapshot", error);
+
+    return false;
+
+  }
+
+}
+
+
+
+async function restoreLocalWorkspaceSnapshot() {
+
+  try {
+
+    const snapshot = await readLocalWorkspaceSnapshot();
+
+    if (!snapshot || snapshot.version !== 1) return false;
+
+    state.uploads = Array.isArray(snapshot.uploads) ? snapshot.uploads : [];
+
+    state.records = stripKgRuntimeArtifacts(Array.isArray(snapshot.records) ? snapshot.records : []);
+
+    state.chunks = stripKgRuntimeArtifacts(Array.isArray(snapshot.chunks) ? snapshot.chunks : []).map(hydrateChunk);
+
+    state.primaryCollection = snapshot.primaryCollection || state.primaryCollection || "";
+
+    if (state.primaryCollection) {
+
+      rememberActiveCollection(state.primaryCollection);
+
+      syncActiveCollectionInputs(state.primaryCollection);
+
+    }
+
+    state.lastProcess = snapshot.lastProcess || null;
+
+    state.publicBooksJson = snapshot.publicBooksJson || null;
+
+    state.lastSearch = snapshot.lastSearch || null;
+
+    state.benchmark = snapshot.benchmark || null;
+
+    clearKgGraphView("restore");
+
+    await resetKgBackendGraph("restore");
+
+    refreshLocalUploadBuckets();
+
+    await refreshLocalStats();
+
+    addActivity("success", "Local workspace restored", `${formatNumber(state.chunks.length)} chunks restored from browser storage.`);
+
+    return true;
+
+  } catch (error) {
+
+    console.warn("[workspace] failed to restore snapshot", error);
+
+    return false;
+
+  }
+
+}
+
+
+
+function renderRestoredKgGraphSnapshot() {
+
+  const kg = window._kgGraph;
+
+  if (!kg || !Array.isArray(kg.nodes) || !kg.nodes.length || !globalThis.d3) return false;
+
+  if (!shouldRenderKgGraph(kg.nodes, kg.links)) return renderKgGraphLimitNotice(kg.nodes, kg.links);
+
+  const graphEmpty = $("kgGraphEmpty");
+
+  const graphSvg = $("kgGraphSvg");
+
+  const graphStats = $("kgGraphStats");
+
+  const container = $("kgGraphContainer");
+
+  if (!graphSvg) return false;
+
+  if (graphEmpty) graphEmpty.style.display = "none";
+
+  graphSvg.style.display = "block";
+
+  if (graphStats) graphStats.textContent = `节点: ${kg.nodes.length} · 边: ${kg.links.length}`;
+
+  const btnLP = $("btnKgLongestPath"); if (btnLP) btnLP.style.display = "inline-block";
+
+  const btnCP = $("btnKgClearPath"); if (btnCP) btnCP.style.display = "none";
+
+  const width = container?.clientWidth || 800;
+
+  const height = container?.clientHeight || 480;
+
+  const nodeMap = new Map(kg.nodes.map((node) => [node.id, node]));
+
+  const drawableLinks = (kg.links || []).map((edge) => {
+
+    const source = nodeMap.get(graphEndpointId(edge.source));
+
+    const target = nodeMap.get(graphEndpointId(edge.target));
+
+    return source && target ? { ...edge, source, target } : null;
+
+  }).filter(Boolean);
+
+  const svg = d3.select("#kgGraphSvg");
+
+  svg.selectAll("*").remove();
+
+  svg.attr("viewBox", [0, 0, width, height]);
+
+  const g = svg.append("g");
+
+  svg.call(d3.zoom().scaleExtent([0.2, 5]).on("zoom", (event) => {
+
+    g.attr("transform", event.transform);
+
+  }));
+
+  const link = g.append("g")
+
+    .selectAll("line")
+
+    .data(drawableLinks)
+
+    .join("line")
+
+    .attr("stroke", "#555")
+
+    .attr("stroke-opacity", 0.3)
+
+    .attr("stroke-width", d => Math.max(0.3, Math.min(2.5, Number(d.weight || 1) * 0.4)))
+
+    .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+
+    .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+
+  const node = g.append("g")
+
+    .selectAll("circle")
+
+    .data(kg.nodes)
+
+    .join("circle")
+
+    .attr("r", d => d.radius)
+
+    .attr("fill", d => d.color || "#aaa")
+
+    .attr("stroke", "#222")
+
+    .attr("stroke-width", 1)
+
+    .attr("opacity", 0.85)
+
+    .attr("cx", d => d.x)
+
+    .attr("cy", d => d.y);
+
+  const labelThreshold = kg.nodes.length > 25 ? kg.nodes.slice().sort((a, b) => b.count - a.count)[24]?.count || 0 : 0;
+
+  const label = g.append("g")
+
+    .selectAll("text")
+
+    .data(kg.nodes)
+
+    .join("text")
+
+    .attr("fill", "#eee")
+
+    .attr("font-size", d => Math.max(9, Math.min(14, d.radius * 0.7)) + "px")
+
+    .attr("text-anchor", "middle")
+
+    .attr("x", d => d.x)
+
+    .attr("y", d => d.y)
+
+    .attr("opacity", d => d.count >= labelThreshold ? 1 : 0)
+
+    .text(d => d.id);
+
+  kg.d3Selections = { node, link, label, g, labelThreshold };
+
+  return true;
+
+}
+
+
+
+function hasBrowserKgGraphSnapshot() {
+
+  const kg = window._kgGraph;
+
+  return Boolean(kg && Array.isArray(kg.nodes) && kg.nodes.length);
+
+}
+
+
+
+function exportBrowserKgGraphSnapshot() {
+
+  const kg = window._kgGraph;
+
+  if (!hasBrowserKgGraphSnapshot()) {
+
+    showToast("No graph is available to export. Build the graph first.", "warning");
+
+    return false;
+
+  }
+
+
+
+  const links = Array.isArray(kg.links) ? kg.links : Array.from(kg.edges?.values?.() || []);
+
+  const entities = kg.entities instanceof Map
+
+    ? Array.from(kg.entities.entries()).map(([name, data]) => ({ name, ...(data || {}) }))
+
+    : [];
+
+  const payload = {
+
+    version: 1,
+
+    format: "browser_kg_graph_export",
+
+    exported_at: new Date().toISOString(),
+
+    engine_mode: kg.engineMode || null,
+
+    summary: {
+
+      node_count: kg.nodes.length,
+
+      edge_count: links.length,
+
+      entity_count: entities.length,
+
+    },
+
+    nodes: kg.nodes.map((node) => ({
+
+      id: node.id,
+
+      label: node.label || node.name || node.id,
+
+      type: node.type || null,
+
+      count: node.count ?? null,
+
+      radius: node.radius ?? null,
+
+      x: Number.isFinite(node.x) ? node.x : null,
+
+      y: Number.isFinite(node.y) ? node.y : null,
+
+    })),
+
+    edges: links.map((edge, index) => ({
+
+      id: edge.id || edge.triple_id || `EDGE-${String(index + 1).padStart(4, "0")}`,
+
+      source: graphEndpointId(edge.source),
+
+      target: graphEndpointId(edge.target),
+
+      predicate: edge.predicate || edge.relation || "RELATES_TO",
+
+      weight: edge.weight ?? null,
+
+      confidence: edge.confidence ?? null,
+
+      evidence: edge.evidence || null,
+
+      source_file: edge.source_file || null,
+
+      source_page: edge.source_page || null,
+
+      source_chunk_id: edge.source_chunk_id || edge.chunk_id || null,
+
+    })),
+
+    entities,
+
+  };
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+
+  downloadBlobAsFile(blob, `kg_graph_snapshot_${timestamp}.json`);
+
+  addActivity("success", "Graph snapshot exported", `${formatNumber(payload.summary.node_count)} nodes / ${formatNumber(payload.summary.edge_count)} edges`);
+
+  showToast("Current graph JSON exported.", "success");
+
+  return true;
+
+}
+
+
+
+async function exportKgGraphSnapshot() {
+
+  if (hasBrowserKgGraphSnapshot()) {
+
+    exportBrowserKgGraphSnapshot();
+
+    return;
+
+  }
+
+
+
+  if (state.localMode || state.publicDemo) {
+
+    exportBrowserKgGraphSnapshot();
+
+    return;
+
+  }
+
+
+
+  const graphDbPath = "graph_store.sqlite";
+
+  showToast("Exporting knowledge graph JSON...", "success");
+
+  try {
+
+    const response = await fetch(apiUrl(`/api/graphrag/export?graph_db_path=${encodeURIComponent(graphDbPath)}`));
+
+    if (!response.ok) {
+
+      const detail = await response.text();
+
+      throw new Error(detail || response.statusText);
+
+    }
+
+    const blob = await response.blob();
+
+    const fallbackName = `graphrag_graph_export_${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}.json`;
+
+    const filename = filenameFromContentDisposition(response.headers.get("Content-Disposition"), fallbackName);
+
+    downloadBlobAsFile(blob, filename);
+
+    addActivity("success", "Knowledge graph exported", `${graphDbPath} -> JSON`);
+
+    showToast("Knowledge graph JSON exported.", "success");
+
+  } catch (err) {
+
+    const usedBrowserSnapshot = exportBrowserKgGraphSnapshot();
+
+    if (!usedBrowserSnapshot) showToast(`Graph export failed: ${err.message || err}`, "danger");
+
+  }
+
+}
+
+
+
+async function runSearch() {
+
+  if (state.localMode || state.publicDemo) {
+
+    await runLocalSearch();
+
+    return;
+
+  }
+
+  const query = String(els.searchInput?.value || "").trim();
+
+  if (!query) {
+
+    showToast("Enter a search question.", "warning");
+
+    return;
+
+  }
+
+
+
+  if (els.searchMeta) els.searchMeta.textContent = "正在检索...";
+
+  try {
+
+    const params = new URLSearchParams({
+
+      q: query,
+
+      top_k: String(Number(els.searchTopK?.value || 20))
+
+    });
+
+    if (state.primaryCollection) params.set("collection", state.primaryCollection);
+
+
+
+    const result = await requestJson(`/api/search?${params.toString()}`);
+
+    state.lastSearch = result;
+
+    rememberTimeline("search");
+
+    renderSearchResults();
+
+    renderTrendChart();
+
+    renderSummaryMetrics();
+
+    addActivity(
+
+      result.results?.length ? "success" : "warning",
+
+      "Search finished",
+
+      `Query "${query}" returned ${result.results?.length || 0} results.`
+
+    );
+
+    showToast(`Search finished; returned ${result.results?.length || 0} results.`, "success");
+
+  } catch (error) {
+
+    addActivity("danger", "Search failed", error.message || String(error));
+
+    state.lastSearch = {
+
+      query,
+
+      results: [],
+
+      message: error.message || "Search failed"
+
+    };
+
+    renderSearchResults();
+
+    showToast(error.message || "Search failed", "danger");
+
+  }
+
+}
+
+
+function defaultRetrievalPolicySettings() {
+
+  const current = state.lastSearch?.retrieval_diagnostics?.retrieval_policy?.settings;
+
+  if (current && Object.keys(current).length) return JSON.stringify(current, null, 2);
+
+  return JSON.stringify({ query_rewrite: true, reranker: "noop" }, null, 2);
+
+}
+
+
+
+async function promoteRetrievalPolicy() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("Policy promotion requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  const collection = state.primaryCollection || state.lastSearch?.collection || "";
+
+  if (!collection) {
+
+    showToast("Select or search a collection before promoting a policy.", "warning");
+
+    return;
+
+  }
+
+  const rawSettings = String(els.retrievalPolicySettings?.value || "").trim() || defaultRetrievalPolicySettings();
+
+  let settings;
+
+  try {
+
+    settings = JSON.parse(rawSettings);
+
+  } catch (error) {
+
+    showToast("Policy settings must be valid JSON.", "danger");
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Promoting retrieval policy...";
+
+    const result = await requestJson("/api/retrieval/policies/promote", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+      body: JSON.stringify({
+
+        collection,
+
+        settings,
+
+        reviewer: String(els.retrievalPolicyReviewer?.value || "").trim(),
+
+        review_note: String(els.retrievalPolicyReviewNote?.value || "").trim(),
+
+        source_report: String(els.retrievalPolicySourceReport?.value || "").trim(),
+
+        assigned_to: String(els.retrievalPolicyAssignedTo?.value || "").trim(),
+
+        due_at: String(els.retrievalPolicyDueAt?.value || "").trim(),
+
+      }),
+
+    });
+
+    if (els.retrievalPolicyStatus) {
+
+      els.retrievalPolicyStatus.textContent = `Promoted ${result.collection || collection} via ${result.policy_file || "retrieval_policies.json"}.`;
+
+    }
+
+    showToast("Retrieval policy promoted.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "Retrieval policy promotion failed.", "danger");
+
+  }
+
+}
+
+
+async function proposeRetrievalPolicy() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("Policy proposal requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  const collection = state.primaryCollection || state.lastSearch?.collection || "";
+
+  if (!collection) {
+
+    showToast("Select or search a collection before proposing a policy.", "warning");
+
+    return;
+
+  }
+
+  const rawSettings = String(els.retrievalPolicySettings?.value || "").trim() || defaultRetrievalPolicySettings();
+
+  let settings;
+
+  try {
+
+    settings = JSON.parse(rawSettings);
+
+  } catch (error) {
+
+    showToast("Policy settings must be valid JSON.", "danger");
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Creating retrieval policy proposal...";
+
+    const result = await requestJson("/api/retrieval/policies/propose", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+      body: JSON.stringify({
+
+        collection,
+
+        settings,
+
+        reviewer: String(els.retrievalPolicyReviewer?.value || "").trim(),
+
+        reviewer_role: String(els.retrievalPolicyReviewerRole?.value || "").trim(),
+
+        review_note: String(els.retrievalPolicyReviewNote?.value || "").trim(),
+
+        source_report: String(els.retrievalPolicySourceReport?.value || "").trim(),
+
+      }),
+
+    });
+
+    if (els.retrievalPolicyProposalId) els.retrievalPolicyProposalId.value = result.proposal_id || "";
+
+    if (els.retrievalPolicyStatus) {
+
+      els.retrievalPolicyStatus.textContent = `Created pending policy proposal ${result.proposal_id || ""}.`;
+
+    }
+
+    showToast("Retrieval policy proposal created.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "Retrieval policy proposal failed.", "danger");
+
+  }
+
+}
+
+
+
+async function approveRetrievalPolicy() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("Policy approval requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  const proposalId = String(els.retrievalPolicyProposalId?.value || "").trim();
+
+  if (!proposalId) {
+
+    showToast("Enter or load a proposal id before approval.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Approving retrieval policy proposal...";
+
+    const result = await requestJson("/api/retrieval/policies/approve", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+      body: JSON.stringify({
+
+        proposal_id: proposalId,
+
+        approver: String(els.retrievalPolicyApprover?.value || "").trim(),
+
+        approver_role: String(els.retrievalPolicyApproverRole?.value || "").trim(),
+
+        approval_note: String(els.retrievalPolicyApprovalNote?.value || "").trim(),
+
+      }),
+
+    });
+
+    if (els.retrievalPolicySettings && result.settings) {
+
+      els.retrievalPolicySettings.value = JSON.stringify(result.settings, null, 2);
+
+    }
+
+    if (els.retrievalPolicyStatus) {
+
+      els.retrievalPolicyStatus.textContent = `Approved ${result.proposal_id || proposalId} for ${result.collection || "collection"}.`;
+
+    }
+
+    showToast("Retrieval policy proposal approved.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "Retrieval policy approval failed.", "danger");
+
+  }
+
+}
+
+
+async function rejectRetrievalPolicy() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("Policy rejection requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  const proposalId = String(els.retrievalPolicyProposalId?.value || "").trim();
+
+  if (!proposalId) {
+
+    showToast("Enter or load a proposal id before rejection.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Rejecting retrieval policy proposal...";
+
+    const result = await requestJson("/api/retrieval/policies/reject", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+      body: JSON.stringify({
+
+        proposal_id: proposalId,
+
+        approver: String(els.retrievalPolicyApprover?.value || "").trim(),
+
+        approver_role: String(els.retrievalPolicyApproverRole?.value || "").trim(),
+
+        rejection_note: String(els.retrievalPolicyRejectionNote?.value || "").trim(),
+
+      }),
+
+    });
+
+    if (els.retrievalPolicyStatus) {
+
+      els.retrievalPolicyStatus.textContent = `Rejected ${result.proposal_id || proposalId} for ${result.collection || "collection"}.`;
+
+    }
+
+    showToast("Retrieval policy proposal rejected.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "Retrieval policy rejection failed.", "danger");
+
+  }
+
+}
+
+
+async function upsertRetrievalPolicyRole() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("Policy role registration requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  const subject = String(els.retrievalPolicyRoleSubject?.value || "").trim();
+
+  if (!subject) {
+
+    showToast("Enter a role subject before saving policy roles.", "warning");
+
+    return;
+
+  }
+
+  const roles = String(els.retrievalPolicyRoleNames?.value || "")
+
+    .split(/[,\s]+/)
+
+    .map((item) => item.trim())
+
+    .filter(Boolean);
+
+  const assignedCollections = String(els.retrievalPolicyRoleCollections?.value || "")
+
+    .split(/[,\s]+/)
+
+    .map((item) => item.trim())
+
+    .filter(Boolean);
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Saving retrieval policy role registry entry...";
+
+    const result = await requestJson("/api/retrieval/policies/roles/upsert", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+      body: JSON.stringify({
+
+        subject,
+
+        roles,
+
+        assigned_collections: assignedCollections,
+
+        updated_by: String(els.retrievalPolicyRoleUpdatedBy?.value || "").trim(),
+
+      }),
+
+    });
+
+    if (els.retrievalPolicyStatus) {
+
+      els.retrievalPolicyStatus.textContent = `Saved roles for ${result.subject || subject}: ${(result.roles || roles).join(", ")}.`;
+
+    }
+
+    showToast("Retrieval policy role saved.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "Retrieval policy role save failed.", "danger");
+
+  }
+
+}
+
+
+async function upsertRetrievalPolicyRecipient() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("Policy notification recipient registration requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  const subject = String(els.retrievalPolicyRecipientSubject?.value || "").trim();
+
+  if (!subject) {
+
+    showToast("Enter a notification recipient subject before saving.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Saving notification recipient registry entry...";
+
+    const result = await requestJson("/api/retrieval/policies/notification-recipients/upsert", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+      body: JSON.stringify({
+
+        subject,
+
+        email: String(els.retrievalPolicyRecipientEmail?.value || "").trim(),
+
+        webhook_url: String(els.retrievalPolicyRecipientWebhookUrl?.value || "").trim(),
+
+        webhook_template: String(els.retrievalPolicyRecipientWebhookTemplate?.value || "").trim(),
+
+        webhook_signing_secret_env: String(els.retrievalPolicyRecipientWebhookSigningSecretEnv?.value || "").trim(),
+
+        webhook_routing_key_env: String(els.retrievalPolicyRecipientWebhookRoutingKeyEnv?.value || "").trim(),
+
+        webhook_auth_header_name: String(els.retrievalPolicyRecipientWebhookAuthHeaderName?.value || "").trim(),
+
+        webhook_auth_token_env: String(els.retrievalPolicyRecipientWebhookAuthTokenEnv?.value || "").trim(),
+
+        webhook_auth_scheme: String(els.retrievalPolicyRecipientWebhookAuthScheme?.value || "").trim(),
+
+        preferred_delivery_mode: String(els.retrievalPolicyRecipientPreferredDeliveryMode?.value || "").trim(),
+
+        updated_by: String(els.retrievalPolicyRecipientUpdatedBy?.value || els.retrievalPolicyRoleUpdatedBy?.value || "").trim(),
+
+        note: String(els.retrievalPolicyRecipientNote?.value || "").trim(),
+
+      }),
+
+    });
+
+    if (els.retrievalPolicyStatus) {
+
+      els.retrievalPolicyStatus.textContent = `Saved notification recipient ${result.subject || subject}.`;
+
+    }
+
+    showToast("Notification recipient saved.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "Notification recipient save failed.", "danger");
+
+  }
+
+}
+
+
+async function loadRetrievalPolicyRecipients() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("Policy notification recipients require the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Loading notification recipient registry...";
+
+    const result = await requestJson("/api/retrieval/policies/notification-recipients");
+
+    if (els.retrievalPolicyDiff) {
+
+      els.retrievalPolicyDiff.textContent = JSON.stringify(result, null, 2);
+
+    }
+
+    if (els.retrievalPolicyStatus) {
+
+      els.retrievalPolicyStatus.textContent = `Loaded ${result.recipient_count || 0} notification recipients.`;
+
+    }
+
+    showToast("Notification recipients loaded.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "Notification recipient load failed.", "danger");
+
+  }
+
+}
+
+
+
+function parseRetrievalPolicyJsonField(element, fallbackValue, label) {
+
+  const raw = String(element?.value || "").trim();
+
+  if (!raw) return fallbackValue;
+
+  try {
+
+    return JSON.parse(raw);
+
+  } catch (error) {
+
+    throw new Error(`${label} must be valid JSON: ${error.message || error}`);
+
+  }
+
+}
+
+
+function splitScimDirectoryPayload(directoryPayload) {
+
+  const payload = directoryPayload && typeof directoryPayload === "object" ? directoryPayload : {};
+
+  const resources = Array.isArray(payload.Resources) ? payload.Resources : [];
+
+  const users = Array.isArray(payload.users)
+
+    ? payload.users
+
+    : resources.filter((item) => {
+
+      const schemas = Array.isArray(item?.schemas) ? item.schemas.join(" ") : "";
+
+      return schemas.includes("User") || item?.userName;
+
+    });
+
+  const groups = Array.isArray(payload.groups)
+
+    ? payload.groups
+
+    : resources.filter((item) => {
+
+      const schemas = Array.isArray(item?.schemas) ? item.schemas.join(" ") : "";
+
+      return schemas.includes("Group") || Array.isArray(item?.members);
+
+    });
+
+  return { users, groups };
+
+}
+
+
+async function syncRetrievalPolicyDirectory() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("Directory sync requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    const directoryPayload = parseRetrievalPolicyJsonField(els.retrievalPolicyDirectoryJson, {}, "Directory JSON");
+
+    const roleGroupMappings = parseRetrievalPolicyJsonField(els.retrievalPolicyDirectoryRoleMappings, {}, "Role group mappings");
+
+    const recipientDefaults = parseRetrievalPolicyJsonField(els.retrievalPolicyDirectoryRecipientDefaults, {}, "Recipient defaults");
+
+    const { users, groups } = splitScimDirectoryPayload(directoryPayload);
+
+    if (!users.length) {
+
+      showToast("Paste a directory JSON payload with users or SCIM Resources first.", "warning");
+
+      return;
+
+    }
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Syncing SCIM directory into policy registries...";
+
+    const result = await requestJson("/api/retrieval/policies/directory/sync", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+      body: JSON.stringify({
+
+        source_type: "scim",
+
+        users,
+
+        groups,
+
+        role_group_mappings: roleGroupMappings,
+
+        recipient_defaults: recipientDefaults,
+
+        updated_by: String(els.retrievalPolicyDirectoryUpdatedBy?.value || els.retrievalPolicyRoleUpdatedBy?.value || "").trim(),
+
+        note: String(els.retrievalPolicyDirectoryNote?.value || "").trim(),
+
+      }),
+
+    });
+
+    if (els.retrievalPolicyStatus) {
+
+      els.retrievalPolicyStatus.textContent = `Synced ${result.synced_user_count || 0} directory users, ${result.role_upsert_count || 0} roles, ${result.recipient_upsert_count || 0} recipients.`;
+
+    }
+
+    showToast("Directory sync finished.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "Directory sync failed.", "danger");
+
+  }
+
+}
+
+
+async function saveRetrievalPolicyIdentityProvider() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("Identity provider configuration requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  const algorithms = String(els.retrievalPolicyIdpAlgorithms?.value || "RS256")
+
+    .split(/[,\s]+/)
+
+    .map((item) => item.trim())
+
+    .filter(Boolean);
+
+  const scopes = String(els.retrievalPolicyIdpScopes?.value || "openid email profile")
+
+    .split(/[,\s]+/)
+
+    .map((item) => item.trim())
+
+    .filter(Boolean);
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Saving OIDC identity provider configuration...";
+
+    const result = await requestJson("/api/retrieval/policies/identity-provider/upsert", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+      body: JSON.stringify({
+
+        provider: "oidc",
+
+        enabled: String(els.retrievalPolicyIdpEnabled?.value || "false") === "true",
+
+        issuer: String(els.retrievalPolicyIdpIssuer?.value || "").trim(),
+
+        audience: String(els.retrievalPolicyIdpAudience?.value || "").trim(),
+
+        jwks_url: String(els.retrievalPolicyIdpJwksUrl?.value || "").trim(),
+
+        authorization_endpoint: String(els.retrievalPolicyIdpAuthorizationEndpoint?.value || "").trim(),
+
+        token_endpoint: String(els.retrievalPolicyIdpTokenEndpoint?.value || "").trim(),
+
+        client_id: String(els.retrievalPolicyIdpClientId?.value || "").trim(),
+
+        client_secret_env: String(els.retrievalPolicyIdpClientSecretEnv?.value || "").trim(),
+
+        redirect_uri: String(els.retrievalPolicyIdpRedirectUri?.value || "").trim(),
+
+        scopes,
+
+        subject_claim: String(els.retrievalPolicyIdpSubjectClaim?.value || "email").trim() || "email",
+
+        groups_claim: String(els.retrievalPolicyIdpGroupsClaim?.value || "groups").trim() || "groups",
+
+        algorithms,
+
+        updated_by: String(els.retrievalPolicyIdpUpdatedBy?.value || els.retrievalPolicyRoleUpdatedBy?.value || "").trim(),
+
+        note: String(els.retrievalPolicyIdpNote?.value || "").trim(),
+
+      }),
+
+    });
+
+    const config = result.identity_provider || {};
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = `Saved OIDC IdP config: ${config.enabled ? "enabled" : "disabled"}.`;
+
+    showToast("OIDC identity provider saved.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "OIDC identity provider save failed.", "danger");
+
+  }
+
+}
+
+
+async function loadRetrievalPolicyIdentityProvider() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("Identity provider configuration requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Loading OIDC identity provider configuration...";
+
+    const result = await requestJson("/api/retrieval/policies/identity-provider");
+
+    const config = result.identity_provider || {};
+
+    if (els.retrievalPolicyIdpEnabled) els.retrievalPolicyIdpEnabled.value = config.enabled ? "true" : "false";
+
+    if (els.retrievalPolicyIdpIssuer) els.retrievalPolicyIdpIssuer.value = config.issuer || "";
+
+    if (els.retrievalPolicyIdpAudience) els.retrievalPolicyIdpAudience.value = config.audience || "";
+
+    if (els.retrievalPolicyIdpJwksUrl) els.retrievalPolicyIdpJwksUrl.value = config.jwks_url || "";
+
+    if (els.retrievalPolicyIdpAuthorizationEndpoint) els.retrievalPolicyIdpAuthorizationEndpoint.value = config.authorization_endpoint || "";
+
+    if (els.retrievalPolicyIdpTokenEndpoint) els.retrievalPolicyIdpTokenEndpoint.value = config.token_endpoint || "";
+
+    if (els.retrievalPolicyIdpClientId) els.retrievalPolicyIdpClientId.value = config.client_id || "";
+
+    if (els.retrievalPolicyIdpClientSecretEnv) els.retrievalPolicyIdpClientSecretEnv.value = config.client_secret_env || "";
+
+    if (els.retrievalPolicyIdpRedirectUri) els.retrievalPolicyIdpRedirectUri.value = config.redirect_uri || "";
+
+    if (els.retrievalPolicyIdpScopes) els.retrievalPolicyIdpScopes.value = Array.isArray(config.scopes) ? config.scopes.join(" ") : "openid email profile";
+
+    if (els.retrievalPolicyIdpSubjectClaim) els.retrievalPolicyIdpSubjectClaim.value = config.subject_claim || "email";
+
+    if (els.retrievalPolicyIdpGroupsClaim) els.retrievalPolicyIdpGroupsClaim.value = config.groups_claim || "groups";
+
+    if (els.retrievalPolicyIdpAlgorithms) els.retrievalPolicyIdpAlgorithms.value = Array.isArray(config.algorithms) ? config.algorithms.join(",") : "RS256";
+
+    if (els.retrievalPolicyDiff) els.retrievalPolicyDiff.textContent = JSON.stringify(result, null, 2);
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = `Loaded OIDC IdP config: ${config.enabled ? "enabled" : "disabled"}.`;
+
+    showToast("OIDC identity provider loaded.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "OIDC identity provider load failed.", "danger");
+
+  }
+
+}
+
+
+async function buildRetrievalPolicyOidcLoginUrl() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("OIDC login URL generation requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Building OIDC login URL...";
+
+    const result = await requestJson("/api/retrieval/policies/identity-provider/login-url", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+      body: JSON.stringify({
+
+        redirect_uri: String(els.retrievalPolicyIdpRedirectUri?.value || "").trim(),
+
+      }),
+
+    });
+
+    if (els.retrievalPolicyIdpLoginUrl) els.retrievalPolicyIdpLoginUrl.value = result.authorization_url || "";
+
+    if (els.retrievalPolicyIdpCodeVerifier) els.retrievalPolicyIdpCodeVerifier.value = result.code_verifier || "";
+
+    if (els.retrievalPolicyDiff) els.retrievalPolicyDiff.textContent = JSON.stringify(result, null, 2);
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Built OIDC login URL.";
+
+    showToast("OIDC login URL built.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "OIDC login URL failed.", "danger");
+
+  }
+
+}
+
+
+function openRetrievalPolicyOidcLoginUrl() {
+
+  const url = String(els.retrievalPolicyIdpLoginUrl?.value || "").trim();
+
+  if (!url) {
+
+    showToast("Build an OIDC login URL first.", "warning");
+
+    return;
+
+  }
+
+  window.open(url, "_blank", "noopener,noreferrer");
+
+  if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Opened OIDC login URL in a new tab.";
+
+}
+
+
+async function exchangeRetrievalPolicyOidcCodeForToken() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("OIDC token exchange requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Exchanging OIDC authorization code...";
+
+    const result = await requestJson("/api/retrieval/policies/identity-provider/token", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+      body: JSON.stringify({
+
+        code: String(els.retrievalPolicyIdpAuthCode?.value || "").trim(),
+
+        code_verifier: String(els.retrievalPolicyIdpCodeVerifier?.value || "").trim(),
+
+        redirect_uri: String(els.retrievalPolicyIdpRedirectUri?.value || "").trim(),
+
+      }),
+
+    });
+
+    const token = String(result.id_token || result.access_token || "").trim();
+
+    if (token && els.retrievalPolicyBearerToken) {
+
+      els.retrievalPolicyBearerToken.value = token;
+
+      sessionStorage.setItem(RETRIEVAL_POLICY_AUTH_STORAGE_KEY, token);
+
+      updateRetrievalPolicyBearerStatus(true);
+
+    }
+
+    if (els.retrievalPolicyDiff) els.retrievalPolicyDiff.textContent = JSON.stringify(result, null, 2);
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = token ? "OIDC token exchange finished and token is active." : "OIDC token exchange finished without an id_token or access_token.";
+
+    showToast("OIDC token exchange finished.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "OIDC token exchange failed.", "danger");
+
+  }
+
+}
+
+
+async function startRetrievalPolicyOidcSession() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("OIDC policy session requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Starting HttpOnly OIDC policy session...";
+
+    const result = await requestJson("/api/retrieval/policies/identity-provider/session", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+    });
+
+    if (els.retrievalPolicyDiff) els.retrievalPolicyDiff.textContent = JSON.stringify(result, null, 2);
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = `Started OIDC policy session for ${result.subject || "current user"}.`;
+
+    showToast("OIDC policy session started.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "OIDC policy session failed.", "danger");
+
+  }
+
+}
+
+
+async function refreshRetrievalPolicyOidcSession() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("OIDC policy session refresh requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Refreshing HttpOnly OIDC policy session...";
+
+    const result = await requestJson("/api/retrieval/policies/identity-provider/session/refresh", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+    });
+
+    if (els.retrievalPolicyDiff) els.retrievalPolicyDiff.textContent = JSON.stringify(result, null, 2);
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = `Refreshed OIDC policy session for ${result.subject || "current user"}.`;
+
+    showToast("OIDC policy session refreshed.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "OIDC policy session refresh failed.", "danger");
+
+  }
+
+}
+
+function formatRetrievalPolicySessionTime(value) {
+
+  const seconds = Number(value || 0);
+
+  if (!Number.isFinite(seconds) || seconds <= 0) return "None";
+
+  try {
+
+    return new Date(seconds * 1000).toLocaleString();
+
+  } catch (_error) {
+
+    return String(value || "None");
+
+  }
+
+}
+
+
+function renderRetrievalPolicySessionAdminAudit(auditEntry) {
+
+  if (!els.retrievalPolicySessionAudit) return;
+
+  if (!auditEntry || typeof auditEntry !== "object") {
+
+    els.retrievalPolicySessionAudit.textContent = "No session admin action yet.";
+
+    return;
+
+  }
+
+  const action = String(auditEntry.action || "").trim();
+
+  const actionLabel = action === "identity_provider_session_key_rotate"
+
+    ? "Session key rotation"
+
+    : action === "identity_provider_session_revoke"
+
+      ? "Session revoke"
+
+      : action || "Session admin action";
+
+  const fields = [
+
+    actionLabel,
+
+    auditEntry.admin ? `admin ${auditEntry.admin}` : "",
+
+    auditEntry.role_source ? `source ${auditEntry.role_source}` : "",
+
+    auditEntry.active_key_id ? `active key ${auditEntry.active_key_id}` : "",
+
+    Number.isFinite(Number(auditEntry.rotated_count)) ? `rotated ${auditEntry.rotated_count}` : "",
+
+    auditEntry.revoked_session_id ? `session ${auditEntry.revoked_session_id}` : "",
+
+    typeof auditEntry.revoked === "boolean" ? `revoked ${auditEntry.revoked ? "yes" : "no"}` : "",
+
+    auditEntry.timestamp ? `at ${auditEntry.timestamp}` : "",
+
+  ].filter(Boolean);
+
+  els.retrievalPolicySessionAudit.textContent = fields.join(" | ");
+
+}
+
+
+function renderRetrievalPolicyOidcSessions(result) {
+
+  const sessions = Array.isArray(result?.sessions) ? result.sessions : [];
+
+  const sessionCount = Number(result?.session_count ?? sessions.length) || 0;
+
+  const expiredCount = Number(result?.expired_pruned_count || 0);
+
+  if (els.retrievalPolicySessionSummary) {
+
+    els.retrievalPolicySessionSummary.textContent = `Active sessions ${sessionCount} | expired pruned ${expiredCount} | admin ${result?.admin || "current admin"}`;
+
+  }
+
+  if (!els.retrievalPolicySessionTable) return;
+
+  if (!sessions.length) {
+
+    els.retrievalPolicySessionTable.innerHTML = '<div class="empty-state">No active OIDC policy sessions.</div>';
+
+    return;
+
+  }
+
+  const rows = sessions.map((session) => {
+
+    const sessionId = String(session.session_id || "");
+
+    const groups = Array.isArray(session.groups) ? session.groups.filter(Boolean).join(", ") : "";
+
+    const hasRefresh = session.has_refresh_token ? "yes" : "no";
+
+    const secretStorage = String(session.secret_storage || "none");
+
+    return `
+      <tr>
+        <td><code title="${escapeHtml(sessionId)}">${escapeHtml(sessionId.slice(0, 12))}${sessionId.length > 12 ? "..." : ""}</code></td>
+        <td>${escapeHtml(session.subject || "")}</td>
+        <td>${escapeHtml(groups || "None")}</td>
+        <td>${escapeHtml(secretStorage)}</td>
+        <td>${hasRefresh}</td>
+        <td>${escapeHtml(formatRetrievalPolicySessionTime(session.expires_at))}</td>
+        <td><button class="ghost-btn" type="button" data-policy-session-id="${escapeHtml(sessionId)}"><iconify-icon icon="lucide:mouse-pointer-click"></iconify-icon><span>Select</span></button></td>
+      </tr>`;
+
+  }).join("");
+
+  els.retrievalPolicySessionTable.innerHTML = `
+    <div style="overflow:auto;border:1px solid var(--line);border-radius:8px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid var(--line)">Session</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid var(--line)">Subject</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid var(--line)">Groups</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid var(--line)">secret_storage</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid var(--line)">has_refresh_token</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid var(--line)">Expires</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid var(--line)">Action</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+
+  els.retrievalPolicySessionTable.querySelectorAll("[data-policy-session-id]").forEach((button) => {
+
+    button.addEventListener("click", () => {
+
+      if (els.retrievalPolicySessionId) {
+
+        els.retrievalPolicySessionId.value = button.getAttribute("data-policy-session-id") || "";
+
+      }
+
+    });
+
+  });
+
+}
+
+
+function renderRetrievalPolicySessionKeyStatus(result) {
+
+  if (!els.retrievalPolicySessionKeyStatus) return;
+
+  if (!result || typeof result !== "object") {
+
+    els.retrievalPolicySessionKeyStatus.textContent = "No session key status loaded.";
+
+    return;
+
+  }
+
+  const reasons = Array.isArray(result.rotation_due_reasons) && result.rotation_due_reasons.length
+
+    ? result.rotation_due_reasons.join(", ")
+
+    : "none";
+
+  const dueLabel = result.rotation_due ? "due" : "ok";
+
+  els.retrievalPolicySessionKeyStatus.innerHTML = `
+    <div class="metric-subgrid">
+      <span>key source: <strong>${escapeHtml(result.key_source || "none")}</strong></span>
+      <span>active_key_id: <strong>${escapeHtml(result.active_key_id || "none")}</strong></span>
+      <span>key count: <strong>${Number(result.key_count || 0)}</strong></span>
+      <span>rotation: <strong>${dueLabel}</strong></span>
+      <span>active encrypted: <strong>${Number(result.active_encrypted_session_count || 0)}</strong></span>
+      <span>stale encrypted: <strong>${Number(result.stale_encrypted_session_count || 0)}</strong></span>
+      <span>plain refresh: <strong>${Number(result.plain_refresh_session_count || 0)}</strong></span>
+      <span>missing refresh: <strong>${Number(result.missing_refresh_session_count || 0)}</strong></span>
+      <span>rotation_due_reasons: <strong>${escapeHtml(reasons)}</strong></span>
+      <span>last rotation: <strong>${escapeHtml(result.last_rotation?.timestamp || "none")}</strong></span>
+    </div>`;
+
+}
+
+
+async function loadRetrievalPolicyOidcSessionKeyStatus() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("OIDC session key status requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Loading OIDC session key status...";
+
+    const result = await requestJson("/api/retrieval/policies/identity-provider/sessions/key-status", {
+
+      method: "GET",
+
+      headers: { "Content-Type": "application/json" },
+
+    });
+
+    renderRetrievalPolicySessionKeyStatus(result);
+
+    if (els.retrievalPolicyDiff) els.retrievalPolicyDiff.textContent = JSON.stringify(result, null, 2);
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = result.rotation_due ? "OIDC session key rotation is due." : "OIDC session key status is healthy.";
+
+    showToast(result.rotation_due ? "OIDC session key rotation is due." : "OIDC session key status loaded.", result.rotation_due ? "warning" : "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "OIDC session key status failed.", "danger");
+
+  }
+
+}
+
+
+async function loadRetrievalPolicyOidcSessions() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("OIDC session inventory requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Loading OIDC policy sessions...";
+
+    const result = await requestJson("/api/retrieval/policies/identity-provider/sessions", {
+
+      method: "GET",
+
+      headers: { "Content-Type": "application/json" },
+
+    });
+
+    const firstSession = Array.isArray(result.sessions) ? result.sessions[0] : null;
+
+    if (firstSession?.session_id && els.retrievalPolicySessionId) els.retrievalPolicySessionId.value = firstSession.session_id;
+
+    renderRetrievalPolicyOidcSessions(result);
+
+    if (els.retrievalPolicyDiff) els.retrievalPolicyDiff.textContent = JSON.stringify(result, null, 2);
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = `Loaded ${result.session_count || 0} OIDC policy sessions.`;
+
+    showToast("OIDC policy sessions loaded.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "OIDC policy session inventory failed.", "danger");
+
+  }
+
+}
+
+
+async function revokeRetrievalPolicyOidcSession() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("OIDC session revoke requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  const sessionId = String(els.retrievalPolicySessionId?.value || "").trim();
+
+  if (!sessionId) {
+
+    showToast("Enter an OIDC policy session id to revoke.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Revoking OIDC policy session...";
+
+    const result = await requestJson(`/api/retrieval/policies/identity-provider/sessions/${encodeURIComponent(sessionId)}`, {
+
+      method: "DELETE",
+
+      headers: { "Content-Type": "application/json" },
+
+    });
+
+    renderRetrievalPolicySessionAdminAudit(result.audit_entry || result);
+
+    if (els.retrievalPolicyDiff) els.retrievalPolicyDiff.textContent = JSON.stringify(result, null, 2);
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = result.revoked ? "OIDC policy session revoked." : "OIDC policy session was not found.";
+
+    showToast(result.revoked ? "OIDC policy session revoked." : "OIDC policy session was not found.", result.revoked ? "success" : "warning");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "OIDC policy session revoke failed.", "danger");
+
+  }
+
+}
+
+
+async function rotateRetrievalPolicyOidcSessionKeys() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("OIDC session key rotation requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Rotating OIDC session refresh-token keys...";
+
+    const result = await requestJson("/api/retrieval/policies/identity-provider/sessions/rotate-key", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+    });
+
+    renderRetrievalPolicySessionAdminAudit(result.audit_entry || result);
+
+    if (els.retrievalPolicyDiff) els.retrievalPolicyDiff.textContent = JSON.stringify(result, null, 2);
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = `Rotated ${result.rotated_count || 0} OIDC policy session keys.`;
+
+    showToast("OIDC policy session keys rotated.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "OIDC policy session key rotation failed.", "danger");
+
+  }
+
+}
+
+
+async function logoutRetrievalPolicyOidcSession() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("OIDC policy session logout requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Clearing OIDC policy session...";
+
+    const result = await requestJson("/api/retrieval/policies/identity-provider/logout", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+    });
+
+    try { sessionStorage.removeItem(RETRIEVAL_POLICY_AUTH_STORAGE_KEY); } catch {}
+
+    if (els.retrievalPolicyBearerToken) els.retrievalPolicyBearerToken.value = "";
+
+    updateRetrievalPolicyBearerStatus(false);
+
+    if (els.retrievalPolicyDiff) els.retrievalPolicyDiff.textContent = JSON.stringify(result, null, 2);
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "OIDC policy session cleared.";
+
+    showToast("OIDC policy session cleared.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "OIDC policy session logout failed.", "danger");
+
+  }
+
+}
+
+
+async function rollbackRetrievalPolicy() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("Policy rollback requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  const collection = state.primaryCollection || state.lastSearch?.collection || "";
+
+  if (!collection) {
+
+    showToast("Select or search a collection before rolling back a policy.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Rolling back retrieval policy...";
+
+    const result = await requestJson("/api/retrieval/policies/rollback", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+      body: JSON.stringify({
+
+        collection,
+
+        reviewer: String(els.retrievalPolicyReviewer?.value || "").trim(),
+
+        review_note: String(els.retrievalPolicyReviewNote?.value || "").trim(),
+
+      }),
+
+    });
+
+    if (els.retrievalPolicySettings && result.settings) {
+
+      els.retrievalPolicySettings.value = JSON.stringify(result.settings, null, 2);
+
+    }
+
+    if (els.retrievalPolicyStatus) {
+
+      els.retrievalPolicyStatus.textContent = `Rolled back ${result.collection || collection} via ${result.policy_file || "retrieval_policies.json"}.`;
+
+    }
+
+    showToast("Retrieval policy rolled back.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "Retrieval policy rollback failed.", "danger");
+
+  }
+
+}
+
+
+
+async function loadRetrievalPolicyHistory() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("Policy history requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  const collection = state.primaryCollection || state.lastSearch?.collection || "";
+
+  if (!collection) {
+
+    showToast("Select or search a collection before loading policy history.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Loading retrieval policy history...";
+
+    const result = await requestJson(`/api/retrieval/policies/history?collection=${encodeURIComponent(collection)}`);
+
+    if (els.retrievalPolicySettings && result.current_policy) {
+
+      els.retrievalPolicySettings.value = JSON.stringify(result.current_policy, null, 2);
+
+    }
+
+    if (els.retrievalPolicyDiff) {
+
+      const history = Array.isArray(result.history) ? result.history : [];
+      const pendingProposals = Array.isArray(result.pending_proposals) ? result.pending_proposals : [];
+
+      if (els.retrievalPolicyProposalId && pendingProposals.length) {
+
+        els.retrievalPolicyProposalId.value = pendingProposals[0].proposal_id || "";
+
+      }
+
+      els.retrievalPolicyDiff.textContent = JSON.stringify({
+
+        current_policy: result.current_policy || {},
+
+        latest_diff: result.latest_diff || {},
+
+        pending_proposals: pendingProposals,
+
+        history_count: history.length,
+
+        last_audit: history.length ? history[history.length - 1] : null,
+
+      }, null, 2);
+
+    }
+
+    if (els.retrievalPolicyStatus) {
+
+      els.retrievalPolicyStatus.textContent = `Loaded ${(result.history || []).length} policy audit entries for ${result.collection || collection}.`;
+
+    }
+
+    showToast("Retrieval policy history loaded.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "Retrieval policy history failed.", "danger");
+
+  }
+
+}
+
+
+async function loadRetrievalPolicyNotifications() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("Policy notifications require the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  const recipient = String(els.retrievalPolicyNotificationRecipient?.value || els.retrievalPolicyAssignedTo?.value || "").trim();
+
+  const params = new URLSearchParams();
+
+  if (recipient) params.set("recipient", recipient);
+
+  params.set("status", "pending");
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Loading pending policy notifications...";
+
+    const result = await requestJson(`/api/retrieval/policies/notifications?${params.toString()}`);
+
+    const notifications = Array.isArray(result.notifications) ? result.notifications : [];
+
+    if (els.retrievalPolicyProposalId && notifications.length) {
+
+      els.retrievalPolicyProposalId.value = notifications[0].proposal_id || "";
+
+    }
+
+    if (els.retrievalPolicyDiff) {
+
+      els.retrievalPolicyDiff.textContent = JSON.stringify({
+
+        notification_count: notifications.length,
+
+        notifications,
+
+      }, null, 2);
+
+    }
+
+    if (els.retrievalPolicyStatus) {
+
+      els.retrievalPolicyStatus.textContent = `Loaded ${notifications.length} pending policy notifications.`;
+
+    }
+
+    showToast("Retrieval policy notifications loaded.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "Retrieval policy notifications failed.", "danger");
+
+  }
+
+}
+
+
+async function dispatchRetrievalPolicyNotifications() {
+
+  if (state.localMode || state.publicDemo) {
+
+    showToast("Policy notification dispatch requires the backend runtime.", "warning");
+
+    return;
+
+  }
+
+  const recipient = String(els.retrievalPolicyNotificationRecipient?.value || els.retrievalPolicyAssignedTo?.value || "").trim();
+  const deliveryMode = String(els.retrievalPolicyDeliveryMode?.value || "outbox_file").trim() || "outbox_file";
+
+  try {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = "Dispatching pending policy notifications...";
+
+    const result = await requestJson("/api/retrieval/policies/notifications/dispatch", {
+
+      method: "POST",
+
+      headers: { "Content-Type": "application/json" },
+
+      body: JSON.stringify({
+
+        recipient,
+
+        status: "pending",
+
+        delivery_mode: deliveryMode,
+
+        outbox_path: String(els.retrievalPolicyOutboxPath?.value || "").trim(),
+
+        webhook_url: String(els.retrievalPolicyWebhookUrl?.value || "").trim(),
+
+        webhook_template: String(els.retrievalPolicyWebhookTemplate?.value || "generic").trim() || "generic",
+
+        webhook_signing_secret_env: String(els.retrievalPolicyWebhookSigningSecretEnv?.value || "").trim(),
+
+        webhook_routing_key_env: String(els.retrievalPolicyWebhookRoutingKeyEnv?.value || "").trim(),
+
+        webhook_auth_header_name: String(els.retrievalPolicyWebhookAuthHeaderName?.value || "").trim(),
+
+        webhook_auth_token_env: String(els.retrievalPolicyWebhookAuthTokenEnv?.value || "").trim(),
+
+        webhook_auth_scheme: String(els.retrievalPolicyWebhookAuthScheme?.value || "").trim(),
+
+        smtp_host: String(els.retrievalPolicySmtpHost?.value || "").trim(),
+
+        smtp_port: Number(els.retrievalPolicySmtpPort?.value || 25),
+
+        smtp_from: String(els.retrievalPolicySmtpFrom?.value || "").trim(),
+
+        smtp_to: String(els.retrievalPolicySmtpTo?.value || "").trim(),
+
+        smtp_subject: String(els.retrievalPolicySmtpSubject?.value || "RAG retrieval policy review notification").trim(),
+
+        smtp_use_tls: Boolean(els.retrievalPolicySmtpUseTls?.checked),
+
+        smtp_username_env: String(els.retrievalPolicySmtpUsernameEnv?.value || "").trim(),
+
+        smtp_password_env: String(els.retrievalPolicySmtpPasswordEnv?.value || "").trim(),
+
+        dispatched_by: String(els.retrievalPolicyReviewer?.value || els.retrievalPolicyApprover?.value || "").trim(),
+
+      }),
+
+    });
+
+    if (els.retrievalPolicyDiff) {
+
+      els.retrievalPolicyDiff.textContent = JSON.stringify({
+
+        dispatched_count: result.dispatched_count || 0,
+
+        outbox_path: result.outbox_path || "",
+
+        notifications: Array.isArray(result.notifications) ? result.notifications : [],
+
+      }, null, 2);
+
+    }
+
+    if (els.retrievalPolicyStatus) {
+
+      els.retrievalPolicyStatus.textContent = `Dispatched ${result.dispatched_count || 0} policy notifications.`;
+
+    }
+
+    showToast("Retrieval policy notifications dispatched.", "success");
+
+  } catch (error) {
+
+    if (els.retrievalPolicyStatus) els.retrievalPolicyStatus.textContent = error.message || String(error);
+
+    showToast(error.message || "Retrieval policy notification dispatch failed.", "danger");
+
+  }
+
+}
+
+
+
+async function deleteCollection(name) {
+
+  if (state.publicDemo) {
+
+    showToast("Demo collections cannot be deleted on static pages.", "warning");
+
+    return;
+
+  }
+
+  if (state.localMode) {
+
+    await deleteLocalCollection(name);
+
+    return;
+
+  }
+
+  await requestJson(`/api/collections/${encodeURIComponent(name)}`, { method: "DELETE" });
+
+  if (state.primaryCollection === name) {
+
+    state.primaryCollection = "";
+
+    state.primaryStats = null;
+
+    rememberActiveCollection("");
+
+  }
+
+  addActivity("success", "Collection deleted", name);
+
+  await refreshStats();
+
+  showToast(`Deleted collection ${name}.`, "success");
+
+}
+
+
+
+async function runBenchmark() {
+
+  if (state.publicDemo) {
+
+    renderBenchmark();
+
+    showToast("The public page shows a benchmark demo snapshot.", "success");
+
+    return;
+
+  }
+
+  if (state.localMode) {
+
+    await runLocalBenchmark();
+
+    return;
+
+  }
+
+  const payload = {
+
+    collection: `benchmark_${Date.now()}`,
+
+    document_count: Number(els.benchDocs?.value || 500),
+
+    batch_size: Number(els.benchBatch?.value || 100),
+
+    query_count: Number(els.benchQueries?.value || 50),
+
+    top_k: Number(els.benchTopK?.value || 5),
+
+    backend: "hashing",
+
+    cleanup: true
+
+  };
+
+
+
+  if (els.btnBench) els.btnBench.disabled = true;
+
+  if (els.benchFill) els.benchFill.style.width = "18%";
+
+  if (els.benchLog) els.benchLog.textContent = "Benchmark running...";
+
+
+
+  try {
+
+    addActivity("warning", "Benchmark started", `${payload.document_count} documents / ${payload.query_count} queries`);
+
+    const result = await requestJson("/api/benchmark", {
+
+      method: "POST",
+
+      headers: {
+
+        "Content-Type": "application/json"
+
+      },
+
+      body: JSON.stringify(payload)
+
+    }, 300000);
+
+
+
+    state.benchmark = result;
+
+    if (els.benchFill) els.benchFill.style.width = "100%";
+
+    rememberTimeline("benchmark");
+
+    renderBenchmark();
+
+    renderTrendChart();
+
+    renderSummaryMetrics();
+
+    addActivity("success", "Benchmark finished", `Write ${result.insert_docs_per_second} docs/s; search ${result.query_qps} qps`);
+
+    showToast("Benchmark finished; metrics updated.", "success");
+
+  } catch (error) {
+
+    if (els.benchFill) els.benchFill.style.width = "0%";
+
+    addActivity("danger", "Benchmark failed", error.message || String(error));
+
+    showToast(error.message || "Benchmark failed", "danger");
+
+  } finally {
+
+    if (els.btnBench) els.btnBench.disabled = false;
+
+  }
+
+}
+
+
+
+function activateGroupButton(group, matcher) {
+
+  group?.querySelectorAll(".segment-btn").forEach((button) => {
+
+    const isActive = Boolean(matcher(button));
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+
+  });
+
+}
+
+
+
+// ─── LLM + RAG ask ───
+
+
+
+function updateLLMStatusLegacyUnused() {
+
+  if (!els.llmStatus) return;
+
+  const cfg = readLLMSettings();
+
+  els.llmStatus.classList.remove("is-ready", "is-error");
+
+  if (cfg.model) {
+
+    const base = cfg.baseUrl || "https://api.openai.com/v1";
+
+    const keyHint = cfg.apiKey ? "Key set" : "No key";
+
+    els.llmStatus.textContent = `Ready · ${cfg.model} · ${base} · ${keyHint}`;
+
+    els.llmStatus.classList.add("is-ready");
+
+  } else if (cfg.apiKey || cfg.baseUrl) {
+
+    els.llmStatus.textContent = "Enter a model name";
+
+  } else {
+
+    els.llmStatus.textContent = "Not configured · optional for RAG answers";
+
+  }
+
+}
+
+
+
+function populateBaseUrlDatalistLegacyUnused() {
+
+  const datalist = document.getElementById("llmBaseUrlList");
+
+  if (!datalist) return;
+
+  const seen = new Set();
+
+  datalist.innerHTML = MODEL_CATALOG
+
+    .map((g) => g.endpoint.replace(/\s*\(.+$/, ""))
+
+    .filter((url) => { if (seen.has(url)) return false; seen.add(url); return true; })
+
+    .map((url) => `<option value="${url}">`)
+
+    .join("");
+
+}
+
+
+
+function closeModelCatalog() {
+
+  if (els.modelCatalog) els.modelCatalog.hidden = true;
+
+}
+
+
+
+
+
+function readLLMSettings() {
+
+  return {
+
+    provider: els.llmProvider?.value || "auto",
+
+    baseUrl: normalizeKnownLLMEndpoint(els.llmBaseUrl?.value || ""),
+
+    apiKey: (els.llmApiKey?.value || "").trim(),
+
+    model: (els.llmModel?.value || "").trim(),
+
+    temperature: Number(els.llmTemperature?.value || 0.7),
+
+    maxTokens: Math.max(64, Number(els.llmMaxTokens?.value || 131072))
+
+  };
+
+}
+
+
+
+function normalizeLLMFormCopy() {
+
+  const providerLabel = document.querySelector('label[for="llmProvider"]');
+
+  if (providerLabel) providerLabel.textContent = "模型服务";
+
+  const baseLabel = document.querySelector('label[for="llmBaseUrl"]');
+
+  if (baseLabel) {
+
+    baseLabel.innerHTML = 'API Base URL <span style="font-size:10px;color:var(--muted);font-weight:400">(可不填；需要改代理时再填)</span>';
+
+  }
+
+  if (els.llmBaseUrl) els.llmBaseUrl.placeholder = "不填则自动使用所选服务商地址";
+
+  if (els.llmModel) els.llmModel.placeholder = "例如 gemini-3.5-flash";
+
+}
+
+
+
+function populateLLMProviderSelect() {
+
+  normalizeLLMFormCopy();
+
+  if (!els.llmProvider) return;
+
+  const current = els.llmProvider.value || "auto";
+
+  els.llmProvider.innerHTML = [
+
+    '<option value="auto">自动识别模型服务</option>',
+
+    ...MODEL_CATALOG.map((provider) => `<option value="${escapeHtml(provider.id)}">${escapeHtml(provider.label)}</option>`),
+
+    '<option value="custom">自定义 OpenAI 兼容地址</option>'
+
+  ].join("");
+
+  els.llmProvider.value = getLLMProvider(current) || current === "auto" ? current : "auto";
+
+}
+
+
+
+function updateLLMStatus() {
+
+  if (!els.llmStatus) return;
+
+  const cfg = readLLMSettings();
+
+  const provider = getLLMProviderMeta(cfg);
+
+  const endpoint = resolveLLMEndpoint(cfg);
+
+  const needsKey = providerNeedsKey(provider);
+
+  els.llmStatus.classList.remove("is-ready", "is-error");
+
+  if (cfg.model && needsKey && !cfg.apiKey) {
+
+    els.llmStatus.textContent = `Missing API key · ${cfg.model} · ${provider?.label || "Custom"} · ${endpoint}`;
+
+    els.llmStatus.classList.add("is-error");
+
+  } else if (cfg.model) {
+
+    const keyHint = needsKey ? "Key set" : "Local model; no key required";
+
+    els.llmStatus.textContent = `Ready · ${cfg.model} · ${provider?.label || "Custom"} · ${endpoint} · ${keyHint}`;
+
+    els.llmStatus.classList.add("is-ready");
+
+  } else if (cfg.apiKey || cfg.baseUrl || cfg.provider !== "auto") {
+
+    els.llmStatus.textContent = "Select or enter a model";
+
+  } else {
+
+    els.llmStatus.textContent = "Not configured · choose a model service and model name for RAG answers";
+
+  }
+
+}
+
+
+
+function populateBaseUrlDatalist() {
+
+  const datalist = document.getElementById("llmBaseUrlList");
+
+  if (!datalist) return;
+
+  const seen = new Set();
+
+  datalist.innerHTML = MODEL_CATALOG
+
+    .map((provider) => cleanLLMEndpoint(provider.endpoint))
+
+    .filter((url) => { if (!url || seen.has(url)) return false; seen.add(url); return true; })
+
+    .map((url) => `<option value="${escapeHtml(url)}">`)
+
+    .join("");
+
+}
+
+
+
+function clearLLMSettings() {
+
+  if (els.llmProvider) els.llmProvider.value = "auto";
+
+  if (els.llmBaseUrl) els.llmBaseUrl.value = "";
+
+  if (els.llmApiKey) els.llmApiKey.value = "";
+
+  if (els.llmModel) els.llmModel.value = "";
+
+  if (els.llmTemperature) els.llmTemperature.value = "0.7";
+
+  if (els.llmMaxTokens) els.llmMaxTokens.value = "131072";
+
+  saveLLMSettings();
+
+  showToast("LLM settings cleared.", "success");
+
+}
+
+
+
+function loadLLMSettings() {
+
+  try {
+
+    const raw = localStorage.getItem(LLM_STORAGE_KEY);
+
+    if (raw) {
+
+      const data = JSON.parse(raw);
+
+      if (els.llmProvider) els.llmProvider.value = data.provider || "auto";
+
+      if (els.llmBaseUrl) els.llmBaseUrl.value = normalizeKnownLLMEndpoint(data.baseUrl || "");
+
+      if (els.llmApiKey) els.llmApiKey.value = data.apiKey || "";
+
+      if (els.llmModel) els.llmModel.value = data.model || "";
+
+      if (els.llmTemperature && data.temperature != null) els.llmTemperature.value = data.temperature;
+
+      if (els.llmMaxTokens && data.maxTokens != null) els.llmMaxTokens.value = data.maxTokens;
+
+    }
+
+  } catch {}
+
+  updateLLMStatus();
+
+}
+
+
+
+function saveLLMSettings() {
+
+  try {
+
+    const cfg = readLLMSettings();
+
+    localStorage.setItem(LLM_STORAGE_KEY, JSON.stringify(cfg));
+
+    // Save non-empty values to input history
+
+    if (cfg.baseUrl) addInputHistory('baseUrl', cfg.baseUrl);
+
+    if (cfg.apiKey) addInputHistory('apiKey', cfg.apiKey);
+
+    if (cfg.model) addInputHistory('model', cfg.model);
+
+  } catch {}
+
+  updateLLMStatus();
+
+}
+
+
+
+// ─── Input History System ───
+
+const INPUT_HISTORY_KEY = 'rag_input_history_v1';
+
+const MAX_HISTORY_ITEMS = 15;
+
+
+
+function getInputHistory() {
+
+  try {
+
+    const raw = localStorage.getItem(INPUT_HISTORY_KEY);
+
+    return raw ? JSON.parse(raw) : { baseUrl: [], apiKey: [], model: [] };
+
+  } catch { return { baseUrl: [], apiKey: [], model: [] }; }
+
+}
+
+
+
+function saveInputHistory(history) {
+
+  try { localStorage.setItem(INPUT_HISTORY_KEY, JSON.stringify(history)); } catch {}
+
+}
+
+
+
+function addInputHistory(field, value) {
+
+  const val = String(value || '').trim();
+
+  if (!val) return;
+
+  const history = getInputHistory();
+
+  if (!Array.isArray(history[field])) history[field] = [];
+
+  // Remove duplicate then prepend
+
+  history[field] = [val, ...history[field].filter((item) => item !== val)].slice(0, MAX_HISTORY_ITEMS);
+
+  saveInputHistory(history);
+
+}
+
+
+
+function removeInputHistory(field, value) {
+
+  const history = getInputHistory();
+
+  if (!Array.isArray(history[field])) return;
+
+  history[field] = history[field].filter((item) => item !== value);
+
+  saveInputHistory(history);
+
+}
+
+
+
+function clearInputHistory(field) {
+
+  const history = getInputHistory();
+
+  if (field) { history[field] = []; }
+
+  else { history.baseUrl = []; history.apiKey = []; history.model = []; }
+
+  saveInputHistory(history);
+
+}
+
+
+
+function maskApiKey(key) {
+
+  const s = String(key || '');
+
+  if (s.length <= 8) return "********";
+
+  return s.slice(0, 4) + "********" + s.slice(-4);
+
+}
+
+function parseSchemaList(value, options = {}) {
+
+  const upper = Boolean(options.upper);
+
+  return Array.from(new Set(String(value || "")
+
+    .split(/[,\n，、;；]+/)
+
+    .map((item) => item.trim())
+
+    .filter(Boolean)
+
+    .map((item) => item.replace(/\s+/g, "_"))
+
+    .map((item) => upper ? item.toUpperCase() : item)
+
+    .filter((item) => item.length >= 2 && item.length <= 48)));
+
+}
+
+function readKgEntityTypes() {
+
+  return parseSchemaList($("kgEntityTypes")?.value || "").slice(0, 24);
+
+}
+
+function readKgRelationTypes() {
+
+  return parseSchemaList($("kgRelationTypes")?.value || "", { upper: true }).slice(0, 40);
+
+}
+
+function extractJsonObjectFromText(text) {
+
+  let raw = String(text || "").trim();
+
+  if (raw.startsWith("```")) {
+
+    raw = raw.replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
+
+  }
+
+  try { return JSON.parse(raw); } catch {}
+
+  const first = raw.indexOf("{");
+
+  const last = raw.lastIndexOf("}");
+
+  if (first >= 0 && last > first) {
+
+    return JSON.parse(raw.slice(first, last + 1));
+
+  }
+
+  throw new Error("AI did not return a parseable JSON object.");
+
+}
+
+function normalizeSchemaStringArray(value, options = {}) {
+
+  const upper = Boolean(options.upper);
+
+  const source = Array.isArray(value) ? value : String(value || "").split(/[,\n，、;；]+/);
+
+  return Array.from(new Set(source
+
+    .map((item) => String(item || "").trim())
+
+    .filter(Boolean)
+
+    .map((item) => item.replace(/\s+/g, "_"))
+
+    .map((item) => upper ? item.toUpperCase() : item)
+
+    .filter((item) => item.length >= 2 && item.length <= 64)));
+
+}
+
+function normalizeKgSchemaRecommendation(raw) {
+
+  const entityTypes = normalizeSchemaStringArray(raw.entity_types || raw.entities || raw.entityTypes).slice(0, 24);
+
+  const relationTypes = normalizeSchemaStringArray(raw.relation_types || raw.relations || raw.relationTypes, { upper: true }).slice(0, 40);
+
+  if (!entityTypes.length || !relationTypes.length) {
+
+    throw new Error("AI recommendation is missing entity_types or relation_types.");
+
+  }
+
+  const asRules = (value) => Array.isArray(value)
+
+    ? value.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 12)
+
+    : String(value || "").split(/\n+/).map((item) => item.trim()).filter(Boolean).slice(0, 12);
+
+  const examples = Array.isArray(raw.examples) ? raw.examples.slice(0, 8) : [];
+
+  return {
+
+    data_type: String(raw.data_type || raw.dataset_type || raw.type || "custom").trim(),
+
+    goal: String(raw.goal || raw.analysis_goal || "").trim(),
+
+    entity_types: entityTypes,
+
+    relation_types: relationTypes,
+
+    extraction_rules: asRules(raw.extraction_rules || raw.rules),
+
+    merge_rules: asRules(raw.merge_rules || raw.identity_rules),
+
+    exclude_rules: asRules(raw.exclude_rules || raw.exclusions),
+
+    evidence_rules: asRules(raw.evidence_rules || raw.evidence_requirements),
+
+    examples,
+
+    warnings: asRules(raw.warnings),
+
+    confidence: raw.confidence == null ? null : Number(raw.confidence),
+
+    raw
+
+  };
+
+}
+
+function renderSchemaAdvisorStatus(title, detail = "", options = {}) {
+
+  const panel = $("kgSchemaAdvisor");
+
+  const body = $("kgSchemaAdvisorBody");
+
+  if (!panel || !body) return;
+
+  panel.hidden = false;
+
+  const level = options.level || "info";
+
+  const icon = level === "danger" ? "lucide:alert-circle" : level === "success" ? "lucide:check-circle" : "lucide:loader";
+
+  body.innerHTML = `
+
+    <div class="schema-advisor-section is-wide">
+
+      <h4><iconify-icon icon="${icon}" style="vertical-align:-2px;margin-right:6px"></iconify-icon>${escapeHtml(title)}</h4>
+
+      <p style="margin:0;color:var(--ink-soft);font-size:12px;line-height:1.6">${escapeHtml(detail)}</p>
+
+    </div>
+
+  `;
+
+  const applyBtn = $("btnKgApplySchema");
+
+  const copyBtn = $("btnKgCopySchema");
+
+  if (applyBtn) applyBtn.disabled = true;
+
+  if (copyBtn) copyBtn.disabled = !state.kgSchemaRecommendation;
+
+}
+
+function renderKgSchemaRecommendation(rec) {
+
+  state.kgSchemaRecommendation = rec;
+
+  const panel = $("kgSchemaAdvisor");
+
+  const body = $("kgSchemaAdvisorBody");
+
+  if (!panel || !body) return;
+
+  panel.hidden = false;
+
+  const chipList = (items) => `<div class="schema-advisor-list">${items.map((item) => `<span class="pill">${escapeHtml(item)}</span>`).join("")}</div>`;
+
+  const ruleList = (items, emptyText) => items.length
+
+    ? `<ol class="schema-advisor-rules">${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>`
+
+    : `<p style="margin:0;color:var(--muted);font-size:12px">${escapeHtml(emptyText)}</p>`;
+
+  const examplesText = rec.examples.length ? JSON.stringify(rec.examples, null, 2) : "No examples returned.";
+
+  body.innerHTML = `
+
+    <div class="schema-advisor-section">
+
+      <h4>Entity Types</h4>
+
+      ${chipList(rec.entity_types)}
+
+    </div>
+
+    <div class="schema-advisor-section">
+
+      <h4>Relation Types</h4>
+
+      ${chipList(rec.relation_types)}
+
+    </div>
+
+    <div class="schema-advisor-section">
+
+      <h4>Extraction Rules</h4>
+
+      ${ruleList(rec.extraction_rules, "No extraction rules returned.")}
+
+    </div>
+
+    <div class="schema-advisor-section">
+
+      <h4>Merge Rules</h4>
+
+      ${ruleList(rec.merge_rules, "No merge rules returned.")}
+
+    </div>
+
+    <div class="schema-advisor-section">
+
+      <h4>Exclude Rules</h4>
+
+      ${ruleList(rec.exclude_rules, "No exclude rules returned.")}
+
+    </div>
+
+    <div class="schema-advisor-section">
+
+      <h4>Evidence Rules</h4>
+
+      ${ruleList(rec.evidence_rules, "No evidence rules returned.")}
+
+    </div>
+
+    <div class="schema-advisor-section is-wide">
+
+      <h4>Examples / Raw Structure</h4>
+
+      <pre class="schema-advisor-pre">${escapeHtml(examplesText)}</pre>
+
+    </div>
+
+  `;
+
+  const applyBtn = $("btnKgApplySchema");
+
+  const copyBtn = $("btnKgCopySchema");
+
+  if (applyBtn) applyBtn.disabled = false;
+
+  if (copyBtn) copyBtn.disabled = false;
+
+}
+
+function buildKgSchemaAdvisorPrompt({ dataType, goal, currentEntityTypes, currentRelationTypes, sampleText, sampleMeta }) {
+
+  return `You are a GraphRAG GraphSchema design assistant. Recommend graph extraction settings from the dataset type, analysis goal, and sample.
+
+Requirements:
+1. Return one valid JSON object only. Do not use Markdown and do not add explanatory prose outside JSON.
+2. entity_types must be English PascalCase or clear English type names.
+3. relation_types must be English UPPER_SNAKE_CASE.
+4. Include evidence rules explaining which relation types require source text, record_id, chunk_id, date, page, or source references.
+5. Include identity/merge rules. Do not merge entities only because they co-occur or are mentioned in similar text.
+6. Stay generic. Do not invent domain-specific entities unless the data sample supports them.
+
+Output JSON shape:
+{
+  "data_type": "string",
+  "goal": "string",
+  "entity_types": ["..."],
+  "relation_types": ["..."],
+  "extraction_rules": ["..."],
+  "merge_rules": ["..."],
+  "exclude_rules": ["..."],
+  "evidence_rules": ["..."],
+  "examples": [{"triple":["subject","PREDICATE","object"],"evidence_required":"message_id/date/source","note":"..."}],
+  "warnings": ["..."],
+  "confidence": 0.0
+}
+
+Dataset type: ${dataType}
+Analysis goal: ${goal}
+Current Entity Types: ${currentEntityTypes.join(", ") || "none"}
+Current Relation Types: ${currentRelationTypes.join(", ") || "none"}
+Sample metadata: ${sampleMeta}
+
+Sample text:
+${sampleText || "No sample text. Recommend a conservative schema from the dataset type and goal."}`;
+
+}
+
+async function collectKgSchemaAdvisorSample() {
+
+  const files = [...(_pendingJsonFiles.kgCorpus || [])].slice(0, 3);
+
+  const parts = [];
+
+  let bytesRead = 0;
+
+  for (const file of files) {
+
+    const slice = file.slice(0, Math.min(file.size || 0, 180000));
+
+    const text = await slice.text().catch(() => "");
+
+    if (!text.trim()) continue;
+
+    bytesRead += slice.size || text.length;
+
+    parts.push(`### ${file.name} (${formatNumber(file.size || 0)} bytes)\n${normalizeText(text).slice(0, 6000)}`);
+
+  }
+
+  if (!parts.length && Array.isArray(state.chunks) && state.chunks.length) {
+
+    parts.push(`### current chunks sample\n${state.chunks.slice(0, 8).map((chunk) => chunk.text || "").join("\n\n").slice(0, 12000)}`);
+
+  }
+
+  return {
+
+    text: parts.join("\n\n").slice(0, 18000),
+
+    meta: files.length ? `${files.length} 个待构建文件，读取前缀 ${formatNumber(bytesRead)} bytes` : "未选择 KG 文件，使用当前浏览器索引样本或空样本"
+
+  };
+
+}
+
+async function requestKgSchemaRecommendation() {
+
+  const btn = $("btnKgRecommendSchema");
+
+  const baseCfg = readLLMSettings();
+
+  const cfg = {
+
+    baseUrl: $("kgLlmBaseUrl")?.value?.trim() || resolveLLMEndpoint(baseCfg) || "",
+
+    apiKey: $("kgLlmApiKey")?.value?.trim() || baseCfg.apiKey || "",
+
+    model: $("kgLlmModel")?.value?.trim() || baseCfg.model || "",
+
+    temperature: Number($("kgLlmTemperature")?.value || baseCfg.temperature || 0.2),
+
+    maxTokens: Math.min(12000, Math.max(1024, Number($("kgLlmMaxTokens")?.value || baseCfg.maxTokens || 4096)))
+
+  };
+
+  const provider = getLLMProviderMeta({ ...baseCfg, baseUrl: cfg.baseUrl, model: cfg.model });
+
+  if (!cfg.model) {
+
+    showToast("Configure an LLM model before generating an AI extraction recommendation.", "warning");
+
+    renderSchemaAdvisorStatus("Missing model", "Enter a model name in LLM settings, for example gemini-3.5-flash.", { level: "danger" });
+
+    return;
+
+  }
+
+  if (!cfg.baseUrl) {
+
+    showToast("Configure an API Base URL or choose a model service first.", "warning");
+
+    renderSchemaAdvisorStatus("Missing API URL", "Cannot call an OpenAI-compatible /chat/completions endpoint.", { level: "danger" });
+
+    return;
+
+  }
+
+  if (providerNeedsKey(provider) && !cfg.apiKey) {
+
+    showToast("Remote models require an API key.", "warning");
+
+    renderSchemaAdvisorStatus("Missing API key", `Model ${cfg.model} requires an API key; the full key is never displayed.`, { level: "danger" });
+
+    return;
+
+  }
+
+  try {
+
+    if (btn) { btn.disabled = true; btn.dataset.busy = "true"; }
+
+    state.kgSchemaRecommendation = null;
+
+    renderSchemaAdvisorStatus("Analyzing sample and requesting AI recommendation", `model ${cfg.model} · ${cfg.baseUrl} · key ${cfg.apiKey ? maskApiKey(cfg.apiKey) : "not used"}`);
+
+    const sample = await collectKgSchemaAdvisorSample();
+
+    const dataType = $("kgSchemaDataType")?.value || "auto";
+    const goal = ($("kgSchemaGoal")?.value || "问答、关系检索、证据可追溯").trim();
+
+    const prompt = buildKgSchemaAdvisorPrompt({
+
+      dataType,
+
+      goal,
+
+      currentEntityTypes: readKgEntityTypes(),
+
+      currentRelationTypes: readKgRelationTypes(),
+
+      sampleText: sample.text,
+
+      sampleMeta: sample.meta
+
+    });
+
+    renderSchemaAdvisorStatus("AI is generating a recommendation", `${sample.meta} · using ${cfg.model}.`);
+
+    const resp = await fetch(`${cfg.baseUrl.replace(/\/+$/, "")}/chat/completions`, {
+
+      method: "POST",
+
+      headers: {
+
+        "Content-Type": "application/json",
+
+        ...(cfg.apiKey ? { "Authorization": `Bearer ${cfg.apiKey}` } : {})
+
+      },
+
+      body: JSON.stringify({
+
+        model: cfg.model,
+
+        temperature: Math.min(0.4, Math.max(0, cfg.temperature || 0.2)),
+
+        max_tokens: cfg.maxTokens,
+
+        stream: false,
+
+        messages: [
+
+          { role: "system", content: "You design safe, evidence-bound GraphRAG schemas. Return valid JSON only." },
+
+          { role: "user", content: prompt }
+
+        ]
+
+      })
+
+    });
+
+    if (!resp.ok) {
+
+      const errText = await resp.text().catch(() => "");
+
+      throw new Error(`HTTP ${resp.status} ${resp.statusText}${errText ? ` · ${errText.slice(0, 240)}` : ""}`);
+
+    }
+
+    const data = await resp.json();
+
+    const content = data.choices?.[0]?.message?.content || data.output_text || "";
+
+    const rec = normalizeKgSchemaRecommendation(extractJsonObjectFromText(content));
+
+    renderKgSchemaRecommendation(rec);
+
+    showToast("AI extraction recommendation generated. Review before applying.", "success");
+
+    addActivity("success", "AI recommended Graph Schema", `${cfg.model} · ${rec.entity_types.length} entities · ${rec.relation_types.length} relations`);
+
+  } catch (err) {
+
+    const message = err?.message || String(err);
+
+    renderSchemaAdvisorStatus("AI recommendation failed", message, { level: "danger" });
+
+    showToast(`AI recommendation failed: ${message}`, "danger");
+
+  } finally {
+
+    if (btn) { btn.disabled = false; delete btn.dataset.busy; }
+
+  }
+
+}
+
+function applyKgSchemaRecommendation() {
+
+  const rec = state.kgSchemaRecommendation;
+
+  if (!rec) {
+
+    showToast("No AI recommendation is available to apply.", "warning");
+
+    return;
+
+  }
+
+  if ($("kgEntityTypes")) $("kgEntityTypes").value = rec.entity_types.join(", ");
+
+  if ($("kgRelationTypes")) $("kgRelationTypes").value = rec.relation_types.join(", ");
+
+  if ($("kgExtractEngine")) $("kgExtractEngine").value = "schema";
+
+  showToast("Applied AI-recommended entity and relation types.", "success");
+
+  addActivity("success", "Applied AI Graph Schema", `${rec.entity_types.length} entity types · ${rec.relation_types.length} relation types`);
+
+}
+
+async function copyKgSchemaRecommendation() {
+
+  const rec = state.kgSchemaRecommendation;
+
+  if (!rec) {
+
+    showToast("No AI recommendation is available to copy.", "warning");
+
+    return;
+
+  }
+
+  try {
+
+    await navigator.clipboard.writeText(JSON.stringify(rec.raw || rec, null, 2));
+
+    showToast("Copied recommended schema JSON.", "success");
+
+  } catch (err) {
+
+    showToast(`Copy failed: ${err?.message || String(err)}`, "warning");
+
+  }
+
+}
+
+
+
+function renderInputHistoryDropdown(field, dropdownEl, inputEl) {
+
+  if (!dropdownEl) return;
+
+  const history = getInputHistory();
+
+  const items = Array.isArray(history[field]) ? history[field] : [];
+
+  if (!items.length) {
+
+    dropdownEl.innerHTML = '<div class="history-empty">No history</div>';
+
+    return;
+
+  }
+
+  const fieldLabel = field === 'baseUrl' ? 'URL' : field === 'apiKey' ? 'Key' : 'Model';
+
+  const headerHtml = `
+
+    <div class="history-header">
+
+      <span>History ${fieldLabel}: ${items.length}</span>
+
+      <button class="history-clear-all" type="button" data-history-clear="${escapeHtml(field)}">Clear all</button>
+
+    </div>
+
+  `;
+
+  const itemsHtml = items.map((item) => {
+
+    const display = field === 'apiKey' ? maskApiKey(item) : item;
+
+    return `
+
+      <button class="history-item" type="button" data-history-value="${escapeHtml(item)}" data-history-field="${escapeHtml(field)}">
+
+        <span title="${escapeHtml(item)}">${escapeHtml(display)}</span>
+
+        <span class="history-delete" data-history-delete="${escapeHtml(item)}" data-history-delete-field="${escapeHtml(field)}" title="Delete">x</span>
+
+      </button>
+
+    `;
+
+  }).join('');
+
+  dropdownEl.innerHTML = headerHtml + itemsHtml;
+
+}
+
+
+
+function openHistoryDropdown(field) {
+
+  const map = {
+
+    baseUrl: { dropdown: document.getElementById('historyBaseUrl'), input: els.llmBaseUrl },
+
+    apiKey: { dropdown: document.getElementById('historyApiKey'), input: els.llmApiKey },
+
+    model: { dropdown: document.getElementById('historyModel'), input: els.llmModel }
+
+  };
+
+  // Close all first
+
+  Object.values(map).forEach(({ dropdown }) => { if (dropdown) dropdown.classList.remove('is-open'); });
+
+  const target = map[field];
+
+  if (!target?.dropdown) return;
+
+  renderInputHistoryDropdown(field, target.dropdown, target.input);
+
+  target.dropdown.classList.add('is-open');
+
+}
+
+
+
+function closeAllHistoryDropdowns() {
+
+  document.querySelectorAll('.input-history-dropdown').forEach((el) => el.classList.remove('is-open'));
+
+}
+
+
+
+function bindInputHistoryEvents() {
+
+  // Open on focus
+
+  els.llmBaseUrl?.addEventListener('focus', () => openHistoryDropdown('baseUrl'));
+
+  els.llmApiKey?.addEventListener('focus', () => openHistoryDropdown('apiKey'));
+
+  els.llmModel?.addEventListener('focus', () => openHistoryDropdown('model'));
+
+
+
+  // Click handlers on dropdowns (delegated)
+
+  document.addEventListener('click', (event) => {
+
+    // Handle select history item
+
+    const deleteBtn = event.target.closest('[data-history-delete]');
+
+    if (deleteBtn) {
+
+      event.preventDefault();
+
+      event.stopPropagation();
+
+      const value = deleteBtn.dataset.historyDelete;
+
+      const field = deleteBtn.dataset.historyDeleteField;
+
+      removeInputHistory(field, value);
+
+      openHistoryDropdown(field); // Re-render
+
+      return;
+
+    }
+
+
+
+    const clearBtn = event.target.closest('[data-history-clear]');
+
+    if (clearBtn) {
+
+      event.preventDefault();
+
+      event.stopPropagation();
+
+      const field = clearBtn.dataset.historyClear;
+
+      clearInputHistory(field);
+
+      openHistoryDropdown(field); // Re-render
+
+      showToast('History cleared.', 'success');
+
+      return;
+
+    }
+
+
+
+    const historyItem = event.target.closest('[data-history-value]');
+
+    if (historyItem) {
+
+      event.preventDefault();
+
+      const value = historyItem.dataset.historyValue;
+
+      const field = historyItem.dataset.historyField;
+
+      const inputMap = { baseUrl: els.llmBaseUrl, apiKey: els.llmApiKey, model: els.llmModel };
+
+      const input = inputMap[field];
+
+      if (input) {
+
+        input.value = value;
+
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      }
+
+      closeAllHistoryDropdowns();
+
+      saveLLMSettings();
+
+      return;
+
+    }
+
+
+
+    // Close dropdowns when clicking outside
+
+    if (!event.target.closest('.input-history-wrap')) {
+
+      closeAllHistoryDropdowns();
+
+    }
+
+  });
+
+}
+
+
+
+function refreshLLMConfig() {
+
+  loadLLMSettings();
+
+  populateLLMProviderSelect();
+
+  populateBaseUrlDatalist();
+
+  showToast('LLM settings refreshed.', 'success');
+
+}
+
+
+
+function openModelCatalog() {
+
+  if (!els.modelCatalog || !els.modelCatalogBody) return;
+
+  els.modelCatalogBody.innerHTML = MODEL_CATALOG.map((group) => {
+
+    const cleanEndpoint = cleanLLMEndpoint(group.endpoint);
+
+    const items = group.models.map((model) => `
+
+      <button class="model-row" type="button"
+
+              data-provider-id="${escapeHtml(group.id)}"
+
+              data-model-name="${escapeHtml(model.name)}"
+
+              data-endpoint="${escapeHtml(cleanEndpoint)}">
+
+        <span class="model-name">${escapeHtml(model.name)}</span>
+
+        <span class="model-desc">${escapeHtml(model.desc || "")}</span>
+
+        <iconify-icon class="model-copy" icon="lucide:clipboard-copy"></iconify-icon>
+
+      </button>
+
+    `).join("");
+
+    return `
+
+      <div class="model-group">
+
+        <div class="model-group-label">
+
+          <span>${escapeHtml(group.label)}</span>
+
+          <span class="endpoint">${escapeHtml(cleanEndpoint || "manual")}</span>
+
+        </div>
+
+        ${items}
+
+      </div>
+
+    `;
+
+  }).join("");
+
+  els.modelCatalog.hidden = false;
+
+}
+
+
+
+async function pickModelFromCatalog(modelName, endpoint, providerId) {
+
+  if (els.llmModel) els.llmModel.value = modelName;
+
+  if (els.llmProvider && providerId) els.llmProvider.value = providerId;
+
+  if (els.llmBaseUrl && providerId) {
+
+    els.llmBaseUrl.value = "";
+
+  } else if (els.llmBaseUrl && !els.llmBaseUrl.value.trim() && endpoint) {
+
+    els.llmBaseUrl.value = endpoint;
+
+  }
+
+  saveLLMSettings();
+
+  let copied = false;
+
+  try {
+
+    await navigator.clipboard.writeText(modelName);
+
+    copied = true;
+
+  } catch {}
+
+  showToast(copied ? `Copied and filled: ${modelName}` : `Filled: ${modelName}`, "success");
+
+  closeModelCatalog();
+
+}
+
+
+
+function buildAskMessages(question) {
+
+  const results = Array.isArray(state.lastSearch?.results) ? state.lastSearch.results : [];
+
+  if (!results.length) {
+
+    return [
+
+      { role: "system", content: "You are a PowerRAG retrieval-augmented assistant. No local evidence was retrieved, so state that the current knowledge base does not provide enough evidence. Do not fill gaps with model prior knowledge." },
+
+      { role: "user", content: question }
+
+    ];
+
+  }
+
+  const context = results.slice(0, 8).map((item, idx) => {
+
+    const text = item.text || item.content || item.chunk || item.snippet || "";
+
+    const meta = item.metadata || {};
+
+    const source = meta.source || meta.filename || meta.title || item.source || `chunk-${idx + 1}`;
+
+    return `[Chunk ${idx + 1} | source ${source}]\n${String(text).slice(0, 1200)}`;
+
+  }).join("\n\n---\n\n");
+
+
+
+  return [
+
+    {
+
+      role: "system",
+
+      content: "You are a PowerRAG retrieval-augmented assistant. Answer only from the provided local chunks, graph clues, or evidence. Cite key claims as [Chunk N]. If the context is insufficient, say evidence is insufficient and do not fill gaps with model prior knowledge."
+
+    },
+
+    {
+
+      role: "user",
+
+      content: `## Context\n${context}\n\n## Question\n${question}`
+
+    }
+
+  ];
+
+}
+
+
+
+function resolveKgQueryCollection() {
+
+  return $("kgPublicBooksJsonCollection")?.value?.trim() || state.primaryCollection || "";
+
+}
+
+
+
+async function requestUnifiedQuery(question, options = {}) {
+
+  const cfg = options.llmSettings || readLLMSettings();
+
+  const baseUrl = options.baseUrl || resolveLLMEndpoint(cfg) || cfg.baseUrl || "";
+
+  const topK = Number(options.topK ?? els.searchTopK?.value ?? 20);
+
+  const payload = {
+
+    question,
+
+    collection: options.collection || state.primaryCollection || "",
+
+    top_k: Math.max(1, Math.min(100, topK || 8)),
+
+    mode: options.mode || "auto",
+
+    graph_db_path: options.graphDbPath || state.kgGraphDbPath || "",
+
+    llm_api_key: options.apiKey ?? cfg.apiKey ?? "",
+
+    llm_base_url: baseUrl,
+
+    llm_model: options.model || cfg.model || "",
+
+    temperature: Number(options.temperature ?? cfg.temperature ?? 0.7),
+
+    max_tokens: Number(options.maxTokens ?? cfg.maxTokens ?? 8192),
+
+    context_only: Boolean(options.contextOnly)
+
+  };
+
+  const result = await requestJson("/api/query", {
+
+    method: "POST",
+
+    headers: { "Content-Type": "application/json" },
+
+    body: JSON.stringify(payload)
+
+  }, options.timeoutMs || 240000);
+
+  const resolvedCollection = cleanCollectionName(
+
+    result?.resolved_collection ||
+
+    result?.collection_resolution?.resolved_collection ||
+
+    result?.coverage_report?.collection ||
+
+    ""
+
+  );
+
+  if (resolvedCollection && resolvedCollection !== payload.collection) {
+
+    activateRagCollection(resolvedCollection, { reason: "query-resolved-collection", render: true, persist: true });
+
+  }
+
+  return result;
+
+}
+
+
+
+function formatGraphQualityMetricValue(value) {
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+
+    return Number.isInteger(value) ? String(value) : value.toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
+
+  }
+
+  return value == null ? "n/a" : String(value);
+
+}
+
+
+
+function formatGraphQualityGateMarkdown(graphQuality, options = {}) {
+
+  if (!graphQuality || typeof graphQuality !== "object") return "";
+
+  const gate = graphQuality.quality_gate || {};
+
+  const metrics = graphQuality.metrics || {};
+
+  const failures = Array.isArray(gate.failures) ? gate.failures : [];
+
+  const details = graphQuality.details || {};
+
+  const status = String(gate.status || "unknown").toUpperCase();
+
+  const statusLabel = options.bypassed ? `${status} (graph_quality_bypassed)` : status;
+
+  const metricKeys = [
+
+    "evidence_coverage",
+
+    "low_confidence_edge_rate",
+
+    "isolated_node_rate",
+
+    "community_assignment_coverage",
+
+    "community_summary_coverage",
+
+    "summary_evidence_coverage"
+
+  ];
+
+  const metricLines = metricKeys
+
+    .filter((key) => Object.prototype.hasOwnProperty.call(metrics, key))
+
+    .map((key) => `- ${key}: ${formatGraphQualityMetricValue(metrics[key])}`);
+
+  const failureLines = failures.map((failure) => {
+
+    const actual = formatGraphQualityMetricValue(failure.actual);
+
+    const threshold = formatGraphQualityMetricValue(failure.threshold);
+
+    return `- ${failure.metric}: ${actual} ${failure.operator || ""} ${threshold}`;
+
+  });
+
+  const detailLines = [
+
+    ["missing_evidence_edges", "missing evidence edges"],
+
+    ["low_confidence_edges", "low confidence edges"],
+
+    ["isolated_nodes", "isolated nodes"],
+
+    ["communities_without_summaries", "communities without summaries"],
+
+    ["summaries_without_evidence", "summaries without evidence"]
+
+  ].map(([key, label]) => {
+
+    const values = Array.isArray(details[key]) ? details[key].filter(Boolean).slice(0, 8) : [];
+
+    return values.length ? `- ${label}: ${values.join(", ")}` : "";
+
+  }).filter(Boolean);
+
+  return [
+
+    "### Graph Quality Gate",
+
+    `**Status:** ${statusLabel}`,
+
+    metricLines.length ? `**Metrics:**\n${metricLines.join("\n")}` : "",
+
+    failureLines.length ? `**Failures:**\n${failureLines.join("\n")}` : "",
+
+    detailLines.length ? `**Details:**\n${detailLines.join("\n")}` : ""
+
+  ].filter(Boolean).join("\n\n");
+
+}
+
+function formatCollectionResolutionMarkdown(result) {
+
+  const requested = cleanCollectionName(result?.requested_collection);
+
+  const resolved = cleanCollectionName(result?.resolved_collection || result?.collection_resolution?.resolved_collection);
+
+  const reason = result?.collection_resolution?.reason || "";
+
+  if (!requested && !resolved) return "";
+
+  const changed = requested && resolved && requested !== resolved;
+
+  return [
+
+    "### Collection Resolution",
+
+    requested ? `- requested: ${requested}` : "",
+
+    resolved ? `- active: ${resolved}${changed ? " (frontend switched)" : ""}` : "",
+
+    reason ? `- reason: ${reason}` : ""
+
+  ].filter(Boolean).join("\n");
+
+}
+
+
+
+function formatUnifiedQueryErrorMarkdown(error, title = "Unified query failed") {
+
+  const detail = error?.detail || error?.payload?.detail || null;
+
+  const graphQuality = detail?.graph_quality;
+
+  const isGraphQualityFailure = detail?.error === "graph_quality_gate_failed";
+
+  const message = detail?.message || error?.message || String(error || "unknown error");
+
+  const heading = isGraphQualityFailure ? "Graph Quality Gate blocked this answer" : title;
+
+  return [
+
+    `**${heading}:** ${message}`,
+
+    detail?.route?.strategy ? `**Route:** ${detail.route.strategy}` : "",
+
+    detail?.graph_db_path ? `**Graph DB:** ${detail.graph_db_path}` : "",
+
+    formatGraphQualityGateMarkdown(graphQuality)
+
+  ].filter(Boolean).join("\n\n");
+
+}
+
+
+
+function truncateUnifiedEvidenceText(text, maxLength = 180) {
+
+  const clean = String(text || "").replace(/\s+/g, " ").trim();
+
+  if (!clean) return "";
+
+  return clean.length > maxLength ? `${clean.slice(0, maxLength - 1)}...` : clean;
+
+}
+
+
+
+function formatUnifiedCitationLine(item) {
+
+  const kind = item?.source_type || "evidence";
+
+  const source = item?.source || item?.metadata?.source_file || item?.id || "unknown";
+
+  const id = item?.id || kind;
+
+  const community = item?.metadata?.community_id ? ` · community:${item.metadata.community_id}` : "";
+
+  const base = `- [${id}] ${kind} · ${source}${community}`;
+
+  if (kind === "graph_community_source") {
+
+    const snippet = truncateUnifiedEvidenceText(item?.text || item?.metadata?.source_evidence);
+
+    return snippet ? `${base}\n  - source_evidence: ${snippet}` : base;
+
+  }
+
+  return base;
+
+}
+
+
+
+window.formatUnifiedCitationLine = formatUnifiedCitationLine;
+
+function formatLightRagDiagnosticsMarkdown(diagnostics) {
+
+  if (!diagnostics || typeof diagnostics !== "object") return "";
+
+  const activePaths = Array.isArray(diagnostics.active_paths) ? diagnostics.active_paths.filter(Boolean) : [];
+
+  const sourceCounts = diagnostics.source_type_counts && typeof diagnostics.source_type_counts === "object"
+    ? diagnostics.source_type_counts
+    : {};
+
+  const sourceLines = Object.entries(sourceCounts)
+    .filter(([key]) => key)
+    .map(([key, value]) => `- ${key}: ${value}`);
+
+  const countLines = [
+    `- naive_count: ${Number(diagnostics.naive_count || 0)}`,
+    `- local_count: ${Number(diagnostics.local_count || 0)}`,
+    `- global_count: ${Number(diagnostics.global_count || 0)}`,
+    `- final_count: ${Number(diagnostics.final_count || 0)}`
+  ];
+
+  return [
+    "### LightRAG Diagnostics",
+    `**Mode:** ${diagnostics.mode || "unknown"}`,
+    diagnostics.route_strategy ? `**Route strategy:** ${diagnostics.route_strategy}` : "",
+    activePaths.length ? `**Active paths:** ${activePaths.join(", ")}` : "",
+    `**Evidence counts:**\n${countLines.join("\n")}`,
+    sourceLines.length ? `**Source type counts:**\n${sourceLines.join("\n")}` : "",
+    diagnostics.global_error ? `**Global error:** ${diagnostics.global_error}` : ""
+  ].filter(Boolean).join("\n\n");
+
+}
+
+window.formatLightRagDiagnosticsMarkdown = formatLightRagDiagnosticsMarkdown;
+
+function escapeMarkdownTableCell(value) {
+
+  return String(value ?? "").replace(/\|/g, "\\|").replace(/\r?\n/g, " ").trim();
+
+}
+
+function formatPartitionAnalysisMarkdown(result) {
+
+  const report = result?.partition_analysis;
+
+  if (!report || typeof report !== "object") return "";
+
+  const coverage = report.coverage_report || result.coverage_report || {};
+
+  if (coverage.analysis_type !== "generic_partition_evidence_sweep") return "";
+
+  const profile = report.analysis_profile || result.analysis_profile || {};
+
+  const candidates = Array.isArray(report.candidates) ? report.candidates : [];
+
+  const sections = [
+    "### Generic Partition Full Scan",
+    [
+      "**Coverage:**",
+      `- collection: ${coverage.collection || result?.resolved_collection || "unknown"}`,
+      `- analysis_type: ${coverage.analysis_type}`,
+      `- partition_key: ${profile.partition_key || coverage.partition_key || "unknown"}`,
+      `- top_k_used: ${Boolean(coverage.top_k_used)}`,
+      `- scanned_chunks: ${Number(coverage.scanned_chunks || 0)}`,
+      `- partitions_analyzed: ${Number(coverage.partitions_analyzed || 0)}`,
+      `- candidate_partition_count: ${Number(coverage.candidate_partition_count || 0)}`,
+      `- partitions_without_evidence: ${Number(coverage.partitions_without_evidence_count || 0)}`
+    ].join("\n")
+  ];
+
+  const terms = Array.isArray(profile.query_terms) ? profile.query_terms : [];
+  if (terms.length) sections.push(`**Query terms:** ${terms.map(escapeMarkdownTableCell).join(", ")}`);
+
+  if (candidates.length) {
+
+    const table = [
+      "| Partition | Label | Chunks | Evidence |",
+      "|---|---|---:|---:|",
+      ...candidates.slice(0, 30).map((item) => (
+        `| ${escapeMarkdownTableCell(item.partition_id)} | ${escapeMarkdownTableCell(item.partition_label || item.partition_id)} | ${Number(item.chunk_count || 0)} | ${Number(item.evidence_count || 0)} |`
+      ))
+    ].join("\n");
+
+    sections.push(`**Candidate partitions:**\n${table}`);
+
+  }
+
+  return sections.join("\n\n");
+
+}
+
+window.formatPartitionAnalysisMarkdown = formatPartitionAnalysisMarkdown;
+
+function formatAdvancedQueryMarkdown(result) {
+
+  if (!result || typeof result !== "object") return "";
+
+  const mode = result.advanced_mode || result?.route?.task_route || "";
+
+  const sections = [];
+
+  if (mode) sections.push(`### Advanced RAG\n**Mode:** ${mode}`);
+
+  const rows = Array.isArray(result.comparison_table) ? result.comparison_table : [];
+
+  if (rows.length) {
+
+    const table = [
+      "| Object | Evidence count | Key evidence | Citations |",
+      "|---|---:|---|---|",
+      ...rows.map((row) => {
+        const citations = Array.isArray(row?.citations) ? row.citations.join(", ") : "";
+        return `| ${escapeMarkdownTableCell(row?.object)} | ${Number(row?.evidence_count || 0)} | ${escapeMarkdownTableCell(row?.key_evidence)} | ${escapeMarkdownTableCell(citations)} |`;
+      })
+    ].join("\n");
+
+    sections.push(`**Comparison table:**\n${table}`);
+
+  }
+
+  const coverage = result.coverage_report && typeof result.coverage_report === "object" ? result.coverage_report : null;
+
+  if (coverage && Object.keys(coverage).length) {
+    const fullScan = coverage.full_scan || {};
+    const globalSearch = coverage.global_search || {};
+    const queryTerms = Array.isArray(coverage.query_terms) && coverage.query_terms.length
+      ? `- query_terms: ${coverage.query_terms.join(", ")}`
+      : "";
+
+    const lines = [
+      "**Coverage report:**",
+      coverage.analysis_type ? `- analysis_type: ${coverage.analysis_type}` : "",
+      coverage.partition_key ? `- partition_key: ${coverage.partition_key}` : "",
+      coverage.top_k_used != null ? `- top_k_used: ${Boolean(coverage.top_k_used)}` : "",
+      coverage.scanned_chunks != null ? `- scanned_chunks: ${Number(coverage.scanned_chunks || 0)}` : "",
+      coverage.partitions_analyzed != null ? `- partitions_analyzed: ${Number(coverage.partitions_analyzed || 0)}` : "",
+      coverage.candidate_partition_count != null ? `- candidate_partition_count: ${Number(coverage.candidate_partition_count || 0)}` : "",
+      coverage.partitions_without_evidence_count != null ? `- partitions_without_evidence: ${Number(coverage.partitions_without_evidence_count || 0)}` : "",
+      coverage.planned_queries != null ? `- planned_queries: ${Number(coverage.planned_queries || 0)}` : "",
+      coverage.answered_queries != null ? `- answered_queries: ${Number(coverage.answered_queries || 0)}` : "",
+      Array.isArray(coverage.missing_queries) ? `- missing_queries: ${coverage.missing_queries.length ? coverage.missing_queries.join("; ") : "none"}` : "",
+      fullScan.available != null ? `- full_scan: ${Boolean(fullScan.available)} (${Number(fullScan.scanned_chunks || 0)} chunks)` : "",
+      globalSearch.available != null ? `- global_search: ${Boolean(globalSearch.available)} (${Number(globalSearch.partial_answer_count || 0)} partial answers)` : "",
+      queryTerms
+    ].filter(Boolean);
+    sections.push(lines.join("\n"));
+  }
+
+  const steps = Array.isArray(result.steps) ? result.steps : [];
+
+  if (steps.length) {
+
+    sections.push(`**Steps:**\n${steps.slice(0, 8).map((step) => `- ${Number(step?.index || 0)}. ${step?.query || ""} (${Number(step?.evidence_count || 0)} evidence)`).join("\n")}`);
+
+  }
+
+  return sections.join("\n\n");
+
+}
+
+window.formatAdvancedQueryMarkdown = formatAdvancedQueryMarkdown;
+
+function formatGraphRagTriageItem(item) {
+
+  const id = item?.id || "";
+
+  const question = item?.question || "(no question)";
+
+  const route = item?.route?.strategy || item?.strategy || "UNKNOWN";
+
+  const status = item?.graph_quality_status || item?.status || "unknown";
+
+  const review = item?.review_status || "unreviewed";
+
+  const sourceCount = Number(item?.source_evidence_count || 0);
+
+  const created = item?.created_at || "";
+
+  const note = item?.review_note ? `<div class="result-meta">review_note: ${escapeHtml(item.review_note)}</div>` : "";
+
+  const failure = item?.graph_quality?.failure_reason || item?.failure_reason || "";
+
+  return `<div class="result-card" data-triage-id="${escapeHtml(id)}">
+    <div class="result-head">
+      <strong>${escapeHtml(question)}</strong>
+      <span class="tag">${escapeHtml(status)}</span>
+    </div>
+    <div class="result-body">
+      <div class="result-meta">${escapeHtml(route)} / source_evidence ${sourceCount} / review ${escapeHtml(review)} / ${escapeHtml(created)}</div>
+      ${failure ? `<pre style="white-space:pre-wrap;font-size:12px;color:#aaa;margin:8px 0 0">${escapeHtml(failure)}</pre>` : ""}
+      ${note}
+      <input class="form-control" aria-label="图谱质量审核备注" data-triage-note="${escapeHtml(id)}" type="text" value="${escapeHtml(item?.review_note || "")}" placeholder="审核备注" style="margin-top:10px">
+      <div class="panel-tools" style="margin-top:10px">
+        <button class="ghost-btn" type="button" data-triage-review="accepted" data-triage-id="${escapeHtml(id)}"><iconify-icon icon="lucide:check"></iconify-icon><span>accept</span></button>
+        <button class="ghost-btn" type="button" data-triage-review="rejected" data-triage-id="${escapeHtml(id)}"><iconify-icon icon="lucide:x"></iconify-icon><span>reject</span></button>
+        <button class="ghost-btn" type="button" data-triage-promote="${escapeHtml(id)}"><iconify-icon icon="lucide:flask-conical"></iconify-icon><span>promote</span></button>
+      </div>
+    </div>
+  </div>`;
+
+}
+
+function formatGraphRagAnalyticsCountMap(map, emptyLabel = "none") {
+
+  const entries = Object.entries(map || {}).filter(([key]) => key);
+
+  if (!entries.length) return emptyLabel;
+
+  return entries.map(([key, value]) => `${escapeHtml(key)} ${Number(value || 0)}`).join(" / ");
+
+}
+
+function renderGraphRagTriageTrend(items) {
+
+  const rows = Array.isArray(items) ? items.slice(-7) : [];
+
+  if (!rows.length) return `<div class="panel" style="padding:14px"><p class="card-kicker">failure trend</p><p style="color:var(--muted);margin:0">No trend data yet.</p></div>`;
+
+  const maxCount = Math.max(1, ...rows.map((row) => Number(row.total_count || 0)));
+
+  return `<div class="panel" style="padding:14px">
+    <p class="card-kicker">failure trend</p>
+    <div style="display:grid;gap:8px">
+      ${rows.map((row) => {
+        const total = Number(row.total_count || 0);
+        const failed = Number(row.fail_count || 0);
+        const missing = Number(row.source_missing_count || 0);
+        const width = Math.max(4, Math.round((Math.max(failed, total) / maxCount) * 100));
+        return `<div style="display:grid;grid-template-columns:88px minmax(80px,1fr) 132px;gap:8px;align-items:center">
+          <span class="result-meta" style="margin:0">${escapeHtml(row.date || "unknown")}</span>
+          <span style="height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden"><span style="display:block;height:100%;width:${width}%;background:linear-gradient(90deg,var(--danger),var(--warning))"></span></span>
+          <span class="result-meta" style="margin:0">fail ${failed}/${total} · missing ${missing}</span>
+        </div>`;
+      }).join("")}
+    </div>
+  </div>`;
+
+}
+
+function renderGraphRagRouteDrilldown(items) {
+
+  const rows = Array.isArray(items) ? items : [];
+
+  if (!rows.length) return `<div class="panel" style="padding:14px"><p class="card-kicker">route-level drilldown</p><p style="color:var(--muted);margin:0">No route data yet.</p></div>`;
+
+  return `<div class="panel" style="padding:14px">
+    <p class="card-kicker">route-level drilldown</p>
+    <div class="results-list" style="gap:8px">
+      ${rows.map((row) => {
+        const coverage = Math.round(Number(row.source_coverage_rate || 0) * 100);
+        return `<div class="result-card" style="padding:10px">
+          <div class="result-head"><strong>${escapeHtml(row.route_strategy || "UNKNOWN")}</strong><span class="pill">${Number(row.total_count || 0)} records</span></div>
+          <div class="result-meta">pass ${Number(row.pass_count || 0)} / fail ${Number(row.fail_count || 0)} · source ${coverage}% · promoted ${Number(row.promoted_case_count || 0)}</div>
+          <div class="result-meta">review accepted ${Number(row.accepted_count || 0)} / rejected ${Number(row.rejected_count || 0)} / unreviewed ${Number(row.unreviewed_count || 0)}</div>
+          <div class="result-meta">failure ${formatGraphRagAnalyticsCountMap(row.failure_metrics)}</div>
+        </div>`;
+      }).join("")}
+    </div>
+  </div>`;
+
+}
+
+function renderGraphRagTriageAnalytics(payload) {
+
+  const panel = $("kgTriageAnalytics");
+
+  if (!panel) return;
+
+  const data = payload && typeof payload === "object" ? payload : {};
+
+  const source = data.source_evidence || {};
+
+  const coverage = Math.round(Number(source.coverage_rate || 0) * 100);
+
+  const total = Number(data.total_count || 0);
+
+  const promoted = Number(data.promoted_case_count || 0);
+
+  const missing = Number(source.missing_count || 0);
+
+  panel.innerHTML = `
+    <div class="metric-grid metric-grid--summary" style="margin-bottom:12px">
+      <div class="metric-card panel"><p class="card-kicker">triage records</p><div class="metric-value">${total}</div><div class="result-meta">${formatGraphRagAnalyticsCountMap(data.by_graph_quality_status)}</div></div>
+      <div class="metric-card panel"><p class="card-kicker">source evidence coverage</p><div class="metric-value">${coverage}%</div><div class="result-meta">covered ${Number(source.covered_count || 0)} / missing ${missing}</div></div>
+      <div class="metric-card panel"><p class="card-kicker">promoted_case_count</p><div class="metric-value">${promoted}</div><div class="result-meta">review ${formatGraphRagAnalyticsCountMap(data.by_review_status)}</div></div>
+      <div class="metric-card panel"><p class="card-kicker">routes</p><div class="metric-value" style="font-size:16px">${formatGraphRagAnalyticsCountMap(data.by_route_strategy)}</div><div class="result-meta">failure ${formatGraphRagAnalyticsCountMap(data.by_failure_metric)}</div></div>
+    </div>
+    <div class="metric-grid" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px">
+      ${renderGraphRagTriageTrend(data.failure_trend)}
+      ${renderGraphRagRouteDrilldown(data.route_drilldown)}
+    </div>`;
+
+}
+
+function renderGraphRagTriageHistory(items) {
+
+  const list = $("kgTriageList");
+
+  if (!list) return;
+
+  const rows = Array.isArray(items) ? items : [];
+
+  list.innerHTML = rows.length
+    ? rows.map((item) => formatGraphRagTriageItem(item)).join("")
+    : `<p style="color:var(--muted);padding:20px">No GraphRAG triage records yet.</p>`;
+
+}
+
+function buildGraphRagTriageQueryParams() {
+
+  const params = new URLSearchParams();
+
+  const status = $("kgTriageStatusFilter")?.value || "";
+
+  const review = $("kgTriageReviewFilter")?.value || "";
+
+  const route = $("kgTriageRouteFilter")?.value || "";
+
+  if (status) params.set("graph_quality_status", status);
+
+  if (review) params.set("review_status", review);
+
+  if (route) params.set("route_strategy", route);
+
+  params.set("limit", "50");
+
+  return params;
+
+}
+
+async function loadGraphRagTriageHistory() {
+
+  const list = $("kgTriageList");
+
+  if (!list) return;
+
+  list.innerHTML = `<p style="color:var(--muted);padding:20px">Loading GraphRAG triage history...</p>`;
+
+  try {
+
+    const params = buildGraphRagTriageQueryParams();
+
+    const query = params.toString();
+
+    const payload = await requestJson("/api/graphrag/triage" + (query ? `?${query}` : ""), {}, 60000);
+
+    renderGraphRagTriageHistory(payload.items || []);
+
+  } catch (err) {
+
+    list.innerHTML = `<p style="color:var(--danger);padding:20px">GraphRAG triage load failed: ${escapeHtml(err?.message || String(err))}</p>`;
+
+  }
+
+}
+
+async function loadGraphRagTriageAnalytics() {
+
+  const panel = $("kgTriageAnalytics");
+
+  if (!panel) return;
+
+  panel.innerHTML = `<p style="color:var(--muted);padding:12px">Loading GraphRAG reviewer dashboard...</p>`;
+
+  try {
+
+    const params = buildGraphRagTriageQueryParams();
+
+    params.delete("limit");
+
+    const query = params.toString();
+
+    const payload = await requestJson("/api/graphrag/triage/analytics" + (query ? `?${query}` : ""), {}, 60000);
+
+    renderGraphRagTriageAnalytics(payload);
+
+  } catch (err) {
+
+    panel.innerHTML = `<p style="color:var(--danger);padding:12px">GraphRAG analytics load failed: ${escapeHtml(err?.message || String(err))}</p>`;
+
+  }
+
+}
+
+async function loadGraphRagTriageDashboard() {
+
+  await Promise.all([
+    loadGraphRagTriageAnalytics(),
+    loadGraphRagTriageHistory()
+  ]);
+
+}
+
+function exportGraphRagTriageHistory() {
+
+  const params = buildGraphRagTriageQueryParams();
+
+  const query = params.toString();
+
+  window.location.href = "/api/graphrag/triage/export" + (query ? `?${query}` : "");
+
+}
+
+async function reviewGraphRagTriageItem(triageId, reviewStatus, reviewNote = "") {
+
+  if (!triageId || !reviewStatus) return;
+
+  await requestJson(`/api/graphrag/triage/${encodeURIComponent(triageId)}/review`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ review_status: reviewStatus, review_note: reviewNote })
+  }, 60000);
+
+  await loadGraphRagTriageDashboard();
+
+}
+
+async function promoteGraphRagTriageItem(triageId) {
+
+  if (!triageId) return;
+
+  await requestJson(`/api/graphrag/triage/${encodeURIComponent(triageId)}/promote`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({})
+  }, 60000);
+
+  await loadGraphRagTriageDashboard();
+
+}
+
+
+
+function renderUnifiedQueryAnswer(result, container = els.askAnswer) {
+
+  if (!container) return;
+
+  const route = result?.route?.strategy || "UNKNOWN";
+
+  const reason = result?.route?.reason || "";
+
+  const citations = Array.isArray(result?.citations) ? result.citations : [];
+
+  const capabilities = result?.capabilities || {};
+
+  const evidenceLines = citations.slice(0, 8).map((item) => formatUnifiedCitationLine(item)).join("\n");
+
+  const meta = [
+
+    "",
+
+    "---",
+
+    `**Route:** ${route}${reason ? ` · ${reason}` : ""}`,
+
+    `**Capabilities:** text=${Boolean(capabilities.text)} · graph=${Boolean(capabilities.graph)} · global=${Boolean(capabilities.global)} · router=${Boolean(capabilities.router)}`,
+
+    formatCollectionResolutionMarkdown(result),
+
+    formatAdvancedQueryMarkdown(result),
+
+    formatPartitionAnalysisMarkdown(result),
+
+    evidenceLines ? `**Evidence:**\n${evidenceLines}` : "",
+
+    formatLightRagDiagnosticsMarkdown(result?.lightrag_diagnostics),
+
+    formatGraphQualityGateMarkdown(result?.graph_quality, { bypassed: Boolean(result?.graph_quality_bypassed) })
+
+  ].filter(Boolean).join("\n");
+
+  const text = `${result?.answer || "Unified backend query did not return an answer."}${meta}`;
+
+  let html;
+
+  try {
+
+    if (globalThis.marked?.parse) {
+
+      const raw = globalThis.marked.parse(text, { breaks: true, gfm: true });
+
+      html = globalThis.DOMPurify?.sanitize ? globalThis.DOMPurify.sanitize(raw) : raw;
+
+    } else {
+
+      html = _renderMarkdownBuiltin(text);
+
+    }
+
+  } catch {
+
+    html = _renderMarkdownBuiltin(text);
+
+  }
+
+  html = _renderMathInHtml(html);
+
+  container.innerHTML = html;
+
+  container.classList.add("has-content");
+
+  _renderKatexElements(container);
+
+}
+
+
+
+async function ensureAskContext(question) {
+
+  // 每次问答都强制重新检索，确保获取最新、最相关的上下文
+
+  const previousSearchInput = els.searchInput?.value ?? "";
+
+  try {
+
+    // Use the RAG question for retrieval without leaving it in the manual search box.
+
+    if (els.searchInput) els.searchInput.value = question;
+
+    if (els.searchMeta) els.searchMeta.textContent = "Searching context for RAG answer...";
+
+    await runSearch();
+
+  } finally {
+
+    if (els.searchInput && els.searchInput.value === question) {
+
+      els.searchInput.value = previousSearchInput;
+
+    }
+
+  }
+
+
+
+  const results = Array.isArray(state.lastSearch?.results) ? state.lastSearch.results : [];
+
+  if (!results.length) {
+
+    const message = "No usable evidence was retrieved from local chunks or the knowledge base. LLM answering was stopped to avoid unsupported answers.";
+
+    if (els.askAnswer) els.askAnswer.textContent = message;
+
+    addActivity("warning", "RAG answer missing evidence", question.slice(0, 80));
+
+    showToast(message, "warning");
+
+    return false;
+
+  }
+
+  return true;
+
+}
+
+
+
+async function runAsk() {
+
+  const cfg = readLLMSettings();
+
+  const question = (els.askInput?.value || "").trim();
+
+  if (!question) {
+
+    showToast("Enter a question.", "warning");
+
+    return;
+
+  }
+
+  if (!cfg.model) {
+
+    showToast("Enter a model name in LLM settings first.", "warning");
+
+    return;
+
+  }
+
+  const provider = getLLMProviderMeta(cfg);
+
+  const baseUrl = resolveLLMEndpoint(cfg);
+
+  if (!baseUrl) {
+
+    showToast("Choose a model service or enter an OpenAI-compatible API URL.", "warning");
+
+    return;
+
+  }
+
+  if (providerNeedsKey(provider) && !cfg.apiKey) {
+
+    showToast("Remote models require an API key; local Ollama can run without one.", "warning");
+
+    return;
+
+  }
+
+  if (!state.localMode && !state.publicDemo) {
+
+    resetAskAnswer();
+
+    if (els.askAnswer) els.askAnswer.classList.add("is-streaming");
+
+    if (els.btnAsk) els.btnAsk.disabled = true;
+
+    try {
+
+      const result = await requestUnifiedQuery(question, {
+
+        mode: "auto",
+
+        baseUrl,
+
+        apiKey: cfg.apiKey,
+
+        model: cfg.model,
+
+        temperature: cfg.temperature,
+
+        maxTokens: cfg.maxTokens,
+
+        topK: Number(els.searchTopK?.value || 20)
+
+      });
+
+      renderUnifiedQueryAnswer(result, els.askAnswer);
+
+      state.lastSearch = { results: result.evidence || result.citations || [], query: question, unified: true };
+
+      addActivity("success", "Unified RAG answer finished", `${result.route?.strategy || "AUTO"} · ${question.slice(0, 60)}`);
+
+      return;
+
+    } catch (error) {
+
+      const message = error?.message || String(error);
+
+      renderAnswerMarkdown(`**Unified query failed:** ${message}`);
+
+      addActivity("danger", "Unified RAG answer failed", message);
+
+      renderAnswerMarkdown(formatUnifiedQueryErrorMarkdown(error, "Unified RAG query failed"), els.askAnswer);
+
+      showToast(message, "danger");
+
+      return;
+
+    } finally {
+
+      if (els.askAnswer) els.askAnswer.classList.remove("is-streaming");
+
+      if (els.btnAsk) els.btnAsk.disabled = false;
+
+    }
+
+  }
+
+  const url = `${baseUrl}/chat/completions`;
+
+  const hasContext = await ensureAskContext(question);
+
+  if (!hasContext) return;
+
+  const messages = buildAskMessages(question);
+
+
+
+  let accumulated = "";
+
+  resetAskAnswer();
+
+  if (els.askAnswer) {
+
+    els.askAnswer.classList.add("is-streaming");
+
+  }
+
+  if (els.btnAsk) els.btnAsk.disabled = true;
+
+
+
+  try {
+
+    const response = await fetch(url, {
+
+      method: "POST",
+
+      headers: {
+
+        "Content-Type": "application/json",
+
+        ...(cfg.apiKey ? { "Authorization": `Bearer ${cfg.apiKey}` } : {})
+
+      },
+
+      body: JSON.stringify({
+
+        model: cfg.model,
+
+        messages,
+
+        temperature: cfg.temperature,
+
+        max_tokens: cfg.maxTokens,
+
+        stream: true
+
+      })
+
+    });
+
+
+
+    if (!response.ok) {
+
+      const errText = await response.text().catch(() => "");
+
+      throw new Error(`HTTP ${response.status} ${response.statusText}${errText ? ` · ${errText.slice(0, 240)}` : ""}`);
+
+    }
+
+
+
+    if (!response.body || !response.body.getReader) {
+
+      const data = await response.json();
+
+      accumulated = data.choices?.[0]?.message?.content || "";
+
+      renderAnswerMarkdown(accumulated);
+
+    } else {
+
+      const reader = response.body.getReader();
+
+      const decoder = new TextDecoder();
+
+      let buffer = "";
+
+      let received = false;
+
+      let wasTruncated = false;
+
+      while (true) {
+
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+
+        buffer = lines.pop() || "";
+
+        for (const rawLine of lines) {
+
+          const line = rawLine.trim();
+
+          if (!line || !line.startsWith("data:")) continue;
+
+          const payload = line.slice(5).trim();
+
+          if (payload === "[DONE]") continue;
+
+          try {
+
+            const json = JSON.parse(payload);
+
+            const delta = json.choices?.[0]?.delta?.content || json.choices?.[0]?.message?.content || "";
+
+            if (delta) {
+
+              accumulated += delta;
+
+              renderAnswerMarkdown(accumulated);
+
+              received = true;
+
+            }
+
+            // 检测是否因 max_tokens 截断
+
+            const finishReason = json.choices?.[0]?.finish_reason;
+
+            if (finishReason === "length") wasTruncated = true;
+
+          } catch {}
+
+        }
+
+      }
+
+      if (!received && !accumulated) {
+
+        renderAnswerMarkdown("_(The model returned no content.)_");
+
+      }
+
+      if (wasTruncated && accumulated) {
+
+        accumulated += "\n\n---\n**Answer truncated:** Max Tokens limit reached (current setting: " + cfg.maxTokens + "). Increase Max Tokens in LLM settings and ask again.";
+
+        renderAnswerMarkdown(accumulated);
+
+        showToast("Answer was truncated. Increase Max Tokens.", "warning");
+
+      }
+
+    }
+
+    addActivity("success", "LLM answer finished", `${cfg.model} · ${question.slice(0, 60)}`);
+
+  } catch (error) {
+
+    const message = error?.message || String(error);
+
+    renderAnswerMarkdown(`**Call failed:** ${message}`);
+
+    addActivity("danger", "LLM call failed", message);
+
+    showToast(message, "danger");
+
+  } finally {
+
+    if (els.askAnswer) els.askAnswer.classList.remove("is-streaming");
+
+    if (els.btnAsk) els.btnAsk.disabled = false;
+
+  }
+
+}
+
+
+
+function resetAskAnswer() {
+
+  if (!els.askAnswer) return;
+
+  els.askAnswer.innerHTML = "";
+
+  els.askAnswer.classList.remove("has-content");
+
+}
+
+
+
+function renderAnswerMarkdown(markdown, container = els.askAnswer) {
+
+  if (!container) return;
+
+  const text = String(markdown || "");
+
+  let html;
+
+  try {
+
+    if (globalThis.marked?.parse) {
+
+      const raw = globalThis.marked.parse(text, { breaks: true, gfm: true });
+
+      html = globalThis.DOMPurify?.sanitize ? globalThis.DOMPurify.sanitize(raw) : raw;
+
+    } else {
+
+      // Built-in Markdown renderer (fallback when marked.js is unavailable)
+
+      html = _renderMarkdownBuiltin(text);
+
+    }
+
+  } catch {
+
+    html = _renderMarkdownBuiltin(text);
+
+  }
+
+  // Render LaTeX math if present
+
+  html = _renderMathInHtml(html);
+
+  container.innerHTML = html;
+
+  container.classList.toggle("has-content", text.trim().length > 0);
+
+  // Trigger KaTeX rendering for any math elements
+
+  _renderKatexElements(container);
+
+}
+
+
+
+// Built-in Markdown -> HTML renderer.
+
+function _renderMarkdownBuiltin(md) {
+
+  let html = "";
+
+  const lines = md.split("\n");
+
+  let inCodeBlock = false, codeLang = "", codeLines = [];
+
+  let inList = false, listType = "";
+
+
+
+  function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+
+
+  function inlineFormat(line) {
+
+    let s = esc(line);
+
+    // Code spans first (to protect from other formatting)
+
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Bold+italic
+
+    s = s.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+
+    // Bold
+
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+    // Italic
+
+    s = s.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+
+    // Links [text](url)
+
+    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+    return s;
+
+  }
+
+
+
+  function closeList() {
+
+    if (inList) { html += listType === "ol" ? "</ol>" : "</ul>"; inList = false; }
+
+  }
+
+
+
+  for (let i = 0; i < lines.length; i++) {
+
+    const line = lines[i];
+
+
+
+    // Code block
+
+    if (line.trimStart().startsWith("```")) {
+
+      if (!inCodeBlock) {
+
+        closeList();
+
+        inCodeBlock = true;
+
+        codeLang = line.trimStart().slice(3).trim();
+
+        codeLines = [];
+
+      } else {
+
+        html += `<pre><code class="language-${esc(codeLang)}">${esc(codeLines.join("\n"))}</code></pre>`;
+
+        inCodeBlock = false;
+
+      }
+
+      continue;
+
+    }
+
+    if (inCodeBlock) { codeLines.push(line); continue; }
+
+
+
+    const trimmed = line.trim();
+
+    if (!trimmed) { closeList(); html += "<br>"; continue; }
+
+
+
+    // Headings
+
+    const hMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
+
+    if (hMatch) { closeList(); const lvl = hMatch[1].length; html += `<h${lvl}>${inlineFormat(hMatch[2])}</h${lvl}>`; continue; }
+
+
+
+    // Horizontal rule
+
+    if (/^[-*_]{3,}$/.test(trimmed)) { closeList(); html += "<hr>"; continue; }
+
+
+
+    // Blockquote
+
+    if (trimmed.startsWith("> ")) { closeList(); html += `<blockquote><p>${inlineFormat(trimmed.slice(2))}</p></blockquote>`; continue; }
+
+
+
+    // Unordered list
+
+    const ulMatch = trimmed.match(/^[-*+]\s+(.+)$/);
+
+    if (ulMatch) {
+
+      if (!inList || listType !== "ul") { closeList(); html += "<ul>"; inList = true; listType = "ul"; }
+
+      html += `<li>${inlineFormat(ulMatch[1])}</li>`;
+
+      continue;
+
+    }
+
+
+
+    // Ordered list
+
+    const olMatch = trimmed.match(/^\d+[.)]\s+(.+)$/);
+
+    if (olMatch) {
+
+      if (!inList || listType !== "ol") { closeList(); html += "<ol>"; inList = true; listType = "ol"; }
+
+      html += `<li>${inlineFormat(olMatch[1])}</li>`;
+
+      continue;
+
+    }
+
+
+
+    // Table (simple: |col|col|)
+
+    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+
+      // Skip separator rows like |---|---|
+
+      if (/^\|[\s\-:|]+\|$/.test(trimmed)) continue;
+
+      closeList();
+
+      const cells = trimmed.slice(1, -1).split("|").map(c => c.trim());
+
+      // Detect if this is a header (next line is separator)
+
+      const nextLine = (lines[i+1] || "").trim();
+
+      const isHeader = /^\|[\s\-:|]+\|$/.test(nextLine);
+
+      const tag = isHeader ? "th" : "td";
+
+      html += "<table><tr>" + cells.map(c => `<${tag}>${inlineFormat(c)}</${tag}>`).join("") + "</tr></table>";
+
+      continue;
+
+    }
+
+
+
+    // Normal paragraph
+
+    closeList();
+
+    html += `<p>${inlineFormat(trimmed)}</p>`;
+
+  }
+
+  closeList();
+
+  if (inCodeBlock) { html += `<pre><code>${esc(codeLines.join("\n"))}</code></pre>`; }
+
+  return html;
+
+}
+
+
+
+// ── Math rendering: $...$ (inline) and $$...$$ (block) ──
+
+function _renderMathInHtml(html) {
+
+  // Replace $$...$$ with math block placeholders
+
+  html = html.replace(/\$\$(.+?)\$\$/gs, (_, tex) =>
+
+    `<div class="math-block" data-tex="${tex.replace(/"/g, '&quot;').trim()}"></div>`);
+
+  // Replace $...$ with inline math (but not $$)
+
+  html = html.replace(/(?<!\$)\$(?!\$)(.+?)(?<!\$)\$(?!\$)/g, (_, tex) =>
+
+    `<span class="math-inline" data-tex="${tex.replace(/"/g, '&quot;').trim()}"></span>`);
+
+  return html;
+
+}
+
+
+
+let _katexLoaded = false;
+
+async function _loadKatex() {
+
+  if (_katexLoaded) return;
+
+  if (globalThis.katex) { _katexLoaded = true; return; }
+
+  // Load KaTeX CSS
+
+  const link = document.createElement("link");
+
+  link.rel = "stylesheet";
+
+  link.href = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css";
+
+  document.head.appendChild(link);
+
+  // Load KaTeX JS
+
+  await new Promise((resolve, reject) => {
+
+    const s = document.createElement("script");
+
+    s.src = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js";
+
+    s.onload = resolve;
+
+    s.onerror = () => reject(new Error("KaTeX CDN failed"));
+
+    document.head.appendChild(s);
+
+  });
+
+  _katexLoaded = true;
+
+}
+
+
+
+async function _renderKatexElements(container) {
+
+  const mathEls = container.querySelectorAll(".math-block, .math-inline");
+
+  if (!mathEls.length) return;
+
+  try {
+
+    await _loadKatex();
+
+    for (const el of mathEls) {
+
+      const tex = el.getAttribute("data-tex");
+
+      if (!tex || !globalThis.katex) continue;
+
+      try {
+
+        globalThis.katex.render(tex, el, {
+
+          throwOnError: false,
+
+          displayMode: el.classList.contains("math-block")
+
+        });
+
+      } catch { el.textContent = tex; }
+
+    }
+
+  } catch {
+
+    // KaTeX failed to load; show raw TeX.
+
+    for (const el of mathEls) { el.textContent = el.getAttribute("data-tex") || ""; }
+
+  }
+
+}
+
+
+
+function clearAnswer() {
+
+  resetAskAnswer();
+
+}
+
+
+
+// ─── Collection Selection Dialog ───
+
+
+
+function getKnownCollections() {
+
+  const collections = state.stats?.collections || [];
+
+  return collections.map((c) => ({
+
+    name: c.name || "",
+
+    count: Number(c.count || 0),
+
+    tokens: Number(c.estimated_tokens || 0),
+
+  })).filter((c) => c.name);
+
+}
+
+
+
+function openCollectionDialog() {
+
+  return new Promise((resolve) => {
+
+    const dialog = document.getElementById("collectionDialog");
+
+    if (!dialog) { resolve(null); return; }
+
+
+
+    const body = dialog.querySelector(".modal-body");
+
+    const collections = getKnownCollections();
+
+    const defaultName = state.primaryCollection || "power_equipment";
+
+
+
+    let selectedCollection = defaultName;
+
+
+
+    function render() {
+
+      const existingSection = collections.length ? `
+
+        <div class="coll-existing">
+
+          <div class="coll-existing-label">选择已有集合</div>
+
+          ${collections.map((c) => `
+
+            <button class="coll-option ${c.name === selectedCollection ? 'is-selected' : ''}"
+
+                    type="button" data-coll-pick="${escapeHtml(c.name)}">
+
+              <iconify-icon icon="lucide:database"></iconify-icon>
+
+              <span class="coll-name">${escapeHtml(c.name)}</span>
+
+              <span class="coll-count">${formatNumber(c.count)} 片段 · ${formatNumber(c.tokens)} tokens</span>
+
+            </button>
+
+          `).join("")}
+
+        </div>
+
+      ` : `<div class="coll-existing">
+
+          <div class="coll-existing-label">暂无已有集合</div>
+
+        </div>`;
+
+
+
+      body.innerHTML = `
+
+        ${existingSection}
+
+        <div class="coll-new-wrap">
+
+          <label class="coll-existing-label" for="collNewName">或输入新集合名称</label>
+
+          <div class="coll-new-row">
+
+            <input class="form-control" id="collNewName" type="text"
+
+                   placeholder="例如: professional_books"
+
+                   value="${collections.some((c) => c.name === selectedCollection) ? '' : escapeHtml(selectedCollection)}">
+
+            <button class="ghost-btn" type="button" id="collNewBtn">
+
+              <iconify-icon icon="lucide:plus"></iconify-icon><span>新建</span>
+
+            </button>
+
+          </div>
+
+        </div>
+
+        <div class="coll-actions">
+
+          <button class="ghost-btn" type="button" data-coll-cancel>取消</button>
+
+          <button class="btn" type="button" data-coll-confirm>
+
+            <iconify-icon icon="lucide:square-play"></iconify-icon><span>开始处</span>
+
+          </button>
+
+        </div>
+
+      `;
+
+    }
+
+
+
+    render();
+
+    dialog.hidden = false;
+
+
+
+    function cleanup() {
+
+      dialog.hidden = true;
+
+      dialog.removeEventListener("click", handleClick);
+
+      dialog.removeEventListener("keydown", handleKeydown);
+
+    }
+
+
+
+    function handleClick(event) {
+
+      const pick = event.target.closest("[data-coll-pick]");
+
+      if (pick) {
+
+        selectedCollection = pick.dataset.collPick;
+
+        const input = dialog.querySelector("#collNewName");
+
+        if (input) input.value = "";
+
+        render();
+
+        return;
+
+      }
+
+
+
+      if (event.target.closest("#collNewBtn")) {
+
+        const input = dialog.querySelector("#collNewName");
+
+        const name = (input?.value || "").trim().replace(/[^a-zA-Z0-9_\-]/g, "_");
+
+        if (name.length < 2) {
+
+          showToast("Collection name must be at least 2 characters and use letters, numbers, underscore, or hyphen.", "warning");
+
+          return;
+
+        }
+
+        selectedCollection = name;
+
+        render();
+
+        return;
+
+      }
+
+
+
+      if (event.target.closest("[data-coll-cancel]") || event.target.closest(".modal-backdrop") || event.target.closest("[data-modal-close]")) {
+
+        cleanup();
+
+        resolve(null);
+
+        return;
+
+      }
+
+
+
+      if (event.target.closest("[data-coll-confirm]")) {
+
+        const input = dialog.querySelector("#collNewName");
+
+        const inputVal = (input?.value || "").trim().replace(/[^a-zA-Z0-9_\-]/g, "_");
+
+        const finalName = inputVal.length >= 2 ? inputVal : selectedCollection;
+
+        if (!finalName) {
+
+          showToast("Select or enter a collection name.", "warning");
+
+          return;
+
+        }
+
+        cleanup();
+
+        resolve(finalName);
+
+        return;
+
+      }
+
+    }
+
+
+
+    function handleKeydown(event) {
+
+      if (event.key === "Escape") {
+
+        cleanup();
+
+        resolve(null);
+
+      }
+
+      if (event.key === "Enter" && event.target.id === "collNewName") {
+
+        event.preventDefault();
+
+        const name = (event.target.value || "").trim().replace(/[^a-zA-Z0-9_\-]/g, "_");
+
+        if (name.length >= 2) {
+
+          cleanup();
+
+          resolve(name);
+
+        }
+
+      }
+
+    }
+
+
+
+    dialog.addEventListener("click", handleClick);
+
+    dialog.addEventListener("keydown", handleKeydown);
+
+  });
+
+}
+
+
+
+
+
+// ─── Local-mode Export ───
+
+
+
+// Legacy JSON-only export (kept as fallback)
+
+function exportLocalChunksAsJson() {
+
+  if (!state.chunks.length) {
+
+    showToast("No local index data is available to export.", "warning");
+
+    return;
+
+  }
+
+  const data = {
+
+    collection: state.primaryCollection || LOCAL_COLLECTION_NAME,
+
+    count: state.chunks.length,
+
+    exported_at: new Date().toISOString(),
+
+    ids: state.chunks.map((c) => c.chunk_id),
+
+    documents: state.chunks.map((c) => c.text),
+
+    metadatas: state.chunks.map((c) => c.metadata || {}),
+
+  };
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+
+  a.href = url;
+
+  a.download = `local_index_export_${timestamp}.json`;
+
+  document.body.appendChild(a);
+
+  a.click();
+
+  document.body.removeChild(a);
+
+  URL.revokeObjectURL(url);
+
+  addActivity("success", "Local index exported", `${formatNumber(state.chunks.length)} chunks -> JSON`);
+
+  showToast(`Exported ${formatNumber(state.chunks.length)} chunks.`, "success");
+
+}
+
+
+
+// ─── ChromaDB ZIP Export (browser-side) ───
+
+// Generates a ZIP archive with real chroma.sqlite3 + HNSW segment folder
+
+
+
+function _generateUUID() {
+
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+
+    const r = Math.random() * 16 | 0;
+
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+
+  });
+
+}
+
+
+
+async function exportLocalChunksAsChromaZip() {
+
+  if (!state.chunks.length) {
+
+    showToast("No local index data is available to export.", "warning");
+
+    return;
+
+  }
+
+
+
+  // Check dependencies
+
+  if (typeof JSZip === "undefined") {
+
+    showToast("JSZip is not loaded; falling back to JSON export.", "warning");
+
+    exportLocalChunksAsJson();
+
+    return;
+
+  }
+
+  if (typeof initSqlJs === "undefined") {
+
+    showToast("sql.js is not loaded; falling back to JSON export.", "warning");
+
+    exportLocalChunksAsJson();
+
+    return;
+
+  }
+
+
+
+  showToast("Building ChromaDB export package...", "success");
+
+
+
+  try {
+
+    const collName = state.primaryCollection || LOCAL_COLLECTION_NAME;
+
+    const collUuid = _generateUUID();
+
+    const segUuid = _generateUUID();
+
+    const now = new Date().toISOString();
+
+    const dimension = 384; // default embedding dimension for hashing backend
+
+
+
+    // ── 1. Build chroma.sqlite3 with sql.js ──
+
+    const SQL = await initSqlJs({
+
+      locateFile: file => {
+
+        // Prefer local libs/ for offline support, fallback to CDN
+
+        if (location.protocol === "file:" || location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+
+          return `libs/${file}`;
+
+        }
+
+        return `https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/${file}`;
+
+      }
+
+    });
+
+    const db = new SQL.Database();
+
+
+
+    // ChromaDB core schema (simplified but structurally authentic)
+
+    db.run(`CREATE TABLE IF NOT EXISTS collections (
+
+      id TEXT PRIMARY KEY,
+
+      name TEXT NOT NULL UNIQUE,
+
+      dimension INTEGER,
+
+      metadata TEXT,
+
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS segments (
+
+      id TEXT PRIMARY KEY,
+
+      type TEXT NOT NULL,
+
+      scope TEXT NOT NULL,
+
+      collection TEXT REFERENCES collections(id)
+
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS embeddings (
+
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+      segment_id TEXT REFERENCES segments(id),
+
+      embedding_id TEXT NOT NULL,
+
+      seq_id INTEGER,
+
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS embedding_metadata (
+
+      id INTEGER REFERENCES embeddings(id),
+
+      key TEXT NOT NULL,
+
+      string_value TEXT,
+
+      int_value INTEGER,
+
+      float_value REAL,
+
+      bool_value INTEGER
+
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS documents (
+
+      id INTEGER REFERENCES embeddings(id),
+
+      document TEXT
+
+    )`);
+
+
+
+    // Insert collection
+
+    db.run(`INSERT INTO collections (id, name, dimension, metadata) VALUES (?, ?, ?, ?)`,
+
+      [collUuid, collName, dimension, JSON.stringify({ "hnsw:space": "cosine" })]);
+
+
+
+    // Insert segments (vector + metadata)
+
+    const vecSegId = _generateUUID();
+
+    const metaSegId = _generateUUID();
+
+    db.run(`INSERT INTO segments (id, type, scope, collection) VALUES (?, ?, ?, ?)`,
+
+      [vecSegId, "urn:chroma:segment/vector/hnsw-local", "VECTOR", collUuid]);
+
+    db.run(`INSERT INTO segments (id, type, scope, collection) VALUES (?, ?, ?, ?)`,
+
+      [metaSegId, "urn:chroma:segment/metadata/sqlite", "METADATA", collUuid]);
+
+
+
+    // Insert all chunks as embeddings + documents
+
+    const stmtEmb = db.prepare(`INSERT INTO embeddings (segment_id, embedding_id, seq_id) VALUES (?, ?, ?)`);
+
+    const stmtDoc = db.prepare(`INSERT INTO documents (id, document) VALUES (?, ?)`);
+
+    const stmtMeta = db.prepare(`INSERT INTO embedding_metadata (id, key, string_value) VALUES (?, ?, ?)`);
+
+
+
+    state.chunks.forEach((chunk, idx) => {
+
+      const embId = idx + 1;
+
+      stmtEmb.run([vecSegId, chunk.chunk_id || `chunk_${idx}`, idx]);
+
+      stmtDoc.run([embId, chunk.text || ""]);
+
+      // Store metadata fields
+
+      const meta = chunk.metadata || {};
+
+      Object.entries(meta).forEach(([key, val]) => {
+
+        if (typeof val === "string" || typeof val === "number") {
+
+          stmtMeta.run([embId, key, String(val)]);
+
+        }
+
+      });
+
+    });
+
+    stmtEmb.free();
+
+    stmtDoc.free();
+
+    stmtMeta.free();
+
+
+
+    const sqliteBytes = db.export();
+
+    db.close();
+
+
+
+    // ── 2. Build HNSW segment folder (structural placeholders) ──
+
+    // These are minimal valid binary files so the folder looks authentic
+
+    const headerBuf = new ArrayBuffer(16);
+
+    const headerView = new DataView(headerBuf);
+
+    headerView.setUint32(0, 0x48534E57, false); // 'HSNW' magic
+
+    headerView.setUint32(4, dimension, true);     // dimension
+
+    headerView.setUint32(8, state.chunks.length, true); // num elements
+
+    headerView.setUint32(12, 16, true);           // M parameter
+
+
+
+    const lengthBuf = new ArrayBuffer(8);
+
+    const lengthView = new DataView(lengthBuf);
+
+    lengthView.setUint32(0, state.chunks.length, true);
+
+    lengthView.setUint32(4, dimension, true);
+
+
+
+    // data_level0.bin: num_elements * (dimension * 4 bytes float32) placeholder
+
+    const dataSize = Math.min(state.chunks.length * dimension * 4, 64 * 1024 * 1024); // cap at 64MB
+
+    const dataBuf = new ArrayBuffer(Math.min(dataSize, 1024)); // small placeholder
+
+
+
+    const linkBuf = new ArrayBuffer(16); // minimal placeholder
+
+
+
+    // ── 3. Build ZIP ──
+
+    const zip = new JSZip();
+
+    const root = zip.folder("chroma_db");
+
+
+
+    // chroma.sqlite3
+
+    root.file("chroma.sqlite3", new Uint8Array(sqliteBytes));
+
+
+
+    // HNSW segment folder
+
+    const segFolder = root.folder(segUuid);
+
+    segFolder.file("header.bin", new Uint8Array(headerBuf));
+
+    segFolder.file("length.bin", new Uint8Array(lengthBuf));
+
+    segFolder.file("data_level0.bin", new Uint8Array(dataBuf));
+
+    segFolder.file("link_lists.bin", new Uint8Array(linkBuf));
+
+
+
+    // Also include the portable JSON for easy Python import
+
+    const jsonData = {
+
+      _format: "chroma_browser_export",
+
+      _version: "1.0",
+
+      collection: collName,
+
+      collection_uuid: collUuid,
+
+      segment_uuid: segUuid,
+
+      count: state.chunks.length,
+
+      dimension: dimension,
+
+      exported_at: now,
+
+      ids: state.chunks.map(c => c.chunk_id),
+
+      documents: state.chunks.map(c => c.text),
+
+      metadatas: state.chunks.map(c => c.metadata || {}),
+
+    };
+
+    root.file("collection_data.json", JSON.stringify(jsonData, null, 2));
+
+
+
+    // Import helper script
+
+    root.file("_import_to_chromadb.py", [
+
+      '#!/usr/bin/env python3',
+
+      '"""',
+
+      'Import browser-exported collection_data.json into local ChromaDB.',
+
+      '',
+
+      'Usage:',
+
+      '  pip install chromadb',
+
+      '  python _import_to_chromadb.py',
+
+      '',
+
+      'By default this creates ./chroma_imported as the persistent directory.',
+
+      '"""',
+
+      'import json, sys',
+
+      'from pathlib import Path',
+
+      '',
+
+      'try:',
+
+      '    import chromadb',
+
+      '    from chromadb.config import Settings',
+
+      'except ImportError:',
+
+      '    print("Install chromadb first: pip install chromadb")',
+
+      '    sys.exit(1)',
+
+      '',
+
+      'data_file = Path(__file__).parent / "collection_data.json"',
+
+      'if not data_file.exists():',
+
+      '    print(f"Cannot find {data_file}; make sure this script is beside collection_data.json")',
+
+      '    sys.exit(1)',
+
+      '',
+
+      'data = json.loads(data_file.read_text(encoding="utf-8"))',
+
+      'persist_dir = str(Path(__file__).parent / "chroma_imported")',
+
+      '',
+
+      'client = chromadb.PersistentClient(',
+
+      '    path=persist_dir,',
+
+      '    settings=Settings(anonymized_telemetry=False, is_persistent=True),',
+
+      ')',
+
+      '',
+
+      'collection = client.get_or_create_collection(',
+
+      '    name=data["collection"],',
+
+      '    metadata={"hnsw:space": "cosine"},',
+
+      ')',
+
+      '',
+
+      'batch = 500',
+
+      'ids = data["ids"]',
+
+      'docs = data["documents"]',
+
+      'metas = data.get("metadatas", [{}] * len(ids))',
+
+      '',
+
+      'for i in range(0, len(ids), batch):',
+
+      '    collection.add(',
+
+      '        ids=ids[i:i+batch],',
+
+      '        documents=docs[i:i+batch],',
+
+      '        metadatas=metas[i:i+batch],',
+
+      '    )',
+
+      '    print(f"  wrote {min(i+batch, len(ids))}/{len(ids)} records")',
+
+      '',
+
+      'print(f"\\nImport finished: {collection.count()} records -> {persist_dir}")',
+
+    ].join('\n'));
+
+
+
+    // Generate and download ZIP
+
+    const zipBlob = await zip.generateAsync({
+
+      type: "blob",
+
+      compression: "DEFLATE",
+
+      compressionOptions: { level: 6 }
+
+    });
+
+
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+
+    const url = URL.createObjectURL(zipBlob);
+
+    const a = document.createElement("a");
+
+    a.href = url;
+
+    a.download = `chroma_db_export_${timestamp}.zip`;
+
+    document.body.appendChild(a);
+
+    a.click();
+
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
+
+
+
+    const sizeMB = (zipBlob.size / (1024 * 1024)).toFixed(1);
+
+    addActivity("success", "ChromaDB vector store exported", `${formatNumber(state.chunks.length)} records -> ZIP (${sizeMB} MB)`);
+
+    showToast(`Exported ChromaDB vector ZIP (${sizeMB} MB).`, "success");
+
+  } catch (err) {
+
+    console.error("ChromaDB ZIP export failed:", err);
+
+    showToast(`Export failed: ${err.message}; falling back to JSON export.`, "warning");
+
+    exportLocalChunksAsJson();
+
+  }
+
+}
+
+
+
+
+
+function bindEvents() {
+
+  els.globalModeToggle?.addEventListener("click", (event) => {
+
+    const btn = event.target.closest(".segment-btn");
+
+    if (!btn) return;
+
+    setWorkspaceMode(btn.dataset.mode);
+
+  });
+
+
+
+  els.navList?.addEventListener("click", (event) => {
+
+    const button = event.target.closest(".nav-item");
+
+    if (!button) return;
+
+    setPage(button.dataset.page);
+
+  });
+
+  els.deliveryProjectSelect?.addEventListener("change", async () => {
+    state.delivery.projectId = els.deliveryProjectSelect.value || "default";
+    state.delivery.selectedDocumentVersions = new Set();
+    localStorage.setItem(DELIVERY_PROJECT_STORAGE_KEY, state.delivery.projectId);
+    await refreshDeliveryConsole({ projectId: state.delivery.projectId });
+  });
+
+  els.btnDeliveryCreateProject?.addEventListener("click", createDeliveryProject);
+  els.btnDeliveryCopyProjectTemplate?.addEventListener("click", async () => {
+    try {
+      els.btnDeliveryCopyProjectTemplate.disabled = true;
+      await copyDeliveryProjectTemplate();
+    } catch (error) {
+      showToast(error.message || "项目模板复制失败。", "danger");
+    } finally {
+      els.btnDeliveryCopyProjectTemplate.disabled = false;
+    }
+  });
+  els.btnDeliveryExportProject?.addEventListener("click", async () => {
+    try {
+      els.btnDeliveryExportProject.disabled = true;
+      await exportDeliveryProject();
+      showToast("项目备份包已校验并导出。", "success");
+    } catch (error) {
+      showToast(error.message || "项目备份失败。", "danger");
+    } finally {
+      els.btnDeliveryExportProject.disabled = false;
+    }
+  });
+  els.btnDeliveryRestoreProject?.addEventListener("click", async () => {
+    try {
+      els.btnDeliveryRestoreProject.disabled = true;
+      await restoreDeliveryProject();
+      showToast("项目已从完整性校验通过的备份包恢复。", "success");
+    } catch (error) {
+      showToast(error.message || "项目恢复失败。", "danger");
+    } finally {
+      els.btnDeliveryRestoreProject.disabled = false;
+    }
+  });
+  els.btnDeliveryRefresh?.addEventListener("click", () => refreshDeliveryConsole());
+  els.btnDeliveryUpload?.addEventListener("click", uploadDeliveryDocument);
+  els.btnDeliverySearch?.addEventListener("click", async () => {
+    try {
+      els.btnDeliverySearch.disabled = true;
+      await searchDeliveryDocuments();
+    } catch (error) {
+      showToast(error.message || "正式资料检索失败。", "danger");
+    } finally {
+      els.btnDeliverySearch.disabled = false;
+    }
+  });
+  els.btnDeliveryExtractGraph?.addEventListener("click", extractDeliveryGraph);
+  els.deliveryFmeaTemplate?.addEventListener("change", fillDeliveryFmeaTemplateEditor);
+  els.btnDeliveryRegisterFmeaTemplate?.addEventListener("click", async () => {
+    try {
+      els.btnDeliveryRegisterFmeaTemplate.disabled = true;
+      await registerDeliveryFmeaTemplate();
+    } catch (error) {
+      showToast(error.message || "FMEA 模板登记失败。", "danger");
+    } finally {
+      els.btnDeliveryRegisterFmeaTemplate.disabled = false;
+    }
+  });
+  els.btnDeliveryApproveFmeaTemplate?.addEventListener("click", async () => {
+    try {
+      els.btnDeliveryApproveFmeaTemplate.disabled = true;
+      await approveDeliveryFmeaTemplate();
+    } catch (error) {
+      showToast(error.message || "FMEA 模板批准失败。", "danger");
+    } finally {
+      els.btnDeliveryApproveFmeaTemplate.disabled = false;
+    }
+  });
+  els.btnDeliveryRunFmea?.addEventListener("click", runDeliveryFmea);
+  els.btnDeliveryRebuildIndex?.addEventListener("click", async () => {
+    try {
+      els.btnDeliveryRebuildIndex.disabled = true;
+      await rebuildDeliveryIndex();
+    } catch (error) {
+      showToast(error.message || "索引重建任务创建失败。", "danger");
+    } finally {
+      els.btnDeliveryRebuildIndex.disabled = false;
+    }
+  });
+  els.btnDeliveryBatchRetry?.addEventListener("click", async () => {
+    try {
+      els.btnDeliveryBatchRetry.disabled = true;
+      await batchRetryDeliveryTasks();
+    } catch (error) {
+      showToast(error.message || "批量重试失败。", "danger");
+    } finally {
+      els.btnDeliveryBatchRetry.disabled = false;
+    }
+  });
+  els.btnDeliveryBatchApproveDocuments?.addEventListener("click", async () => {
+    try {
+      els.btnDeliveryBatchApproveDocuments.disabled = true;
+      await batchApproveDeliveryDocuments();
+    } catch (error) {
+      showToast(error.message || "批量资料审核失败。", "danger");
+    } finally {
+      els.btnDeliveryBatchApproveDocuments.disabled = false;
+    }
+  });
+  els.deliveryTaskFilter?.addEventListener("change", () => refreshDeliveryConsole());
+  $("page-delivery")?.addEventListener("change", (event) => {
+    const documentCheckbox = event.target.closest("[data-delivery-doc-select]");
+    if (documentCheckbox) {
+      if (documentCheckbox.checked) state.delivery.selectedDocumentVersions.add(documentCheckbox.value);
+      else state.delivery.selectedDocumentVersions.delete(documentCheckbox.value);
+      return;
+    }
+    const taskCheckbox = event.target.closest("[data-delivery-task-select]");
+    if (taskCheckbox) {
+      if (taskCheckbox.checked) state.delivery.selectedTaskIds.add(taskCheckbox.value);
+      else state.delivery.selectedTaskIds.delete(taskCheckbox.value);
+      return;
+    }
+    const reviewDocumentCheckbox = event.target.closest("[data-delivery-review-doc-select]");
+    if (reviewDocumentCheckbox) {
+      if (reviewDocumentCheckbox.checked) state.delivery.selectedReviewDocumentIds.add(reviewDocumentCheckbox.value);
+      else state.delivery.selectedReviewDocumentIds.delete(reviewDocumentCheckbox.value);
+    }
+  });
+  $("page-delivery")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-delivery-action]");
+    if (button) handleDeliveryAction(button);
+  });
+
+
+
+  document.querySelectorAll("[data-jump]").forEach((button) => {
+
+    button.addEventListener("click", () => setPage(button.dataset.jump));
+
+  });
+
+
+
+  els.refreshBtn?.addEventListener("click", refreshAll);
+
+
+
+  els.pickFilesButton?.addEventListener("click", () => els.fileInput?.click());
+
+  els.pickFolderButton?.addEventListener("click", () => els.folderInput?.click());
+
+  els.dropFolderButton?.addEventListener("click", () => els.folderInput?.click());
+
+  els.dropBrowseButton?.addEventListener("click", () => els.queueList?.scrollIntoView({ behavior: "smooth", block: "start" }));
+
+  els.reloadQueueButton?.addEventListener("click", refreshUploads);
+
+  els.selectAllUploads?.addEventListener("click", () => {
+
+    state.selectedUploads = new Set(getPendingUploads().map((item) => item.filename));
+
+    renderUploads();
+
+  });
+
+  els.clearUploadSelection?.addEventListener("click", () => {
+
+    state.selectedUploads.clear();
+
+    renderUploads();
+
+  });
+
+  els.processedEditButton?.addEventListener("click", () => toggleProcessedEditMode());
+
+  els.processedDeleteButton?.addEventListener("click", async () => {
+
+    await deleteProcessedUploads(Array.from(state.selectedProcessedUploads));
+
+  });
+
+
+
+  els.fileInput?.addEventListener("change", async (event) => {
+
+    const files = event.target.files;
+
+    await uploadFiles(files);
+
+    const picked = collectJsonFiles(files);
+
+    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingListByKey("standard"); }
+
+    event.target.value = "";
+
+  });
+
+
+
+  els.folderInput?.addEventListener("change", async (event) => {
+
+    const files = event.target.files;
+
+    await uploadFiles(files);
+
+    const picked = collectJsonFiles(files);
+
+    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingListByKey("standard"); }
+
+    event.target.value = "";
+
+  });
+
+
+
+  els.dropZone?.addEventListener("dragenter", (event) => {
+
+    event.preventDefault();
+
+    event.stopPropagation();
+
+    els.dropZone.classList.add("is-dragging");
+
+  });
+
+
+
+  els.dropZone?.addEventListener("dragover", (event) => {
+
+    event.preventDefault();
+
+    event.stopPropagation();
+
+    els.dropZone.classList.add("is-dragging");
+
+  });
+
+
+
+  els.dropZone?.addEventListener("dragleave", (event) => {
+
+    event.preventDefault();
+
+    event.stopPropagation();
+
+    els.dropZone.classList.remove("is-dragging");
+
+  });
+
+
+
+  els.dropZone?.addEventListener("drop", async (event) => {
+
+    event.preventDefault();
+
+    event.stopPropagation();
+
+    els.dropZone.classList.remove("is-dragging");
+
+    const dropped = await filesFromDrop(event.dataTransfer);
+
+    await uploadFiles(dropped);
+
+    // Also populate JSON ingest file list
+
+    const picked = collectJsonFiles(dropped);
+
+    if (picked.length) {
+
+      _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked];
+
+      renderPendingListByKey("standard");
+
+    }
+
+  });
+
+
+
+  els.btnProcess?.addEventListener("click", runProcess);
+
+  els.btnPublicBooksJsonIngest?.addEventListener("click", runPublicBooksJsonIngest);
+
+  els.btnPublicBooksExportChroma?.addEventListener("click", exportChromaFromPublicBooksPanel);
+
+  $("btnLoadDemoDataset")?.addEventListener("click", async () => {
+    try {
+      await loadDemoDatasetInto("standard");
+    } catch (err) {
+      showToast(err?.message || String(err), "danger");
+    }
+  });
+
+
+
+  // ── Standard RAG JSON ingest file pickers ──
+
+  const jsonIngestFileInput = $("jsonIngestFileInput");
+
+  const jsonIngestFolderInput = $("jsonIngestFolderInput");
+
+  const jsonIngestDropZone = $("jsonIngestDropZone");
+
+  const jsonIngestFileList = $("jsonIngestFileList");
+
+
+
+  $("btnPickJsonFiles")?.addEventListener("click", () => jsonIngestFileInput?.click());
+
+  $("btnPickJsonFolder")?.addEventListener("click", () => jsonIngestFolderInput?.click());
+
+
+
+  jsonIngestFileInput?.addEventListener("change", (e) => {
+
+    const picked = collectJsonFiles(e.target.files);
+
+    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingListByKey("standard"); }
+
+    e.target.value = "";
+
+  });
+
+  jsonIngestFolderInput?.addEventListener("change", (e) => {
+
+    const picked = collectJsonFiles(e.target.files);
+
+    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingListByKey("standard"); }
+
+    e.target.value = "";
+
+  });
+
+  jsonIngestDropZone?.addEventListener("dragover", (e) => { e.preventDefault(); jsonIngestDropZone.classList.add("is-dragging"); });
+
+  jsonIngestDropZone?.addEventListener("dragleave", () => jsonIngestDropZone.classList.remove("is-dragging"));
+
+  jsonIngestDropZone?.addEventListener("drop", async (e) => {
+
+    e.preventDefault(); jsonIngestDropZone.classList.remove("is-dragging");
+
+    const dropped = await filesFromDrop(e.dataTransfer);
+
+    const picked = collectJsonFiles(dropped);
+
+    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingListByKey("standard"); }
+
+  });
+
+
+
+  // ── KG corpus dropzone ──
+
+  const kgFileInput = $("kgFileInput");
+
+  const kgFolderInput = $("kgFolderInput");
+
+  const kgDropZoneEl = $("kgDropZone");
+
+  const kgFileList = $("kgFileList");
+
+
+
+  $("btnKgPickFiles")?.addEventListener("click", () => kgFileInput?.click());
+
+  $("btnKgPickFolder")?.addEventListener("click", () => kgFolderInput?.click());
+
+
+
+  function handleKgCorpusFiles(fileList) {
+
+    const picked = Array.from(fileList || []);
+
+    if (picked.length) {
+
+      _pendingJsonFiles.kgCorpus = [..._pendingJsonFiles.kgCorpus, ...picked];
+
+      renderPendingListByKey("kgCorpus");
+
+      // Also render in the ingest summary area if present
+
+      const kgIngestList = $("kgJsonIngestFileList");
+
+      if (kgIngestList) renderPendingListByKey("kgCorpus");
+
+      // Summarise file types
+
+      const exts = {};
+
+      picked.forEach(f => { const ext = (f.name.split('.').pop() || '').toLowerCase(); exts[ext] = (exts[ext] || 0) + 1; });
+
+      const summary = Object.entries(exts).map(([k, v]) => `${v} .${k}`).join(", ");
+
+      showToast(`Selected ${picked.length} files (${summary}).`, "success");
+
+    }
+
+  }
+
+  kgFileInput?.addEventListener("change", (e) => { handleKgCorpusFiles(e.target.files); e.target.value = ""; });
+
+  kgFolderInput?.addEventListener("change", (e) => { handleKgCorpusFiles(e.target.files); e.target.value = ""; });
+
+  kgDropZoneEl?.addEventListener("dragenter", (e) => { e.preventDefault(); e.stopPropagation(); kgDropZoneEl.classList.add("is-dragging"); });
+
+  kgDropZoneEl?.addEventListener("dragover", (e) => { e.preventDefault(); e.stopPropagation(); kgDropZoneEl.classList.add("is-dragging"); });
+
+  kgDropZoneEl?.addEventListener("dragleave", (e) => { e.preventDefault(); e.stopPropagation(); kgDropZoneEl.classList.remove("is-dragging"); });
+
+  kgDropZoneEl?.addEventListener("drop", async (e) => {
+
+    e.preventDefault(); e.stopPropagation(); kgDropZoneEl.classList.remove("is-dragging");
+
+    const dropped = await filesFromDrop(e.dataTransfer);
+
+    handleKgCorpusFiles(dropped);
+
+  });
+
+  $("btnKgRecommendSchema")?.addEventListener("click", requestKgSchemaRecommendation);
+
+  $("btnKgApplySchema")?.addEventListener("click", applyKgSchemaRecommendation);
+
+  $("btnKgCopySchema")?.addEventListener("click", copyKgSchemaRecommendation);
+
+
+
+  // KG Build button: generic PowerRAG entity extraction and graph construction.
+
+$("btnKgBuild")?.addEventListener("click", async () => {
+    const corpusFiles = _pendingJsonFiles.kgCorpus;
+    if (!corpusFiles.length) {
+      showToast("请先选择图谱语料文件，或载入演示语料。", "warning");
+      return;
+    }
+
+    const btn = $("btnKgBuild");
+    const logEl = $("kgBuildLog");
+    const progressEl = $("kgBuildProgress");
+
+    if (btn) { btn.disabled = true; btn.dataset.busy = "true"; }
+    if (logEl) logEl.innerHTML = "";
+    if (progressEl) progressEl.style.width = "0%";
+    const progress = createIngestProgressReporter(logEl, {
+      phase: "准备构建图谱",
+      fileName: "GraphRAG 语料",
+      percent: 0,
+      total: corpusFiles.length,
+      current: 0,
+      detail: `等待处理 ${corpusFiles.length} 个文件。`
+    });
+
+    function logEntry(icon, text) {
+      if (progress) {
+        progress.update({}, text);
+        return;
+      }
+      if (!logEl) return;
+      const entry = document.createElement("div");
+      entry.className = "queue-item";
+      entry.style.cssText = "padding:6px 12px;font-size:12px;";
+      entry.innerHTML = `<iconify-icon icon="${icon}" style="margin-right:6px;vertical-align:middle;"></iconify-icon>${escapeHtml(text)}`;
+      logEl.prepend(entry);
+      logEl.scrollTop = 0;
+    }
+
+    try {
+      addActivity("warning", "图谱构建开始", `正在处理 ${corpusFiles.length} 个语料文件。`);
+      logEntry("lucide:loader", `正在处理 ${corpusFiles.length} 个语料文件。`);
+      await clearKgRuntimeState("kg-build-start", { backend: true });
+      logEntry("lucide:trash-2", "已清理上一次图谱运行状态。");
+
+      const allRecords = [];
+      const allTexts = [];
+      let succeeded = 0;
+      let failed = 0;
+
+      for (let fi = 0; fi < corpusFiles.length; fi++) {
+        const file = corpusFiles[fi];
+        progress.update({
+          current: fi + 1,
+          percent: Math.round(((fi + 1) / corpusFiles.length) * 35),
+          phase: "解析文件",
+          fileName: file.name,
+          detail: `正在解析 ${fi + 1}/${corpusFiles.length}`
+        });
+        logEntry("lucide:file-text", `正在解析 ${fi + 1}/${corpusFiles.length}: ${file.name}`);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        try {
+          const records = await parseFileRecords(file);
+          records.forEach((record) => {
+            if (record?.text) allTexts.push(record.text);
+            allRecords.push(record);
+          });
+          succeeded++;
+        } catch (error) {
+          failed++;
+          logEntry("lucide:alert-circle", `Parse failed: ${file.name} (${error?.message || error})`);
+        }
+      }
+
+      if (!allTexts.length) throw new Error("All files failed to parse; graph cannot be built.");
+      logEntry("lucide:check-circle", `Parsed ${succeeded} files; failed ${failed}; ${allTexts.length} text records.`);
+
+      const configuredEntityTypes = readKgEntityTypes();
+      const configuredRelationTypes = readKgRelationTypes();
+      const schemaEntityTypes = configuredEntityTypes.length
+        ? configuredEntityTypes
+        : ["Topic", "Intent", "Observation", "Evidence", "Event", "Source"];
+      const schemaRelationTypes = configuredRelationTypes.length
+        ? configuredRelationTypes
+        : ["RELATES_TO", "MENTIONS", "HAS_EVIDENCE", "MENTIONED_IN"];
+      const schemaRelationSet = new Set(schemaRelationTypes);
+      const fallbackRelation = schemaRelationSet.has("RELATES_TO") ? "RELATES_TO" : (schemaRelationTypes[0] || "RELATES_TO");
+
+      const KG_TYPE_PALETTE = ["#4fc3f7", "#81c784", "#ffb74d", "#ef5350", "#ba68c8", "#4dd0e1", "#ffd54f", "#90a4ae", "#f06292", "#a1887f", "#7986cb", "#aed581"];
+      const TYPE_COLORS = Object.fromEntries(schemaEntityTypes.map((type, index) => [type, KG_TYPE_PALETTE[index % KG_TYPE_PALETTE.length]]));
+      const entities = new Map();
+      const edges = new Map();
+      const fullText = allTexts.join("\n");
+
+      function addEntity(name, type, count = 1) {
+        const id = String(name || "").trim();
+        if (id.length < 2 || id.length > 64) return;
+        const safeType = schemaEntityTypes.includes(type) ? type : (schemaEntityTypes[0] || "Entity");
+        const current = entities.get(id);
+        if (current) current.count += count;
+        else entities.set(id, { type: safeType, count });
+      }
+
+      function addEdge(source, target, relation = fallbackRelation, evidenceRow = null) {
+        if (!source || !target || source === target) return;
+        if (!entities.has(source) || !entities.has(target)) return;
+        const rel = schemaRelationSet.has(relation) ? relation : fallbackRelation;
+        const key = `${source}->${target}->${rel}`;
+        const current = edges.get(key);
+        const evidenceText = String(evidenceRow?.sentence || evidenceRow?.text || evidenceRow?.evidence || "").trim();
+        if (current) {
+          current.weight++;
+          current.evidence_count = Number(current.evidence_count || 1) + 1;
+          if (!current.evidence && evidenceText) current.evidence = evidenceText;
+          if (!current.source_chunk_id && evidenceRow?.source_chunk_id) current.source_chunk_id = evidenceRow.source_chunk_id;
+          if (!current.source_file && evidenceRow?.source_file) current.source_file = evidenceRow.source_file;
+          if (!current.source_page && evidenceRow?.source_page) current.source_page = evidenceRow.source_page;
+          return;
+        }
+        if (edges.size >= KG_MAX_GRAPH_EDGES) return;
+        edges.set(key, {
+          source,
+          target,
+          relation: rel,
+          weight: 1,
+          evidence_count: evidenceText ? 1 : 0,
+          evidence: evidenceText || null,
+          confidence: evidenceText ? 0.78 : null,
+          source_file: evidenceRow?.source_file || null,
+          source_page: evidenceRow?.source_page ?? null,
+          source_chunk_id: evidenceRow?.source_chunk_id || evidenceRow?.record_id || null
+        });
+      }
+
+      const engineMode = $("kgExtractEngine")?.value || "schema";
+      progress.update({
+        percent: 50,
+        phase: "Extracting entities",
+        fileName: engineMode,
+        detail: `Extracting entities with ${engineMode} mode.`
+      });
+      logEntry("lucide:scan", `Extracting entities with ${engineMode} mode.`);
+
+      const jsonKeys = Array.from(new Set(fullText.match(/"([a-zA-Z_][\w.-]{1,48})"(?=\s*:)/g) || []))
+        .map((item) => item.replace(/"/g, ""))
+        .slice(0, KG_MAX_JSON_KEY_ENTITIES);
+      jsonKeys.forEach((key) => addEntity(key, schemaEntityTypes.includes("Evidence") ? "Evidence" : schemaEntityTypes[0], 1));
+
+      const sourceNames = Array.from(new Set(allRecords.map((record) => record?.filename || record?.source_file).filter(Boolean))).slice(0, 500);
+      sourceNames.forEach((name) => addEntity(name, schemaEntityTypes.includes("Source") ? "Source" : schemaEntityTypes[0], 1));
+
+      const termCounts = {};
+      const normalizedText = fullText.replace(/[^\p{L}\p{N}_\u4e00-\u9fff]+/gu, " ");
+      for (const term of normalizedText.split(/\s+/)) {
+        const value = term.trim();
+        if (value.length < 2 || value.length > 24) continue;
+        termCounts[value] = (termCounts[value] || 0) + 1;
+      }
+      selectTopGenerativeTerms(termCounts, Math.min(KG_MAX_GENERATIVE_ENTITIES, 3000)).forEach(([term, count], index) => {
+        addEntity(term, schemaEntityTypes[index % schemaEntityTypes.length] || schemaEntityTypes[0], count);
+      });
+      logEntry("lucide:sparkles", `Extracted ${entities.size} entities.`);
+
+      progress.update({
+        percent: 70,
+        phase: "Scanning relations",
+        fileName: `${entities.size} entities`,
+        detail: "Building co-occurrence relations."
+      });
+      const entityNames = selectRelationEntityNames(entities, KG_RELATION_ENTITY_LIMIT);
+      const sentenceRows = [];
+      allRecords.forEach((record, recordIndex) => {
+        const metadata = record?.metadata || {};
+        const sourceFile = record?.source_file || record?.filename || metadata.source_file || metadata.filename || "";
+        const sourcePage = record?.page_num ?? record?.source_page ?? metadata.page_num ?? metadata.source_page ?? null;
+        const sourceChunkId = record?.chunk_id || record?.record_id || metadata.chunk_id || metadata.message_id || `record-${recordIndex}`;
+        String(record?.text || "")
+          .split(/[.!?;；。！？\n\r]+/u)
+          .map((line) => line.trim())
+          .filter((line) => line.length > 5)
+          .forEach((sentence) => {
+            sentenceRows.push({
+              sentence,
+              source_file: sourceFile,
+              source_page: sourcePage,
+              source_chunk_id: sourceChunkId,
+              record_id: record?.record_id || metadata.message_id || sourceChunkId
+            });
+          });
+      });
+      const relationSentences = selectRelationSentences(sentenceRows, KG_MAX_RELATION_SENTENCES);
+      relationSentences.forEach((row, index) => {
+        const found = matchSentenceEntities(row.sentence, entityNames).slice(0, 5);
+        for (let i = 0; i < found.length; i++) {
+          for (let j = i + 1; j < found.length; j++) addEdge(found[i], found[j], fallbackRelation, row);
+        }
+        if (index && index % KG_RELATION_BATCH_SIZE === 0) {
+          progress.update({
+            percent: 70 + Math.round((index / Math.max(relationSentences.length, 1)) * 10),
+            phase: "Scanning relations",
+            fileName: `${index}/${relationSentences.length} sentences`,
+            detail: `${edges.size} relations found so far.`
+          });
+        }
+      });
+      logEntry("lucide:git-branch", `Found ${edges.size} relations.`);
+
+      const sortedEntities = Array.from(entities.entries())
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 5000);
+      const nodeIdSet = new Set(sortedEntities.map(([name]) => name));
+      const nodes = sortedEntities.map(([name, data], index) => {
+        const angle = (index / Math.max(sortedEntities.length, 1)) * Math.PI * 2;
+        const radius = 100 + (index % 12) * 18;
+        return {
+          id: name,
+          type: data.type,
+          count: data.count,
+          color: TYPE_COLORS[data.type] || "#aaa",
+          radius: Math.max(8, Math.min(28, 5 + Math.sqrt(data.count) * 1.8)),
+          x: 400 + Math.cos(angle) * radius,
+          y: 300 + Math.sin(angle) * radius
+        };
+      });
+      const nodeMap = new Map(nodes.map((node) => [node.id, node]));
+      const links = Array.from(edges.values())
+        .filter((edge) => nodeIdSet.has(edge.source) && nodeIdSet.has(edge.target))
+        .sort((a, b) => b.weight - a.weight)
+        .slice(0, 50000)
+        .map((edge) => ({ ...edge, source: nodeMap.get(edge.source), target: nodeMap.get(edge.target) }));
+
+      window._kgGraph = { nodes, links, entities, edges, engineMode, schema: { entityTypes: schemaEntityTypes, relationTypes: schemaRelationTypes }, d3Selections: null };
+      progress.update({
+        percent: 88,
+        phase: "Rendering graph",
+        fileName: `${nodes.length} nodes / ${links.length} edges`,
+        detail: shouldRenderKgGraph(nodes, links) ? "Rendering browser graph view." : "Graph is too large; skipping full render."
+      });
+      if (shouldRenderKgGraph(nodes, links)) renderRestoredKgGraphSnapshot();
+      else renderKgGraphLimitNotice(nodes, links);
+
+      const typeCounts = {};
+      nodes.forEach((node) => { typeCounts[node.type] = (typeCounts[node.type] || 0) + 1; });
+      const relCounts = {};
+      links.forEach((link) => { relCounts[link.relation] = (relCounts[link.relation] || 0) + 1; });
+      const graphSummary = [
+        "[Knowledge Graph Build Report]",
+        `engine: ${engineMode}`,
+        `nodes: ${nodes.length}`,
+        `edges: ${links.length}`,
+        "",
+        "entity_type_counts:",
+        ...Object.entries(typeCounts).map(([type, count]) => `- ${type}: ${count}`),
+        "",
+        "relation_type_counts:",
+        ...Object.entries(relCounts).sort((a, b) => b[1] - a[1]).map(([relation, count]) => `- ${relation}: ${count}`)
+      ].join("\n");
+
+      const summaryRecord = {
+        record_id: `kg-summary-${Date.now()}`,
+        filename: "knowledge_graph_build_summary",
+        source_file: "kg-graph-summary",
+        source_kind: "GraphSummary",
+        page_num: null,
+        text: graphSummary
+      };
+      const allRecords2 = [summaryRecord, ...allRecords];
+      const allChunks2 = makeChunks(allRecords2);
+      state.records = [...state.records, ...allRecords2];
+      state.chunks = [...state.chunks, ...allChunks2];
+
+      if (state.publicDemo) await refreshPublicDemoStats();
+      else await refreshLocalStats();
+      renderSummaryMetrics();
+      progress.update({
+        percent: 94,
+        phase: "Preparing graph artifacts",
+        fileName: `${formatNumber(allChunks2.length)} chunks`,
+        detail: "Writing searchable graph summary and chunks."
+      });
+
+      addActivity("success", "Graph build finished", `${nodes.length} entities; ${links.length} relations; ${formatNumber(allChunks2.length)} chunks.`);
+      showToast(`Graph build finished: ${nodes.length} entities, ${links.length} relations.`, "success");
+      if (!state.localMode && !state.publicDemo) {
+        progress.update({
+          percent: 96,
+          phase: "Syncing backend GraphStore",
+          fileName: "graph_store.sqlite",
+          detail: "Importing graph for GraphRAG Q&A."
+        });
+        logEntry("lucide:database-zap", "Syncing graph snapshot into backend GraphStore...");
+        await syncKgGraphToBackend("kg-build");
+      }
+      progress.stop({
+        percent: 100,
+        phase: "Graph build complete",
+        fileName: `${nodes.length} nodes / ${links.length} edges`,
+        detail: "Graph is ready for GraphRAG Q&A."
+      });
+      void saveLocalWorkspaceSnapshot("kg-build");
+    } catch (err) {
+      const message = err?.message || String(err);
+      addActivity("danger", "Graph build failed", message);
+      showToast(`Graph build failed: ${message}`, "danger");
+      logEntry("lucide:alert-triangle", `Error: ${message}`);
+      progress.stop({
+        percent: 100,
+        phase: "Graph build failed",
+        fileName: "GraphRAG corpus",
+        detail: message
+      });
+    } finally {
+      if (btn) { delete btn.dataset.busy; btn.disabled = false; }
+      progress.stop();
+    }
+  });
+
+
+
+  // ── Longest Path: find & highlight ──
+
+  function findLongestPath() {
+
+    const kg = window._kgGraph;
+
+    if (!kg || !kg.nodes.length || !kg.links.length) return null;
+
+    const { nodes: gNodes, links: gLinks } = kg;
+
+
+
+    // Build undirected adjacency list
+
+    const adj = new Map();
+
+    gLinks.forEach(l => {
+
+      const s = typeof l.source === "object" ? l.source.id : l.source;
+
+      const t = typeof l.target === "object" ? l.target.id : l.target;
+
+      if (!adj.has(s)) adj.set(s, []);
+
+      if (!adj.has(t)) adj.set(t, []);
+
+      adj.get(s).push(t);
+
+      adj.get(t).push(s);
+
+    });
+
+
+
+    // Sort start candidates: prefer high-degree nodes
+
+    const nodeIds = gNodes.map(n => n.id);
+
+    const byDegree = nodeIds.slice().sort((a, b) => (adj.get(b)?.length || 0) - (adj.get(a)?.length || 0));
+
+    const startCandidates = byDegree.slice(0, Math.min(30, byDegree.length));
+
+
+
+    let bestPath = [];
+
+    const MAX_OPS = 500000;
+
+    let ops = 0;
+
+
+
+    for (const start of startCandidates) {
+
+      if (ops >= MAX_OPS) break;
+
+      const stack = [{ node: start, visited: new Set([start]), path: [start] }];
+
+      while (stack.length && ops < MAX_OPS) {
+
+        ops++;
+
+        const { node, visited, path } = stack.pop();
+
+        if (path.length > bestPath.length) bestPath = [...path];
+
+        if (bestPath.length >= 15) break;
+
+        const neighbors = adj.get(node) || [];
+
+        for (const nb of neighbors) {
+
+          if (!visited.has(nb)) {
+
+            const newVisited = new Set(visited);
+
+            newVisited.add(nb);
+
+            stack.push({ node: nb, visited: newVisited, path: [...path, nb] });
+
+          }
+
+        }
+
+      }
+
+      if (bestPath.length >= 15) break;
+
+    }
+
+    return bestPath;
+
+  }
+
+
+
+  function highlightLongestPath(path) {
+
+    const kg = window._kgGraph;
+
+    if (!kg?.d3Selections) return;
+
+    const { node, link, label, g } = kg.d3Selections;
+
+    const pathSet = new Set(path);
+
+    const pathEdges = new Set();
+
+    for (let i = 0; i < path.length - 1; i++) {
+
+      pathEdges.add(`${path[i]}|${path[i+1]}`);
+
+      pathEdges.add(`${path[i+1]}|${path[i]}`);
+
+    }
+
+
+
+    // Dim everything, highlight path
+
+    node.attr("opacity", d => pathSet.has(d.id) ? 1 : 0.12);
+
+    link.attr("stroke-opacity", d => {
+
+      const s = typeof d.source === "object" ? d.source.id : d.source;
+
+      const t = typeof d.target === "object" ? d.target.id : d.target;
+
+      return pathEdges.has(`${s}|${t}`) ? 1 : 0.03;
+
+    });
+
+    link.attr("stroke", d => {
+
+      const s = typeof d.source === "object" ? d.source.id : d.source;
+
+      const t = typeof d.target === "object" ? d.target.id : d.target;
+
+      return pathEdges.has(`${s}|${t}`) ? "#f59e42" : "#555";
+
+    });
+
+    link.attr("stroke-width", d => {
+
+      const s = typeof d.source === "object" ? d.source.id : d.source;
+
+      const t = typeof d.target === "object" ? d.target.id : d.target;
+
+      return pathEdges.has(`${s}|${t}`) ? 3 : Math.max(0.3, Math.min(2.5, d.weight * 0.4));
+
+    });
+
+    label.attr("opacity", d => pathSet.has(d.id) ? 1 : 0);
+
+    label.filter(d => pathSet.has(d.id)).attr("fill", "#fff").attr("font-weight", "bold");
+
+
+
+    // Glow on path nodes
+
+    node.filter(d => pathSet.has(d.id))
+
+      .attr("stroke", "#f59e42").attr("stroke-width", 3);
+
+
+
+    // Path order numbers
+
+    g.selectAll(".longest-path-order").remove();
+
+    const orderG = g.append("g").attr("class", "longest-path-order");
+
+    const nodeMap = new Map(kg.nodes.map(n => [n.id, n]));
+
+    path.forEach((id, i) => {
+
+      const n = nodeMap.get(id);
+
+      if (!n) return;
+
+      orderG.append("circle")
+
+        .attr("cx", n.x).attr("cy", n.y - n.radius - 10)
+
+        .attr("r", 8).attr("fill", "#e67e22").attr("stroke", "#fff").attr("stroke-width", 1);
+
+      orderG.append("text")
+
+        .attr("x", n.x).attr("y", n.y - n.radius - 6)
+
+        .attr("text-anchor", "middle").attr("fill", "#fff")
+
+        .attr("font-size", "9px").attr("font-weight", "bold")
+
+        .text(i + 1);
+
+    });
+
+
+
+    // Update stats
+
+    const statsEl = $("kgGraphStats");
+
+    if (statsEl) statsEl.textContent = `longest path: ${path.length} nodes · ${path.length - 1} hops`;
+
+  }
+
+
+
+  function clearPathHighlight() {
+
+    const kg = window._kgGraph;
+
+    if (!kg?.d3Selections) return;
+
+    const { node, link, label, g, labelThreshold } = kg.d3Selections;
+
+    node.attr("opacity", 0.85).attr("stroke", "#222").attr("stroke-width", 1);
+
+    link.attr("stroke-opacity", 0.3).attr("stroke", "#555")
+
+      .attr("stroke-width", d => Math.max(0.3, Math.min(2.5, d.weight * 0.4)));
+
+    label.attr("opacity", d => d.count >= labelThreshold ? 1 : 0)
+
+      .attr("fill", "#eee").attr("font-weight", "normal");
+
+    g.selectAll(".longest-path-order").remove();
+
+
+
+    const statsEl = $("kgGraphStats");
+
+    if (statsEl && kg.nodes) statsEl.textContent = `nodes: ${kg.nodes.length} · edges: ${kg.links.length}`;
+
+    $("btnKgClearPath").style.display = "none";
+
+  }
+
+
+
+  $("btnKgLongestPath")?.addEventListener("click", () => {
+
+    const path = findLongestPath();
+
+    if (!path || path.length < 2) {
+
+      showToast("No valid path was found. Build the knowledge graph first.", "warning");
+
+      return;
+
+    }
+
+    highlightLongestPath(path);
+
+    $("btnKgClearPath").style.display = "inline-block";
+
+    showToast(`Found longest path: ${path.length} nodes, ${path.length - 1} hops.`, "success");
+
+  });
+
+  $("btnKgClearPath")?.addEventListener("click", clearPathHighlight);
+
+
+
+  // KG JSON ingest path.
+
+  // (Merged into the single kgDropZone above; no separate dropzone needed.)
+
+
+
+  $("btnKgPublicBooksJsonIngest")?.addEventListener("click", async () => {
+
+    await runBrowserJsonIngest("kgCorpus", {
+
+      collection: $("kgPublicBooksJsonCollection"),
+
+      mode: $("kgPublicBooksJsonMode"),
+
+      chunkSize: $("kgPublicBooksJsonChunkSize"),
+
+      overlap: $("kgPublicBooksJsonOverlap"),
+
+      btn: $("btnKgPublicBooksJsonIngest"),
+
+      summary: $("kgPublicBooksJsonSummary")
+
+    });
+
+  });
+
+  $("btnKgExportGraph")?.addEventListener("click", exportKgGraphSnapshot);
+
+
+
+  // ── Export PDF text as .txt files (standalone, no dependency on OCR cache) ──
+
+  $("btnKgExportPdfText")?.addEventListener("click", async () => {
+
+    const files = _pendingJsonFiles.kgCorpus;
+
+    if (!files || !files.length) {
+
+      showToast("请先拖入或选择 PDF 文件", "warning");
+
+      return;
+
+    }
+
+    const pdfFiles = files.filter(f => (f.name.split('.').pop() || '').toLowerCase() === 'pdf');
+
+    if (!pdfFiles.length) {
+
+      showToast("文件列表中没有 PDF 文件", "warning");
+
+      return;
+
+    }
+
+    if (!globalThis.pdfjsLib) {
+
+      showToast("PDF.js 库未加载", "danger");
+
+      return;
+
+    }
+
+
+
+    const btn = $("btnKgExportPdfText");
+
+    if (btn) { btn.disabled = true; btn.textContent = "正在提取..."; }
+
+
+
+    let exported = 0;
+
+    for (const pdfFile of pdfFiles) {
+
+      try {
+
+        const data = await pdfFile.arrayBuffer();
+
+        const pdf = await globalThis.pdfjsLib.getDocument({ data }).promise;
+
+        const pageTexts = [];
+
+        for (let p = 1; p <= pdf.numPages; p++) {
+
+          const page = await pdf.getPage(p);
+
+          const tc = await page.getTextContent();
+
+          const text = tc.items.map(item => item.str).join(" ").trim();
+
+          if (text) pageTexts.push(text);
+
+        }
+
+        const fullText = pageTexts.join("\n\n");
+
+        if (fullText.length > 0) {
+
+          const txtName = pdfFile.name.replace(/\.pdf$/i, '') + '_text_extract.txt';
+
+          const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+
+          const url = URL.createObjectURL(blob);
+
+          const a = document.createElement('a');
+
+          a.href = url;
+
+          a.download = txtName;
+
+          document.body.appendChild(a);
+
+          a.click();
+
+          document.body.removeChild(a);
+
+          URL.revokeObjectURL(url);
+
+          exported++;
+
+          showToast(`Downloaded ${txtName} (${fullText.length.toLocaleString()} chars).`, "success");
+
+        } else {
+
+          showToast(`${pdfFile.name}: no text extracted; OCR may be required.`, "warning");
+
+        }
+
+      } catch (err) {
+
+        showToast(`${pdfFile.name} extraction failed: ${err.message}`, "danger");
+
+      }
+
+    }
+
+
+
+    if (btn) { btn.disabled = false; btn.innerHTML = '<iconify-icon icon="lucide:file-down"></iconify-icon><span>Export PDF text</span>'; }
+
+    if (exported > 0) {
+
+      showToast(`Exported text for ${exported} PDF files.`, "success");
+
+    }
+
+  });
+
+
+
+
+
+  els.searchInput?.addEventListener("keydown", (event) => {
+
+    if (event.key === "Enter") {
+
+      event.preventDefault();
+
+      runSearch();
+
+    }
+
+  });
+
+  els.btnSearch?.addEventListener("click", runSearch);
+
+  els.btnProposeRetrievalPolicy?.addEventListener("click", proposeRetrievalPolicy);
+
+  els.btnApproveRetrievalPolicy?.addEventListener("click", approveRetrievalPolicy);
+
+  els.btnRejectRetrievalPolicy?.addEventListener("click", rejectRetrievalPolicy);
+
+  els.btnUpsertRetrievalPolicyRole?.addEventListener("click", upsertRetrievalPolicyRole);
+
+  els.btnUpsertRetrievalPolicyRecipient?.addEventListener("click", upsertRetrievalPolicyRecipient);
+
+  els.btnLoadRetrievalPolicyRecipients?.addEventListener("click", loadRetrievalPolicyRecipients);
+
+  els.btnSyncRetrievalPolicyDirectory?.addEventListener("click", syncRetrievalPolicyDirectory);
+
+  els.btnSaveRetrievalPolicyIdp?.addEventListener("click", saveRetrievalPolicyIdentityProvider);
+
+  els.btnLoadRetrievalPolicyIdp?.addEventListener("click", loadRetrievalPolicyIdentityProvider);
+
+  els.btnBuildRetrievalPolicyOidcLoginUrl?.addEventListener("click", buildRetrievalPolicyOidcLoginUrl);
+
+  els.btnOpenRetrievalPolicyOidcLoginUrl?.addEventListener("click", openRetrievalPolicyOidcLoginUrl);
+
+  els.btnExchangeRetrievalPolicyOidcCode?.addEventListener("click", exchangeRetrievalPolicyOidcCodeForToken);
+
+  els.btnStartRetrievalPolicyOidcSession?.addEventListener("click", startRetrievalPolicyOidcSession);
+
+  els.btnRefreshRetrievalPolicyOidcSession?.addEventListener("click", refreshRetrievalPolicyOidcSession);
+
+  els.btnLoadRetrievalPolicyOidcSessions?.addEventListener("click", loadRetrievalPolicyOidcSessions);
+
+  els.btnRevokeRetrievalPolicyOidcSession?.addEventListener("click", revokeRetrievalPolicyOidcSession);
+
+  els.btnRotateRetrievalPolicyOidcSessionKeys?.addEventListener("click", rotateRetrievalPolicyOidcSessionKeys);
+
+  els.btnLoadRetrievalPolicyOidcSessionKeyStatus?.addEventListener("click", loadRetrievalPolicyOidcSessionKeyStatus);
+
+  els.btnLogoutRetrievalPolicyOidcSession?.addEventListener("click", logoutRetrievalPolicyOidcSession);
+
+  els.btnSaveRetrievalPolicyBearerToken?.addEventListener("click", saveRetrievalPolicyBearerToken);
+
+  els.btnClearRetrievalPolicyBearerToken?.addEventListener("click", clearRetrievalPolicyBearerToken);
+
+  loadRetrievalPolicyBearerTokenSession();
+
+  els.btnPromoteRetrievalPolicy?.addEventListener("click", promoteRetrievalPolicy);
+
+  els.btnRollbackRetrievalPolicy?.addEventListener("click", rollbackRetrievalPolicy);
+
+  els.btnLoadRetrievalPolicyHistory?.addEventListener("click", loadRetrievalPolicyHistory);
+
+  els.btnLoadRetrievalPolicyNotifications?.addEventListener("click", loadRetrievalPolicyNotifications);
+
+  els.btnDispatchRetrievalPolicyNotifications?.addEventListener("click", dispatchRetrievalPolicyNotifications);
+
+
+
+  // ── Smart Paste: auto-fill LLM config from free-form text ──
+
+  function smartParseLLM(raw) {
+
+    const text = (raw || "").trim();
+
+    if (!text) return null;
+
+
+
+    // Split on common separators
+
+    const tokens = text.split(/[\s,;\t\n|]+/).filter(Boolean);
+
+    let url = "", key = "", model = "", temp = "", maxTok = "";
+
+
+
+    for (const tok of tokens) {
+
+      // URL detection
+
+      if (/^https?:\/\//i.test(tok) && !url) {
+
+        url = tok;
+
+      }
+
+      // API Key detection (common patterns)
+
+      else if (/^(sk-|AIza|key-|Bearer\s)/i.test(tok) && !key) {
+
+        key = tok.replace(/^Bearer\s+/i, "");
+
+      }
+
+      // Model name detection
+
+      else if (/^(gemini|gpt|claude|deepseek|qwen|llama|mistral|yi-|glm|chatglm|moonshot|kimi|doubao|ernie)/i.test(tok) && !model) {
+
+        model = tok;
+
+      }
+
+      // Temperature: "temp:0.7", "温度0.5", or standalone decimal 0-2
+
+      else if (!temp && /^(?:temp(?:erature)?[:=]?|温度[:=]?)(\d\.?\d*)$/i.test(tok)) {
+
+        temp = RegExp.$1;
+
+      }
+
+      else if (!temp && /^(0\.\d+|[01]\.?\d*|2\.?0?)$/.test(tok) && parseFloat(tok) <= 2) {
+
+        temp = tok;
+
+      }
+
+      // Cleaned comment.
+
+      else if (!maxTok && /^(?:max_?tokens?|tokens?|上下文|context)[:=]?(\d+)$/i.test(tok)) {
+
+        maxTok = RegExp.$1;
+
+      }
+
+      else if (!maxTok && /^\d+$/.test(tok) && parseInt(tok) >= 64) {
+
+        maxTok = tok;
+
+      }
+
+      // Long alphanumeric string: likely API key.
+
+      else if (!key && tok.length >= 20 && /^[A-Za-z0-9_\-]+$/.test(tok)) {
+
+        key = tok;
+
+      }
+
+      // Short identifier not yet matched: try as model.
+
+      else if (!model && tok.length >= 3 && tok.length <= 60 && !tok.includes("://")) {
+
+        model = tok;
+
+      }
+
+    }
+
+
+
+    return { url, key, model, temp, maxTok };
+
+  }
+
+
+
+  function applySmartPaste() {
+
+    const input = $("llmSmartPaste");
+
+    const result = smartParseLLM(input?.value);
+
+    if (!result) { showToast("Paste text containing URL, Key, or Model.", "warning"); return; }
+
+
+
+    let filled = [];
+
+    if (result.url && els.llmBaseUrl) { els.llmBaseUrl.value = result.url; filled.push("URL"); }
+
+    if (result.key && els.llmApiKey) { els.llmApiKey.value = result.key; filled.push("Key"); }
+
+    if (result.model && els.llmModel) { els.llmModel.value = result.model; filled.push("Model"); }
+
+    if (result.temp && els.llmTemperature) { els.llmTemperature.value = result.temp; filled.push("Temperature"); }
+
+    if (result.maxTok && els.llmMaxTokens) { els.llmMaxTokens.value = result.maxTok; filled.push("MaxTokens"); }
+
+
+
+    if (filled.length) {
+
+      saveLLMSettings();
+
+      showToast(`Detected and filled: ${filled.join(", ")}`, "success");
+
+      if (input) input.value = "";
+
+    } else {
+
+      showToast("No valid configuration was recognized. Check the format.", "warning");
+
+    }
+
+  }
+
+
+
+  $("btnSmartPaste")?.addEventListener("click", applySmartPaste);
+
+  $("llmSmartPaste")?.addEventListener("keydown", (e) => {
+
+    if (e.key === "Enter") { e.preventDefault(); applySmartPaste(); }
+
+  });
+
+  // Auto-trigger on paste
+
+  $("llmSmartPaste")?.addEventListener("paste", () => {
+
+    setTimeout(applySmartPaste, 100);
+
+  });
+
+
+
+  // ── KG page smart paste (fills kgLlm* fields) ──
+
+  function applyKgSmartPaste() {
+
+    const input = $("kgLlmSmartPaste");
+
+    const result = smartParseLLM(input?.value);
+
+    if (!result) { showToast("Paste text containing URL, Key, or Model.", "warning"); return; }
+
+
+
+    let filled = [];
+
+    if (result.url) { const el = $("kgLlmBaseUrl"); if (el) { el.value = result.url; filled.push("URL"); } }
+
+    if (result.key) { const el = $("kgLlmApiKey"); if (el) { el.value = result.key; filled.push("Key"); } }
+
+    if (result.model) { const el = $("kgLlmModel"); if (el) { el.value = result.model; filled.push("Model"); } }
+
+    if (result.temp) { const el = $("kgLlmTemperature"); if (el) { el.value = result.temp; filled.push("Temperature"); } }
+
+    if (result.maxTok) { const el = $("kgLlmMaxTokens"); if (el) { el.value = result.maxTok; filled.push("MaxTokens"); } }
+
+
+
+    // Also sync to standard RAG fields so both pages share config
+
+    if (result.url && els.llmBaseUrl) els.llmBaseUrl.value = result.url;
+
+    if (result.key && els.llmApiKey) els.llmApiKey.value = result.key;
+
+    if (result.model && els.llmModel) els.llmModel.value = result.model;
+
+    if (result.temp && els.llmTemperature) els.llmTemperature.value = result.temp;
+
+    if (result.maxTok && els.llmMaxTokens) els.llmMaxTokens.value = result.maxTok;
+
+
+
+    if (filled.length) {
+
+      saveLLMSettings();
+
+      showToast(`Detected and filled: ${filled.join(", ")}`, "success");
+
+      if (input) input.value = "";
+
+    } else {
+
+      showToast("No valid configuration was recognized. Check the format.", "warning");
+
+    }
+
+  }
+
+  $("btnKgSmartPaste")?.addEventListener("click", applyKgSmartPaste);
+
+  $("kgLlmSmartPaste")?.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); applyKgSmartPaste(); } });
+
+  $("kgLlmSmartPaste")?.addEventListener("paste", () => { setTimeout(applyKgSmartPaste, 100); });
+
+
+
+  // ── GraphRAG Q&A Ask Handler ──
+
+  async function runKgAskBackend(query) {
+
+    const answerDiv = $("kgAskAnswer");
+
+    const resultsDiv = $("kgSearchResults");
+
+    const meta = $("kgSearchMeta");
+
+    const baseCfg = readLLMSettings();
+
+    const kgBaseUrl = $("kgLlmBaseUrl")?.value?.trim() || resolveLLMEndpoint(baseCfg) || "";
+
+    const kgApiKey = $("kgLlmApiKey")?.value?.trim() || baseCfg.apiKey || "";
+
+    const kgModel = $("kgLlmModel")?.value?.trim() || baseCfg.model || "gpt-4.1-mini";
+
+    const kgTemp = parseFloat($("kgLlmTemperature")?.value || baseCfg.temperature || "0.7");
+
+    const kgMaxTok = parseInt($("kgLlmMaxTokens")?.value || baseCfg.maxTokens || "8192");
+
+    const mode = ($("kgSearchMode")?.value || "global") === "local" ? "local" : "global";
+
+    if (!kgApiKey) {
+
+      if (answerDiv) answerDiv.innerHTML = `<div style="color:var(--warning)">Configure an LLM API key first.</div>`;
+
+      return;
+
+    }
+
+    if (answerDiv) answerDiv.innerHTML = `<div style="color:var(--muted)">Running backend unified GraphRAG retrieval and answer generation...</div>`;
+
+    try {
+
+      const result = await requestUnifiedQuery(query, {
+
+        mode,
+
+        collection: resolveKgQueryCollection(),
+
+        baseUrl: kgBaseUrl,
+
+        apiKey: kgApiKey,
+
+        model: kgModel,
+
+        temperature: kgTemp,
+
+        maxTokens: kgMaxTok,
+
+        topK: Number($("kgSearchTopK")?.value || 20),
+
+        timeoutMs: 240000
+
+      });
+
+      renderUnifiedQueryAnswer(result, answerDiv);
+
+      if (meta) meta.textContent = `Backend unified orchestration finished · ${result.route?.strategy || mode} · citations ${(result.citations || []).length}`;
+
+      if (resultsDiv) {
+
+        const citations = Array.isArray(result.citations) ? result.citations : [];
+
+        resultsDiv.innerHTML = citations.slice(0, Number($("kgSearchTopK")?.value || 20)).map((item) => {
+
+          const source = item.source || item.metadata?.source_file || item.id || "unknown";
+
+          const text = item.text || item.graph?.predicate || "";
+
+          return `<div class="result-card"><div class="result-head"><strong>${escapeHtml(item.id || item.source_type || "evidence")}</strong> <span class="tag">${escapeHtml(item.source_type || "evidence")}</span></div><div class="result-body"><div class="result-meta">${escapeHtml(source)}</div><pre style="white-space:pre-wrap;font-size:12px;color:#aaa;margin:8px 0 0">${escapeHtml(String(text).slice(0, 800))}</pre></div></div>`;
+
+        }).join("") || `<p style="color:var(--muted);padding:20px">Backend returned no citations.</p>`;
+
+      }
+
+      loadGraphRagTriageDashboard().catch(() => {});
+
+    } catch (err) {
+
+      const message = err?.message || String(err);
+
+      const errorMarkdown = formatUnifiedQueryErrorMarkdown(err, "Unified GraphRAG query failed");
+
+      if (answerDiv) answerDiv.innerHTML = `<div style="color:var(--danger)">Unified GraphRAG call failed: ${escapeHtml(message)}</div>`;
+
+      if (meta) meta.textContent = `Unified GraphRAG call failed: ${message}`;
+
+      if (answerDiv) renderAnswerMarkdown(errorMarkdown, answerDiv);
+
+      showToast(message, "danger");
+
+      loadGraphRagTriageDashboard().catch(() => {});
+
+    }
+
+  }
+
+
+
+  async function runKgAsk() {
+
+    const input = $("kgAskInput");
+
+    const query = input?.value?.trim();
+
+    if (!query) return;
+
+    if (!state.localMode && !state.publicDemo) {
+
+      await runKgAskBackend(query);
+
+      return;
+
+    }
+
+
+
+    const answerDiv = $("kgAskAnswer");
+
+    const resultsDiv = $("kgSearchResults");
+
+    const meta = $("kgSearchMeta");
+
+
+
+    // Read KG-specific LLM settings, fallback to standard
+
+    const kgBaseUrl = $("kgLlmBaseUrl")?.value?.trim() || els.llmBaseUrl?.value?.trim() || "";
+
+    const kgApiKey = $("kgLlmApiKey")?.value?.trim() || els.llmApiKey?.value?.trim() || "";
+
+    const kgModel = $("kgLlmModel")?.value?.trim() || els.llmModel?.value?.trim() || "gemini-2.5-flash";
+
+    const kgTemp = parseFloat($("kgLlmTemperature")?.value || els.llmTemperature?.value || "0.7");
+
+    const kgMaxTok = parseInt($("kgLlmMaxTokens")?.value || els.llmMaxTokens?.value || "8192");
+
+
+
+    if (!kgApiKey) {
+
+      if (answerDiv) answerDiv.innerHTML = `<div style="color:var(--warning)">Configure an LLM API key first.</div>`;
+
+      return;
+
+    }
+
+
+
+    if (answerDiv) answerDiv.innerHTML = `<div style="color:var(--muted)">Searching graph and generating an answer...</div>`;
+
+
+
+    // Graph traversal
+
+    let graphContext = "No knowledge graph has been built yet, so graph retrieval is unavailable.";
+
+    if (window._kgGraph && window._kgGraph.nodes.length) {
+
+      const { nodes: gNodes, links: gLinks, entities: gEntities } = window._kgGraph;
+
+      const maxHops = parseInt($("kgMaxHops")?.value) || 2;
+
+
+
+      // Find matching entities
+
+      const matched = [];
+
+      for (const [name, data] of gEntities.entries()) {
+
+        if (name.length >= 2 && query.includes(name)) matched.push({ name, ...data });
+
+      }
+
+      if (!matched.length) {
+
+        for (const [name, data] of gEntities.entries()) {
+
+          if (name.length >= 2 && name.includes(query.slice(0, 4))) matched.push({ name, ...data });
+
+        }
+
+      }
+
+      if (!matched.length) gNodes.slice(0, 8).forEach(n => matched.push({ name: n.id, type: n.type, count: n.count }));
+
+
+
+      // Build adjacency
+
+      const adj = new Map();
+
+      gLinks.forEach(l => {
+
+        const s = typeof l.source === "object" ? l.source.id : l.source;
+
+        const t = typeof l.target === "object" ? l.target.id : l.target;
+
+        if (!adj.has(s)) adj.set(s, []);
+
+        if (!adj.has(t)) adj.set(t, []);
+
+        adj.get(s).push({ target: t, relation: l.relation, weight: l.weight });
+
+        adj.get(t).push({ target: s, relation: l.relation, weight: l.weight });
+
+      });
+
+
+
+      // BFS traverse
+
+      const visited = new Set();
+
+      const triples = [];
+
+      const frontier = matched.map(e => ({ name: e.name, depth: 0 }));
+
+      while (frontier.length) {
+
+        const { name, depth } = frontier.shift();
+
+        if (visited.has(name)) continue;
+
+        visited.add(name);
+
+        for (const edge of (adj.get(name) || [])) {
+
+          triples.push(`${name} --[${edge.relation}]--> ${edge.target}`);
+
+          if (depth < maxHops && !visited.has(edge.target)) frontier.push({ name: edge.target, depth: depth + 1 });
+
+        }
+
+      }
+
+
+
+      const entityList = [...visited].slice(0, 40).map(n => {
+
+        const d = gEntities.get(n);
+
+        return d ? `${n} [${d.type}]` : n;
+
+      });
+
+
+
+      graphContext = [
+
+        `Knowledge graph: ${gNodes.length} nodes, ${gLinks.length} edges`,
+
+        `Query matched ${matched.length} entities; ${maxHops}-hop expansion reached ${visited.size} entities`,
+
+        `Entities: ${entityList.join(", ")}`,
+
+        `Relation triples:`,
+
+        ...triples.slice(0, 50)
+
+      ].join("\n");
+
+
+
+      // Show entity results
+
+      if (resultsDiv) {
+
+        resultsDiv.innerHTML = matched.slice(0, 10).map(e => {
+
+          const nbrs = (adj.get(e.name) || []).slice(0, 5).map(n => `${n.relation} -> ${n.target}`).join("\n");
+
+          return `<div class="result-card"><div class="result-head"><strong>${escapeHtml(e.name)}</strong> <span class="tag">${escapeHtml(e.type || "")}</span> <span class="score">${Number(e.count || 0)} hits</span></div><div class="result-body"><pre style="white-space:pre-wrap;font-size:12px;color:#aaa;margin:0">${escapeHtml(nbrs || "No direct relations")}</pre></div></div>`;
+
+        }).join("");
+
+      }
+
+      if (meta) meta.textContent = `matched ${matched.length} entities · ${visited.size} nodes · ${triples.length} triples`;
+
+    }
+
+
+
+    // Call LLM
+
+    try {
+
+      const resp = await fetch(kgBaseUrl + "/chat/completions", {
+
+        method: "POST",
+
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${kgApiKey}` },
+
+        body: JSON.stringify({
+
+          model: kgModel,
+
+          temperature: kgTemp,
+
+          max_tokens: kgMaxTok,
+
+          messages: [
+
+            { role: "system", content: "You are a graph-grounded PowerRAG assistant. Answer the user from the provided graph entities and relation triples. Be structured, cite evidence when available, and say when evidence is insufficient." },
+
+            { role: "user", content: `Question: ${query}\n\n${graphContext}` }
+
+          ]
+
+        })
+
+      });
+
+      const data = await resp.json();
+
+      const answer = data.choices?.[0]?.message?.content || data.error?.message || "LLM returned no valid answer.";
+
+      if (answerDiv) {
+
+        let html;
+
+        try {
+
+          if (globalThis.marked?.parse) {
+
+            const raw = globalThis.marked.parse(answer, { breaks: true, gfm: true });
+
+            html = globalThis.DOMPurify?.sanitize ? globalThis.DOMPurify.sanitize(raw) : raw;
+
+          } else {
+
+            html = _renderMarkdownBuiltin(answer);
+
+          }
+
+        } catch { html = _renderMarkdownBuiltin(answer); }
+
+        html = _renderMathInHtml(html);
+
+        answerDiv.innerHTML = html;
+
+        answerDiv.classList.add("has-content");
+
+        _renderKatexElements(answerDiv);
+
+      }
+
+    } catch (err) {
+
+      if (answerDiv) answerDiv.innerHTML = `<div style="color:var(--danger)">LLM call failed: ${escapeHtml(err.message || String(err))}</div>`;
+
+    }
+
+  }
+
+
+  async function runPowerRagOneClick(options = {}) {
+
+    const btn = $(options.buttonId || "btnKgPowerRagOneClick");
+
+    const applyPreset = options.applyPreset || applyPowerRagGraphPreset;
+
+    const analysisQuestion = options.question || POWER_RAG_DEFAULT_QUESTION;
+
+    try {
+
+      if (btn) { btn.disabled = true; btn.dataset.busy = "true"; }
+
+      clearKgOneClickLog();
+
+      setKgOneClickStatus("Running", "running");
+
+      appendKgOneClickLog("Switch to GraphRAG / graph build", "", "lucide:panel-top");
+
+      setWorkspaceMode("graphrag", { keepPage: true });
+
+      setPage("kg_data");
+
+      applyPreset();
+
+      appendKgOneClickLog("Applied generic PowerRAG preset", "collection=create, top_k=100, generic schema extraction", "lucide:sliders-horizontal");
+
+      if (!_pendingJsonFiles.kgCorpus.length) {
+
+        appendKgOneClickLog("Loading default RAG JSON corpus", "Prefer the latest exported corpus file.", "lucide:file-json");
+
+        const file = await pickPowerRagCorpusFile({ preferDefault: true });
+
+        if (!file) throw new Error("No RAG JSON corpus file was selected.");
+
+        addKgCorpusFiles([file], { replace: true, silent: true });
+
+        appendKgOneClickLog("Corpus loaded", `${relativePathOf(file)} (${(file.size / 1048576).toFixed(1)} MB)`, "lucide:check-circle");
+
+      } else {
+
+        appendKgOneClickLog("Using current pending corpus", `${_pendingJsonFiles.kgCorpus.length} files`, "lucide:files");
+
+      }
+
+      setKgOneClickStatus("Ingesting", "running");
+
+      appendKgOneClickLog("Start detection and ingestion", "Rebuild the collection to avoid stale residue.", "lucide:database-zap");
+
+      await runKgCorpusIngestForCurrentFiles();
+
+      appendKgOneClickLog("Ingestion finished", "Chunks and record stats refreshed.", "lucide:check-circle");
+
+      setKgOneClickStatus("Building graph", "running");
+
+      appendKgOneClickLog("Start graph construction", "Waiting for the graph build task to finish.", "lucide:cpu");
+
+      await clickButtonAndWaitForIdle("btnKgBuild", 1200000);
+
+      const nodeCount = window._kgGraph?.nodes?.length || 0;
+
+      const edgeCount = window._kgGraph?.links?.length || 0;
+
+      if (!nodeCount) throw new Error("Graph build finished but generated no nodes. Check corpus parsing and schema configuration.");
+
+      appendKgOneClickLog("Graph build finished", `${nodeCount.toLocaleString()} nodes, ${edgeCount.toLocaleString()} edges`, "lucide:network");
+
+      setKgOneClickStatus("Answering", "running");
+
+      setPage("kg_search");
+
+      setFormValue("kgAskInput", analysisQuestion);
+
+      appendKgOneClickLog("Filled generic analysis question", "Comprehensive PowerRAG analysis with evidence requirements.", "lucide:message-square-text");
+
+      await runKgAsk();
+
+      setKgOneClickStatus("Finished", "success");
+
+      appendKgOneClickLog("One-click flow finished", "Check the result in the GraphRAG answer area.", "lucide:check-circle");
+
+    } catch (err) {
+
+      const message = err?.message || String(err);
+
+      setKgOneClickStatus("Failed", "danger");
+
+      appendKgOneClickLog("Flow failed", message, "lucide:alert-triangle");
+
+      showToast(message, "danger");
+
+    } finally {
+
+      if (btn) { btn.disabled = false; delete btn.dataset.busy; }
+
+    }
+
+  }
+
+  $("btnKgPowerRagPickCorpus")?.addEventListener("click", async () => {
+
+    try {
+
+      const file = await pickPowerRagCorpusFile({ preferDefault: false });
+
+      if (file) {
+
+        addKgCorpusFiles([file], { replace: true });
+
+        appendKgOneClickLog("Selected RAG corpus", relativePathOf(file), "lucide:file-json");
+
+      }
+
+    } catch (err) {
+
+      showToast(err?.message || String(err), "warning");
+
+    }
+
+  });
+
+  $("btnKgLoadDemoCorpus")?.addEventListener("click", async () => {
+    try {
+      await loadDemoDatasetInto("kgCorpus");
+      appendKgOneClickLog("已载入演示语料", "power_equipment_demo.json -> power_equipment_demo", "lucide:database");
+    } catch (err) {
+      showToast(err?.message || String(err), "danger");
+    }
+  });
+
+  $("btnKgPowerRagOneClick")?.addEventListener("click", runPowerRagOneClick);
+
+
+
+
+  $("btnKgAsk")?.addEventListener("click", runKgAsk);
+
+  $("kgAskInput")?.addEventListener("keydown", (e) => {
+
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); runKgAsk(); }
+
+  });
+
+
+
+  // ── GraphRAG Search Handler ──
+
+  $("btnRefreshKgTriage")?.addEventListener("click", () => {
+
+    loadGraphRagTriageDashboard().catch(() => {});
+
+  });
+
+  $("kgTriageStatusFilter")?.addEventListener("change", () => {
+
+    loadGraphRagTriageDashboard().catch(() => {});
+
+  });
+
+  $("kgTriageReviewFilter")?.addEventListener("change", () => {
+
+    loadGraphRagTriageDashboard().catch(() => {});
+
+  });
+
+  $("kgTriageRouteFilter")?.addEventListener("change", () => {
+
+    loadGraphRagTriageDashboard().catch(() => {});
+
+  });
+
+  $("btnExportKgTriage")?.addEventListener("click", () => {
+
+    exportGraphRagTriageHistory();
+
+  });
+
+  $("kgTriageList")?.addEventListener("click", async (event) => {
+
+    const promoteButton = event.target?.closest?.("[data-triage-promote]");
+
+    if (promoteButton) {
+
+      try {
+
+        await promoteGraphRagTriageItem(promoteButton.dataset.triagePromote);
+
+        showToast("GraphRAG triage promoted to regression dataset.", "success");
+
+      } catch (err) {
+
+        showToast(err?.message || String(err), "danger");
+
+      }
+
+      return;
+
+    }
+
+    const button = event.target?.closest?.("[data-triage-review]");
+
+    if (!button) return;
+
+    try {
+
+      const note = button.closest("[data-triage-id]")?.querySelector("[data-triage-note]")?.value || "";
+
+      await reviewGraphRagTriageItem(button.dataset.triageId, button.dataset.triageReview, note);
+
+      showToast("GraphRAG triage review saved.", "success");
+
+    } catch (err) {
+
+      showToast(err?.message || String(err), "danger");
+
+    }
+
+  });
+
+  if (!state.localMode && !state.publicDemo) {
+
+    loadGraphRagTriageDashboard().catch(() => {});
+
+  }
+
+  $("btnKgSearch")?.addEventListener("click", async () => {
+
+    const query = $("kgSearchInput")?.value?.trim();
+
+    if (!query) { showToast("Enter a search question.", "warning"); return; }
+
+
+
+    const meta = $("kgSearchMeta");
+
+    const resultsDiv = $("kgSearchResults");
+
+    const answerDiv = $("kgAskAnswer");
+
+    const searchMode = $("kgSearchMode")?.value || "global";
+
+    const maxHops = parseInt($("kgMaxHops")?.value) || 2;
+
+
+
+    if (!window._kgGraph || !window._kgGraph.nodes.length) {
+
+      if (meta) meta.textContent = "Build the knowledge graph first on the Graph Build page.";
+
+      return;
+
+    }
+
+
+
+    const t0 = performance.now();
+
+    const { nodes: gNodes, links: gLinks, entities: gEntities } = window._kgGraph;
+
+    if (meta) meta.textContent = "Searching graph...";
+
+    if (resultsDiv) resultsDiv.innerHTML = "";
+
+    if (answerDiv) answerDiv.innerHTML = "";
+
+
+
+    // Step 1: Find matching entities in the query
+
+    const matchedEntities = [];
+
+    for (const [name, data] of gEntities.entries()) {
+
+      if (name.length >= 2 && query.includes(name)) {
+
+        matchedEntities.push({ name, ...data });
+
+      }
+
+    }
+
+    // Also do fuzzy: find entities whose name appears partially in query
+
+    if (matchedEntities.length === 0) {
+
+      for (const [name, data] of gEntities.entries()) {
+
+        if (name.length >= 2 && (query.includes(name) || name.includes(query.slice(0, 4)))) {
+
+          matchedEntities.push({ name, ...data });
+
+        }
+
+      }
+
+    }
+
+    // Fallback: pick top entities by count
+
+    if (matchedEntities.length === 0) {
+
+      gNodes.slice(0, 10).forEach(n => matchedEntities.push({ name: n.id, type: n.type, count: n.count }));
+
+    }
+
+
+
+    // Step 2: Build adjacency and traverse N-hop neighbors
+
+    const adj = new Map();
+
+    gLinks.forEach(l => {
+
+      const s = typeof l.source === "object" ? l.source.id : l.source;
+
+      const t = typeof l.target === "object" ? l.target.id : l.target;
+
+      if (!adj.has(s)) adj.set(s, []);
+
+      if (!adj.has(t)) adj.set(t, []);
+
+      adj.get(s).push({ target: t, relation: l.relation, weight: l.weight });
+
+      adj.get(t).push({ target: s, relation: l.relation, weight: l.weight });
+
+    });
+
+
+
+    const visited = new Set();
+
+    const relevantTriples = [];
+
+    const frontier = matchedEntities.map(e => ({ name: e.name, depth: 0 }));
+
+
+
+    while (frontier.length > 0) {
+
+      const { name, depth } = frontier.shift();
+
+      if (visited.has(name)) continue;
+
+      visited.add(name);
+
+      const neighbors = adj.get(name) || [];
+
+      for (const edge of neighbors) {
+
+        relevantTriples.push({ source: name, relation: edge.relation, target: edge.target, weight: edge.weight });
+
+        if (depth < maxHops && !visited.has(edge.target)) {
+
+          frontier.push({ name: edge.target, depth: depth + 1 });
+
+        }
+
+      }
+
+    }
+
+
+
+    // Step 3: Build structured graph context
+
+    const entityDetails = [];
+
+    for (const eName of visited) {
+
+      const eData = gEntities.get(eName);
+
+        if (eData) entityDetails.push(`- ${eName} [${eData.type}] (${eData.count} hits)`);
+
+    }
+
+
+
+    const tripleLines = relevantTriples
+
+      .sort((a, b) => b.weight - a.weight)
+
+      .slice(0, 60)
+
+      .map(t => `  ${t.source} --[${t.relation}]--> ${t.target} (weight: ${t.weight})`);
+
+
+
+    const graphContext = [
+
+      `[GraphRAG Search Result]`,
+
+      `search_mode: ${searchMode === "global" ? "Global Search" : "Local Search"}`,
+
+      `query matched ${matchedEntities.length} entities; ${maxHops}-hop expansion reached ${visited.size} entities`,
+
+      `related_triples: ${relevantTriples.length}`,
+
+      ``,
+
+      `entities:`,
+
+      ...entityDetails.slice(0, 40),
+
+      ``,
+
+      `relation triples by weight:`,
+
+      ...tripleLines,
+
+    ].join("\n");
+
+
+
+    const elapsed = ((performance.now() - t0) / 1000).toFixed(2);
+
+    if (meta) meta.textContent = `图谱检索完成 · ${elapsed}s · 命中 ${matchedEntities.length} 个实体 · ${maxHops} 跳到达 ${visited.size} 个节点 · ${relevantTriples.length} 条关系`;
+
+
+
+    // Step 4: Render results as entity cards
+
+    if (resultsDiv) {
+
+      const matchedCards = matchedEntities.slice(0, Number($("kgSearchTopK")?.value || 20)).map(e => {
+
+        const neighbors = (adj.get(e.name) || []).slice(0, 5);
+
+        const neighborText = neighbors.map(n => `${n.relation} -> ${n.target}`).join("\n");
+
+        return `<div class="result-card">
+
+          <div class="result-head"><strong>${escapeHtml(e.name)}</strong> <span class="tag">${escapeHtml(e.type || "")}</span> <span class="score">${Number(e.count || 0)} hits</span></div>
+
+          <div class="result-body"><pre style="white-space:pre-wrap;font-size:12px;color:#aaa;margin:0">${escapeHtml(neighborText || "No direct relations")}</pre></div>
+
+        </div>`;
+
+      }).join("");
+
+      resultsDiv.innerHTML = matchedCards || `<p style="color:var(--muted);padding:20px">No matching entities found.</p>`;
+
+    }
+
+
+
+    // Step 5: Call LLM with graph context
+
+    const llmSettings = loadLLMSettings();
+
+    if (llmSettings.apiKey && answerDiv) {
+
+      answerDiv.innerHTML = `<div style="color:var(--muted)">Generating an answer from graph context...</div>`;
+
+      try {
+
+        const systemPrompt = `You are a graph-grounded PowerRAG assistant. Answer from the retrieved graph entities and relation triples. Reason from the triples, produce a structured answer, and say when graph evidence is insufficient.`;
+
+        const userPrompt = `User question: ${query}\n\n${graphContext}`;
+
+
+
+        const resp = await fetch(llmSettings.baseUrl + "/chat/completions", {
+
+          method: "POST",
+
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${llmSettings.apiKey}` },
+
+          body: JSON.stringify({
+
+            model: llmSettings.model || "gemini-2.5-flash",
+
+            temperature: parseFloat(llmSettings.temperature) || 0.7,
+
+            max_tokens: parseInt(llmSettings.maxTokens) || 8192,
+
+            messages: [
+
+              { role: "system", content: systemPrompt },
+
+              { role: "user", content: userPrompt }
+
+            ]
+
+          })
+
+        });
+
+        const data = await resp.json();
+
+        const answer = data.choices?.[0]?.message?.content || "LLM returned no valid answer.";
+
+        answerDiv.innerHTML = `<div style="white-space:pre-wrap;line-height:1.7">${DOMPurify.sanitize(answer)}</div>`;
+
+      } catch (err) {
+
+        answerDiv.innerHTML = `<div style="color:var(--danger)">LLM call failed: ${escapeHtml(err.message || String(err))}</div>`;
+
+      }
+
+    } else if (answerDiv) {
+
+      answerDiv.innerHTML = `<div style="white-space:pre-wrap;line-height:1.7;color:var(--muted)">Configure an LLM API key to enable graph Q&A.\n\nRetrieved graph context:\n\n${DOMPurify.sanitize(graphContext)}</div>`;
+
+    }
+
+  });
+
+
+
+  ["input", "change"].forEach((evt) => {
+
+    els.llmProvider?.addEventListener(evt, saveLLMSettings);
+
+    els.llmBaseUrl?.addEventListener(evt, saveLLMSettings);
+
+    els.llmApiKey?.addEventListener(evt, saveLLMSettings);
+
+    els.llmModel?.addEventListener(evt, saveLLMSettings);
+
+    els.llmTemperature?.addEventListener(evt, saveLLMSettings);
+
+    els.llmMaxTokens?.addEventListener(evt, saveLLMSettings);
+
+  });
+
+
+
+  els.btnModelCatalog?.addEventListener("click", openModelCatalog);
+
+  document.getElementById("btnClearLlm")?.addEventListener("click", clearLLMSettings);
+
+  document.getElementById("btnRefreshLlm")?.addEventListener("click", refreshLLMConfig);
+
+
+
+
+
+  els.modelCatalog?.addEventListener("click", (event) => {
+
+    if (event.target.closest("[data-modal-close]")) {
+
+      closeModelCatalog();
+
+      return;
+
+    }
+
+    const row = event.target.closest("[data-model-name]");
+
+    if (!row) return;
+
+    pickModelFromCatalog(row.dataset.modelName, row.dataset.endpoint, row.dataset.providerId);
+
+  });
+
+  document.addEventListener("keydown", (event) => {
+
+    if (event.key === "Escape" && els.modelCatalog && !els.modelCatalog.hidden) {
+
+      closeModelCatalog();
+
+    }
+
+  });
+
+
+
+  els.btnAsk?.addEventListener("click", runAsk);
+
+  els.btnClearAnswer?.addEventListener("click", clearAnswer);
+
+  els.askInput?.addEventListener("keydown", (event) => {
+
+    if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+
+      event.preventDefault();
+
+      runAsk();
+
+    }
+
+  });
+
+
+
+  els.btnBench?.addEventListener("click", runBenchmark);
+
+
+
+  els.collList?.addEventListener("click", async (event) => {
+
+    const selectButton = event.target.closest("[data-set-collection]");
+
+    const deleteButton = event.target.closest("[data-delete-collection]");
+
+    const exportButton = event.target.closest("[data-export-collection]");
+
+
+
+    if (exportButton) {
+
+      const name = exportButton.dataset.exportCollection;
+
+      if (state.localMode || state.publicDemo) {
+
+        exportLocalChunksAsChromaZip();
+
+        return;
+
+      }
+
+      showToast(`Exporting collection ${name}...`, "success");
+
+      try {
+
+        const link = document.createElement("a");
+
+        link.href = apiUrl(`/api/export/${encodeURIComponent(name)}`);
+
+        link.download = "";
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        document.body.removeChild(link);
+
+        addActivity("success", "Collection exported", `${name} -> JSON`);
+
+      } catch (err) {
+
+        showToast(`Export failed: ${err.message || err}`, "danger");
+
+      }
+
+      return;
+
+    }
+
+
+
+    if (selectButton) {
+
+      activateRagCollection(selectButton.dataset.setCollection, { reason: "collection-list", render: false, persist: true });
+
+      state.primaryStats = state.publicDemo
+
+        ? { record_count: 1592, chunk_count: 2655 }
+
+        : state.localMode
+
+          ? { record_count: state.records.length, chunk_count: state.chunks.length }
+
+          : await requestJson(`/api/stats?collection=${encodeURIComponent(state.primaryCollection)}`);
+
+      renderCollectionList();
+
+      renderSummaryMetrics();
+
+      showToast(`Default collection switched to ${state.primaryCollection}`, "success");
+
+      return;
+
+    }
+
+
+
+    if (deleteButton) {
+
+      const name = deleteButton.dataset.deleteCollection;
+
+      if (!window.confirm(`确认删除集合 ${name}？这会删除该集合下的向量记录，操作不可撤销。`)) return;
+
+      await deleteCollection(name);
+
+    }
+
+  });
+
+
+
+  document.getElementById("btnExportAll")?.addEventListener("click", () => {
+
+    if (state.localMode || state.publicDemo) {
+
+      exportLocalChunksAsChromaZip();
+
+      return;
+
+    }
+
+    showToast("Packaging database ZIP. This may take a few seconds...", "success");
+
+    const link = document.createElement("a");
+
+    link.href = apiUrl("/api/export");
+
+    link.download = "";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+    addActivity("success", "Database exported", "ChromaDB -> ZIP");
+
+  });
+
+
+
+  // Data page export buttons
+
+  document.getElementById("btnExportAllData")?.addEventListener("click", () => {
+
+    if (state.localMode || state.publicDemo) {
+
+      exportLocalChunksAsChromaZip();
+
+      return;
+
+    }
+
+    showToast("Packaging database ZIP. This may take a few seconds...", "success");
+
+    const link = document.createElement("a");
+
+    link.href = apiUrl("/api/export");
+
+    link.download = "";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+    addActivity("success", "Database exported", "ChromaDB -> ZIP");
+
+  });
+
+
+
+  document.getElementById("btnExportJson")?.addEventListener("click", () => {
+
+    if (state.localMode || state.publicDemo) {
+
+      exportLocalChunksAsChromaZip();
+
+      return;
+
+    }
+
+    const name = state.primaryCollection;
+
+    if (!name) {
+
+      showToast("No default collection is available for export.", "warning");
+
+      return;
+
+    }
+
+    showToast(`Exporting collection ${name}...`, "success");
+
+    const link = document.createElement("a");
+
+    link.href = apiUrl(`/api/export/${encodeURIComponent(name)}`);
+
+    link.download = "";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+    addActivity("success", "Collection exported", `${name} -> JSON`);
+
+  });
+
+
+
+  els.queueList?.addEventListener("change", (event) => {
+
+    const input = event.target.closest("[data-upload-select]");
+
+    if (!input) return;
+
+    const name = input.dataset.uploadSelect;
+
+    if (input.checked) state.selectedUploads.add(name);
+
+    else state.selectedUploads.delete(name);
+
+    renderUploads();
+
+  });
+
+
+
+  els.queueList?.addEventListener("click", async (event) => {
+
+    const button = event.target.closest("[data-delete-upload]");
+
+    if (!button) return;
+
+    const filename = button.dataset.deleteUpload;
+    if (!window.confirm(`确认从上传目录移除 ${splitUploadPath(uploadDisplayName(filename)).file}？如果该文件已入库，请在“已处理文件”中删除以同步清理向量记录。`)) return;
+    await deleteUpload(filename);
+
+  });
+
+
+
+  els.processedList?.addEventListener("change", (event) => {
+
+    const input = event.target.closest("[data-processed-select]");
+
+    if (!input) return;
+
+    const name = input.dataset.processedSelect;
+
+    if (input.checked) state.selectedProcessedUploads.add(name);
+
+    else state.selectedProcessedUploads.delete(name);
+
+    renderProcessedUploads();
+
+  });
+
+
+
+  els.searchResults?.addEventListener("click", (event) => {
+
+    const button = event.target.closest("[data-result-toggle]");
+
+    if (!button) return;
+
+    const key = button.dataset.resultToggle;
+
+    if (state.expandedResults.has(key)) state.expandedResults.delete(key);
+
+    else state.expandedResults.add(key);
+
+    renderSearchResults();
+
+  });
+
+
+
+  els.trendModeGroup?.addEventListener("click", (event) => {
+
+    const button = event.target.closest("[data-trend-mode]");
+
+    if (!button) return;
+
+    state.trendMode = button.dataset.trendMode;
+
+    activateGroupButton(els.trendModeGroup, (item) => item.dataset.trendMode === state.trendMode);
+
+    renderTrendChart();
+
+  });
+
+
+
+  els.activityFilterGroup?.addEventListener("click", (event) => {
+
+    const button = event.target.closest("[data-activity-filter]");
+
+    if (!button) return;
+
+    state.activityFilter = button.dataset.activityFilter;
+
+    activateGroupButton(els.activityFilterGroup, (item) => item.dataset.activityFilter === state.activityFilter);
+
+    renderActivityFeed();
+
+  });
+
+}
+
+
+
+async function init() {
+
+  resolveEls();
+
+  try { localStorage.removeItem('rag_demo_mode'); } catch {}
+
+  state.publicDemo = false;
+
+  state.localMode = FORCE_LOCAL_RUNTIME;
+
+  state.stats = cloneDefaultStats();
+
+  state.primaryStats = null;
+
+  moveAdminPanelsToSystemPage();
+
+  bindEvents();
+
+  updateJsonIngestButtonState("standard");
+  updateJsonIngestButtonState("kgCorpus");
+
+  populateLLMProviderSelect();
+
+  loadLLMSettings();
+
+  populateBaseUrlDatalist();
+
+  bindInputHistoryEvents();
+
+  const firstPage = initialPageName();
+
+  const firstMode = ["kg", "kg_data", "kg_search", "kg_benchmark"].includes(firstPage) ? "graphrag" : "rag";
+
+  setWorkspaceMode(firstMode, { keepPage: true });
+
+  setPage(firstPage, { updateHash: false });
+
+  await restoreLocalWorkspaceSnapshot();
+
+  if (!state.localMode) {
+
+    addActivity("warning", "Frontend loaded", "Connecting to backend service and syncing Chroma statistics.");
+
+  }
+
+  renderAll();
+
+  await refreshAll();
+
+}
+
+
+
+globalThis.PowerRAGDeliveryPage.mount({ refresh: refreshDeliveryConsole });
+
+window.addEventListener("DOMContentLoaded", init);

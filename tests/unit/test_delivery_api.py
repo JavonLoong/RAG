@@ -31,7 +31,24 @@ def test_delivery_api_exposes_reviewed_document_graph_and_fmea_flow(tmp_path: Pa
     assert intake.status_code == 200, intake.text
     version_id = intake.json()["document_version"]["version_id"]
     detail = client.get(f"/api/delivery/documents/{version_id}").json()
+    assert detail["created_by"]
+    assert len(detail["content_hash"]) == 64
+    assert len(detail["config_hash"]) == 64
+    assert detail["evidence"][0]["project_id"] == "default"
+    assert len(detail["evidence"][0]["content_hash"]) == 64
+    assert len(detail["evidence"][0]["config_hash"]) == 64
     evidence_id = detail["evidence"][0]["evidence_id"]
+    stale_revision = client.post(
+        f"/api/delivery/documents/{version_id}/revise",
+        json={
+            "reviewer": "document-expert",
+            "comment": "stale write must fail",
+            "corrections": {evidence_id: {"text": text + " 修订"}},
+            "expected_version": "stale-version",
+        },
+    )
+    assert stale_revision.status_code == 409
+    assert stale_revision.json()["detail"]["code"] == "version_conflict"
 
     review = client.post(
         f"/api/delivery/documents/{version_id}/review",
@@ -76,6 +93,9 @@ def test_delivery_api_exposes_reviewed_document_graph_and_fmea_flow(tmp_path: Pa
     )
     assert graph_response.status_code == 200, graph_response.text
     graph_version_id = graph_response.json()["graph_version_id"]
+    assert graph_response.json()["created_by"]
+    assert len(graph_response.json()["content_hash"]) == 64
+    assert len(graph_response.json()["config_hash"]) == 64
     assert (
         client.post(
             f"/api/delivery/graphs/{graph_version_id}/review",
@@ -86,6 +106,52 @@ def test_delivery_api_exposes_reviewed_document_graph_and_fmea_flow(tmp_path: Pa
     published_graph = client.post(f"/api/delivery/graphs/{graph_version_id}/publish").json()
     assert published_graph["status"] == "published"
     assert published_graph["graph_store_sync"]["edge_count"] == 6
+    community_task = client.post(
+        f"/api/delivery/graphs/{graph_version_id}/community-summaries",
+        headers={"Idempotency-Key": "community-summary-v1"},
+        json={"actor": "graph-expert", "level": 0},
+    )
+    assert community_task.status_code == 202, community_task.text
+    completed_community_task = client.get(
+        f"/api/delivery/tasks/{community_task.json()['task']['task_id']}"
+    ).json()
+    assert completed_community_task["status"] == "completed"
+    assert completed_community_task["duration_ms"] is not None
+    assert completed_community_task["result"]["community_summary"]["community_count"] == 1
+    community_summaries = client.get(
+        f"/api/delivery/graphs/{graph_version_id}/community-summaries"
+    ).json()
+    assert community_summaries["count"] == 1
+    assert community_summaries["items"][0]["metadata"]["graph_version_id"] == graph_version_id
+
+    builtin_template = client.get(
+        "/api/delivery/projects/default/fmea-templates/gas_turbine_minimum_v1",
+        params={"version": "1.1.0"},
+    )
+    assert builtin_template.status_code == 200, builtin_template.text
+    custom_definition = builtin_template.json()["definition"]
+    custom_definition["template"] = "pilot_fmea_template"
+    custom_definition["version"] = "1.0.0"
+    custom_definition["report_layout"]["title"] = "试点项目 FMEA 审核表"
+    registered_template = client.post(
+        "/api/delivery/projects/default/fmea-templates",
+        json={
+            "template_id": "pilot_fmea_template",
+            "version": "1.0.0",
+            "definition": custom_definition,
+            "actor": "template-owner",
+            "status": "draft",
+        },
+    )
+    assert registered_template.status_code == 201, registered_template.text
+    assert registered_template.json()["status"] == "draft"
+    approved_template = client.post(
+        "/api/delivery/projects/default/fmea-templates/pilot_fmea_template/1.0.0/approve",
+        json={"actor": "domain-owner"},
+    )
+    assert approved_template.status_code == 200, approved_template.text
+    assert approved_template.json()["status"] == "approved"
+    assert len(approved_template.json()["content_hash"]) == 64
 
     task_response = client.post(
         "/api/delivery/fmea/tasks",
@@ -93,11 +159,17 @@ def test_delivery_api_exposes_reviewed_document_graph_and_fmea_flow(tmp_path: Pa
             "requested_by": "纪文龙",
             "graph_version_id": graph_version_id,
             "document_version_ids": [version_id],
+            "template": "pilot_fmea_template",
+            "template_version": "1.0.0",
         },
     )
     assert task_response.status_code == 200, task_response.text
     task = task_response.json()
     task_id = task["task_id"]
+    assert task["created_by"] == "local-user"
+    assert len(task["content_hash"]) == 64
+    assert len(task["config_hash"]) == 64
+    assert task["request"]["metadata"]["template_lineage"]["template_id"] == "pilot_fmea_template"
     assert task["items"][0]["fields"]["failure_mode"] == "过滤器堵塞"
     assert task["items"][0]["field_evidence"]["cause"] == [evidence_id]
     assert (
@@ -117,9 +189,10 @@ def test_delivery_api_exposes_reviewed_document_graph_and_fmea_flow(tmp_path: Pa
         "task_id": task_id,
         "status": "published",
         "consistent": True,
-        "json_rows": 1,
-        "csv_rows": 1,
-        "mismatches": [],
+            "json_rows": 1,
+            "csv_rows": 1,
+            "docx_rows": 1,
+            "mismatches": [],
     }
 
     feedback = client.post(
@@ -134,13 +207,19 @@ def test_delivery_api_exposes_reviewed_document_graph_and_fmea_flow(tmp_path: Pa
     feedback_id = feedback.json()["feedback_id"]
     assert feedback.json()["routed_module"] == "M3"
     remediation = client.post(
-        f"/api/delivery/fmea/feedback/{feedback_id}/remediate",
+        f"/api/delivery/fmea/feedback/{feedback_id}/remediate?background=true",
+        headers={"Idempotency-Key": "feedback-remediation-v1"},
         json={"actor": "index-operator"},
     )
-    assert remediation.status_code == 200, remediation.text
-    assert remediation.json()["action"] == "rebuild_published_material_index"
-    assert remediation.json()["status"] == "completed"
-    assert remediation.json()["feedback_status"] == "resolved"
+    assert remediation.status_code == 202, remediation.text
+    remediation_task = client.get(
+        f"/api/delivery/tasks/{remediation.json()['task']['task_id']}"
+    ).json()
+    assert remediation_task["status"] == "completed"
+    remediation_result = remediation_task["result"]["remediation"]
+    assert remediation_result["action"] == "rebuild_published_material_index"
+    assert remediation_result["status"] == "completed"
+    assert remediation_result["feedback_status"] == "resolved"
     runs = client.get(f"/api/delivery/fmea/feedback/{feedback_id}/runs")
     assert runs.status_code == 200
     assert runs.json()["items"][0]["result"]["operation"] == "rebuild"
@@ -204,6 +283,13 @@ def test_delivery_api_automatically_extracts_syncs_and_paths_graph(tmp_path: Pat
     active_graph = client.get("/api/delivery/graphs-active/status")
     assert active_graph.status_code == 200, active_graph.text
     assert active_graph.json()["edge_count"] == 6
+    assert active_graph.json()["projection"]["status"] == "ready"
+    assert active_graph.json()["projection"]["source_version_id"] == graph_version_id
+
+    resync = client.post(f"/api/delivery/graphs/{graph_version_id}/resync")
+    assert resync.status_code == 200, resync.text
+    assert resync.json()["projection"]["source_version_id"] == graph_version_id
+    assert resync.json()["graph_store_sync"]["edge_count"] == 6
 
     path = client.get(
         f"/api/delivery/graphs/{graph_version_id}/path",

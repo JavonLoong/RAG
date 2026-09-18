@@ -88,12 +88,12 @@ def test_graph_quality_gate_ignores_evidence_covered_isolated_noise_nodes(tmp_pa
         [
             GraphEdgeRecord(
                 triple_id="t1",
-                subject="Chat corpus",
+                subject="Maintenance corpus",
                 predicate="HAS_TOPIC",
-                object_name="Rental discussion",
-                evidence="The corpus contains private chat records discussing rental housing.",
+                object_name="Bearing inspection",
+                evidence="The corpus contains maintenance records discussing bearing inspection.",
                 confidence=0.92,
-                source_file="wechat_private_chunks_rag.json",
+                source_file="maintenance_records.json",
                 source_chunk_id="chunk-1",
             ),
         ]
@@ -101,8 +101,8 @@ def test_graph_quality_gate_ignores_evidence_covered_isolated_noise_nodes(tmp_pa
     store.upsert_nodes([{"name": "qlogo", "type": "metadata_noise"}])
     store.store_communities(
         [
-            {"community_id": "C1", "node_name": "Chat corpus"},
-            {"community_id": "C1", "node_name": "Rental discussion"},
+            {"community_id": "C1", "node_name": "Maintenance corpus"},
+            {"community_id": "C1", "node_name": "Bearing inspection"},
             {"community_id": "C1", "node_name": "qlogo"},
         ]
     )
@@ -110,8 +110,8 @@ def test_graph_quality_gate_ignores_evidence_covered_isolated_noise_nodes(tmp_pa
         [
             {
                 "community_id": "C1",
-                "title": "Private chat corpus overview",
-                "summary": "The community summarizes private chat records discussing rental housing.",
+                "title": "Maintenance corpus overview",
+                "summary": "The community summarizes maintenance records discussing bearing inspection.",
                 "entity_count": 3,
                 "edge_count": 1,
                 "metadata": {
@@ -123,8 +123,8 @@ def test_graph_quality_gate_ignores_evidence_covered_isolated_noise_nodes(tmp_pa
                             "source_evidence": [
                                 {
                                     "triple_id": "t1",
-                                    "text": "The corpus contains private chat records discussing rental housing.",
-                                    "source_file": "wechat_private_chunks_rag.json",
+                                    "text": "The corpus contains maintenance records discussing bearing inspection.",
+                                    "source_file": "maintenance_records.json",
                                     "source_chunk_id": "chunk-1",
                                 }
                             ],

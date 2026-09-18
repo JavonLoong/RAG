@@ -1,0 +1,3 @@
+sample_id,equipment,component,failure_mode,cause,effect,detection_method,recommended_action,source_file,page,source_excerpt,review_status
+GT-FMEA-001,燃气轮机,润滑油系统,过滤器堵塞,油液污染,润滑油压力下降,压差监测,更换滤芯并清洗油路,燃气轮机维护手册脱敏样例.pdf,146,燃气轮机润滑油系统的过滤器堵塞可能由油液污染导致，影响是润滑油压力下降；可通过压差监测发现，并通过更换滤芯和清洗油路处理。,人工复核样例
+GT-FMEA-002,燃气轮机,轴承系统,轴承磨损,润滑不足,振动升高,振动趋势监测,检查供油并更换轴承,燃气轮机维护手册脱敏样例.pdf,203,燃气轮机轴承系统的轴承磨损可能由润滑不足导致，影响是振动升高；可通过振动趋势监测发现，并通过检查供油和更换轴承处理。,人工复核样例

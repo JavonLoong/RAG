@@ -1,0 +1,862 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>三条 GraphRAG 工具线演示</title>
+  <style>
+    :root {
+      --paper: #f7f6f1;
+      --ink: #202522;
+      --soft-ink: #47514c;
+      --muted: #727a75;
+      --line: #d7d9cf;
+      --panel: rgba(255, 255, 255, 0.84);
+      --green: #147269;
+      --blue: #335f91;
+      --red: #ad4a34;
+      --gold: #8d7226;
+      --purple: #6f5b9a;
+      --shadow: 0 22px 70px rgba(32, 37, 34, 0.12);
+      --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
+      --sans: "Aptos", "Segoe UI", "Microsoft YaHei UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(110deg, rgba(20, 114, 105, 0.09), transparent 34%),
+        linear-gradient(250deg, rgba(173, 74, 52, 0.09), transparent 36%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.44), transparent 42%),
+        repeating-linear-gradient(90deg, rgba(32, 37, 34, 0.025) 0 1px, transparent 1px 92px),
+        var(--paper);
+      font-family: var(--sans);
+      line-height: 1.7;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+    a:focus-visible, button:focus-visible { outline: 3px solid rgba(51, 95, 145, 0.35); outline-offset: 3px; }
+
+    .shell {
+      width: min(1240px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid rgba(32, 37, 34, 0.1);
+      background: rgba(247, 246, 241, 0.9);
+      backdrop-filter: blur(16px);
+    }
+
+    .topbar .shell {
+      min-height: 66px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      white-space: nowrap;
+    }
+
+    .brand strong {
+      font-family: var(--serif);
+      font-size: 20px;
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .nav a {
+      min-height: 36px;
+      padding: 7px 10px;
+      border: 1px solid rgba(32, 37, 34, 0.12);
+      background: rgba(255, 255, 255, 0.60);
+      color: #404845;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .hero {
+      padding: 68px 0 36px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 16px;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 42px;
+      height: 1px;
+      background: currentColor;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      font-family: var(--serif);
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      max-width: 900px;
+      font-size: clamp(40px, 5.8vw, 76px);
+      font-weight: 800;
+    }
+
+    h2 { font-size: clamp(28px, 4vw, 46px); }
+    h3 { font-size: 23px; }
+
+    .hero p {
+      max-width: 860px;
+      margin: 22px 0 0;
+      color: var(--soft-ink);
+      font-size: 18px;
+    }
+
+    .demo-shell {
+      display: grid;
+      grid-template-columns: 280px minmax(420px, 1fr) 330px;
+      gap: 18px;
+      align-items: stretch;
+      padding: 24px 0 48px;
+    }
+
+    .rail, .stage, .inspector, .sample, .matrix {
+      border: 1px solid rgba(32, 37, 34, 0.11);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .rail, .inspector {
+      min-height: 640px;
+      padding: 18px;
+    }
+
+    .rail h2, .inspector h2 {
+      margin-bottom: 14px;
+      font-size: 22px;
+    }
+
+    .mode-button {
+      width: 100%;
+      min-height: 120px;
+      margin-bottom: 10px;
+      padding: 14px;
+      border: 1px solid rgba(32, 37, 34, 0.13);
+      background: rgba(255, 255, 255, 0.68);
+      color: var(--soft-ink);
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .mode-button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(20, 114, 105, 0.38);
+    }
+
+    .mode-button.active {
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
+    }
+
+    .mode-button strong {
+      display: block;
+      font-family: var(--serif);
+      font-size: 19px;
+      line-height: 1.2;
+    }
+
+    .mode-button span {
+      display: block;
+      margin-top: 8px;
+      color: inherit;
+      opacity: 0.82;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .note {
+      margin-top: 18px;
+      padding: 14px;
+      border: 1px solid rgba(173, 74, 52, 0.16);
+      background: rgba(242, 225, 219, 0.60);
+      color: #5c3b31;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    .stage {
+      position: relative;
+      min-height: 640px;
+      overflow: hidden;
+    }
+
+    .stage-head {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      right: 18px;
+      z-index: 3;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      pointer-events: none;
+    }
+
+    .stage-title {
+      max-width: 540px;
+      padding: 14px 16px;
+      border: 1px solid rgba(32, 37, 34, 0.1);
+      background: rgba(247, 246, 241, 0.90);
+      backdrop-filter: blur(10px);
+    }
+
+    .stage-title h2 {
+      font-size: 26px;
+    }
+
+    .stage-title p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .purpose {
+      max-width: 240px;
+      padding: 12px 14px;
+      border: 1px solid rgba(20, 114, 105, 0.18);
+      background: rgba(220, 236, 231, 0.92);
+      color: #26443f;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    .graph-area {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 28% 28%, rgba(20, 114, 105, 0.08), transparent 24%),
+        radial-gradient(circle at 78% 62%, rgba(173, 74, 52, 0.08), transparent 27%),
+        rgba(255, 255, 255, 0.24);
+    }
+
+    .graph-area svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .edge {
+      stroke: rgba(32, 37, 34, 0.34);
+      stroke-width: 1.6;
+      marker-end: url(#arrow);
+    }
+
+    .edge-label {
+      fill: rgba(64, 72, 68, 0.86);
+      font: 700 11px var(--sans);
+      paint-order: stroke;
+      stroke: rgba(247, 246, 241, 0.88);
+      stroke-width: 5px;
+      stroke-linejoin: round;
+    }
+
+    .node {
+      position: absolute;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 96px;
+      min-height: 56px;
+      padding: 9px;
+      color: #fff;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.22;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 16px 38px rgba(32, 37, 34, 0.18);
+    }
+
+    .node.doc { background: var(--gold); }
+    .node.entity { background: var(--green); }
+    .node.issue { background: var(--red); }
+    .node.action { background: var(--blue); }
+    .node.community { background: var(--purple); }
+
+    .node small {
+      display: block;
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .legend {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
+      z-index: 3;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid rgba(32, 37, 34, 0.10);
+      background: rgba(247, 246, 241, 0.90);
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      display: inline-block;
+    }
+
+    .dot.doc { background: var(--gold); }
+    .dot.entity { background: var(--green); }
+    .dot.issue { background: var(--red); }
+    .dot.action { background: var(--blue); }
+    .dot.community { background: var(--purple); }
+
+    .inspector-section {
+      padding: 16px 0;
+      border-top: 1px solid rgba(32, 37, 34, 0.1);
+    }
+
+    .inspector-section:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .inspector h3 {
+      margin-bottom: 8px;
+      color: var(--green);
+      font: 800 13px var(--sans);
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .inspector p {
+      margin: 0;
+      color: var(--soft-ink);
+      font-size: 14px;
+    }
+
+    .list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .list li {
+      position: relative;
+      margin: 10px 0;
+      padding-left: 17px;
+      color: var(--soft-ink);
+      font-size: 14px;
+    }
+
+    .list li::before {
+      content: "";
+      position: absolute;
+      top: 0.78em;
+      left: 0;
+      width: 7px;
+      height: 1px;
+      background: currentColor;
+    }
+
+    pre {
+      overflow-x: auto;
+      margin: 0;
+      padding: 14px;
+      border: 1px solid rgba(32, 37, 34, 0.11);
+      background: #1f2522;
+      color: #e9efe9;
+      font: 13px/1.6 "Cascadia Mono", Consolas, monospace;
+      white-space: pre;
+    }
+
+    .below {
+      display: grid;
+      grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
+      gap: 18px;
+      padding-bottom: 72px;
+    }
+
+    .sample, .matrix {
+      padding: 24px;
+    }
+
+    .sample h2, .matrix h2 {
+      margin-bottom: 18px;
+      font-size: 27px;
+    }
+
+    .sample-text {
+      display: grid;
+      gap: 12px;
+    }
+
+    .doc {
+      padding: 16px;
+      border: 1px solid rgba(32, 37, 34, 0.1);
+      background: rgba(247, 246, 241, 0.74);
+    }
+
+    .doc strong {
+      display: block;
+      font-family: var(--serif);
+      font-size: 18px;
+    }
+
+    .doc span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    th, td {
+      padding: 13px 12px;
+      border: 1px solid rgba(32, 37, 34, 0.11);
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    th {
+      color: var(--green);
+      background: rgba(220, 236, 231, 0.58);
+      font-weight: 800;
+    }
+
+    td { color: var(--soft-ink); }
+
+    @media (max-width: 1080px) {
+      .demo-shell, .below {
+        grid-template-columns: 1fr;
+      }
+      .rail, .inspector, .stage {
+        min-height: auto;
+      }
+      .stage {
+        min-height: 640px;
+      }
+      .mode-button {
+        min-height: 88px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100% - 26px, 1240px);
+      }
+      .topbar {
+        position: static;
+      }
+      .topbar .shell {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 14px 0;
+      }
+      .nav {
+        justify-content: flex-start;
+      }
+      h1 {
+        font-size: 40px;
+      }
+      .stage-head {
+        position: relative;
+        inset: auto;
+        padding: 16px;
+        flex-direction: column;
+      }
+      .graph-area {
+        position: relative;
+        height: 560px;
+      }
+      .legend {
+        position: static;
+        margin: 0 16px 16px;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell">
+      <a class="brand" href="#top">
+        <strong>三条工具线演示</strong>
+        <span>GraphRAG Demo</span>
+      </a>
+      <nav class="nav" aria-label="页面导航">
+        <a href="research_outline.html">后续计划</a>
+        <a href="explainer.html">概念解释</a>
+        <a href="../../kg_pipeline/poc/graph_demo.html">POC 图谱</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero shell">
+      <p class="eyebrow">Three Tool Lines, Three Validation Goals</p>
+      <h1>三条线不是排名，而是三种验证视角。</h1>
+      <p>同一段燃气轮机/设备故障样例，可以用 Microsoft GraphRAG 看完整方法流程，用 Neo4j GraphRAG 看图数据库落地，用 LlamaIndex/LangChain 看如何快速接入已有 RAG pipeline。这里不下“谁最好”的结论，只说明各自适合验证什么。</p>
+    </section>
+
+    <section class="shell demo-shell" aria-label="三条工具线演示台">
+      <aside class="rail">
+        <h2>选择工具线</h2>
+        <button class="mode-button active" type="button" data-mode="microsoft">
+          <strong>Microsoft GraphRAG</strong>
+          <span>验证完整 indexing/query 方法：实体、关系、社区报告、global/local search。</span>
+        </button>
+        <button class="mode-button" type="button" data-mode="neo4j">
+          <strong>Neo4j GraphRAG</strong>
+          <span>验证图数据库落地：节点标签、边类型、属性、Cypher 查询和可视化。</span>
+        </button>
+        <button class="mode-button" type="button" data-mode="llama">
+          <strong>LlamaIndex / LangChain</strong>
+          <span>验证轻量集成：三元组/属性图抽取、图检索器、和现有 RAG 链路衔接。</span>
+        </button>
+        <div class="note">当前 POC 是 rule-based/manual baseline，没有调用 LLM。这里展示的是后续可验证路线，不是已完成的自动抽取结果。</div>
+      </aside>
+
+      <section class="stage" aria-label="工具线图谱演示">
+        <div class="stage-head">
+          <div class="stage-title">
+            <h2 id="modeTitle"></h2>
+            <p id="modeSummary"></p>
+          </div>
+          <div class="purpose" id="modePurpose"></div>
+        </div>
+        <div class="graph-area" id="graphArea">
+          <svg id="edgeLayer" role="img" aria-label="关系边"></svg>
+          <div class="legend">
+            <span><i class="dot doc"></i>文档/Chunk</span>
+            <span><i class="dot entity"></i>实体/设备</span>
+            <span><i class="dot issue"></i>故障/原因</span>
+            <span><i class="dot action"></i>动作/索引</span>
+            <span><i class="dot community"></i>社区/答案</span>
+          </div>
+        </div>
+      </section>
+
+      <aside class="inspector">
+        <h2>当前线怎么验证</h2>
+        <div class="inspector-section">
+          <h3>它是什么</h3>
+          <p id="whatText"></p>
+        </div>
+        <div class="inspector-section">
+          <h3>适合验证什么</h3>
+          <ul class="list" id="validateList"></ul>
+        </div>
+        <div class="inspector-section">
+          <h3>最小输出</h3>
+          <pre id="outputBlock"></pre>
+        </div>
+        <div class="inspector-section">
+          <h3>不该期待什么</h3>
+          <ul class="list" id="riskList"></ul>
+        </div>
+      </aside>
+    </section>
+
+    <section class="shell below">
+      <article class="sample">
+        <h2>共同样例语料</h2>
+        <div class="sample-text">
+          <div class="doc">
+            <strong>运行记录 D1</strong>
+            <span>GT-07 燃气轮机在升负荷过程中压气机出口温度偏高，同时振动值升至 7.2 mm/s。</span>
+          </div>
+          <div class="doc">
+            <strong>检修记录 D2</strong>
+            <span>检查发现进气滤网堵塞，压气机叶片表面积灰。清理滤网并安排叶片离线清洗后，温度恢复正常。</span>
+          </div>
+          <div class="doc">
+            <strong>技术手册 D3</strong>
+            <span>压气机出口温度偏高常见原因包括进气阻力增大、叶片污染和温度传感器漂移。建议检查滤网、清洗叶片并校验传感器。</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="matrix">
+        <h2>三条线的验证边界</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>路线</th>
+              <th>它更像什么</th>
+              <th>本阶段看什么</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Microsoft GraphRAG</td>
+              <td>完整 GraphRAG 方法流程</td>
+              <td>实体/关系/社区摘要是否能支持全局和局部问题。</td>
+            </tr>
+            <tr>
+              <td>Neo4j GraphRAG</td>
+              <td>图数据库工程落地</td>
+              <td>schema 是否清晰，路径查询和可视化是否方便人工检查。</td>
+            </tr>
+            <tr>
+              <td>LlamaIndex / LangChain</td>
+              <td>现有 RAG 项目的快速集成层</td>
+              <td>能否低成本抽三元组/属性图，并与向量检索一起召回上下文。</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const modes = {
+      microsoft: {
+        title: "Microsoft GraphRAG：方法流程视角",
+        summary: "把文档抽成实体、关系和社区报告，再区分 global search 与 local/entity search。",
+        purpose: "验证：完整 GraphRAG 流程是否适合我们的文档。",
+        what: "它更像一套从文档建图到基于图检索生成的完整方法。重点是 indexing、实体关系抽取、社区摘要和查询策略。",
+        validate: [
+          "实体和关系抽取是否能覆盖设备、故障、原因和措施。",
+          "community report 是否能帮助回答跨文档归纳问题。",
+          "local search 是否能围绕 GT-07 找到可靠邻居证据。"
+        ],
+        output: `entities.parquet / relationships.parquet
+community_reports.parquet
+
+Global query:
+  这批记录中压气机异常的主因有哪些？
+
+Local query:
+  GT-07 温度偏高可能由什么导致？`,
+        risks: [
+          "不等于已经有图数据库落地。",
+          "不保证少量文档时一定比普通 RAG 更划算。",
+          "抽取质量仍依赖模型、prompt、schema 和人工评审。"
+        ],
+        nodes: [
+          ["c", "压气机异常社区", "community", 50, 18],
+          ["d1", "运行记录 D1", "doc", 18, 36],
+          ["d2", "检修记录 D2", "doc", 18, 62],
+          ["d3", "技术手册 D3", "doc", 28, 82],
+          ["asset", "GT-07", "entity", 50, 44],
+          ["fault", "出口温度偏高", "issue", 58, 62],
+          ["cause1", "滤网堵塞", "issue", 78, 50],
+          ["cause2", "叶片积灰", "issue", 78, 70],
+          ["action", "清理/清洗", "action", 50, 84]
+        ],
+        edges: [
+          ["c", "asset", "mentions"], ["c", "fault", "summarizes"], ["c", "cause1", "summarizes"], ["c", "cause2", "summarizes"],
+          ["d1", "asset", "extracts"], ["d1", "fault", "extracts"], ["d2", "cause1", "extracts"], ["d2", "cause2", "extracts"], ["d3", "fault", "explains"],
+          ["asset", "fault", "has_issue"], ["fault", "cause1", "possible_cause"], ["fault", "cause2", "possible_cause"], ["cause1", "action", "mitigated_by"], ["cause2", "action", "mitigated_by"]
+        ]
+      },
+      neo4j: {
+        title: "Neo4j GraphRAG：图数据库视角",
+        summary: "把 Document、Chunk、Asset、Fault、Cause、Action 落成可查询节点和边。",
+        purpose: "验证：schema、Cypher 路径查询和可视化是否好用。",
+        what: "它更像工程落地形态。Neo4j 负责保存和查询图结构，GraphRAG 相关能力围绕图数据库、向量索引和 LLM 集成展开。",
+        validate: [
+          "节点标签和关系类型是否足够表达设备故障场景。",
+          "Cypher 能否稳定查出 GT-07 -> 故障 -> 原因 -> 处理措施。",
+          "来源、证据、置信度等属性是否方便人工审计。"
+        ],
+        output: `MATCH (a:Asset {id: "GT-07"})-[:HAS_FAULT]->(f:Fault)
+OPTIONAL MATCH (f)-[:HAS_CAUSE]->(c:Cause)
+OPTIONAL MATCH (c)-[:MITIGATED_BY]->(m:Action)
+RETURN a.id, f.name, collect(c.name), collect(m.name)`,
+        risks: [
+          "Neo4j 本身不是自动抽取器，需要先有抽取流程。",
+          "schema 设计不好会导致后期查询和维护困难。",
+          "部署图数据库会引入额外环境和运维成本。"
+        ],
+        nodes: [
+          ["doc", ":Document", "doc", 16, 22],
+          ["chunk", ":Chunk", "doc", 16, 52],
+          ["asset", ":Asset\nGT-07", "entity", 42, 34],
+          ["system", ":Component\n压气机", "entity", 68, 24],
+          ["fault", ":Fault\n出口温度偏高", "issue", 54, 56],
+          ["cause1", ":Cause\n滤网堵塞", "issue", 78, 48],
+          ["cause2", ":Cause\n叶片积灰", "issue", 78, 70],
+          ["action1", ":Action\n清理滤网", "action", 48, 84],
+          ["action2", ":Action\n清洗叶片", "action", 78, 86]
+        ],
+        edges: [
+          ["doc", "chunk", "CONTAINS"], ["chunk", "asset", "MENTIONS"], ["chunk", "fault", "MENTIONS"], ["chunk", "cause1", "MENTIONS"], ["chunk", "cause2", "MENTIONS"],
+          ["asset", "system", "HAS_COMPONENT"], ["asset", "fault", "HAS_FAULT"], ["fault", "cause1", "HAS_CAUSE"], ["fault", "cause2", "HAS_CAUSE"], ["cause1", "action1", "MITIGATED_BY"], ["cause2", "action2", "MITIGATED_BY"]
+        ]
+      },
+      llama: {
+        title: "LlamaIndex / LangChain：快速集成视角",
+        summary: "把三元组或 property graph 作为现有 RAG pipeline 的一个索引组件。",
+        purpose: "验证：能否低成本跑通抽取和混合召回。",
+        what: "它更像应用框架层。可以调用 LLMGraphTransformer、PropertyGraphIndex、Graph Retriever 等能力，把图关系接入已有向量检索和问答链路。",
+        validate: [
+          "能否快速从样例文本抽出可审查三元组。",
+          "图索引是否能与向量索引一起召回原文证据。",
+          "少量代码能否集成到已有 RAG 项目，而不是重搭系统。"
+        ],
+        output: `triplets = [
+  ("GT-07", "出现故障", "压气机出口温度偏高"),
+  ("压气机出口温度偏高", "可能原因", "进气滤网堵塞"),
+  ("进气滤网堵塞", "处理建议", "清理滤网")
+]
+
+retriever = graph_index.as_retriever()`,
+        risks: [
+          "快速 demo 不代表生产质量稳定。",
+          "默认抽取可能 schema 松散，需要后续约束和去重。",
+          "如果不做人工评审，容易把幻觉关系带入答案。"
+        ],
+        nodes: [
+          ["q", "用户问题", "community", 16, 24],
+          ["vec", "Vector Index", "doc", 40, 22],
+          ["graph", "Graph Index", "action", 64, 22],
+          ["t1", "GT-07 -> 温度偏高", "entity", 34, 52],
+          ["t2", "温度偏高 -> 滤网堵塞", "issue", 62, 50],
+          ["t3", "温度偏高 -> 叶片积灰", "issue", 62, 68],
+          ["t4", "滤网堵塞 -> 清理滤网", "action", 38, 82],
+          ["ans", "LLM 答案", "community", 78, 82]
+        ],
+        edges: [
+          ["q", "vec", "hybrid"], ["q", "graph", "query"], ["graph", "t1", "retrieve"], ["graph", "t2", "retrieve"], ["graph", "t3", "retrieve"], ["graph", "t4", "retrieve"],
+          ["vec", "t2", "source"], ["t1", "t2", "expand"], ["t1", "t3", "expand"], ["t2", "t4", "expand"], ["t2", "ans", "context"], ["t3", "ans", "context"], ["t4", "ans", "context"]
+        ]
+      }
+    };
+
+    const graphArea = document.getElementById("graphArea");
+    const edgeLayer = document.getElementById("edgeLayer");
+    let activeMode = "microsoft";
+
+    function setTextList(id, items) {
+      document.getElementById(id).innerHTML = items.map((item) => `<li>${item}</li>`).join("");
+    }
+
+    function renderGraph(mode) {
+      const data = modes[mode];
+      graphArea.querySelectorAll(".node").forEach((node) => node.remove());
+      edgeLayer.innerHTML = `<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="rgba(32,37,34,0.38)"></path></marker></defs>`;
+      const map = Object.fromEntries(data.nodes.map(([id, label, type, x, y]) => [id, { label, type, x, y }]));
+
+      data.edges.forEach(([from, to, label]) => {
+        const a = map[from];
+        const b = map[to];
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("class", "edge");
+        line.setAttribute("x1", `${a.x}%`);
+        line.setAttribute("y1", `${a.y}%`);
+        line.setAttribute("x2", `${b.x}%`);
+        line.setAttribute("y2", `${b.y}%`);
+        edgeLayer.appendChild(line);
+
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("class", "edge-label");
+        text.setAttribute("x", `${(a.x + b.x) / 2}%`);
+        text.setAttribute("y", `${(a.y + b.y) / 2}%`);
+        text.setAttribute("text-anchor", "middle");
+        text.textContent = label;
+        edgeLayer.appendChild(text);
+      });
+
+      data.nodes.forEach(([id, label, type, x, y]) => {
+        const node = document.createElement("div");
+        node.className = `node ${type}`;
+        node.style.left = `${x}%`;
+        node.style.top = `${y}%`;
+        node.innerHTML = label.split("\n").map((part, index) => index === 0 ? part : `<small>${part}</small>`).join("");
+        node.title = id;
+        graphArea.appendChild(node);
+      });
+    }
+
+    function setMode(mode) {
+      activeMode = mode;
+      const data = modes[mode];
+      document.getElementById("modeTitle").textContent = data.title;
+      document.getElementById("modeSummary").textContent = data.summary;
+      document.getElementById("modePurpose").textContent = data.purpose;
+      document.getElementById("whatText").textContent = data.what;
+      document.getElementById("outputBlock").textContent = data.output;
+      setTextList("validateList", data.validate);
+      setTextList("riskList", data.risks);
+      document.querySelectorAll(".mode-button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.mode === mode);
+      });
+      renderGraph(mode);
+    }
+
+    document.querySelectorAll(".mode-button").forEach((button) => {
+      button.addEventListener("click", () => setMode(button.dataset.mode));
+    });
+
+    setMode(activeMode);
+  </script>
+</body>
+</html>

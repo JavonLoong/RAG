@@ -10,7 +10,7 @@ This repository is ready for a local demo when `npm run check` passes.
 - Frontend inline script syntax.
 - Python import smoke for router, retrieval, GraphRAG, and graph store modules.
 - Focused pytest smoke.
-- WeChat private-chat one-click workflow wiring.
+- Generic PowerRAG one-click workflow wiring.
 - Electron desktop startup in no-window smoke mode.
 
 ## Demo Script
@@ -18,13 +18,13 @@ This repository is ready for a local demo when `npm run check` passes.
 1. Run `npm run check`.
 2. Run `npm run desktop`.
 3. Open `GraphRAG -> Graph Build`.
-4. Click the WeChat private-chat one-click detector.
+4. Click the generic PowerRAG one-click flow.
 5. Confirm the workflow logs show corpus load, collection rebuild, graph build, and question dispatch.
 6. Inspect Graph QA answer evidence and citations.
 
 ## Known Limits
 
-- Full WeChat analysis requires a configured OpenAI-compatible LLM key.
+- Full LLM-backed GraphRAG analysis requires a configured OpenAI-compatible LLM key.
 - Browser rendering of very large graphs is intentionally skipped; backend graph data remains available.
 - The frontend is still a single-file console and should be split only after the demo surface is stable.
 - This is a local-first workbench, not a hosted multi-user service.
@@ -50,7 +50,7 @@ The project is considered presentable when:
 
 - Command: `npm run quality:90`
 - Result: PASS on 2026-06-21
-- Notes: This validates the `open_source_90` profile wiring, current guardrail tests, hard routing for full private-contact affection sweeps, and a non-empty seeded promoted GraphRAG regression case. It does not prove real-corpus 90% quality until real promoted GraphRAG cases or an expert gold set are populated.
+- Notes: This validates the `open_source_90` profile wiring, current guardrail tests, and a non-empty seeded promoted GraphRAG regression case. It does not prove real-corpus 90% quality until real promoted GraphRAG cases or an expert gold set are populated.
 
 ## External Benchmark Gap
 

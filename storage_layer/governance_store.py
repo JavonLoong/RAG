@@ -5,7 +5,7 @@ retrieval and graph databases.  It is the audit/control plane: immutable source
 evidence, version transitions, review records, and task outputs live here while
 the existing stores remain optimized for retrieval.
 """
-# ruff: noqa: TRY003
+# ruff: noqa: C901, TRY003
 
 from __future__ import annotations
 
@@ -35,6 +35,8 @@ from core_domain.delivery import (
     QualityIssue,
     ReviewDecision,
     ReviewRecord,
+    TaskError,
+    TaskStateEvent,
     TaskStatus,
 )
 
@@ -42,12 +44,34 @@ from core_domain.delivery import (
 class GovernanceError(RuntimeError):
     """Raised when a governed lifecycle transition is invalid."""
 
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str = "governance_error",
+        details: Mapping[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.code = code
+        self.details = dict(details or {})
+
+
+_FMEA_TRANSITIONS: dict[TaskStatus, set[TaskStatus]] = {
+    TaskStatus.QUEUED: {TaskStatus.RUNNING, TaskStatus.FAILED},
+    TaskStatus.RUNNING: {TaskStatus.NEEDS_REVIEW, TaskStatus.FAILED},
+    TaskStatus.NEEDS_REVIEW: {TaskStatus.NEEDS_REVIEW, TaskStatus.APPROVED, TaskStatus.FAILED},
+    TaskStatus.APPROVED: {TaskStatus.APPROVED, TaskStatus.NEEDS_REVIEW, TaskStatus.PUBLISHED},
+    TaskStatus.PUBLISHED: set(),
+    TaskStatus.FAILED: set(),
+}
+
 
 class GovernanceStore:
     """Durable M2-M5 control plane backed by one local SQLite file."""
 
-    def __init__(self, db_path: str | Path) -> None:
+    def __init__(self, db_path: str | Path, *, project_id: str = "default") -> None:
         self.db_path = Path(db_path)
+        self.project_id = _required(project_id, "project_id")
         self.initialize()
 
     def initialize(self) -> None:
@@ -61,6 +85,8 @@ class GovernanceStore:
                     version INTEGER NOT NULL,
                     source_name TEXT NOT NULL,
                     content_hash TEXT NOT NULL,
+                    config_hash TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000',
+                    created_by TEXT NOT NULL DEFAULT 'system',
                     status TEXT NOT NULL,
                     quality_issues_json TEXT NOT NULL DEFAULT '[]',
                     metadata_json TEXT NOT NULL DEFAULT '{}',
@@ -80,7 +106,51 @@ class GovernanceStore:
                     block_id TEXT,
                     table_id TEXT,
                     image_id TEXT,
+                    content_hash TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000',
+                    config_hash TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000',
+                    created_by TEXT NOT NULL DEFAULT 'system',
+                    created_at TEXT NOT NULL DEFAULT '',
                     metadata_json TEXT NOT NULL DEFAULT '{}'
+                );
+
+                CREATE TABLE IF NOT EXISTS source_assets (
+                    asset_id TEXT PRIMARY KEY,
+                    document_id TEXT NOT NULL,
+                    source_name TEXT NOT NULL,
+                    mime_type TEXT NOT NULL,
+                    content_hash TEXT NOT NULL,
+                    config_hash TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000',
+                    byte_size INTEGER NOT NULL,
+                    page_count INTEGER,
+                    content_blob BLOB NOT NULL,
+                    created_by TEXT NOT NULL DEFAULT 'system',
+                    created_at TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS ocr_jobs (
+                    job_id TEXT PRIMARY KEY,
+                    document_id TEXT NOT NULL,
+                    source_asset_id TEXT NOT NULL REFERENCES source_assets(asset_id),
+                    status TEXT NOT NULL,
+                    backend TEXT NOT NULL,
+                    timeout_seconds REAL NOT NULL,
+                    expected_pages INTEGER,
+                    result_version_id TEXT,
+                    pages_json TEXT NOT NULL DEFAULT '[]',
+                    errors_json TEXT NOT NULL DEFAULT '[]',
+                    attempts INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS document_review_tasks (
+                    review_task_id TEXT PRIMARY KEY,
+                    document_version_id TEXT NOT NULL REFERENCES document_versions(version_id),
+                    source_asset_id TEXT REFERENCES source_assets(asset_id),
+                    status TEXT NOT NULL,
+                    reasons_json TEXT NOT NULL DEFAULT '[]',
+                    created_at TEXT NOT NULL,
+                    resolved_at TEXT
                 );
 
                 CREATE TABLE IF NOT EXISTS graph_versions (
@@ -88,6 +158,9 @@ class GovernanceStore:
                     version INTEGER NOT NULL UNIQUE,
                     status TEXT NOT NULL,
                     source_document_version_ids_json TEXT NOT NULL,
+                    content_hash TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000',
+                    config_hash TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000',
+                    created_by TEXT NOT NULL DEFAULT 'system',
                     schema_json TEXT NOT NULL,
                     quality_issues_json TEXT NOT NULL DEFAULT '[]',
                     metadata_json TEXT NOT NULL DEFAULT '{}',
@@ -105,6 +178,8 @@ class GovernanceStore:
                     subject_type TEXT NOT NULL,
                     object_type TEXT NOT NULL,
                     evidence_ids_json TEXT NOT NULL,
+                    knowledge_type TEXT NOT NULL DEFAULT 'FACT',
+                    model_scope_json TEXT NOT NULL DEFAULT '[]',
                     confidence REAL,
                     metadata_json TEXT NOT NULL DEFAULT '{}'
                 );
@@ -126,9 +201,22 @@ class GovernanceStore:
                     status TEXT NOT NULL,
                     items_json TEXT NOT NULL DEFAULT '[]',
                     errors_json TEXT NOT NULL DEFAULT '[]',
+                    content_hash TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000',
+                    config_hash TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000',
+                    created_by TEXT NOT NULL DEFAULT 'system',
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL,
                     published_at TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS fmea_task_events (
+                    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    task_id TEXT NOT NULL REFERENCES fmea_tasks(task_id),
+                    from_status TEXT,
+                    to_status TEXT NOT NULL,
+                    reason TEXT NOT NULL,
+                    actor TEXT,
+                    created_at TEXT NOT NULL
                 );
 
                 CREATE TABLE IF NOT EXISTS feedback (
@@ -156,15 +244,330 @@ class GovernanceStore:
 
                 CREATE INDEX IF NOT EXISTS idx_doc_versions_document ON document_versions(document_id, version);
                 CREATE INDEX IF NOT EXISTS idx_evidence_version ON evidence_locators(document_version_id);
+                CREATE INDEX IF NOT EXISTS idx_source_assets_document ON source_assets(document_id, created_at);
+                CREATE INDEX IF NOT EXISTS idx_ocr_jobs_document ON ocr_jobs(document_id, created_at);
+                CREATE INDEX IF NOT EXISTS idx_review_tasks_version
+                ON document_review_tasks(document_version_id, created_at);
                 CREATE INDEX IF NOT EXISTS idx_graph_statements_version ON graph_statements(graph_version_id);
                 CREATE INDEX IF NOT EXISTS idx_reviews_target ON reviews(target_type, target_id, review_id);
+                CREATE INDEX IF NOT EXISTS idx_fmea_task_events_task ON fmea_task_events(task_id, event_id);
                 CREATE INDEX IF NOT EXISTS idx_feedback_task ON feedback(task_id, created_at);
                 CREATE INDEX IF NOT EXISTS idx_feedback_runs_feedback ON feedback_runs(feedback_id, created_at);
                 """
             )
+            statement_columns = {
+                str(row["name"])
+                for row in connection.execute("PRAGMA table_info(graph_statements)").fetchall()
+            }
+            if "knowledge_type" not in statement_columns:
+                connection.execute(
+                    "ALTER TABLE graph_statements ADD COLUMN knowledge_type TEXT NOT NULL DEFAULT 'FACT'"
+                )
+            if "model_scope_json" not in statement_columns:
+                connection.execute(
+                    "ALTER TABLE graph_statements ADD COLUMN model_scope_json TEXT NOT NULL DEFAULT '[]'"
+                )
+            source_asset_columns = {
+                str(row["name"])
+                for row in connection.execute("PRAGMA table_info(source_assets)").fetchall()
+            }
+            if "page_count" not in source_asset_columns:
+                connection.execute("ALTER TABLE source_assets ADD COLUMN page_count INTEGER")
+            migrations = (
+                ("source_assets", "created_by", "TEXT NOT NULL DEFAULT 'system'"),
+                ("source_assets", "config_hash", "TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000'"),
+                ("document_versions", "created_by", "TEXT NOT NULL DEFAULT 'system'"),
+                ("document_versions", "config_hash", "TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000'"),
+                ("evidence_locators", "created_by", "TEXT NOT NULL DEFAULT 'system'"),
+                ("evidence_locators", "created_at", "TEXT NOT NULL DEFAULT ''"),
+                ("evidence_locators", "content_hash", "TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000'"),
+                ("evidence_locators", "config_hash", "TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000'"),
+                ("graph_versions", "created_by", "TEXT NOT NULL DEFAULT 'system'"),
+                ("graph_versions", "content_hash", "TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000'"),
+                ("graph_versions", "config_hash", "TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000'"),
+                ("fmea_tasks", "created_by", "TEXT NOT NULL DEFAULT 'system'"),
+                ("fmea_tasks", "content_hash", "TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000'"),
+                ("fmea_tasks", "config_hash", "TEXT NOT NULL DEFAULT '0000000000000000000000000000000000000000000000000000000000000000'"),
+            )
+            for table, column, definition in migrations:
+                columns = {
+                    str(row["name"])
+                    for row in connection.execute(f"PRAGMA table_info({table})").fetchall()
+                }
+                if column not in columns:
+                    connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
     # ------------------------------------------------------------------
     # M2/M3: parsed candidates, evidence, review, and document versions
+
+    def register_source_asset(
+        self,
+        *,
+        document_id: str,
+        source_name: str,
+        content: bytes,
+        mime_type: str = "application/octet-stream",
+        page_count: int | None = None,
+        created_by: str = "system",
+    ) -> dict[str, Any]:
+        document_id = _required(document_id, "document_id")
+        source_name = _required(source_name, "source_name")
+        created_by = _required(created_by, "created_by")
+        if not content:
+            raise ValueError("Source asset content must not be empty")
+        content_hash = hashlib.sha256(content).hexdigest()
+        normalized_page_count = max(1, int(page_count)) if page_count is not None else None
+        normalized_mime_type = str(mime_type or "application/octet-stream")
+        config_hash = _sha256_json(
+            {"mime_type": normalized_mime_type, "page_count": normalized_page_count}
+        )
+        asset_scope = hashlib.sha256(f"{document_id}:{content_hash}".encode()).hexdigest()
+        asset_id = f"SRC-{asset_scope[:20]}"
+        now = _utc_now()
+        with self._connect() as connection:
+            duplicate_row = connection.execute(
+                """
+                SELECT asset_id, document_id, source_name, created_at
+                FROM source_assets WHERE content_hash = ?
+                ORDER BY created_at, asset_id LIMIT 1
+                """,
+                (content_hash,),
+            ).fetchone()
+            connection.execute(
+                """
+                INSERT OR IGNORE INTO source_assets (
+                    asset_id, document_id, source_name, mime_type, content_hash, config_hash,
+                    byte_size, page_count, content_blob, created_by, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    asset_id,
+                    document_id,
+                    source_name,
+                    normalized_mime_type,
+                    content_hash,
+                    config_hash,
+                    len(content),
+                    normalized_page_count,
+                    sqlite3.Binary(content),
+                    created_by,
+                    now,
+                ),
+            )
+        payload = self.get_source_asset(asset_id, include_content=False)
+        payload["project_id"] = self.project_id
+        payload["duplicate"] = duplicate_row is not None
+        payload["duplicate_of"] = dict(duplicate_row) if duplicate_row is not None else None
+        return payload
+
+    def get_source_asset(self, asset_id: str, *, include_content: bool = True) -> dict[str, Any]:
+        with self._connect() as connection:
+            row = connection.execute("SELECT * FROM source_assets WHERE asset_id = ?", (asset_id,)).fetchone()
+        if row is None:
+            raise GovernanceError(f"Unknown source asset: {asset_id}")
+        payload = {key: row[key] for key in row.keys() if key != "content_blob"}  # noqa: SIM118
+        if include_content:
+            payload["content"] = bytes(row["content_blob"])
+        payload["project_id"] = self.project_id
+        return payload
+
+    def find_source_asset_by_content_hash(self, content_hash: str) -> dict[str, Any] | None:
+        """Return the first registered asset with the exact SHA-256, without its blob."""
+
+        normalized_hash = _required(content_hash, "content_hash").lower()
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT asset_id, document_id, source_name, mime_type, content_hash, config_hash,
+                       byte_size, page_count, created_by, created_at
+                FROM source_assets WHERE content_hash = ?
+                ORDER BY created_at, asset_id LIMIT 1
+                """,
+                (normalized_hash,),
+            ).fetchone()
+        return None if row is None else {**dict(row), "project_id": self.project_id}
+
+    def list_source_assets(
+        self,
+        *,
+        document_id: str | None = None,
+        source_name: str | None = None,
+        limit: int = 50,
+        before_created_at: str | None = None,
+    ) -> list[dict[str, Any]]:
+        clauses: list[str] = []
+        params: list[Any] = []
+        if document_id:
+            clauses.append("document_id = ?")
+            params.append(str(document_id))
+        if source_name:
+            clauses.append("source_name LIKE ?")
+            params.append(f"%{source_name}%")
+        if before_created_at:
+            clauses.append("created_at < ?")
+            params.append(str(before_created_at))
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        with self._connect() as connection:
+            rows = connection.execute(
+                f"""
+                SELECT asset_id, document_id, source_name, mime_type, content_hash, config_hash,
+                       byte_size, page_count, created_by, created_at
+                FROM source_assets {where}
+                ORDER BY created_at DESC, asset_id DESC
+                LIMIT ?
+                """,  # noqa: S608
+                (*params, max(1, min(int(limit), 200))),
+            ).fetchall()
+        return [{**dict(row), "project_id": self.project_id} for row in rows]
+
+    def create_ocr_job(
+        self,
+        *,
+        document_id: str,
+        source_asset_id: str,
+        backend: str,
+        timeout_seconds: float,
+    ) -> dict[str, Any]:
+        self.get_source_asset(source_asset_id, include_content=False)
+        now = _utc_now()
+        job_id = f"OCR-{uuid4().hex[:16]}"
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO ocr_jobs (
+                    job_id, document_id, source_asset_id, status, backend,
+                    timeout_seconds, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    job_id,
+                    _required(document_id, "document_id"),
+                    source_asset_id,
+                    "queued",
+                    _required(backend, "backend"),
+                    float(timeout_seconds),
+                    now,
+                    now,
+                ),
+            )
+        return self.get_ocr_job(job_id)
+
+    def update_ocr_job(
+        self,
+        job_id: str,
+        *,
+        status: str,
+        expected_pages: int | None = None,
+        result_version_id: str | None = None,
+        pages: Sequence[Mapping[str, Any]] | None = None,
+        errors: Sequence[str] | None = None,
+        increment_attempt: bool = False,
+    ) -> dict[str, Any]:
+        self.get_ocr_job(job_id)
+        with self._connect() as connection:
+            connection.execute(
+                """
+                UPDATE ocr_jobs
+                SET status = ?, expected_pages = COALESCE(?, expected_pages),
+                    result_version_id = COALESCE(?, result_version_id),
+                    pages_json = COALESCE(?, pages_json),
+                    errors_json = COALESCE(?, errors_json),
+                    attempts = attempts + ?, updated_at = ?
+                WHERE job_id = ?
+                """,
+                (
+                    _required(status, "status"),
+                    expected_pages,
+                    result_version_id,
+                    _json_dump(list(pages)) if pages is not None else None,
+                    _json_dump(list(errors)) if errors is not None else None,
+                    1 if increment_attempt else 0,
+                    _utc_now(),
+                    job_id,
+                ),
+            )
+        return self.get_ocr_job(job_id)
+
+    def get_ocr_job(self, job_id: str) -> dict[str, Any]:
+        with self._connect() as connection:
+            row = connection.execute("SELECT * FROM ocr_jobs WHERE job_id = ?", (job_id,)).fetchone()
+        if row is None:
+            raise GovernanceError(f"Unknown OCR job: {job_id}")
+        return {
+            **{key: row[key] for key in row.keys() if key not in {"pages_json", "errors_json"}},  # noqa: SIM118
+            "pages": _json_load(row["pages_json"], []),
+            "errors": _json_load(row["errors_json"], []),
+        }
+
+    def create_document_review_task(
+        self,
+        *,
+        document_version_id: str,
+        source_asset_id: str | None,
+        reasons: Sequence[Mapping[str, Any] | str],
+    ) -> dict[str, Any]:
+        self.get_document_version(document_version_id)
+        if source_asset_id:
+            self.get_source_asset(source_asset_id, include_content=False)
+        task_id = f"DR-{uuid4().hex[:16]}"
+        now = _utc_now()
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO document_review_tasks (
+                    review_task_id, document_version_id, source_asset_id,
+                    status, reasons_json, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (task_id, document_version_id, source_asset_id, "open", _json_dump(list(reasons)), now),
+            )
+        return self.get_document_review_task(task_id)
+
+    def get_document_review_task(self, review_task_id: str) -> dict[str, Any]:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM document_review_tasks WHERE review_task_id = ?", (review_task_id,)
+            ).fetchone()
+        if row is None:
+            raise GovernanceError(f"Unknown document review task: {review_task_id}")
+        return {
+            **{key: row[key] for key in row.keys() if key != "reasons_json"},  # noqa: SIM118
+            "reasons": _json_load(row["reasons_json"], []),
+        }
+
+    def list_open_document_review_tasks(self, *, limit: int = 100) -> list[dict[str, Any]]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT * FROM document_review_tasks
+                WHERE status = 'open'
+                ORDER BY created_at, review_task_id
+                LIMIT ?
+                """,
+                (max(1, min(int(limit), 500)),),
+            ).fetchall()
+        return [
+            {
+                **{key: row[key] for key in row.keys() if key != "reasons_json"},  # noqa: SIM118
+                "project_id": self.project_id,
+                "reasons": _json_load(row["reasons_json"], []),
+            }
+            for row in rows
+        ]
+
+    def list_document_review_tasks(self, document_version_id: str) -> list[dict[str, Any]]:
+        with self._connect() as connection:
+            ids = [
+                str(row["review_task_id"])
+                for row in connection.execute(
+                    """
+                    SELECT review_task_id FROM document_review_tasks
+                    WHERE document_version_id = ? ORDER BY created_at, review_task_id
+                    """,
+                    (document_version_id,),
+                ).fetchall()
+            ]
+        return [self.get_document_review_task(item) for item in ids]
 
     def create_document_candidate_from_intake(
         self,
@@ -172,6 +575,7 @@ class GovernanceStore:
         intake_result: Any,
         *,
         metadata: Mapping[str, Any] | None = None,
+        created_by: str = "system",
     ) -> CanonicalDocumentVersion:
         profile = getattr(intake_result, "profile", None)
         source_name = str(getattr(profile, "source_name", "") or "").strip()
@@ -191,6 +595,7 @@ class GovernanceStore:
             warnings=list(getattr(intake_result, "warnings", []) or []),
             errors=list(getattr(intake_result, "errors", []) or []),
             metadata=merged_metadata,
+            created_by=created_by,
         )
 
     def create_document_candidate(
@@ -204,9 +609,11 @@ class GovernanceStore:
         warnings: Sequence[str] = (),
         errors: Sequence[str] = (),
         metadata: Mapping[str, Any] | None = None,
+        created_by: str = "system",
     ) -> CanonicalDocumentVersion:
         document_id = _required(document_id, "document_id")
         source_name = _required(source_name, "source_name")
+        created_by = _required(created_by, "created_by")
         quality_payload = dict(quality or {})
         normalized_chunks = [
             _chunk_to_payload(chunk, source_name, index) for index, chunk in enumerate(chunks, start=1)
@@ -223,6 +630,19 @@ class GovernanceStore:
                     chunk_id=chunk["chunk_id"],
                     text=chunk["text"],
                     source_file=chunk["source_file"],
+                    project_id=self.project_id,
+                    created_by=created_by,
+                    created_at=now,
+                    content_hash=hashlib.sha256(chunk["text"].encode("utf-8")).hexdigest(),
+                    config_hash=_sha256_json(
+                        {
+                            "page": chunk["page"],
+                            "block_id": chunk["block_id"],
+                            "table_id": chunk["table_id"],
+                            "image_id": chunk["image_id"],
+                            "metadata": chunk["metadata"],
+                        }
+                    ),
                     page=chunk["page"],
                     block_id=chunk["block_id"],
                     table_id=chunk["table_id"],
@@ -241,12 +661,22 @@ class GovernanceStore:
             )
             status = ContentStatus.NEEDS_REVIEW if issues else ContentStatus.CANDIDATE
             content_hash = hashlib.sha256("\n".join(item.text for item in evidence).encode("utf-8")).hexdigest()
+            config_hash = _sha256_json(
+                {
+                    "intake_status": intake_status,
+                    "quality": quality_payload,
+                    "warnings": list(warnings),
+                    "errors": list(errors),
+                    "metadata": dict(metadata or {}),
+                }
+            )
             connection.execute(
                 """
                 INSERT INTO document_versions (
-                    version_id, document_id, version, source_name, content_hash, status,
+                    version_id, document_id, version, source_name, content_hash, config_hash,
+                    created_by, status,
                     quality_issues_json, metadata_json, created_at, supersedes_version_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     version_id,
@@ -254,6 +684,8 @@ class GovernanceStore:
                     version,
                     source_name,
                     content_hash,
+                    config_hash,
+                    created_by,
                     status.value,
                     _json_dump([issue.to_dict() for issue in issues]),
                     _json_dump({**dict(metadata or {}), "intake_quality": quality_payload}),
@@ -265,8 +697,9 @@ class GovernanceStore:
                 """
                 INSERT INTO evidence_locators (
                     evidence_id, document_version_id, chunk_id, text, source_file, page,
-                    block_id, table_id, image_id, metadata_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    block_id, table_id, image_id, content_hash, config_hash,
+                    created_by, created_at, metadata_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 [
                     (
@@ -279,6 +712,10 @@ class GovernanceStore:
                         item.block_id,
                         item.table_id,
                         item.image_id,
+                        item.content_hash,
+                        item.config_hash,
+                        item.created_by,
+                        item.created_at,
                         _json_dump(item.metadata),
                     )
                     for item in evidence
@@ -294,7 +731,12 @@ class GovernanceStore:
             evidence_rows = connection.execute(
                 "SELECT * FROM evidence_locators WHERE document_version_id = ? ORDER BY rowid", (version_id,)
             ).fetchall()
-        return _document_from_rows(row, evidence_rows)
+        document = _document_from_rows(row, evidence_rows)
+        return replace(
+            document,
+            project_id=self.project_id,
+            evidence=tuple(replace(item, project_id=self.project_id) for item in document.evidence),
+        )
 
     def create_document_revision(
         self,
@@ -392,6 +834,7 @@ class GovernanceStore:
                 "human_modified_chunk_ids": modified_chunk_ids,
                 "source_quality_issues": [issue.to_dict() for issue in source.quality_issues],
             },
+            created_by=reviewer,
         )
         self.record_review(
             target_type="document",
@@ -423,6 +866,50 @@ class GovernanceStore:
                 ).fetchall()
             ]
         return [self.get_document_version(version_id) for version_id in ids]
+
+    def list_document_catalog(
+        self,
+        *,
+        status: ContentStatus | str | None = None,
+        document_id: str | None = None,
+        source_name: str | None = None,
+        issue_code: str | None = None,
+        limit: int = 50,
+        before_created_at: str | None = None,
+    ) -> list[CanonicalDocumentVersion]:
+        clauses: list[str] = []
+        params: list[Any] = []
+        normalized_status = status.value if isinstance(status, ContentStatus) else str(status or "").strip()
+        if normalized_status:
+            clauses.append("status = ?")
+            params.append(ContentStatus(normalized_status).value)
+        if document_id:
+            clauses.append("document_id = ?")
+            params.append(str(document_id))
+        if source_name:
+            clauses.append("source_name LIKE ?")
+            params.append(f"%{source_name}%")
+        if before_created_at:
+            clauses.append("created_at < ?")
+            params.append(str(before_created_at))
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        with self._connect() as connection:
+            rows = connection.execute(
+                f"""
+                SELECT version_id FROM document_versions {where}
+                ORDER BY created_at DESC, version_id DESC
+                LIMIT ?
+                """,  # noqa: S608
+                (*params, max(1, min(int(limit), 200))),
+            ).fetchall()
+        documents = [self.get_document_version(str(row["version_id"])) for row in rows]
+        if issue_code:
+            documents = [
+                document
+                for document in documents
+                if any(issue.code == issue_code for issue in document.quality_issues)
+            ]
+        return documents
 
     def publish_document(self, version_id: str) -> CanonicalDocumentVersion:
         document = self.get_document_version(version_id)
@@ -464,6 +951,7 @@ class GovernanceStore:
                 for item in target.evidence
             ],
             metadata={**target.metadata, "rollback_target": target_version_id},
+            created_by=reviewer,
         )
         self.record_review(
             target_type="document",
@@ -508,8 +996,10 @@ class GovernanceStore:
         statements: Sequence[GraphStatement | Mapping[str, Any]],
         schema: GraphDomainSchema | None = None,
         metadata: Mapping[str, Any] | None = None,
+        created_by: str = "system",
     ) -> GraphVersion:
         schema = schema or GraphDomainSchema()
+        created_by = _required(created_by, "created_by")
         source_ids = tuple(
             dict.fromkeys(_required(item, "source_document_version_id") for item in source_document_version_ids)
         )
@@ -553,18 +1043,30 @@ class GovernanceStore:
                 )
             status = ContentStatus.NEEDS_REVIEW if issues else ContentStatus.CANDIDATE
             now = _utc_now()
+            content_hash = _sha256_json([item.to_dict() for item in normalized])
+            config_hash = _sha256_json(
+                {
+                    "source_document_version_ids": source_ids,
+                    "schema": schema.to_dict(),
+                    "metadata": dict(metadata or {}),
+                }
+            )
             connection.execute(
                 """
                 INSERT INTO graph_versions (
                     graph_version_id, version, status, source_document_version_ids_json,
+                    content_hash, config_hash, created_by,
                     schema_json, quality_issues_json, metadata_json, created_at, supersedes_version_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     graph_version_id,
                     version,
                     status.value,
                     _json_dump(source_ids),
+                    content_hash,
+                    config_hash,
+                    created_by,
                     _json_dump(schema.to_dict()),
                     _json_dump([issue.to_dict() for issue in issues]),
                     _json_dump(dict(metadata or {})),
@@ -576,8 +1078,9 @@ class GovernanceStore:
                 """
                 INSERT INTO graph_statements (
                     statement_id, graph_version_id, subject, predicate, object_name,
-                    subject_type, object_type, evidence_ids_json, confidence, metadata_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    subject_type, object_type, evidence_ids_json, knowledge_type,
+                    model_scope_json, confidence, metadata_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 [
                     (
@@ -589,6 +1092,8 @@ class GovernanceStore:
                         item.subject_type,
                         item.object_type,
                         _json_dump(item.evidence_ids),
+                        item.knowledge_type,
+                        _json_dump(item.model_scope),
                         item.confidence,
                         _json_dump(item.metadata),
                     )
@@ -607,7 +1112,150 @@ class GovernanceStore:
             statement_rows = connection.execute(
                 "SELECT * FROM graph_statements WHERE graph_version_id = ? ORDER BY rowid", (graph_version_id,)
             ).fetchall()
-        return _graph_from_rows(row, statement_rows)
+        return replace(_graph_from_rows(row, statement_rows), project_id=self.project_id)
+
+    def list_graph_versions(self, *, status: ContentStatus | str | None = None) -> list[GraphVersion]:
+        normalized_status = status.value if isinstance(status, ContentStatus) else str(status or "").strip()
+        with self._connect() as connection:
+            if normalized_status:
+                rows = connection.execute(
+                    "SELECT graph_version_id FROM graph_versions WHERE status = ? ORDER BY version DESC",
+                    (normalized_status,),
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    "SELECT graph_version_id FROM graph_versions ORDER BY version DESC"
+                ).fetchall()
+        return [self.get_graph_version(str(row["graph_version_id"])) for row in rows]
+
+    def compare_graph_versions(self, left_id: str, right_id: str) -> dict[str, Any]:
+        left = self.get_graph_version(left_id)
+        right = self.get_graph_version(right_id)
+
+        def keyed(graph: GraphVersion) -> dict[tuple[str, str, str, tuple[str, ...]], GraphStatement]:
+            return {
+                (item.subject, item.predicate, item.object_name, item.model_scope): item
+                for item in graph.statements
+            }
+
+        left_items = keyed(left)
+        right_items = keyed(right)
+        added = [right_items[key].to_dict() for key in right_items.keys() - left_items.keys()]
+        removed = [left_items[key].to_dict() for key in left_items.keys() - right_items.keys()]
+        return {
+            "left_graph_version_id": left_id,
+            "right_graph_version_id": right_id,
+            "added_statements": added,
+            "removed_statements": removed,
+            "schema_changed": left.schema.to_dict() != right.schema.to_dict(),
+            "changed": bool(added or removed or left.schema.to_dict() != right.schema.to_dict()),
+        }
+
+    def rollback_graph(
+        self,
+        target_graph_version_id: str,
+        *,
+        reviewer: str,
+        comment: str = "",
+    ) -> GraphVersion:
+        target = self.get_graph_version(target_graph_version_id)
+        for source_id in target.source_document_version_ids:
+            if self.get_document_version(source_id).status is not ContentStatus.PUBLISHED:
+                raise GovernanceError(
+                    f"Graph rollback source document is not currently published: {source_id}",
+                    code="graph_rollback_source_not_published",
+                    details={"document_version_id": source_id},
+                )
+        candidate = self.create_graph_candidate(
+            source_document_version_ids=target.source_document_version_ids,
+            statements=target.statements,
+            schema=target.schema,
+            metadata={
+                **target.metadata,
+                "rollback_from_graph_version_id": target_graph_version_id,
+            },
+            created_by=reviewer,
+        )
+        self.record_review(
+            target_type="graph",
+            target_id=candidate.graph_version_id,
+            reviewer=reviewer,
+            decision=ReviewDecision.ROLLBACK,
+            comment=comment or f"Rolled back to {target_graph_version_id}",
+            corrections={"target_graph_version_id": target_graph_version_id},
+        )
+        self.record_review(
+            target_type="graph",
+            target_id=candidate.graph_version_id,
+            reviewer=reviewer,
+            decision=ReviewDecision.APPROVE,
+            comment="Approved audited graph rollback",
+        )
+        return self.publish_graph(candidate.graph_version_id)
+
+    def graph_as_view_payload(self, graph_version_id: str) -> dict[str, Any]:
+        graph = self.get_graph_version(graph_version_id)
+        nodes: dict[tuple[str, str], dict[str, Any]] = {}
+        edges: list[dict[str, Any]] = []
+        for statement in graph.statements:
+            nodes.setdefault(
+                (statement.subject, statement.subject_type),
+                {"id": statement.subject, "name": statement.subject, "entity_type": statement.subject_type},
+            )
+            nodes.setdefault(
+                (statement.object_name, statement.object_type),
+                {"id": statement.object_name, "name": statement.object_name, "entity_type": statement.object_type},
+            )
+            evidence = [self.get_evidence(item).to_dict() for item in statement.evidence_ids]
+            edges.append({**statement.to_dict(), "evidence": evidence})
+        return {
+            "graph_version_id": graph_version_id,
+            "version": graph.version,
+            "status": graph.status.value,
+            "nodes": list(nodes.values()),
+            "edges": edges,
+            "quality_issues": [item.to_dict() for item in graph.quality_issues],
+            "schema": graph.schema.to_dict(),
+        }
+
+    def audit_graph_evidence(self, graph_version_id: str) -> dict[str, Any]:
+        graph = self.get_graph_version(graph_version_id)
+        source_ids = set(graph.source_document_version_ids)
+        missing: list[str] = []
+        out_of_scope: list[dict[str, str]] = []
+        resolved_count = 0
+        for statement in graph.statements:
+            if not statement.evidence_ids:
+                missing.append(statement.statement_id)
+                continue
+            statement_resolved = True
+            for evidence_id in statement.evidence_ids:
+                try:
+                    locator = self.get_evidence(evidence_id)
+                except GovernanceError:
+                    missing.append(statement.statement_id)
+                    statement_resolved = False
+                    break
+                if locator.document_version_id not in source_ids:
+                    out_of_scope.append({
+                        "statement_id": statement.statement_id,
+                        "evidence_id": evidence_id,
+                        "document_version_id": locator.document_version_id,
+                    })
+                    statement_resolved = False
+            if statement_resolved:
+                resolved_count += 1
+        total = len(graph.statements)
+        return {
+            "graph_version_id": graph_version_id,
+            "status": graph.status.value,
+            "statement_count": total,
+            "resolved_statement_count": resolved_count,
+            "evidence_coverage": resolved_count / total if total else 0.0,
+            "missing_statement_ids": sorted(set(missing)),
+            "out_of_scope_evidence": out_of_scope,
+            "pass": bool(total) and resolved_count == total and not out_of_scope,
+        }
 
     def publish_graph(self, graph_version_id: str) -> GraphVersion:
         graph = self.get_graph_version(graph_version_id)
@@ -647,6 +1295,8 @@ class GovernanceStore:
                 "predicate": item.predicate,
                 "object": item.object_name,
                 "object_type": item.object_type,
+                "knowledge_type": item.knowledge_type,
+                "model_scope": list(item.model_scope),
                 "confidence": item.confidence,
                 "evidence": "\n".join(locator.text for locator in evidence),
                 "source_file": first.source_file if first else None,
@@ -656,6 +1306,8 @@ class GovernanceStore:
                     **item.metadata,
                     "graph_version_id": graph_version_id,
                     "evidence_ids": list(item.evidence_ids),
+                    "knowledge_type": item.knowledge_type,
+                    "model_scope": list(item.model_scope),
                 },
             })
         return output
@@ -732,27 +1384,69 @@ class GovernanceStore:
     def create_fmea_task(self, request: FMEATaskRequest) -> FMEATaskResult:
         graph = self.get_graph_version(request.graph_version_id)
         if graph.status is not ContentStatus.PUBLISHED:
-            raise GovernanceError("FMEA tasks require a published graph version")
+            raise GovernanceError(
+                "FMEA tasks require a published graph version",
+                code="fmea_graph_not_published",
+                details={"graph_version_id": request.graph_version_id},
+            )
         requested_docs = tuple(dict.fromkeys(request.document_version_ids))
         if not requested_docs:
-            raise GovernanceError("FMEA tasks require at least one published document version")
+            raise GovernanceError(
+                "FMEA tasks require at least one published document version",
+                code="fmea_documents_required",
+            )
         unknown_sources = set(requested_docs) - set(graph.source_document_version_ids)
         if unknown_sources:
-            raise GovernanceError(f"Task document versions are not graph sources: {sorted(unknown_sources)}")
+            raise GovernanceError(
+                f"Task document versions are not graph sources: {sorted(unknown_sources)}",
+                code="fmea_document_not_graph_source",
+                details={"document_version_ids": sorted(unknown_sources)},
+            )
+        omitted_sources = set(graph.source_document_version_ids) - set(requested_docs)
+        if omitted_sources:
+            raise GovernanceError(
+                f"Task omitted graph source document versions: {sorted(omitted_sources)}",
+                code="fmea_graph_sources_incomplete",
+                details={"document_version_ids": sorted(omitted_sources)},
+            )
         for version_id in requested_docs:
             if self.get_document_version(version_id).status is not ContentStatus.PUBLISHED:
-                raise GovernanceError(f"FMEA source is not published: {version_id}")
+                raise GovernanceError(
+                    f"FMEA source is not published: {version_id}",
+                    code="fmea_document_not_published",
+                    details={"document_version_id": version_id},
+                )
 
         task_id = f"fmea-{uuid4().hex[:12]}"
         now = _utc_now()
         normalized_request = replace(request, document_version_ids=requested_docs)
+        config_hash = _sha256_json(normalized_request.to_dict())
+        content_hash = _sha256_json({"items": [], "errors": []})
         with self._connect() as connection:
             connection.execute(
                 """
-                INSERT INTO fmea_tasks (task_id, request_json, status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO fmea_tasks (
+                    task_id, request_json, status, content_hash, config_hash,
+                    created_by, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (task_id, _json_dump(normalized_request.to_dict()), TaskStatus.QUEUED.value, now, now),
+                (
+                    task_id,
+                    _json_dump(normalized_request.to_dict()),
+                    TaskStatus.QUEUED.value,
+                    content_hash,
+                    config_hash,
+                    _required(request.requested_by, "requested_by"),
+                    now,
+                    now,
+                ),
+            )
+            connection.execute(
+                """
+                INSERT INTO fmea_task_events (task_id, from_status, to_status, reason, actor, created_at)
+                VALUES (?, NULL, ?, ?, ?, ?)
+                """,
+                (task_id, TaskStatus.QUEUED.value, "task_created", request.requested_by, now),
             )
         return self.get_fmea_task(task_id)
 
@@ -762,41 +1456,117 @@ class GovernanceStore:
         *,
         status: TaskStatus,
         items: Sequence[FMEAItem],
-        errors: Sequence[str] = (),
+        errors: Sequence[TaskError | Mapping[str, Any] | str] = (),
+        reason: str = "task_updated",
+        actor: str | None = None,
     ) -> FMEATaskResult:
-        self.get_fmea_task(task_id)
+        current = self.get_fmea_task(task_id)
         if status not in {TaskStatus.RUNNING, TaskStatus.NEEDS_REVIEW, TaskStatus.APPROVED, TaskStatus.FAILED}:
             raise GovernanceError(f"Invalid generated task status: {status.value}")
+        if status not in _FMEA_TRANSITIONS[current.status]:
+            raise GovernanceError(
+                f"Invalid FMEA task transition: {current.status.value} -> {status.value}",
+                code="invalid_fmea_task_transition",
+                details={"from_status": current.status.value, "to_status": status.value},
+            )
+        normalized_errors = tuple(_task_error_from_value(item) for item in errors)
+        now = _utc_now()
+        content_hash = _sha256_json(
+            {
+                "items": [item.to_dict() for item in items],
+                "errors": [item.to_dict() for item in normalized_errors],
+            }
+        )
         with self._connect() as connection:
             connection.execute(
-                "UPDATE fmea_tasks SET status = ?, items_json = ?, errors_json = ?, updated_at = ? WHERE task_id = ?",
+                """
+                UPDATE fmea_tasks
+                SET status = ?, items_json = ?, errors_json = ?, content_hash = ?, updated_at = ?
+                WHERE task_id = ?
+                """,
                 (
                     status.value,
                     _json_dump([item.to_dict() for item in items]),
-                    _json_dump(list(errors)),
-                    _utc_now(),
+                    _json_dump([item.to_dict() for item in normalized_errors]),
+                    content_hash,
+                    now,
                     task_id,
                 ),
+            )
+            connection.execute(
+                """
+                INSERT INTO fmea_task_events (task_id, from_status, to_status, reason, actor, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (task_id, current.status.value, status.value, _required(reason, "reason"), actor, now),
             )
         return self.get_fmea_task(task_id)
 
     def get_fmea_task(self, task_id: str) -> FMEATaskResult:
         with self._connect() as connection:
             row = connection.execute("SELECT * FROM fmea_tasks WHERE task_id = ?", (task_id,)).fetchone()
+            event_rows = connection.execute(
+                "SELECT * FROM fmea_task_events WHERE task_id = ? ORDER BY event_id", (task_id,)
+            ).fetchall()
         if row is None:
             raise GovernanceError(f"Unknown FMEA task: {task_id}")
-        return _fmea_task_from_row(row)
+        task = _fmea_task_from_row(row, event_rows)
+        return replace(task, request=replace(task.request, project_id=self.project_id))
+
+    def list_fmea_tasks(
+        self,
+        *,
+        status: TaskStatus | str | None = None,
+        limit: int = 50,
+        before_created_at: str | None = None,
+    ) -> list[FMEATaskResult]:
+        clauses: list[str] = []
+        params: list[Any] = []
+        normalized_status = status.value if isinstance(status, TaskStatus) else str(status or "").strip()
+        if normalized_status:
+            clauses.append("status = ?")
+            params.append(TaskStatus(normalized_status).value)
+        if before_created_at:
+            clauses.append("created_at < ?")
+            params.append(str(before_created_at))
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        with self._connect() as connection:
+            rows = connection.execute(
+                f"""
+                SELECT task_id FROM fmea_tasks {where}
+                ORDER BY created_at DESC, task_id DESC
+                LIMIT ?
+                """,  # noqa: S608
+                (*params, max(1, min(int(limit), 200))),
+            ).fetchall()
+        return [self.get_fmea_task(str(row["task_id"])) for row in rows]
+
+    def list_fmea_task_events(self, task_id: str) -> list[TaskStateEvent]:
+        return list(self.get_fmea_task(task_id).state_history)
 
     def publish_fmea_task(self, task_id: str) -> FMEATaskResult:
         task = self.get_fmea_task(task_id)
         if not task.items:
             raise GovernanceError("An empty FMEA task cannot be published")
+        if task.status is not TaskStatus.APPROVED:
+            raise GovernanceError(
+                f"FMEA task must be approved before publication: {task.status.value}",
+                code="fmea_not_approved",
+                details={"status": task.status.value},
+            )
         self._require_approval("fmea", task_id)
         now = _utc_now()
         with self._connect() as connection:
             connection.execute(
                 "UPDATE fmea_tasks SET status = ?, updated_at = ?, published_at = ? WHERE task_id = ?",
                 (TaskStatus.PUBLISHED.value, now, now, task_id),
+            )
+            connection.execute(
+                """
+                INSERT INTO fmea_task_events (task_id, from_status, to_status, reason, actor, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (task_id, task.status.value, TaskStatus.PUBLISHED.value, "task_published", None, now),
             )
         return self.get_fmea_task(task_id)
 
@@ -955,6 +1725,21 @@ class GovernanceStore:
             if cursor.lastrowid is None:
                 raise GovernanceError("Failed to persist review record")
             review_id = int(cursor.lastrowid)
+            if target_type == "document":
+                task_status = {
+                    ReviewDecision.APPROVE: "resolved",
+                    ReviewDecision.REJECT: "rejected",
+                    ReviewDecision.MODIFY: "open",
+                    ReviewDecision.ROLLBACK: "resolved",
+                }[normalized_decision]
+                connection.execute(
+                    """
+                    UPDATE document_review_tasks
+                    SET status = ?, resolved_at = CASE WHEN ? IN ('resolved', 'rejected') THEN ? ELSE NULL END
+                    WHERE document_version_id = ? AND status = 'open'
+                    """,
+                    (task_status, task_status, now, target_id),
+                )
         return ReviewRecord(
             review_id=review_id,
             target_type=target_type,
@@ -983,7 +1768,7 @@ class GovernanceStore:
 
     def _require_approval(self, target_type: str, target_id: str) -> None:
         reviews = self.list_reviews(target_type, target_id)
-        if not reviews or reviews[-1].decision is not ReviewDecision.APPROVE:
+        if not reviews or reviews[-1].decision not in {ReviewDecision.APPROVE, ReviewDecision.CONFIRM}:
             raise GovernanceError(f"{target_type} {target_id} requires a latest human approval before publication")
 
     def _ensure_target_exists(self, target_type: str, target_id: str) -> None:
@@ -1046,11 +1831,26 @@ def _intake_issues(
     warnings: Sequence[str],
     errors: Sequence[str],
 ) -> tuple[QualityIssue, ...]:
-    raw: list[tuple[str, str, IssueSeverity, dict[str, Any]]] = []
+    raw: list[tuple[str, str, IssueSeverity, dict[str, Any], tuple[str, ...]]] = []
+
+    def related_evidence(*, page: Any = None, table_id: Any = None) -> tuple[str, ...]:
+        page_text = str(page) if page not in (None, "") else None
+        table_text = str(table_id) if table_id not in (None, "") else None
+        return tuple(
+            item.evidence_id
+            for item in evidence
+            if (page_text is None or item.page == page_text)
+            and (
+                table_text is None
+                or item.table_id == table_text
+                or table_text in str(item.metadata.get("table_ids") or "")
+            )
+        )
+
     if not evidence:
-        raw.append(("empty_document", "No indexable evidence chunks were produced.", IssueSeverity.ERROR, {}))
+        raw.append(("empty_document", "No indexable evidence chunks were produced.", IssueSeverity.ERROR, {}, ()))
     if intake_status != "parsed":
-        raw.append(("intake_not_parsed", f"Document intake status is {intake_status}.", IssueSeverity.ERROR, {}))
+        raw.append(("intake_not_parsed", f"Document intake status is {intake_status}.", IssueSeverity.ERROR, {}, ()))
     gate = str(quality.get("quality_gate_status") or quality.get("status") or "").lower()
     if gate and gate != "pass":
         raw.append((
@@ -1058,10 +1858,74 @@ def _intake_issues(
             f"Document quality gate status is {gate}.",
             IssueSeverity.ERROR,
             dict(quality),
+            (),
         ))
-    raw.extend(("intake_error", str(message), IssueSeverity.ERROR, {}) for message in errors if str(message).strip())
+
+    for page in quality.get("missing_pages") or []:
+        raw.append((
+            "missing_page",
+            f"Source page {page} is missing from OCR output.",
+            IssueSeverity.ERROR,
+            {"page": page},
+            (),
+        ))
+    for page in quality.get("blank_pages") or []:
+        raw.append((
+            "blank_ocr_page",
+            f"OCR page {page} contains no text.",
+            IssueSeverity.WARNING,
+            {"page": page},
+            related_evidence(page=page),
+        ))
+    for page in quality.get("low_confidence_pages") or []:
+        raw.append((
+            "low_ocr_confidence",
+            f"OCR page {page} is below the confidence threshold.",
+            IssueSeverity.WARNING,
+            {"page": page},
+            related_evidence(page=page),
+        ))
+    for page in quality.get("layout_risk_pages") or []:
+        raw.append((
+            "reading_order_risk",
+            f"OCR page {page} requires reading-order review.",
+            IssueSeverity.WARNING,
+            {"page": page},
+            related_evidence(page=page),
+        ))
+    for issue in quality.get("table_misalignment") or []:
+        issue_payload = dict(issue) if isinstance(issue, Mapping) else {"detail": str(issue)}
+        raw.append((
+            "table_misalignment",
+            f"Table alignment is inconsistent on page {issue_payload.get('page', 'unknown')}.",
+            IssueSeverity.ERROR,
+            issue_payload,
+            related_evidence(page=issue_payload.get("page"), table_id=issue_payload.get("table_id")),
+        ))
+    for page in quality.get("timeout_pages") or []:
+        raw.append((
+            "ocr_timeout",
+            f"OCR timed out on page {page}.",
+            IssueSeverity.ERROR,
+            {"page": page},
+            related_evidence(page=page),
+        ))
+    for page in quality.get("failed_pages") or []:
+        raw.append((
+            "ocr_page_failed",
+            f"OCR failed on page {page}.",
+            IssueSeverity.ERROR,
+            {"page": page},
+            related_evidence(page=page),
+        ))
+
     raw.extend(
-        ("intake_warning", str(message), IssueSeverity.WARNING, {}) for message in warnings if str(message).strip()
+        ("intake_error", str(message), IssueSeverity.ERROR, {}, ())
+        for message in errors
+        if str(message).strip()
+    )
+    raw.extend(
+        ("intake_warning", str(message), IssueSeverity.WARNING, {}, ()) for message in warnings if str(message).strip()
     )
     return tuple(
         QualityIssue(
@@ -1069,35 +1933,63 @@ def _intake_issues(
             code=code,
             message=message,
             severity=severity,
+            evidence_ids=evidence_ids,
             metadata=metadata,
         )
-        for index, (code, message, severity, metadata) in enumerate(raw, start=1)
+        for index, (code, message, severity, metadata, evidence_ids) in enumerate(raw, start=1)
     )
 
 
-def _normalize_graph_statements(  # noqa: C901 - one pass keeps validation issues aligned to statements
+def _normalize_graph_statements(
     *,
     graph_version_id: str,
     raw_statements: Sequence[GraphStatement | Mapping[str, Any]],
     schema: GraphDomainSchema,
     allowed_evidence: Mapping[str, str],
 ) -> tuple[list[GraphStatement], list[QualityIssue]]:
-    merged: dict[tuple[str, str, str], dict[str, Any]] = {}
+    merged: dict[tuple[str, str, str, tuple[str, ...]], dict[str, Any]] = {}
     issue_specs: list[tuple[str, str, IssueSeverity, tuple[str, ...], dict[str, Any]]] = []
     for index, raw in enumerate(raw_statements, start=1):
         payload = raw.to_dict() if isinstance(raw, GraphStatement) else dict(raw)
-        subject = schema.normalize_entity(str(payload.get("subject") or ""))
+        raw_subject = str(payload.get("subject") or "")
+        raw_object = str(payload.get("object_name") or payload.get("object") or payload.get("target") or "")
+        raw_predicate = str(payload.get("predicate") or payload.get("relation") or "")
+        subject = schema.normalize_entity(raw_subject)
         object_name = schema.normalize_entity(
-            str(payload.get("object_name") or payload.get("object") or payload.get("target") or "")
+            raw_object
         )
-        predicate = schema.normalize_relation(str(payload.get("predicate") or payload.get("relation") or ""))
+        predicate = schema.normalize_relation(raw_predicate)
         subject_type = str(payload.get("subject_type") or "").strip().upper()
         object_type = str(payload.get("object_type") or payload.get("target_type") or "").strip().upper()
         evidence_ids = tuple(
             dict.fromkeys(str(item).strip() for item in payload.get("evidence_ids", ()) if str(item).strip())
         )
+        metadata = dict(payload.get("metadata") or {})
+        raw_model_scope = payload.get("model_scope", metadata.get("model_scope", ()))
+        if isinstance(raw_model_scope, str):
+            raw_model_scope = (raw_model_scope,)
+        model_scope = tuple(
+            dict.fromkeys(
+                schema.normalize_model(str(item))
+                for item in (raw_model_scope or ())
+                if str(item).strip()
+            )
+        )
+        expected_knowledge_type = schema.knowledge_type_for_relation(predicate)
+        raw_knowledge_type = str(payload.get("knowledge_type") or "").strip().upper()
+        knowledge_type = raw_knowledge_type or expected_knowledge_type
         confidence = _optional_float(payload.get("confidence"))
         label = f"statement #{index}"
+
+        normalized_from: dict[str, str] = {}
+        if raw_subject.strip() != subject:
+            normalized_from["subject"] = raw_subject.strip()
+        if raw_object.strip() != object_name:
+            normalized_from["object"] = raw_object.strip()
+        if raw_predicate.strip() != predicate:
+            normalized_from["predicate"] = raw_predicate.strip()
+        if normalized_from:
+            metadata["normalized_from"] = normalized_from
 
         if not subject or not object_name or not predicate:
             issue_specs.append((
@@ -1132,6 +2024,44 @@ def _normalize_graph_statements(  # noqa: C901 - one pass keeps validation issue
                 evidence_ids,
                 {"statement": index},
             ))
+        if knowledge_type not in schema.knowledge_types:
+            issue_specs.append((
+                "unknown_knowledge_type",
+                f"{label} has unsupported knowledge type {knowledge_type or '<empty>'}.",
+                IssueSeverity.ERROR,
+                evidence_ids,
+                {"statement": index, "knowledge_type": knowledge_type},
+            ))
+        elif predicate in schema.relation_types and knowledge_type != expected_knowledge_type:
+            issue_specs.append((
+                "knowledge_relation_mismatch",
+                f"{label} knowledge type {knowledge_type} does not match {predicate} ({expected_knowledge_type}).",
+                IssueSeverity.ERROR,
+                evidence_ids,
+                {
+                    "statement": index,
+                    "knowledge_type": knowledge_type,
+                    "expected_knowledge_type": expected_knowledge_type,
+                },
+            ))
+        if (
+            predicate in schema.relation_types
+            and subject_type in schema.entity_types
+            and object_type in schema.entity_types
+            and not schema.relation_allows(predicate, subject_type, object_type)
+        ):
+            issue_specs.append((
+                "invalid_relation_endpoints",
+                f"{label} relation {predicate} does not allow {subject_type} -> {object_type}.",
+                IssueSeverity.ERROR,
+                evidence_ids,
+                {
+                    "statement": index,
+                    "predicate": predicate,
+                    "subject_type": subject_type,
+                    "object_type": object_type,
+                },
+            ))
         missing_evidence = tuple(item for item in evidence_ids if item not in allowed_evidence)
         if not evidence_ids or missing_evidence:
             issue_specs.append((
@@ -1149,7 +2079,7 @@ def _normalize_graph_statements(  # noqa: C901 - one pass keeps validation issue
                 evidence_ids,
                 {"confidence": confidence},
             ))
-        key = (subject, predicate, object_name)
+        key = (subject, predicate, object_name, model_scope)
         existing = merged.setdefault(
             key,
             {
@@ -1158,31 +2088,80 @@ def _normalize_graph_statements(  # noqa: C901 - one pass keeps validation issue
                 "object_name": object_name,
                 "subject_type": subject_type,
                 "object_type": object_type,
+                "knowledge_type": knowledge_type,
+                "model_scope": model_scope,
                 "evidence_ids": [],
                 "confidence": confidence,
-                "metadata": dict(payload.get("metadata") or {}),
+                "metadata": metadata,
+                "duplicate_count": 0,
             },
         )
+        existing["duplicate_count"] += 1
         existing["evidence_ids"] = list(dict.fromkeys([*existing["evidence_ids"], *evidence_ids]))
         if confidence is not None and (existing["confidence"] is None or confidence > existing["confidence"]):
             existing["confidence"] = confidence
 
-    conflict_groups: dict[tuple[str, str], set[str]] = {}
-    for subject, predicate, object_name in merged:
-        conflict_groups.setdefault((subject, predicate), set()).add(object_name)
-    for (subject, predicate), objects in conflict_groups.items():
+    for item in merged.values():
+        if item["duplicate_count"] > 1:
+            item["metadata"] = {
+                **item["metadata"],
+                "merged_duplicate_count": item["duplicate_count"],
+            }
+
+    conflict_groups: dict[tuple[str, str, tuple[str, ...]], set[str]] = {}
+    for subject, predicate, object_name, scope in merged:
+        conflict_groups.setdefault((subject, predicate, scope), set()).add(object_name)
+    for (subject, predicate, scope), objects in conflict_groups.items():
         if len(objects) > 1:
             evidence_ids = tuple(
                 dict.fromkeys(
-                    evidence_id for obj in objects for evidence_id in merged[(subject, predicate, obj)]["evidence_ids"]
+                    evidence_id
+                    for obj in objects
+                    for evidence_id in merged[(subject, predicate, obj, scope)]["evidence_ids"]
                 )
             )
             issue_specs.append((
                 "source_conflict",
-                f"{subject} / {predicate} has conflicting objects: {', '.join(sorted(objects))}.",
+                f"{subject} / {predicate} has conflicting objects in model scope {scope or ('<global>',)}: "
+                f"{', '.join(sorted(objects))}.",
                 IssueSeverity.WARNING,
                 evidence_ids,
-                {"subject": subject, "predicate": predicate, "objects": sorted(objects)},
+                {
+                    "subject": subject,
+                    "predicate": predicate,
+                    "objects": sorted(objects),
+                    "model_scope": list(scope),
+                },
+            ))
+
+    model_groups: dict[tuple[str, str], dict[tuple[str, ...], set[str]]] = {}
+    for subject, predicate, object_name, scope in merged:
+        if scope:
+            model_groups.setdefault((subject, predicate), {}).setdefault(scope, set()).add(object_name)
+    for (subject, predicate), scoped_objects in model_groups.items():
+        all_objects = {item for objects in scoped_objects.values() for item in objects}
+        if len(scoped_objects) > 1 and len(all_objects) > 1:
+            evidence_ids = tuple(
+                dict.fromkeys(
+                    evidence_id
+                    for scope, objects in scoped_objects.items()
+                    for obj in objects
+                    for evidence_id in merged[(subject, predicate, obj, scope)]["evidence_ids"]
+                )
+            )
+            issue_specs.append((
+                "model_difference",
+                f"{subject} / {predicate} differs across model scopes.",
+                IssueSeverity.WARNING,
+                evidence_ids,
+                {
+                    "subject": subject,
+                    "predicate": predicate,
+                    "variants": [
+                        {"model_scope": list(scope), "objects": sorted(objects)}
+                        for scope, objects in sorted(scoped_objects.items())
+                    ],
+                },
             ))
 
     statements = [
@@ -1194,6 +2173,8 @@ def _normalize_graph_statements(  # noqa: C901 - one pass keeps validation issue
             subject_type=item["subject_type"],
             object_type=item["object_type"],
             evidence_ids=tuple(item["evidence_ids"]),
+            knowledge_type=item["knowledge_type"],
+            model_scope=item["model_scope"],
             confidence=item["confidence"],
             metadata=item["metadata"],
         )
@@ -1221,6 +2202,8 @@ def _document_from_rows(row: sqlite3.Row, evidence_rows: Sequence[sqlite3.Row]) 
         source_name=str(row["source_name"]),
         content_hash=str(row["content_hash"]),
         status=ContentStatus(str(row["status"])),
+        created_by=str(row["created_by"]),
+        config_hash=str(row["config_hash"]),
         evidence=tuple(_evidence_from_row(item) for item in evidence_rows),
         quality_issues=tuple(_quality_issue_from_dict(item) for item in _json_load(row["quality_issues_json"], [])),
         metadata=_json_load(row["metadata_json"], {}),
@@ -1237,6 +2220,10 @@ def _evidence_from_row(row: sqlite3.Row) -> EvidenceLocator:
         chunk_id=str(row["chunk_id"]),
         text=str(row["text"]),
         source_file=str(row["source_file"]),
+        created_by=str(row["created_by"]),
+        created_at=str(row["created_at"]),
+        content_hash=str(row["content_hash"]),
+        config_hash=str(row["config_hash"]),
         page=_optional_text(row["page"]),
         block_id=_optional_text(row["block_id"]),
         table_id=_optional_text(row["table_id"]),
@@ -1247,27 +2234,26 @@ def _evidence_from_row(row: sqlite3.Row) -> EvidenceLocator:
 
 def _graph_from_rows(row: sqlite3.Row, statement_rows: Sequence[sqlite3.Row]) -> GraphVersion:
     schema_payload = _json_load(row["schema_json"], {})
+    defaults = GraphDomainSchema()
     schema = GraphDomainSchema(
-        entity_types=tuple(schema_payload.get("entity_types") or ()),
-        relation_types=tuple(schema_payload.get("relation_types") or ()),
+        entity_types=tuple(schema_payload.get("entity_types") or defaults.entity_types),
+        relation_types=tuple(schema_payload.get("relation_types") or defaults.relation_types),
+        knowledge_types=tuple(schema_payload.get("knowledge_types") or defaults.knowledge_types),
         entity_aliases=dict(schema_payload.get("entity_aliases") or {}),
-        relation_aliases=dict(schema_payload.get("relation_aliases") or {}),
+        relation_aliases=dict(schema_payload.get("relation_aliases") or defaults.relation_aliases),
+        model_aliases=dict(schema_payload.get("model_aliases") or defaults.model_aliases),
+        relation_knowledge_types=dict(
+            schema_payload.get("relation_knowledge_types") or defaults.relation_knowledge_types
+        ),
+        relation_constraints={
+            str(relation): tuple(tuple(str(value) for value in pair) for pair in pairs)
+            for relation, pairs in dict(
+                schema_payload.get("relation_constraints") or defaults.relation_constraints
+            ).items()
+        },
         min_confidence=float(schema_payload.get("min_confidence", 0.7)),
     )
-    statements = tuple(
-        GraphStatement(
-            statement_id=str(item["statement_id"]),
-            subject=str(item["subject"]),
-            predicate=str(item["predicate"]),
-            object_name=str(item["object_name"]),
-            subject_type=str(item["subject_type"]),
-            object_type=str(item["object_type"]),
-            evidence_ids=tuple(_json_load(item["evidence_ids_json"], [])),
-            confidence=_optional_float(item["confidence"]),
-            metadata=_json_load(item["metadata_json"], {}),
-        )
-        for item in statement_rows
-    )
+    statements = tuple(_graph_statement_from_row(item, schema) for item in statement_rows)
     return GraphVersion(
         graph_version_id=str(row["graph_version_id"]),
         version=int(row["version"]),
@@ -1276,10 +2262,41 @@ def _graph_from_rows(row: sqlite3.Row, statement_rows: Sequence[sqlite3.Row]) ->
         statements=statements,
         quality_issues=tuple(_quality_issue_from_dict(item) for item in _json_load(row["quality_issues_json"], [])),
         schema=schema,
+        created_by=str(row["created_by"]),
+        content_hash=str(row["content_hash"]),
+        config_hash=str(row["config_hash"]),
         metadata=_json_load(row["metadata_json"], {}),
         created_at=str(row["created_at"]),
         published_at=_optional_text(row["published_at"]),
         supersedes_version_id=_optional_text(row["supersedes_version_id"]),
+    )
+
+
+def _graph_statement_from_row(row: sqlite3.Row, schema: GraphDomainSchema) -> GraphStatement:
+    predicate = str(row["predicate"])
+    keys = set(row.keys())
+    raw_knowledge_type = str(row["knowledge_type"] or "") if "knowledge_type" in keys else ""
+    expected_knowledge_type = schema.knowledge_type_for_relation(predicate)
+    knowledge_type = raw_knowledge_type.strip().upper()
+    if not knowledge_type or (knowledge_type == "FACT" and expected_knowledge_type != "FACT"):
+        knowledge_type = expected_knowledge_type
+    model_scope = (
+        tuple(_json_load(row["model_scope_json"], []))
+        if "model_scope_json" in keys
+        else tuple(_json_load(row["metadata_json"], {}).get("model_scope") or ())
+    )
+    return GraphStatement(
+        statement_id=str(row["statement_id"]),
+        subject=str(row["subject"]),
+        predicate=predicate,
+        object_name=str(row["object_name"]),
+        subject_type=str(row["subject_type"]),
+        object_type=str(row["object_type"]),
+        evidence_ids=tuple(_json_load(row["evidence_ids_json"], [])),
+        knowledge_type=knowledge_type,
+        model_scope=tuple(str(item) for item in model_scope),
+        confidence=_optional_float(row["confidence"]),
+        metadata=_json_load(row["metadata_json"], {}),
     )
 
 
@@ -1308,13 +2325,18 @@ def _review_from_row(row: sqlite3.Row) -> ReviewRecord:
     )
 
 
-def _fmea_task_from_row(row: sqlite3.Row) -> FMEATaskResult:
+def _fmea_task_from_row(
+    row: sqlite3.Row,
+    event_rows: Sequence[sqlite3.Row] = (),
+) -> FMEATaskResult:
     request_payload = _json_load(row["request_json"], {})
     request = FMEATaskRequest(
         requested_by=str(request_payload.get("requested_by") or ""),
         graph_version_id=str(request_payload.get("graph_version_id") or ""),
         document_version_ids=tuple(request_payload.get("document_version_ids") or ()),
+        project_id=str(request_payload.get("project_id") or "default"),
         template=str(request_payload.get("template") or "gas_turbine_minimum_v1"),
+        template_version=_optional_text(request_payload.get("template_version")),
         metadata=dict(request_payload.get("metadata") or {}),
     )
     items = tuple(_fmea_item_from_dict(payload) for payload in _json_load(row["items_json"], []))
@@ -1323,10 +2345,41 @@ def _fmea_task_from_row(row: sqlite3.Row) -> FMEATaskResult:
         request=request,
         status=TaskStatus(str(row["status"])),
         items=items,
-        errors=tuple(_json_load(row["errors_json"], [])),
+        errors=tuple(_task_error_from_value(item) for item in _json_load(row["errors_json"], [])),
+        state_history=tuple(_task_state_event_from_row(item) for item in event_rows),
+        created_by=str(row["created_by"]),
+        content_hash=str(row["content_hash"]),
+        config_hash=str(row["config_hash"]),
         created_at=str(row["created_at"]),
         updated_at=str(row["updated_at"]),
         published_at=_optional_text(row["published_at"]),
+    )
+
+
+def _task_error_from_value(value: TaskError | Mapping[str, Any] | str) -> TaskError:
+    if isinstance(value, TaskError):
+        return value
+    if isinstance(value, Mapping):
+        return TaskError(
+            code=str(value.get("code") or "task_error"),
+            message=str(value.get("message") or "Unknown task error"),
+            stage=str(value.get("stage") or "M5"),
+            retryable=bool(value.get("retryable", False)),
+            details=dict(value.get("details") or {}),
+        )
+    return TaskError(code="legacy_task_error", message=str(value))
+
+
+def _task_state_event_from_row(row: sqlite3.Row) -> TaskStateEvent:
+    raw_from = _optional_text(row["from_status"])
+    return TaskStateEvent(
+        event_id=int(row["event_id"]),
+        task_id=str(row["task_id"]),
+        from_status=TaskStatus(raw_from) if raw_from else None,
+        to_status=TaskStatus(str(row["to_status"])),
+        reason=str(row["reason"]),
+        actor=_optional_text(row["actor"]),
+        created_at=str(row["created_at"]),
     )
 
 
@@ -1388,6 +2441,10 @@ def _utc_now() -> str:
 
 def _json_dump(payload: Any) -> str:
     return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _sha256_json(payload: Any) -> str:
+    return hashlib.sha256(_json_dump(payload).encode("utf-8")).hexdigest()
 
 
 def _json_load(payload: str | None, default: Any) -> Any:

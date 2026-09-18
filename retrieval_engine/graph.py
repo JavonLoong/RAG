@@ -13,6 +13,19 @@ from typing import Any
 from .core import BaseRetriever, DocumentChunk, RetrievalResult
 
 _TOKEN_RE = re.compile(r"[\w\u4e00-\u9fff]+", re.UNICODE)
+_BROAD_QUERY_MARKERS = (
+    "summarize",
+    "summary",
+    "broad",
+    "overview",
+    "overall",
+    "across",
+    "全局",
+    "总结",
+    "概括",
+    "总体",
+    "跨文档",
+)
 
 
 class SQLiteGraphRetriever(BaseRetriever):
@@ -41,7 +54,7 @@ class SQLiteGraphRetriever(BaseRetriever):
         self.max_hops = 2
         self.damping_factor = 0.85
 
-    def retrieve(self, query: str, top_k: int = 5) -> list[RetrievalResult]:
+    def retrieve(self, query: str, top_k: int = 5) -> list[RetrievalResult]:  # noqa: C901
         if top_k <= 0 or not query.strip():
             return []
 
@@ -58,19 +71,19 @@ class SQLiteGraphRetriever(BaseRetriever):
 
         while frontier:
             current_node, current_score, hop = frontier.pop(0)
-            
+
             if hop >= self.max_hops:
                 continue
-                
+
             if current_node in visited_nodes:
                 continue
             visited_nodes.add(current_node)
 
             neighbors = self.graph_store.neighbors(current_node, limit=top_k * 2)
-            
+
             for neighbor in neighbors:
                 triple_id = str(neighbor.get("triple_id", ""))
-                
+
                 subject = str(neighbor.get("subject", ""))
                 obj = str(neighbor.get("object", ""))
                 confidence = float(neighbor.get("confidence") or 0.5)
@@ -81,7 +94,7 @@ class SQLiteGraphRetriever(BaseRetriever):
                 if triple_id not in seen_triples:
                     seen_triples.add(triple_id)
                     predicate = str(neighbor.get("predicate", ""))
-                    
+
                     text = f"{subject} --{predicate}--> {obj}"
                     metadata = {
                         "subject": subject,
@@ -101,7 +114,7 @@ class SQLiteGraphRetriever(BaseRetriever):
                         chunk_id=triple_id,
                         metadata=metadata,
                     )
-                    
+
                     results.append(
                         RetrievalResult(chunk=chunk, score=edge_score, retriever_name=self.name)
                     )
@@ -169,6 +182,7 @@ class SQLiteGraphRetriever(BaseRetriever):
         """Search community summaries for relevant context."""
         results: list[RetrievalResult] = []
         seen: set[str] = set()
+        broad_query = any(marker in query.casefold() for marker in _BROAD_QUERY_MARKERS)
         try:
             search_terms = [query, *_TOKEN_RE.findall(query)]
             for term in search_terms:
@@ -179,7 +193,7 @@ class SQLiteGraphRetriever(BaseRetriever):
                     if community_id in seen:
                         continue
                     seen.add(community_id)
-                    results.append(self._community_summary_result(summary))
+                    results.append(self._community_summary_result(summary, broad=broad_query))
                     if len(results) >= top_k:
                         return results
         except Exception:
@@ -191,7 +205,13 @@ class SQLiteGraphRetriever(BaseRetriever):
         summaries = self.graph_store.get_community_summaries(level=0)[:top_k]
         return [self._community_summary_result(summary, fallback=True) for summary in summaries]
 
-    def _community_summary_result(self, summary: Mapping[str, Any], *, fallback: bool = False) -> RetrievalResult:
+    def _community_summary_result(
+        self,
+        summary: Mapping[str, Any],
+        *,
+        fallback: bool = False,
+        broad: bool = False,
+    ) -> RetrievalResult:
         chunk = DocumentChunk(
             text=str(summary.get("summary", "")),
             source=f"community:{summary.get('community_id', '')}",
@@ -205,6 +225,8 @@ class SQLiteGraphRetriever(BaseRetriever):
             },
         )
         score = 0.6 * (summary.get("entity_count", 1) / 100)
+        if broad:
+            score = max(score, 0.9)
         if fallback:
             score = min(score, 0.55)
         return RetrievalResult(chunk=chunk, score=min(score, 0.8), retriever_name=self.name)

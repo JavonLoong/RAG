@@ -153,7 +153,9 @@ from chroma_rag_poc.parsing import (  # noqa: E402
     load_source_payload,
     parse_payload,
 )
-from chroma_rag_poc.schemas import ChunkRecord, SourceRecord, TextBlock  # noqa: E402
+from chroma_rag_poc.schemas import ChunkRecord, SourceRecord, TextBlock  # noqa: E402,F401
+
+from .m2_annotation import TranslationProvider, TranslationUnavailable, annotate_records  # noqa: E402
 
 
 @dataclass(frozen=True, slots=True)
@@ -164,6 +166,7 @@ class DocumentIntakeOptions:
     visual_tasks: tuple[str, ...] | None = None
     max_preview_chunks: int = 5
     external_parser_fallback: bool = True
+    translation_target: Literal["zh", "en"] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -364,6 +367,7 @@ def run_document_intake(
     clean: bool = True,
     allow_partial: bool = True,
     options: DocumentIntakeOptions | None = None,
+    translator: TranslationProvider | None = None,
 ) -> DocumentIntakeResult:
     options = options or DocumentIntakeOptions()
     profile = classify_document(source_name, raw_bytes)
@@ -400,6 +404,11 @@ def run_document_intake(
         parsed = _load_records_for_profile(profile, raw_bytes, options)
         records = parsed.records
         warnings.extend(parsed.warnings)
+        records, annotation = annotate_records(
+            records,
+            translation_target=options.translation_target,
+            translator=translator,
+        )
         if clean:
             records = clean_records(records)
         chunks = chunk_records(records, chunk_size=chunk_size, overlap=overlap)
@@ -410,6 +419,7 @@ def run_document_intake(
             chunks=chunks,
             status="parsed",
             processing_plan=processing_plan,
+            annotation=annotation.to_dict(),
         )
         status: DocumentIntakeStatus = "parsed" if chunks and quality["quality_gate_status"] == "pass" else "failed"
         processing_plan = _build_processing_plan(
@@ -434,6 +444,24 @@ def run_document_intake(
         )
     except Exception as exc:
         errors.append(str(exc))
+        if isinstance(exc, TranslationUnavailable):
+            if not allow_partial:
+                raise
+            processing_plan = _build_processing_plan(
+                profile=profile,
+                options=options,
+                status="failed",
+                chunk_size=chunk_size,
+                overlap=overlap,
+            )
+            return _empty_result(
+                profile=profile,
+                status="failed",
+                errors=errors,
+                warnings=warnings,
+                processing_plan=processing_plan,
+                options=options,
+            )
         if profile.source_kind == "PDF":
             ocr_profile = _mark_pdf_as_needing_ocr(profile)
             warnings.append("Native PDF parsing failed; OCR/layout/table recognition is required before indexing.")
@@ -591,6 +619,7 @@ def _build_quality(
     chunks: list[ChunkRecord],
     status: DocumentIntakeStatus,
     processing_plan: dict[str, Any],
+    annotation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     missing_metadata: list[str] = []
     for chunk in chunks:
@@ -605,7 +634,33 @@ def _build_quality(
 
     total_record_chars = sum(len(record.text or "") for record in records)
     total_chunk_chars = sum(len(chunk.text or "") for chunk in chunks)
-    gate_status = "pass" if status == "parsed" and chunks and not missing_metadata else "fail"
+    tables: dict[str, list[tuple[int, int]]] = {}
+    for record in records:
+        for block in record.blocks:
+            if block.table_id:
+                column_count = int(block.metadata.get("column_count") or 0)
+                tables.setdefault(block.table_id, []).append((block.page_num, column_count))
+    table_misalignment: list[dict[str, Any]] = []
+    for table_id, rows in tables.items():
+        widths = [width for _page, width in rows]
+        expected = max(set(widths), key=widths.count) if widths else 0
+        malformed_rows = [index for index, width in enumerate(widths) if width != expected or width == 0]
+        if malformed_rows:
+            table_misalignment.append(
+                {
+                    "code": "table_misalignment",
+                    "table_id": table_id,
+                    "page": next((page for page, _width in rows if page >= 0), None),
+                    "expected_columns": expected,
+                    "row_widths": widths,
+                    "malformed_rows": malformed_rows,
+                }
+            )
+    gate_status = (
+        "pass"
+        if status == "parsed" and chunks and not missing_metadata and not table_misalignment
+        else "fail"
+    )
     return {
         "quality_gate_status": gate_status,
         "parser_route": profile.parser_route,
@@ -617,6 +672,14 @@ def _build_quality(
         "required_chunk_metadata": list(REQUIRED_CHUNK_METADATA),
         "quality_gates": list(profile.quality_gates),
         "pending_visual_tasks": list(processing_plan.get("next_queue") or []),
+        "annotation": dict(annotation or {}),
+        "table_misalignment": table_misalignment,
+        "structural_locators": {
+            "block_ids": sum(1 for record in records for block in record.blocks if block.block_id),
+            "table_ids": len(tables),
+            "image_ids": len({block.image_id for record in records for block in record.blocks if block.image_id}),
+            "captions": sum(1 for record in records for block in record.blocks if block.caption_for),
+        },
     }
 
 
@@ -640,6 +703,10 @@ def _empty_result(
         "required_chunk_metadata": list(REQUIRED_CHUNK_METADATA),
         "quality_gates": list(profile.quality_gates),
         "pending_visual_tasks": list(processing_plan.get("next_queue") or []),
+        "annotation": {
+            "translation_target": options.translation_target,
+            "status": "not_run",
+        },
     }
     return DocumentIntakeResult(
         profile=profile,
@@ -696,6 +763,10 @@ def _build_processing_plan(
             {"name": "parse", "status": "blocked" if status == "needs_ocr" else "done"},
             {"name": "visual_parse", "status": "queued" if status == "needs_ocr" else "not_required"},
             {"name": "clean", "status": "skipped" if status != "parsed" else "done"},
+            {
+                "name": "language_and_translation",
+                "status": "skipped" if status != "parsed" else "done",
+            },
             {"name": "chunk", "status": "skipped" if status != "parsed" else "done"},
             {"name": "quality_gate", "status": "needs_ocr" if status == "needs_ocr" else status},
         ],
@@ -745,6 +816,10 @@ def _build_page_diagnostics(records: list[SourceRecord]) -> list[dict[str, Any]]
                 "block_count": len(record.blocks),
                 "label_counts": label_counts,
                 "has_page_metadata": page_num != -1,
+                "block_ids": [block.block_id for block in record.blocks if block.block_id],
+                "table_ids": sorted({block.table_id for block in record.blocks if block.table_id}),
+                "image_ids": sorted({block.image_id for block in record.blocks if block.image_id}),
+                "caption_links": [block.caption_for for block in record.blocks if block.caption_for],
             }
         )
     return diagnostics
@@ -783,6 +858,21 @@ def _record_to_dict(record: SourceRecord) -> dict[str, Any]:
         "doc_id": record.doc_id,
         "char_count": len(record.text or ""),
         "block_count": len(record.blocks),
+        "blocks": [
+            {
+                "block_id": block.block_id,
+                "type": block.block_type,
+                "order": block.order,
+                "page": block.page_num,
+                "text": block.text,
+                "table_id": block.table_id,
+                "image_id": block.image_id,
+                "caption_for": block.caption_for,
+                "bbox": list(block.bbox) if block.bbox else None,
+                "metadata": dict(block.metadata),
+            }
+            for block in record.blocks
+        ],
         "metadata": dict(record.metadata),
         "text_preview": (record.text or "")[:500],
     }

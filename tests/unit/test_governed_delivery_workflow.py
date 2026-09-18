@@ -114,6 +114,12 @@ def test_m2_to_m5_delivery_closes_with_field_evidence_and_exports(tmp_path: Path
     store = GovernanceStore(tmp_path / "governance.db")
     document = _published_document(store)
     graph, evidence_id = _published_graph(store, document)
+    assert document.created_by == "system"
+    assert len(document.content_hash) == 64
+    assert len(document.config_hash) == 64
+    assert graph.created_by == "system"
+    assert len(graph.content_hash) == 64
+    assert len(graph.config_hash) == 64
 
     # The governed graph remains directly consumable by the existing GraphRAG store.
     graph_store = GraphStore(tmp_path / "retrieval_graph.db")
@@ -131,6 +137,9 @@ def test_m2_to_m5_delivery_closes_with_field_evidence_and_exports(tmp_path: Path
         )
     )
     assert task.status is TaskStatus.NEEDS_REVIEW
+    assert task.created_by == "纪文龙"
+    assert len(task.content_hash) == 64
+    assert len(task.config_hash) == 64
     assert len(task.items) == 1
     item = task.items[0]
     assert item.fields == {

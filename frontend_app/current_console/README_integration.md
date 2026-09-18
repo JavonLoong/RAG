@@ -34,6 +34,8 @@ http://localhost:8000
 
 This path is the easiest local integration mode because the FastAPI app serves the frontend and the API from the same origin. API requests such as `/api/health`, `/api/stats`, and `/api/search` resolve against `http://localhost:8000`.
 
+The backend explicitly mounts `/modules`, `/styles`, `/libs`, `/assets`, and `/demo_data` in addition to `/static`. These mounts are required because `index.html` uses relative asset URLs; a successful `/` response alone is not sufficient evidence that backend-backed mode works. The API regression suite checks these public asset routes.
+
 The backend writes runtime data under:
 
 ```text

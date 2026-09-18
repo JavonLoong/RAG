@@ -22,7 +22,7 @@ Open `http://127.0.0.1:8000` for the web console, or use the Electron window sta
 - Evidence and citation display for text and graph retrieval.
 - Triage history for bad GraphRAG answers.
 - Electron desktop shell with larger renderer memory, backend auto-start, and a scoped local file picker.
-- WeChat private-chat one-click GraphRAG demo flow.
+- Generic PowerRAG one-click GraphRAG demo flow.
 
 ## Current Main Paths
 
@@ -65,7 +65,7 @@ This applies the `open_source_90` profile in `evaluation/quality_profiles.py` an
 1. Start the desktop shell with `npm run desktop`.
 2. Switch to `GraphRAG`.
 3. Open the Graph Build page.
-4. Use the WeChat private-chat one-click detector for the WeChat demo, or manually select a JSON/PDF/TXT/DOCX corpus.
+4. Use the generic PowerRAG one-click flow, or manually select a JSON/PDF/TXT/DOCX corpus.
 5. Build the graph, then open the Graph QA page.
 6. Ask a question and inspect text evidence, graph evidence, route metadata, and citations.
 

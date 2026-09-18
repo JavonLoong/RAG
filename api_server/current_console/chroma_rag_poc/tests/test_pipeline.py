@@ -153,115 +153,6 @@ class PipelineTests(unittest.TestCase):
         records = load_json_payload(build_generic_payload(), "generic.json")
         self.assertGreaterEqual(len(records), 1)
 
-    def test_wechat_json_contact_metadata_survives_chunking(self) -> None:
-        payload = [
-            {
-                "id": "chunk-1",
-                "contact_id": "contact-abc",
-                "conversation_id": "wechat-private-0001-abc",
-                "partition_id": "contact:wxid_abc",
-                "conversation_type": "private",
-                "conversation_index": 1,
-                "contact_name": "小琳",
-                "username": "wxid_abc",
-                "message_count": 2,
-                "first_date": "2026-01-01",
-                "last_date": "2026-01-01",
-                "text": "微信聊天记录 — 小琳\n[12:00:00] 小琳: 你好\n[12:01:00] 我: 你好",
-            }
-        ]
-
-        records = load_json_payload(orjson.dumps(payload), "wechat_private_chunks_rag.json")
-        chunks = chunk_records(records, chunk_size=500, overlap=50)
-
-        self.assertEqual(records[0].metadata["contact_name"], "小琳")
-        self.assertEqual(records[0].metadata["username"], "wxid_abc")
-        self.assertEqual(chunks[0].metadata["contact_id"], "contact-abc")
-        self.assertEqual(chunks[0].metadata["conversation_id"], "wechat-private-0001-abc")
-        self.assertEqual(chunks[0].metadata["conversation_index"], 1)
-        self.assertEqual(chunks[0].metadata["contact_name"], "小琳")
-        self.assertEqual(chunks[0].metadata["username"], "wxid_abc")
-
-    def test_unified_query_full_private_contact_analysis_scans_all_contacts_without_llm(self) -> None:
-        payload = [
-            {
-                "id": "chunk-1",
-                "contact_id": "contact-a",
-                "conversation_id": "wechat-private-0001-a",
-                "partition_id": "contact:wxid_a",
-                "conversation_type": "private",
-                "contact_name": "王佳乐",
-                "username": "wxid_a",
-                "message_count": 2,
-                "first_date": "2026-01-01",
-                "last_date": "2026-01-01",
-                "text": "微信聊天记录 - 王佳乐\n2026-01-01 [12:00:00] 王佳乐: 我想你了 想要你陪陪我",
-            },
-            {
-                "id": "chunk-2",
-                "contact_id": "contact-b",
-                "conversation_id": "wechat-private-0002-b",
-                "partition_id": "contact:wxid_b",
-                "conversation_type": "private",
-                "contact_name": "徐明阳",
-                "username": "wxid_b",
-                "message_count": 1,
-                "first_date": "2026-01-02",
-                "last_date": "2026-01-02",
-                "text": "微信聊天记录 - 徐明阳\n2026-01-02 [13:00:00] 徐明阳: 我们讨论一下哲学问题。",
-            },
-            {
-                "id": "chunk-3",
-                "contact_id": "filehelper",
-                "conversation_id": "wechat-private-filehelper",
-                "partition_id": "contact:filehelper",
-                "conversation_type": "filehelper",
-                "contact_name": "文件传输助手",
-                "username": "filehelper",
-                "message_count": 1,
-                "first_date": "2026-01-03",
-                "last_date": "2026-01-03",
-                "text": "微信聊天记录 - 文件传输助手\n2026-01-03 [14:00:00] 我: 宝宝 草稿",
-            },
-        ]
-        ingest_json_payloads(
-            payloads=[("wechat_private_chunks_rag.json", orjson.dumps(payload))],
-            persist_dir=self.persist_dir,
-            collection_name="wechat_private_test",
-            chunk_size=1000,
-            overlap=0,
-            backend="hashing",
-        )
-
-        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
-        client = TestClient(app)
-        response = client.post(
-            "/api/query",
-            json={
-                "question": "请执行全量私聊联系人级暧昧关系分析，不要只基于 top-k chunk。",
-                "collection": "wechat_private_test",
-                "top_k": 1,
-                "mode": "auto",
-            },
-        )
-
-        self.assertEqual(response.status_code, 200)
-        result = response.json()
-        self.assertEqual(result["route"]["task_route"], "COMPREHENSIVE_ANALYSIS")
-        self.assertEqual(result["advanced_mode"], "COMPREHENSIVE_ANALYSIS")
-        self.assertEqual(result["coverage_report"]["top_k_used"], False)
-        self.assertEqual(result["coverage_report"]["private_contact_count"], 2)
-        self.assertEqual(result["coverage_report"]["contacts_analyzed"], 2)
-        self.assertEqual(result["coverage_report"]["candidate_contact_count"], 1)
-        self.assertEqual(result["coverage_report"]["excluded_reasons"]["system_or_file_helper"], 1)
-        contacts = result["contact_analysis"]["contacts"]
-        self.assertEqual(contacts[0]["contact_name"], "王佳乐")
-        self.assertEqual(contacts[0]["username"], "wxid_a")
-        self.assertEqual(contacts[0]["evidence_count"], 1)
-        self.assertIn("我想你了", contacts[0]["evidence"][0]["text"])
-        self.assertTrue(result["citations"])
-        self.assertEqual(result["citations"][0]["source_type"], "text_full_contact_scan")
-
     def test_unified_query_generic_comprehensive_analysis_scans_partitions_without_llm(self) -> None:
         payload = [
             {
@@ -350,191 +241,6 @@ class PipelineTests(unittest.TestCase):
         self.assertIn("text retrieval", result["answer"])
         self.assertTrue(result["citations"])
         self.assertIn("bearing overheating", result["citations"][0]["text"])
-
-    def test_unified_query_self_identity_uses_deterministic_scan(self) -> None:
-        payload = [
-            {
-                "id": "chunk-1",
-                "contact_id": "contact-xiaolin",
-                "conversation_id": "wechat-private-0001-xiaolin",
-                "partition_id": "contact:wxid_xiaolin",
-                "conversation_type": "private",
-                "contact_name": "\u5c0f\u7433",
-                "username": "wxid_xiaolin",
-                "message_count": 2,
-                "first_date": "2026-01-01",
-                "last_date": "2026-01-01",
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - JavonLoong\u4e0e\u5c0f\u7433\u7684\u804a\u5929\u8bb0\u5f55\n2026-01-01 [12:00:00] JavonLoong: \u4f60\u597d\n2026-01-01 [12:01:00] \u5c0f\u7433: \u4f60\u597d",
-            },
-            {
-                "id": "chunk-2",
-                "contact_id": "contact-xumingyang",
-                "conversation_id": "wechat-private-0002-xumingyang",
-                "partition_id": "contact:wxid_xumingyang",
-                "conversation_type": "private",
-                "contact_name": "\u5f90\u660e\u9633",
-                "username": "wxid_xumingyang",
-                "message_count": 1,
-                "first_date": "2026-01-02",
-                "last_date": "2026-01-02",
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - JavonLoong\u4e0e\u5f90\u660e\u9633\u7684\u804a\u5929\u8bb0\u5f55\n2026-01-02 [13:00:00] JavonLoong: \u8ba8\u8bba\u4e00\u4e0b\u4f5c\u4e1a",
-            },
-            {
-                "id": "chunk-3",
-                "contact_id": "contact-forward",
-                "conversation_id": "wechat-private-0003-forward",
-                "partition_id": "contact:wxid_forward",
-                "conversation_type": "private",
-                "contact_name": "\u4e50\u66c8\u5b66\u59d0",
-                "username": "wxid_forward",
-                "message_count": 1,
-                "text": "\u4e50\u66c8\u5b66\u59d0: [\u5408\u5e76\u8f6c\u53d1] JavonLoong\u4e0e\u4e8c\u80d6\u7684\u804a\u5929\u8bb0\u5f55",
-            },
-        ]
-        ingest_json_payloads(
-            payloads=[("wechat_private_chunks_rag.json", orjson.dumps(payload))],
-            persist_dir=self.persist_dir,
-            collection_name="wechat_identity_test",
-            chunk_size=1000,
-            overlap=0,
-            backend="hashing",
-        )
-
-        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
-        client = TestClient(app)
-
-        class NoCallLLM:
-            def __init__(self, **_: object) -> None:
-                pass
-
-            def generate(self, prompt: str, **_: object) -> str:
-                raise AssertionError("identity questions must bypass LLM routing and generation")
-
-        with patch("chroma_rag_poc.api.OpenAICompatibleLLMClient", NoCallLLM):
-            response = client.post(
-                "/api/query",
-                json={
-                    "question": "\u6211\u662f\u8c01\uff1f",
-                    "collection": "wechat_identity_test",
-                    "top_k": 100,
-                    "mode": "auto",
-                    "llm_api_key": "test-key",
-                },
-            )
-
-        self.assertEqual(response.status_code, 200)
-        result = response.json()
-        self.assertEqual(result["route"]["task_route"], "COMPREHENSIVE_ANALYSIS")
-        self.assertEqual(result["advanced_mode"], "COMPREHENSIVE_ANALYSIS")
-        self.assertEqual(result["coverage_report"]["analysis_type"], "self_identity_scan")
-        self.assertFalse(result["coverage_report"]["top_k_used"])
-        self.assertEqual(result["identity_analysis"]["top_candidate"]["name"], "JavonLoong")
-        self.assertNotIn("\u5408\u5e76\u8f6c\u53d1", result["identity_analysis"]["top_candidate"]["name"])
-        self.assertIn("JavonLoong", result["answer"])
-        self.assertTrue(result["citations"])
-        self.assertEqual(result["citations"][0]["source_type"], "text_identity_scan")
-
-    def test_unified_query_identity_falls_back_from_empty_selected_collection_to_chat_collection(self) -> None:
-        ingest_json_payloads(
-            payloads=[("empty.json", orjson.dumps([{"id": "empty", "text": ""}]))],
-            persist_dir=self.persist_dir,
-            collection_name="power_rag_corpus",
-            chunk_size=1000,
-            overlap=0,
-            backend="hashing",
-        )
-        # Remove the placeholder so the selected collection exists but has zero usable chunks.
-        client_for_empty = _create_client(self.persist_dir)
-        try:
-            client_for_empty.delete_collection("power_rag_corpus")
-            client_for_empty.create_collection("power_rag_corpus", embedding_function=HashingEmbeddingFunction())
-        finally:
-            _close_client(client_for_empty)
-
-        payload = [
-            {
-                "id": "chunk-1",
-                "contact_id": "contact-forward",
-                "conversation_id": "wechat-private-0001-forward",
-                "partition_id": "contact:wxid_forward",
-                "conversation_type": "private",
-                "contact_name": "\u4e50\u66c8\u5b66\u59d0",
-                "username": "wxid_forward",
-                "message_count": 1,
-                "text": "\u4e50\u66c8\u5b66\u59d0: [\u5408\u5e76\u8f6c\u53d1] JavonLoong\u4e0e\u4e8c\u80d6\u7684\u804a\u5929\u8bb0\u5f55",
-            },
-        ]
-        ingest_json_payloads(
-            payloads=[("wechat_private_chunks_rag.json", orjson.dumps(payload))],
-            persist_dir=self.persist_dir,
-            collection_name="wechat_private_chunks_rag",
-            chunk_size=1000,
-            overlap=0,
-            backend="hashing",
-        )
-
-        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
-        client = TestClient(app)
-        response = client.post(
-            "/api/query",
-            json={
-                "question": "\u6839\u636e\u6211\u4eec\u7684\u804a\u5929\u8bb0\u5f55\u5224\u65ad\u4e00\u4e0b\u6211\u662f\u8c01\uff0c\u5224\u65ad\u4e00\u4e0b\u6211\u7684\u8eab\u4efd\u3002",
-                "collection": "power_rag_corpus",
-                "top_k": 100,
-                "mode": "global",
-            },
-        )
-
-        self.assertEqual(response.status_code, 200)
-        result = response.json()
-        self.assertEqual(result["resolved_collection"], "wechat_private_chunks_rag")
-        self.assertEqual(result["requested_collection"], "power_rag_corpus")
-        self.assertEqual(result["collection_resolution"]["reason"], "requested_collection_empty")
-        self.assertGreater(result["coverage_report"]["scanned_chunks"], 0)
-        self.assertEqual(result["identity_analysis"]["top_candidate"]["name"], "JavonLoong")
-
-    def test_unified_query_self_identity_does_not_treat_attachment_fields_as_sender(self) -> None:
-        payload = [
-            {
-                "id": "chunk-1",
-                "contact_id": "contact-printer",
-                "conversation_id": "wechat-private-0001-printer",
-                "partition_id": "contact:wxid_printer",
-                "conversation_type": "private",
-                "contact_name": "AAA\u6253\u5370\u5ba4",
-                "username": "wxid_printer",
-                "message_count": 2,
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - AAA\u6253\u5370\u5ba4\nattachments / path: 0026_AAA/AAA\u6253\u5370\u5ba4/\u6587\u4ef6/demo.pdf\nattachments / size_bytes: 1024\n[12:00:00] \u6211: \u4f60\u597d\n[12:01:00] AAA\u6253\u5370\u5ba4: \u6536\u5230\n[15:48:12] \u5317\u4ea4\u5927\u4e8c \u5546\u52a1\u7ba1\u7406,\u56fd\u9645\u672c\u79d1: \u6211\u662f\u94ae\u795c\u7984\u306e\u82f1\u7f8e",
-            }
-        ]
-        ingest_json_payloads(
-            payloads=[("wechat_private_chunks_rag.json", orjson.dumps(payload))],
-            persist_dir=self.persist_dir,
-            collection_name="wechat_identity_attachment_noise_test",
-            chunk_size=1000,
-            overlap=0,
-            backend="hashing",
-        )
-
-        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
-        client = TestClient(app)
-        response = client.post(
-            "/api/query",
-            json={
-                "question": "\u6211\u662f\u8c01\uff1f",
-                "collection": "wechat_identity_attachment_noise_test",
-                "top_k": 100,
-                "mode": "auto",
-            },
-        )
-
-        self.assertEqual(response.status_code, 200)
-        result = response.json()
-        self.assertEqual(result["coverage_report"]["analysis_type"], "self_identity_scan")
-        self.assertIsNone(result["identity_analysis"]["top_candidate"])
-        self.assertGreaterEqual(result["coverage_report"]["weak_candidate_count"], 1)
-        self.assertFalse(result["citations"])
-        self.assertIn("\u65e0\u6cd5", result["answer"])
 
     def test_unified_query_returns_resilient_fallback_when_primary_path_fails(self) -> None:
         payload = [
@@ -699,406 +405,6 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(result["citations"][0]["source_type"], "text_universal_keyword_scan")
         self.assertIn("bearing overheating", result["citations"][0]["text"])
 
-    def test_private_contact_abstract_affection_question_expands_to_evidence_terms(self) -> None:
-        payload = [
-            {
-                "id": "chunk-1",
-                "contact_id": "contact-a",
-                "conversation_id": "wechat-private-0001-a",
-                "partition_id": "contact:wxid_a",
-                "conversation_type": "private",
-                "contact_name": "\u5c0f\u7433",
-                "username": "wxid_a",
-                "message_count": 1,
-                "first_date": "2026-01-01",
-                "last_date": "2026-01-01",
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - \u5c0f\u7433\n2026-01-01 [22:00:00] \u5c0f\u7433: \u6211\u60f3\u4f60\u4e86\uff0c\u4e5f\u559c\u6b22\u4f60\u3002",
-            },
-            {
-                "id": "chunk-2",
-                "contact_id": "contact-b",
-                "conversation_id": "wechat-private-0002-b",
-                "partition_id": "contact:wxid_b",
-                "conversation_type": "private",
-                "contact_name": "\u5f90\u660e\u9633",
-                "username": "wxid_b",
-                "message_count": 1,
-                "first_date": "2026-01-02",
-                "last_date": "2026-01-02",
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - \u5f90\u660e\u9633\n2026-01-02 [13:00:00] \u5f90\u660e\u9633: \u6211\u4eec\u8ba8\u8bba\u4e00\u4e0b\u4f5c\u4e1a\u3002",
-            },
-        ]
-        ingest_json_payloads(
-            payloads=[("wechat_private_chunks_rag.json", orjson.dumps(payload))],
-            persist_dir=self.persist_dir,
-            collection_name="wechat_private_abstract_affection_test",
-            chunk_size=1000,
-            overlap=0,
-            backend="hashing",
-        )
-
-        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
-        client = TestClient(app)
-        response = client.post(
-            "/api/query",
-            json={
-                "question": "\u54ea\u4e9b\u4eba\u548c\u6211\u597d\u611f\u5ea6\u6bd4\u8f83\u9ad8\uff1f",
-                "collection": "wechat_private_abstract_affection_test",
-                "top_k": 1,
-                "mode": "auto",
-            },
-        )
-
-        self.assertEqual(response.status_code, 200)
-        result = response.json()
-        self.assertEqual(result["coverage_report"]["candidate_contact_count"], 1)
-        self.assertIn("\u60f3\u4f60", result["coverage_report"]["query_terms"])
-        contacts = result["contact_analysis"]["contacts"]
-        self.assertEqual(contacts[0]["contact_name"], "\u5c0f\u7433")
-        self.assertIn("\u559c\u6b22\u4f60", contacts[0]["evidence"][0]["text"])
-
-    def test_unified_query_vague_wechat_overview_returns_deterministic_collection_summary(self) -> None:
-        payload = [
-            {
-                "id": "chunk-1",
-                "contact_id": "contact-a",
-                "conversation_id": "wechat-private-0001-a",
-                "partition_id": "contact:wxid_a",
-                "conversation_type": "private",
-                "contact_name": "\u5c0f\u7433",
-                "username": "wxid_a",
-                "message_count": 2,
-                "first_date": "2026-01-01",
-                "last_date": "2026-01-03",
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - \u5c0f\u7433\n2026-01-01 [22:00:00] \u5c0f\u7433: \u6211\u60f3\u4f60\u4e86\n2026-01-03 [09:00:00] \u6211: \u4eca\u5929\u4f5c\u4e1a\u5f88\u591a",
-            },
-            {
-                "id": "chunk-2",
-                "contact_id": "contact-b",
-                "conversation_id": "wechat-private-0002-b",
-                "partition_id": "contact:wxid_b",
-                "conversation_type": "private",
-                "contact_name": "\u623f\u4e1c\u5f20\u54e5",
-                "username": "wxid_b",
-                "message_count": 1,
-                "first_date": "2026-01-02",
-                "last_date": "2026-01-02",
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - \u623f\u4e1c\u5f20\u54e5\n2026-01-02 [10:00:00] \u623f\u4e1c\u5f20\u54e5: \u6211\u8fd9\u91cc\u6709\u623f\u5b50\u51fa\u79df\uff0c\u623f\u79df\u53ef\u4ee5\u9762\u8c08",
-            },
-        ]
-        ingest_json_payloads(
-            payloads=[("wechat_private_chunks_rag.json", orjson.dumps(payload))],
-            persist_dir=self.persist_dir,
-            collection_name="wechat_private_overview_test",
-            chunk_size=1000,
-            overlap=0,
-            backend="hashing",
-        )
-
-        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
-        client = TestClient(app)
-        response = client.post(
-            "/api/query",
-            json={
-                "question": "\u8fd9\u91cc\u9762\u8bb2\u7684\u662f\u4ec0\u4e48\uff1f",
-                "collection": "wechat_private_overview_test",
-                "top_k": 3,
-                "mode": "auto",
-            },
-        )
-
-        self.assertEqual(response.status_code, 200)
-        result = response.json()
-        self.assertEqual(result["coverage_report"]["analysis_type"], "collection_overview")
-        self.assertFalse(result["coverage_report"]["top_k_used"])
-        self.assertIn("\u5fae\u4fe1\u79c1\u804a\u96c6\u5408", result["answer"])
-        self.assertIn("\u5c0f\u7433", result["answer"])
-        self.assertTrue(result["citations"])
-        self.assertEqual(result["citations"][0]["source_type"], "text_collection_overview")
-
-    def test_unified_query_vague_people_relationships_returns_contact_overview(self) -> None:
-        payload = [
-            {
-                "id": "chunk-1",
-                "contact_id": "contact-a",
-                "conversation_id": "wechat-private-0001-a",
-                "partition_id": "contact:wxid_a",
-                "conversation_type": "private",
-                "contact_name": "\u5c0f\u7433",
-                "username": "wxid_a",
-                "message_count": 5,
-                "first_date": "2026-01-01",
-                "last_date": "2026-01-03",
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - \u5c0f\u7433\n2026-01-01 [22:00:00] \u5c0f\u7433: \u6211\u60f3\u4f60\u4e86",
-            },
-            {
-                "id": "chunk-2",
-                "contact_id": "contact-b",
-                "conversation_id": "wechat-private-0002-b",
-                "partition_id": "contact:wxid_b",
-                "conversation_type": "private",
-                "contact_name": "\u5f90\u660e\u9633",
-                "username": "wxid_b",
-                "message_count": 2,
-                "first_date": "2026-01-02",
-                "last_date": "2026-01-02",
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - \u5f90\u660e\u9633\n2026-01-02 [13:00:00] \u5f90\u660e\u9633: \u6211\u4eec\u8ba8\u8bba\u4e00\u4e0b\u4f5c\u4e1a",
-            },
-        ]
-        ingest_json_payloads(
-            payloads=[("wechat_private_chunks_rag.json", orjson.dumps(payload))],
-            persist_dir=self.persist_dir,
-            collection_name="wechat_private_contacts_overview_test",
-            chunk_size=1000,
-            overlap=0,
-            backend="hashing",
-        )
-
-        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
-        client = TestClient(app)
-        response = client.post(
-            "/api/query",
-            json={
-                "question": "\u6709\u54ea\u4e9b\u91cd\u8981\u7684\u4eba\u548c\u5173\u7cfb\uff1f",
-                "collection": "wechat_private_contacts_overview_test",
-                "top_k": 3,
-                "mode": "auto",
-            },
-        )
-
-        self.assertEqual(response.status_code, 200)
-        result = response.json()
-        self.assertEqual(result["coverage_report"]["analysis_type"], "private_contact_overview")
-        self.assertIn("\u5c0f\u7433", result["answer"])
-        self.assertIn("\u5f90\u660e\u9633", result["answer"])
-        self.assertTrue(result["contact_overview"]["contacts"])
-
-    def test_private_contact_overview_does_not_sum_repeated_message_count_per_chunk(self) -> None:
-        payload = [
-            {
-                "id": "chunk-1",
-                "contact_id": "contact-a",
-                "conversation_id": "wechat-private-0001-a",
-                "partition_id": "contact:wxid_a",
-                "conversation_type": "private",
-                "contact_name": "\u5c0f\u7433",
-                "username": "wxid_a",
-                "message_count": 10,
-                "first_date": "2026-01-01",
-                "last_date": "2026-01-02",
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - \u5c0f\u7433\n2026-01-01 [22:00:00] \u5c0f\u7433: \u7b2c\u4e00\u6bb5",
-            },
-            {
-                "id": "chunk-2",
-                "contact_id": "contact-a",
-                "conversation_id": "wechat-private-0001-a",
-                "partition_id": "contact:wxid_a",
-                "conversation_type": "private",
-                "contact_name": "\u5c0f\u7433",
-                "username": "wxid_a",
-                "message_count": 10,
-                "first_date": "2026-01-03",
-                "last_date": "2026-01-04",
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - \u5c0f\u7433\n2026-01-03 [22:00:00] \u5c0f\u7433: \u7b2c\u4e8c\u6bb5",
-            },
-        ]
-        ingest_json_payloads(
-            payloads=[("wechat_private_chunks_rag.json", orjson.dumps(payload))],
-            persist_dir=self.persist_dir,
-            collection_name="wechat_private_message_count_test",
-            chunk_size=1000,
-            overlap=0,
-            backend="hashing",
-        )
-
-        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
-        client = TestClient(app)
-        response = client.post(
-            "/api/query",
-            json={
-                "question": "\u6709\u54ea\u4e9b\u91cd\u8981\u7684\u4eba\u548c\u5173\u7cfb\uff1f",
-                "collection": "wechat_private_message_count_test",
-                "top_k": 3,
-                "mode": "auto",
-            },
-        )
-
-        self.assertEqual(response.status_code, 200)
-        result = response.json()
-        self.assertEqual(result["coverage_report"]["message_count_estimate"], 10)
-        self.assertEqual(result["contact_overview"]["contacts"][0]["message_count"], 10)
-
-    def test_private_contact_vague_affection_and_rental_questions_use_full_scan(self) -> None:
-        payload = [
-            {
-                "id": "chunk-1",
-                "contact_id": "contact-a",
-                "conversation_id": "wechat-private-0001-a",
-                "partition_id": "contact:wxid_a",
-                "conversation_type": "private",
-                "contact_name": "\u5c0f\u7433",
-                "username": "wxid_a",
-                "message_count": 1,
-                "first_date": "2026-01-01",
-                "last_date": "2026-01-01",
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - \u5c0f\u7433\n2026-01-01 [22:00:00] \u5c0f\u7433: \u6211\u60f3\u4f60\u4e86\uff0c\u559c\u6b22\u4f60\u3002",
-            },
-            {
-                "id": "chunk-2",
-                "contact_id": "contact-rent",
-                "conversation_id": "wechat-private-0002-rent",
-                "partition_id": "contact:wxid_rent",
-                "conversation_type": "private",
-                "contact_name": "\u623f\u4e1c\u5f20\u54e5",
-                "username": "wxid_rent",
-                "message_count": 1,
-                "first_date": "2026-01-02",
-                "last_date": "2026-01-02",
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - \u623f\u4e1c\u5f20\u54e5\n2026-01-02 [10:00:00] \u623f\u4e1c\u5f20\u54e5: \u6211\u8fd9\u91cc\u6709\u623f\u5b50\u51fa\u79df\uff0c\u623f\u79df\u53ef\u4ee5\u9762\u8c08",
-            },
-        ]
-        ingest_json_payloads(
-            payloads=[("wechat_private_chunks_rag.json", orjson.dumps(payload))],
-            persist_dir=self.persist_dir,
-            collection_name="wechat_private_vague_scan_test",
-            chunk_size=1000,
-            overlap=0,
-            backend="hashing",
-        )
-
-        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
-        client = TestClient(app)
-        affection_response = client.post(
-            "/api/query",
-            json={
-                "question": "\u6709\u6ca1\u6709\u4ec0\u4e48\u503c\u5f97\u6ce8\u610f\u7684\u60c5\u7eea\u6216\u66a7\u6627\u7ebf\u7d22\uff1f",
-                "collection": "wechat_private_vague_scan_test",
-                "top_k": 1,
-                "mode": "auto",
-            },
-        )
-        rental_response = client.post(
-            "/api/query",
-            json={
-                "question": "\u5e2e\u6211\u627e\u4e00\u4e0b\u53ef\u80fd\u548c\u79df\u623f\u6709\u5173\u7684\u4eba\u3002",
-                "collection": "wechat_private_vague_scan_test",
-                "top_k": 1,
-                "mode": "auto",
-            },
-        )
-
-        self.assertEqual(affection_response.status_code, 200)
-        affection = affection_response.json()
-        self.assertEqual(affection["coverage_report"]["analysis_type"], "private_contact_affection_evidence_sweep")
-        self.assertEqual(affection["coverage_report"]["candidate_contact_count"], 1)
-        self.assertIn("\u5c0f\u7433", affection["answer"])
-
-        self.assertEqual(rental_response.status_code, 200)
-        rental = rental_response.json()
-        self.assertEqual(rental["coverage_report"]["analysis_type"], "private_contact_term_evidence_sweep")
-        self.assertEqual(rental["coverage_report"]["candidate_contact_count"], 1)
-        self.assertIn("\u623f\u4e1c\u5f20\u54e5", rental["answer"])
-
-    def test_unified_query_private_contact_event_sweep_bypasses_graph_gate(self) -> None:
-        from storage_layer.graph_store import GraphEdgeRecord, GraphStore
-
-        payload = [
-            {
-                "id": "chunk-1",
-                "contact_id": "contact-a",
-                "conversation_id": "wechat-private-0001-a",
-                "partition_id": "contact:wxid_a",
-                "conversation_type": "private",
-                "contact_name": "\u5c0f\u7433",
-                "username": "wxid_a",
-                "message_count": 2,
-                "first_date": "2026-01-01",
-                "last_date": "2026-01-01",
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - \u5c0f\u7433\n2026-01-01 [12:00:00] \u5c0f\u7433: \u6628\u5929\u6211\u4eec\u5435\u67b6\u540e\u8fd8\u6709\u4e89\u6267\uff0c\u4f60\u5bf9\u4e0d\u8d77\u6211\u3002",
-            },
-            {
-                "id": "chunk-2",
-                "contact_id": "contact-b",
-                "conversation_id": "wechat-private-0002-b",
-                "partition_id": "contact:wxid_b",
-                "conversation_type": "private",
-                "contact_name": "\u5f90\u660e\u9633",
-                "username": "wxid_b",
-                "message_count": 1,
-                "first_date": "2026-01-02",
-                "last_date": "2026-01-02",
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - \u5f90\u660e\u9633\n2026-01-02 [13:00:00] \u5f90\u660e\u9633: \u6211\u4eec\u8ba8\u8bba\u4e00\u4e0b\u54f2\u5b66\u95ee\u9898\u3002",
-            },
-            {
-                "id": "chunk-3",
-                "contact_id": "filehelper",
-                "conversation_id": "wechat-private-filehelper",
-                "partition_id": "contact:filehelper",
-                "conversation_type": "filehelper",
-                "contact_name": "\u6587\u4ef6\u4f20\u8f93\u52a9\u624b",
-                "username": "filehelper",
-                "message_count": 1,
-                "first_date": "2026-01-03",
-                "last_date": "2026-01-03",
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - \u6587\u4ef6\u4f20\u8f93\u52a9\u624b\n2026-01-03 [14:00:00] \u6211: \u5435\u67b6 \u4e89\u6267",
-            },
-        ]
-        ingest_json_payloads(
-            payloads=[("wechat_private_chunks_rag.json", orjson.dumps(payload))],
-            persist_dir=self.persist_dir,
-            collection_name="wechat_private_event_test",
-            chunk_size=1000,
-            overlap=0,
-            backend="hashing",
-        )
-        graph_db_path = self.persist_dir / "unsafe_graph.sqlite"
-        store = GraphStore(graph_db_path)
-        store.initialize(reset=True)
-        store.import_edges(
-            [
-                GraphEdgeRecord(
-                    triple_id="unsafe-1",
-                    subject="A",
-                    predicate="RELATES_TO",
-                    object_name="B",
-                    confidence=0.1,
-                    evidence=None,
-                    source_file="unsafe.md",
-                )
-            ],
-            reset=False,
-        )
-
-        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
-        client = TestClient(app)
-        response = client.post(
-            "/api/query",
-            json={
-                "question": "\u6211\u548c\u54ea\u4e9b\u4eba\u53d1\u751f\u8fc7\u4e89\u6267?",
-                "collection": "wechat_private_event_test",
-                "graph_db_path": str(graph_db_path),
-                "top_k": 1,
-                "mode": "auto",
-            },
-        )
-
-        self.assertEqual(response.status_code, 200)
-        result = response.json()
-        self.assertEqual(result["route"]["task_route"], "COMPREHENSIVE_ANALYSIS")
-        self.assertEqual(result["advanced_mode"], "COMPREHENSIVE_ANALYSIS")
-        self.assertEqual(result["coverage_report"]["analysis_type"], "private_contact_term_evidence_sweep")
-        self.assertEqual(result["coverage_report"]["top_k_used"], False)
-        self.assertEqual(result["coverage_report"]["private_contact_count"], 2)
-        self.assertEqual(result["coverage_report"]["candidate_contact_count"], 1)
-        self.assertEqual(result["coverage_report"]["excluded_reasons"]["system_or_file_helper"], 1)
-        self.assertIn("Result:", result["answer"])
-        self.assertNotIn("Full private-contact evidence sweep executed", result["answer"])
-        contacts = result["contact_analysis"]["contacts"]
-        self.assertEqual(contacts[0]["contact_name"], "\u5c0f\u7433")
-        self.assertEqual(contacts[0]["judgement"], "has_matching_evidence")
-        self.assertIn("\u4e89\u6267", contacts[0]["evidence"][0]["text"])
-        self.assertEqual(result["citations"][0]["source_type"], "text_full_contact_term_scan")
-
     def test_unified_query_corpus_wide_question_uses_generic_full_scan_without_graph_gate(self) -> None:
         from storage_layer.graph_store import GraphEdgeRecord, GraphStore
 
@@ -1164,85 +470,6 @@ class PipelineTests(unittest.TestCase):
         candidates = result["partition_analysis"]["candidates"]
         self.assertEqual(candidates[0]["partition_id"], "manual-a.md")
         self.assertIn("bearing overheating", candidates[0]["evidence"][0]["text"])
-
-    def test_unified_query_private_contact_question_uses_generic_contact_sweep(self) -> None:
-        from storage_layer.graph_store import GraphEdgeRecord, GraphStore
-
-        payload = [
-            {
-                "id": "chunk-1",
-                "contact_id": "contact-a",
-                "conversation_id": "wechat-private-0001-a",
-                "partition_id": "contact:wxid_a",
-                "conversation_type": "private",
-                "contact_name": "\u679c\u679c",
-                "username": "wxid_a",
-                "message_count": 2,
-                "first_date": "2026-01-01",
-                "last_date": "2026-01-01",
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - \u679c\u679c\n2026-01-01 [12:00:00] \u679c\u679c: \u522b\u96be\u8fc7\uff0c\u6211\u6765\u5b89\u6170\u4f60\u4e00\u4e0b\u3002",
-            },
-            {
-                "id": "chunk-2",
-                "contact_id": "contact-b",
-                "conversation_id": "wechat-private-0002-b",
-                "partition_id": "contact:wxid_b",
-                "conversation_type": "private",
-                "contact_name": "\u5f90\u660e\u9633",
-                "username": "wxid_b",
-                "message_count": 1,
-                "first_date": "2026-01-02",
-                "last_date": "2026-01-02",
-                "text": "\u5fae\u4fe1\u804a\u5929\u8bb0\u5f55 - \u5f90\u660e\u9633\n2026-01-02 [13:00:00] \u5f90\u660e\u9633: \u6211\u4eec\u8ba8\u8bba\u4e00\u4e0b\u54f2\u5b66\u95ee\u9898\u3002",
-            },
-        ]
-        ingest_json_payloads(
-            payloads=[("wechat_private_chunks_rag.json", orjson.dumps(payload))],
-            persist_dir=self.persist_dir,
-            collection_name="wechat_private_generic_contact_query_test",
-            chunk_size=1000,
-            overlap=0,
-            backend="hashing",
-        )
-        graph_db_path = self.persist_dir / "unsafe_graph_generic_contact.sqlite"
-        store = GraphStore(graph_db_path)
-        store.initialize(reset=True)
-        store.import_edges(
-            [
-                GraphEdgeRecord(
-                    triple_id="unsafe-1",
-                    subject="A",
-                    predicate="RELATES_TO",
-                    object_name="B",
-                    confidence=0.1,
-                    evidence=None,
-                    source_file="unsafe.md",
-                )
-            ],
-            reset=False,
-        )
-
-        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
-        client = TestClient(app)
-        response = client.post(
-            "/api/query",
-            json={
-                "question": "\u8c01\u7ecf\u5e38\u5b89\u6170\u6211?",
-                "collection": "wechat_private_generic_contact_query_test",
-                "graph_db_path": str(graph_db_path),
-                "top_k": 1,
-                "mode": "auto",
-            },
-        )
-
-        self.assertEqual(response.status_code, 200)
-        result = response.json()
-        self.assertEqual(result["route"]["task_route"], "COMPREHENSIVE_ANALYSIS")
-        self.assertEqual(result["coverage_report"]["analysis_type"], "private_contact_term_evidence_sweep")
-        self.assertEqual(result["coverage_report"]["query_terms"], ["\u5b89\u6170"])
-        contacts = result["contact_analysis"]["contacts"]
-        self.assertEqual(contacts[0]["contact_name"], "\u679c\u679c")
-        self.assertIn("\u5b89\u6170", contacts[0]["evidence"][0]["text"])
 
     def test_clean_records(self) -> None:
         """短文本合并测试"""
@@ -5643,25 +4870,25 @@ class PipelineTests(unittest.TestCase):
             [
                 GraphEdgeRecord(
                     triple_id="T1",
-                    subject="小琳",
+                    subject="Gas turbine maintenance",
                     predicate="RELATES_TO",
-                    object_name="喜欢你",
-                    evidence="小琳说喜欢你。",
-                    source_file="wechat_private_chunks_rag.json",
+                    object_name="Vibration monitoring",
+                    evidence="Maintenance notes link turbine inspection with vibration trend monitoring.",
+                    source_file="maintenance_notes.md",
                 )
             ],
             reset=False,
         )
         store.store_communities(
-            [{"community_id": "C0", "node_name": "小琳"}],
+            [{"community_id": "C0", "node_name": "Gas turbine maintenance"}],
             level=0,
         )
         store.store_community_summaries(
             [
                 {
                     "community_id": "C0",
-                    "title": "私聊暧昧关系",
-                    "summary": "该社区包含私聊联系人、喜欢你、宝宝、想你等暧昧关系线索。",
+                    "title": "Maintenance monitoring",
+                    "summary": "The community contains turbine maintenance, vibration monitoring, inspection, and risk-control evidence.",
                     "entity_count": 12,
                     "edge_count": 4,
                 }
@@ -5670,11 +4897,11 @@ class PipelineTests(unittest.TestCase):
         )
 
         retriever = SQLiteGraphRetriever(store, include_community_summaries=True)
-        results = retriever.retrieve("请执行全量私聊联系人级暧昧关系分析", top_k=5)
+        results = retriever.retrieve("Summarize broad maintenance monitoring evidence", top_k=5)
 
         self.assertTrue(results)
         self.assertEqual(results[0].retriever_name, "graph")
-        self.assertIn("暧昧关系线索", results[0].chunk.text)
+        self.assertIn("vibration monitoring", results[0].chunk.text)
 
     def test_unified_query_route_uses_router_text_and_global_context(self) -> None:
         """Unified query should connect router, text retrieval, and community global context."""
@@ -5878,12 +5105,12 @@ class PipelineTests(unittest.TestCase):
             [
                 GraphEdgeRecord(
                     triple_id="T1",
-                    subject="Rental chat corpus",
+                    subject="Maintenance report corpus",
                     predicate="HAS_TOPIC",
-                    object_name="Housing discussion",
+                    object_name="Vibration monitoring",
                     confidence=0.9,
-                    evidence="The corpus contains WeChat records about housing and rental discussion.",
-                    source_file="wechat_private_chunks_rag.json",
+                    evidence="The corpus contains maintenance reports about vibration monitoring and inspection planning.",
+                    source_file="maintenance_reports.json",
                     source_chunk_id="chunk-1",
                 )
             ],
@@ -5892,8 +5119,8 @@ class PipelineTests(unittest.TestCase):
         store.upsert_nodes([{"id": "qlogo", "type": "metadata_noise"}])
         store.store_communities(
             [
-                {"community_id": "C0", "node_name": "Rental chat corpus"},
-                {"community_id": "C0", "node_name": "Housing discussion"},
+                {"community_id": "C0", "node_name": "Maintenance report corpus"},
+                {"community_id": "C0", "node_name": "Vibration monitoring"},
                 {"community_id": "C0", "node_name": "qlogo"},
             ],
             level=0,
@@ -5903,7 +5130,7 @@ class PipelineTests(unittest.TestCase):
                 {
                     "community_id": "C0",
                     "title": "Corpus overview",
-                    "summary": "The community summarizes the dataset as private chat records discussing housing and rental topics.",
+                    "summary": "The community summarizes maintenance reports about vibration monitoring and inspection planning.",
                     "entity_count": 3,
                     "edge_count": 1,
                     "metadata": {
@@ -5915,8 +5142,8 @@ class PipelineTests(unittest.TestCase):
                                 "source_evidence": [
                                     {
                                         "triple_id": "T1",
-                                        "text": "The corpus contains WeChat records about housing and rental discussion.",
-                                        "source_file": "wechat_private_chunks_rag.json",
+                                        "text": "The corpus contains maintenance reports about vibration monitoring and inspection planning.",
+                                        "source_file": "maintenance_reports.json",
                                         "source_chunk_id": "chunk-1",
                                     }
                                 ],
@@ -5971,8 +5198,6 @@ class PipelineTests(unittest.TestCase):
         self.assertIn("async function requestUnifiedQuery", html)
         self.assertIn('requestJson("/api/query"', html)
         self.assertIn("renderUnifiedQueryAnswer", html)
-        self.assertIn("formatContactAnalysisMarkdown", html)
-        self.assertIn("private_contact_affection_sweep", html)
         self.assertIn("formatPartitionAnalysisMarkdown", html)
         self.assertIn("generic_partition_evidence_sweep", html)
         self.assertIn("formatGraphQualityGateMarkdown", html)
@@ -5987,7 +5212,6 @@ class PipelineTests(unittest.TestCase):
         self.assertIn("graph_quality_gate_failed", html)
         self.assertIn("error.detail = payload.detail", html)
         self.assertIn("runKgAskBackend", html)
-        self.assertIn("private_contact_term_evidence_sweep", html)
         self.assertIn("async function syncKgGraphToBackend", html)
         self.assertIn('await syncKgGraphToBackend("kg-build")', html)
         self.assertIn('await clearKgRuntimeState("kg-build-start"', html)

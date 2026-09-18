@@ -5,14 +5,14 @@ from pathlib import Path
 
 from evaluation import (
     LocalChromaRegressionRag,
-    WECHAT_PRIVATE_CONTACT_CASE,
+    POWER_EQUIPMENT_TRIAGE_CASE,
     run_graphrag_triage_regression,
     seed_promoted_graphrag_regression_fixture,
 )
 from evaluation.smoke import SMOKE_COLLECTION
 
 
-def test_seed_promoted_private_contact_case_is_nonempty_and_evaluable(tmp_path: Path) -> None:
+def test_seed_promoted_power_equipment_case_is_nonempty_and_evaluable(tmp_path: Path) -> None:
     persist_dir = tmp_path / "chroma"
     dataset_path = tmp_path / "evaluation" / "graphrag_triage_regression.jsonl"
     report_dir = tmp_path / "reports"
@@ -24,11 +24,11 @@ def test_seed_promoted_private_contact_case_is_nonempty_and_evaluable(tmp_path: 
         backend="hashing",
     )
 
-    assert seed_result["seeded_case_id"] == WECHAT_PRIVATE_CONTACT_CASE.id
+    assert seed_result["seeded_case_id"] == POWER_EQUIPMENT_TRIAGE_CASE.id
     records = [json.loads(line) for line in dataset_path.read_text(encoding="utf-8").splitlines() if line.strip()]
-    assert [record["id"] for record in records] == [WECHAT_PRIVATE_CONTACT_CASE.id]
-    assert records[0]["task_type"] == "private_contact_affection_sweep"
-    assert "晚安宝贝抱抱" in records[0]["expected_evidence_keywords"]
+    assert [record["id"] for record in records] == [POWER_EQUIPMENT_TRIAGE_CASE.id]
+    assert records[0]["task_type"] == "graphrag_triage"
+    assert "vibration growth" in records[0]["expected_evidence_keywords"]
 
     result = run_graphrag_triage_regression(
         rag_system=LocalChromaRegressionRag(
