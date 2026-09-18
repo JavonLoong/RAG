@@ -1,0 +1,15 @@
+Ep-52_Behind_the_Tech_Kevin_Scott_Podcast_with_Bill_Gates-qc.txt  of these corporate learning things, whether it’s a query or a report or even a simple workflow where if something happens, you want to trigger an activity, the description in English will be the program. And when you want it to do something extra, you’ll just pull out that English, or whatever your language is, and type that in. And so, there’s a whole layer of query assistance and programing that will be accessible to any employee. 
+
+And the same thing is true of, okay, I’m somewhere in the college application process and I want to know, okay, what’s my next step and what’s the threshold for these things? It’s so opaque today. So empowering people to go directly and interact, that is the theme that this is trying to enable. 
+
+KEVIN SCOTT: So, I wonder what some of the things are that you are most excited about, just in terms of application of the technology to the things that you care about deeply from the foundation or your personal perspective. So you care a lot about education, public health, climate and sustainable energy. You have all of these things that you’re working on. And like, have you been thinking about how this technology impacts any of those things? 
+
+BILL GATES: Yeah, it’s been fantastic that even going back to the fall, OpenAI and Microsoft have engaged with people at the Gates Foundation thinking about the health stuff and the education stuff. In fact, Peter Lee is going to be publishing some of his thinking, which is somewhat focused on rich world health, but it’s pretty obvious how that work in a sense is even more amazing in health systems where you have so few doctors and getting advice of any kind is so incredibly difficult. 
+
+And so, it is incredible to look at saying, okay, can we have a personal tutor that helps you out? Can you, when you write something, if you’re going to some amazing school, yes, the teacher may go line by line and give you feedback, but a lot of kids just don’t get that much feedback on the writing. And it looks like, configured properly, this is a great tool to give you feedback on writing. 
+
+It’s also ironic in a way that people are saying, well, what does it mean that can people cheat and turn in computer writing? Kind of like when calculators came along that, oh my goodness, what are we going to do about adding and subtracting? And of course, they did create context where you couldn’t use the calculator and they did – you know, we got through that without it being a huge problem. 
+
+So I think education is the most interesting application, and I think health is the second most interesting. You know, obviously there’s commercial opportunity in sales and service type things and that’ll happen. You don’t need any foundation type engagement on that. 
+
+We brainstormed a lot with Sal Khan, and it looks very promising because with a class

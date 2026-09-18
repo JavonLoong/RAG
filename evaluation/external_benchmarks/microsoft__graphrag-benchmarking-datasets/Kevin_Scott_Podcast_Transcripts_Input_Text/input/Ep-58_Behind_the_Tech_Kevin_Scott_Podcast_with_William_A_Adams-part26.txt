@@ -1,0 +1,13 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  I could invest. I could be an LP in someone else’s thing, or whatever. There’s lots of different ways of doing it. And I just came up with the models, like, well, what matches my skills and experience and network best? 
+
+So, I came up with the studio model, right, a venture studio. And the difference between a venture studio and a plain old VC is – or an accelerator is I tell people think of Motown, right? I’m the Berry Gordy, right? I’m going to find the talent; I’m going to train the talent. I’m going to find Aretha Franklin; I’m going to find Michael Jackson. I’m going to help show them how to dance, stage presence, give them the record contract, put them out in the network and help them build their thing, right? 
+
+Do that with software. So, it’s about creating software, creating a network, having a finance network, having resources as simple as, as soon as you start your business, you need a tax accountant, or else you’re just going to fall behind on your taxes, and you’re going to be out of business in a year. You need an admin, you know? (Laughter.) So, you need three or four programmers. You’re not going to write the code yourself. 
+
+And when you fail, you need someone to say, that’s all right, let’s do it again, right? And this is something that typically, black and women businesses don’t have, right? They struggled to do it once. They get burned. They’re working at McDonald’s, or they’re back to general population. They don’t try again, because they’ve got obligations. 
+
+So, the studio is intended to put a little cushion that they don’t normally have in this society, such that they can have enough longevity to succeed, right? So, I’ve been doing a lot of network building. I’ve been writing tons of code, because the other thing that I’m telling people is, okay, AI is the thing. Two years ago, I would have told you, go out and learn you some C sharp, you know, and Web development.
+
+Now it’s like, no, no, no. First, you need to go play with ChatGPT. And if you’re going to write any code at all, you’re going to use copilot, right? And I’m not just saying that because I’m shilling for Microsoft. It’s like, I do it myself, and it makes me 30% more productive, at least. So, I tell them that, and the software I’m writing is about saying, how can I write code such that it’s going to be more composable when I use AI to do it, right? 
+
+So, for example, there’s a ZIP, the ZIP file format, right, compressed files. There’s a library

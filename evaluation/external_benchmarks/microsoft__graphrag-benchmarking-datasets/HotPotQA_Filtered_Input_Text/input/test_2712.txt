@@ -1,0 +1,49 @@
+The Data Universal Numbering System, abbreviated as DUNS or D-U-N-S, is a proprietary system developed and regulated by Dun & Bradstreet (D&B) that assigns a unique numeric identifier, referred to as a "DUNS number" to a single business entity.
+ It was introduced in 1963 to support D&B's credit reporting practice.
+ It is standard worldwide.
+ DUNS users include the European Commission, the United Nations, and the United States government.
+ More than 50 global industry and trade associations recognize, recommend, or require DUNS.
+ The DUNS database contains over 250 million entries for businesses throughout the world.
+The Plant DNA C-values Database is a comprehensive catalogue of C-value (nuclear DNA content, or in diploids, genome size) data for land plants and algae.
+ The database was created by Prof. Michael D. Bennett and Dr. Ilia J. Leitch of the Royal Botanic Gardens, Kew, UK.
+ The database was originally launched as the "Angiosperm DNA C-values Database" in April 1997, essentially as an online version of collected data lists that had been published by Prof. Bennett and colleagues since the 1970s.
+ Release 1.0 of the more inclusive Plant DNA C-values Database was launched in 2001, with subsequent releases 2.0 in January 2003 and 3.0 in December 2004.
+ In addition to the angiosperm dataset made available in 1997, the database has been expanded taxonomically several times and now includes data from pteridophytes (since 2000), gymnosperms (since 2001), bryophytes (since 2001), and algae (since 2004) (see (1) for update history).
+ (Note that each of these subset databases is cited individually as they may contain different sets of authors).
+ As of September 2005, the database as a whole contains data for over 4,800 species of plants in these various taxa.
+ A similar Animal Genome Size Database was created in 2001 by Dr. T. Ryan Gregory of the University of Guelph, Canada.
+There are some Special Metropolitan City roads in Seoul (Hangul: 서울특별시도 ; Hanja: 서울特別市道 ; RR: "Seoulteukbyeolsido " ).
+ Basically in South Korea, urban municipalities maintain and designate highway routes.
+ In Seoul, some of these routes are designated as motorways not allowed to walk.
+ The numbering system of Seoul is complicated than the others: official number and guide number.
+ Basically, official numbering system is used in the legal system only, while guide numbering system is used not only for the signage system, but also widely in public.
+The Universal Numbering System is a dental notation system for associating information to a specific tooth, and is commonly used in the United Kingdom.
+The Calypso Ichthyological Database numbering system is an open source free repository allowing the unique identification numbering of all fish species with a six-numeral fixed number.
+ This number remains the same throughout any alterations or taxonomic changes to the species' accepted current scientific name and allows for recording of species data in 32 unique data fields including all previous names in 32 languages.
+ It has been in use since 1994 and was pioneered by its inventor, Gerald H. Jennings, with the technical assistance of Terry Hall.
+ It is accompanied by a vast photographic library of fish species and is free at the point of use to all researchers and academics.
+ Much of the data is also available in published format and online.
+The Paleoindian Database of the Americas (PIDBA), is a website dedicated to the compilation of projectile point and other relevant data pertaining to Paleoindian site assemblages across the Americas.
+ As of April 2011, the PIDBA database contains information pertaining to locational data (n=29,393), attribute data (n=15,254), and image data (n= ca. 7,500) on Paleoindian projectile points and other tools in North America and also includes bibliographic references, radiocarbon dates, and maps created making use of database and GIS data.
+ The PIDBA site provides a database that is useful in studying stylistic and morphological variability, lithic raw material usage and procurement strategies, geographic distributions of technology, and land use strategies during the Paleoindian period, which took place prior to ca. 11,450 cal year BP.
+ The PIDBA database also serves a function as an intermediary between academic and advocational archaeologists in the collection and integration of primary projectile point data.
+ Overall, the PIDBA project aims to compile data from multiple sources into a comprehensive database, while simultaneously seeking out and including new data.
+The Broward County Uniform Station Numbering system is a system by which all fire stations and fire apparatus in Broward County are numbered.
+ The numbering system was developed by the Fire Chief's Association of Broward County in order to minimize confusion and create efficient radio communications at large fires or emergency scenes, where multiple departments were working together.
+ The system went into effect on October 1, 1990 after a large fire at GLS Fiberglass in Port Everglades in 1988.
+ Prior to 1990, each fire department had its own numbering system, usually starting at 1 and proceeding to number each station that department operated from.
+ At this large fire in Port Everglades, Dania Beach Fire Department, Hollywood Fire Department, Port Everglades Public Safety, and Fort Lauderdale Fire Department all were on scene with their own Engine 1s.
+ As a result, every time a person called for "Engine 1" on fireground radios, confusion would ensue.
+"ATA 100" contains the reference to the ATA numbering system which is a common referencing standard for all commercial aircraft documentation.
+ This commonality permits greater ease of learning and understanding for pilots, aircraft maintenance technicians, and engineers alike.
+ The standard numbering system was published by the Air Transport Association on June 1, 1956.
+ While the ATA 100 numbering system has been superseded, it continued to be widely used until it went out of date back in 2015, especially in documentation for general aviation aircraft, on aircraft Fault Messages (for Post Flight Troubleshooting and Repair) and the electronic and printed manuals.
+Dental professionals, in writing or speech, use several different dental notation systems for associating information with a specific tooth.
+ The three most common systems are the ISO System, Universal Numbering System, and Palmer notation method.
+ The ISO system is used worldwide, and the Universal is used widely in the United States.
+ The ISO System can be easily adapted to computerized charting.
+The Minkus catalogue was a comprehensive catalogue of American and worldwide postage stamps, edited by George A Tlamsa and published by Krause Publications.
+ In the United States Minkus competed with the Scott catalogue as a distant second.
+ Generally sold through department store stamp collecting departments, it had its own system of numbering stamps which was used in its catalogues and stamp albums; Scott's numbering system is proprietary.
+ The Minkus catalogue and numbering system was acquired by Amos Press in 2004 and no further editions were published.
+ The last US catalog was the "2004 Krause-Minkus Standard Catalog of U.S. Stamps".

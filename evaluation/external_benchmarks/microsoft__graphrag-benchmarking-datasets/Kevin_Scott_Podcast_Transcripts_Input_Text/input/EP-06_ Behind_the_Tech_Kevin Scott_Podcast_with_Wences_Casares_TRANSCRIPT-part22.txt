@@ -1,0 +1,13 @@
+EP-06_ Behind_the_Tech_Kevin Scott_Podcast_with_Wences_Casares_TRANSCRIPT.txt  less than seven years.  
+
+So, it's incredibly asymmetrical.  So, you may as well have a very small amount that you can afford to lose in Bitcoin Because if I am wrong, you lose whatever what you were going to spend on a weekend away with your wife.  Instead of going away for a weekend, you stay home, you buy some Bitcoin, and forget about it for seven years.  Like you spent it.  But if I am right, it's going to be 200 times what you put in today.  So, $100,000 today, it's going to be $20 million if I am right.  If I am wrong, you may lose 1 percent or whatever -- a very small amount of your savings.  If I am right, I want a grandkid named "Wencito."  (Laughter.) 
+
+KEVIN SCOTT:  Yeah.  I'm sure that's a deal a lot of people would be willing to make.  So, we chatted a little bit about miners.  And I think it's just sort of a super fascinating thing.  Like Nvidia sort of, purportedly, has a bunch of sort of backed-up inventory because people are investing less in GPUs for mining recently.  What are you seeing in terms of mining activity?  
+
+WENCES CASARES:  Bitcoin has been around for ten years.  And a lot of questions that you can ask about Bitcoin can only be answered in a speculative manner.  But some things we can already answer either with a very factual manner and so with not factual, but quite high degree of certainty.  
+
+And I think the mining is one of those where you can quite confidently say, "What we've seen for the last ten years, we're going to see for the next 10 or 100 years."  Which is mining will always be about business in aggregate; meaning, more investment will go in than revenues will come out.  
+
+That has been the case for the last ten years, and the incentives are so that -- it's like Vegas.  And it will keep going on like Vegas.  It's like in aggregate, people lose money.  People focus on the guys that win, that keeps driving people in.  And in aggregate, the miners are spending all of their winnings paying for the electricity, which is what makes me very bullish about Bitcoin, that it will cost more than $6 billion to secure the Bitcoin blockchain this year.  And without that, I would not be saying all of what I'm saying here.  
+
+I am confident that Bitcoin can succeed because of the $6 billion of electricity.  Not because of electricity, per se, but because of what it means in terms of hashing power and what that hashing power means to trust the integrity of the blockchain.  So, at the very core, we owe the integrity of that blockchain to the miners, I would not want to

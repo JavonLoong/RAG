@@ -1,0 +1,23 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt  are sort of in the interior of the model.  
+
+So like how do you think about this?  Because, like, you’re working on one of the most important safety critical systems in software engineering.  
+
+CHRIS URMSON:  Yeah, no, it’s a great question.  And the way you talked about it actually is a really great way to frame it because as we started to bring machine learning into these systems, people began to really worry about this, like, can we trust the ML system?  Well, if you knew anything about the way these perception algorithms had been implemented before, it’s like it was pretty darn opaque, right?  You couldn’t -- you’ve got feature vectors that you’re creating and parameters you’re tweaking and weird case statements that happen to work.  
+
+And like, you know, so it’s the same problem.  Because by the time these perception systems actually worked, even if you human coded it, it was not human readable, per se.
+
+KEVIN SCOTT:  Yep.  
+
+CHRIS URMSON:  And so the way we think about this is there are some strict “don’t violate,” we call them guardrails that, you know, our vehicles shouldn’t plan to be in the same space as another vehicle.  
+
+Our vehicle should not plan to leave the road.  You know, and there’s a bunch of this stuff that we can kind of codify.  And they’re relatively straightforward and relatively -- you can write a requirement for it, you can trace that and use kind of classic engineering approaches. 
+
+KEVIN SCOTT:  And you can write a piece of software where a human being can look at it and say, like, this software enforces this guardrail. 
+
+CHRIS URMSON:  Right, and you can put testing around it and you know have confidence that you’re implementing that.  And then -- and so we do that.  And then we take the machine-learned approach to basically stick it in the guardrails.  And so, you know, we don’t kid ourselves in believing that we could really interpret all of the weights in that system, but we put rails around it so we kind of bound the operating environment. 
+
+And we believe that that will get us to a point where we can have enough confidence in the system that it really works. 
+
+KEVIN SCOTT:  And theoretically, I mean, one of the things that we’ve seen over and over again is you have these moments with complicated systems where you start off not being able to really understand and characterize the performance of the complex system, and so you don’t really trust them.  
+
+And in certain of these complex systems, they eventually evolve to the point where you both understand them and they have superior performance to like everything that proceeded them, and in some cases, you know, the thing that proceeded them was like a human brain and like the software system

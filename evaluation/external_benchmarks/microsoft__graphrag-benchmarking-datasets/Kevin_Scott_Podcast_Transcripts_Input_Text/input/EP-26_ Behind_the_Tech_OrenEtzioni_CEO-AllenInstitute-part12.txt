@@ -1,0 +1,15 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt  you all have written that paper and are pushing on that because I do think it’s one of the fundamental issues that we’ve got at this particular moment in time with AI research, these models are not only extremely expensive to train, they are extremely expensive to serve. So, you’ve got this cost thing that makes it difficult to make them widely available. 
+
+I mean, like, we could – I’ll give you an example. I won’t talk about GPT-3, but I’ll talk about this model that we built called Turing NLG, which is a 17-billion parameter transformer model. 
+
+OREN ETZIONI: Only 17 billion. 
+
+KEVIN SCOTT: Yeah, only 17 billion. So, like, it was extremely – I mean, we trained this on a very large, very sophisticated cluster of GPUs and it consumed a lot of resources and like we wrote a bunch of very specialized software to manage the distributed training task. 
+
+And the model is very, very powerful. And so, one of the things that we’re struggling with right now is -  I would love to get that model into the hands of as many people as humanly possible. One impediment to getting it into the hands of as many people as possible is cost. And like I think, you know, to your point, we can bring the costs down by, you know, making a whole bunch of these investments. Like, the infrastructure could be better. You can distill the model, there’s all sorts of like really interesting things that you can do to like still preserve the model’s power and make it much cheaper to serve. 
+
+But the other, you know, interesting thing with these models is it’s a general language model. It will enable people to put it in use cases that we would find objectionable. And like by “we” I don’t mean Microsoft, I mean “we” society. And so you know, it’s – and I don’t know how you train the model to allow it to do all of the powerful things that it can do and exclude the objectionable things that we’re not going to want it to do. 
+
+And so that is another thing that makes access a little bit tricky. So, like, how do you get that into the hands of responsible people so that they can discover all of the good uses that the tech companies that have the resources to build these models will never be able to imagine on their own without, you know, opening Pandora’s box and creating more misery in the world. 
+ 
+OREN ETZIONI: Very important questions. The good news is, I do think that we’re making progress there. So, some of it is the old adage, garbage in, garbage out. So, you have to be careful what you feed. This model is kind of like an innocent child, right, who will read anything. So, you have to be careful what you

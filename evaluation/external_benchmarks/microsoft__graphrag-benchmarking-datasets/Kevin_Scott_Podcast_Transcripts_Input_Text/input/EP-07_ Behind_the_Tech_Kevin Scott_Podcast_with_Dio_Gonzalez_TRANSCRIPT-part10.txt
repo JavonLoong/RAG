@@ -1,0 +1,37 @@
+EP-07_ Behind_the_Tech_Kevin Scott_Podcast_with_Dio_Gonzalez_TRANSCRIPT.txt   
+
+KEVIN SCOTT:  Yeah. 
+
+DIO GONZALEZ:  And in our library that have to be evaluated and then you know sent and animated, so I'm really proud of that.  
+
+KEVIN SCOTT:  That's awesome.  You should be proud of it. 
+
+DIO GONZALEZ:  Yes.  Yes.  
+
+KEVIN SCOTT:  I'm, it's a -- it's always interesting to me this being able to effectively bridge the gap between this very technical world, because computer graphics, like all the way at the bottom of it is like one of the more technical things in computer science and engineering.  
+
+And then there's this brilliant creative part of building these animated films.  And if you don't get both right, you really don't have like this compelling product in the end.  
+
+DIO GONZALEZ:  Yes, exactly.  
+
+KEVIN SCOTT:  You know, sort of like emotion without good technology, your vision is just sort of constrained in all of these ways.  
+
+And like the technology without the emotion and the storytelling is just sort of bland and falls flat. 
+
+DIO GONZALEZ:  Yes.  Exactly, like I remember -- you know, so the tools that we give to the character, these are scripting tools. 
+
+So, we write of course everything in C++, you know, the library.  And then we create bindings for any scripted language that then the character TDs would use.  So I was that one.  I was the Python binding girl. 
+
+KEVIN SCOTT:  Very nice. 
+
+DIO GONZALEZ:  Yeah, in the animation R&D team.  And so that -- I went through that -- like the very first solution that we had was some commands there like the TDs would have to create, you know, their nodes and everything.  And I do remember them saying, "This is hard," the very first one.  This is like so limited, like, I cannot do this. And, you know, their evaluation nodes and blah, blah, blah.  So I had to do -- we had to do a lot of iteration of that.  
+
+KEVIN SCOTT:  Oh, that's fascinating. 
+
+(Crosstalk.) 
+
+KEVIN SCOTT:  So, the TDs would actually code in Python? 
+
+DIO GONZALEZ:  Yes, yes, that's one thing that not many people know, the TDs are quite technical people in the animation industry.  They're programmers with a lot of creativity because they know the -- they know about lighting and animation and all, but they're coders, pretty much. 
+
+KEVIN SCOTT:  Super, super interesting.  So, at some point, you started working for Unity and like you were explicitly working on virtual reality

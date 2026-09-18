@@ -1,0 +1,17 @@
+EP-24_ Behind_the_Tech_Kevin_Daphne-Koller_CEO_insitro.txt  of life. And I think we, with the right investment and the right focus, we could actually make a difference. 
+
+KEVIN SCOTT: So, tell me a little bit about what you’re doing at insitro. 
+
+DAPHNE KOLLER: So, the premise for what we’re doing really emerges from what I said a moment ago, which is that this last decade has been transformative in parallel on two fields that very rarely talk to each other. 
+ 
+We’ve already talked about the advancement on the machine learning side and the ability to build incredibly high accuracy, predictive models in a slew of different problem domains if you have enough quality data. 
+
+On the other side, the biologists and bioengineers have developed a set of tools over the last decade or so, that each of which have been transformative in their own rights, but together, they create, I think, a perfect storm of large data creation — enabling large data creation on the biology side, which when you feed it into the machine learning piece, can all of a sudden give rise to unique insights. 
+
+And so, some of those tools are actually pretty special and incredible, honestly. So, one of those is what we call “induced pluripotent stem cells,” which is — “we” being the community, not “we” at insitro — which is the ability to take skin cells or blood cells from any one of us and then by some almost magic, revert them to the state that they’re in when you’re an embryo, in which they can turn into any lineage of your body.  
+
+So, you can take a skin cell from us, revert it to stem cell status, and then make a Daphne neuron. And that’s amazing, because that Daphne neuron carries my genetics. And if there are diseases that manifest in neuronal — in a neuronal tissue, you will be able to potentially examine — assay those cells and say, “Oh, wait, this is what makes a healthy neuron different from one that carries a larger genetic burden of disease.” And so that’s one tool that has arisen.
+
+A different one that also is remarkable is the whole CRISPR revolution and the ability to modify the genetics of those cells so that you could actually create fake disease — not fake disease, because it’s real disease, but introduce it into a cell to see what a really high penetrant mutation looks like in a cell. And then, commensurate with that, there’s been the ability to measure cells in many, many, many different ways, where you can collect hundreds of thousands of measurements from each of those cells so you can really get a broad perspective on what those cells look like, rather than coming in with, “I know I need to measure this one thing.” And you can do this all at an incredible scale. 
+
+So, on the one side, you have all of this capability for data production, and on the other side

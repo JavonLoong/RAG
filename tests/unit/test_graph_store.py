@@ -1,7 +1,7 @@
 import json
 import sqlite3
 
-from storage_layer.graph_store import GraphStore, import_kg_file
+from storage_layer.graph_store import GraphEdgeRecord, GraphStore, import_kg_file
 
 
 def write_json(path, payload):
@@ -115,3 +115,60 @@ def test_import_graph_json_links_to_sqlite(tmp_path):
     neighbors = store.neighbors("Alpha")
     assert neighbors[0]["neighbor_name"] == "Beta"
     assert neighbors[0]["predicate"] == "IMPROVED_BY"
+
+
+def test_export_graph_includes_structure_evidence_and_communities(tmp_path):
+    db_path = tmp_path / "graph_store.sqlite"
+    store = GraphStore(db_path)
+    store.import_edges(
+        [
+            GraphEdgeRecord(
+                triple_id="T-001",
+                subject="燃气轮机A",
+                subject_type="Equipment",
+                predicate="HAS_PARAMETER",
+                object_name="温度阈值100",
+                object_type="Parameter",
+                evidence="燃气轮机A的温度阈值为100。",
+                confidence=0.95,
+                source_file="manual.pdf",
+                source_page="12",
+                metadata={"reviewed": True},
+            )
+        ],
+        reset=True,
+    )
+    store.store_communities(
+        [
+            {"community_id": "C0", "node_name": "燃气轮机A"},
+            {"community_id": "C0", "node_name": "温度阈值100"},
+        ]
+    )
+    store.store_community_summaries(
+        [
+            {
+                "community_id": "C0",
+                "title": "燃气轮机A参数",
+                "summary": "该社区描述燃气轮机A的关键参数。",
+                "entity_count": 2,
+                "edge_count": 1,
+                "metadata": {"source": "unit-test"},
+            }
+        ]
+    )
+
+    payload = store.export_graph()
+
+    assert payload["format"] == "graphrag_graph_export"
+    assert payload["summary"]["node_count"] == 2
+    assert payload["summary"]["edge_count"] == 1
+    assert payload["nodes"][0]["metadata"] == {}
+    assert "metadata_json" not in payload["nodes"][0]
+    assert payload["edges"][0]["triple_id"] == "T-001"
+    assert payload["edges"][0]["subject"] == "燃气轮机A"
+    assert payload["edges"][0]["object"] == "温度阈值100"
+    assert payload["edges"][0]["metadata"] == {"reviewed": True}
+    assert "metadata_json" not in payload["edges"][0]
+    assert payload["evidence"][0]["text"] == "燃气轮机A的温度阈值为100。"
+    assert payload["communities"][0]["community_id"] == "C0"
+    assert payload["community_summaries"][0]["title"] == "燃气轮机A参数"

@@ -1,0 +1,13 @@
+Ep-59_Behind_the_Tech_Kevin_Scott_Podcast_with_David_Kirtley.txt  engineering and technology. But I guess, you know, an interesting question for everyone is, like, why start a fusion power company? Like, we’ve been trying to build fusion reactors since when, the 1960s, maybe, maybe earlier? And we have, I think there’s this sort of joke that physicists make where, you know, like, fusion’s always been 30 years away. Like, every year, you want to ask when it’s coming. 
+
+And so, like, we just haven’t made a ton of progress over many, many decades of doing this. And, like, most of the efforts that we’ve had, you know, to your point, have been, you know, big things like the National Ignition Facility, or, you know, this thing that – the tokamak that they’re building in Europe right now, so, like, big, gigantic projects that have not yet yielded a commercially viable fusion reactor. Like, what gave you the confidence that you were going to be able to go build a company, raise the capital, and, like, build a thing that you were going to be able to make commercially viable?
+
+DAVID KIRTLEY: Yeah, that comes to, interestingly enough, I think that comes or goes all the way back to high school to that student in high school of, I have to build it to believe it. And I want to test a theory. And yeah, sure, I just read it in a textbook, but I’m going to go build that thing. And I’m going to get on the roller coaster, and I’m going to measure it. 
+
+And so, for us, we, in the lab – and in that case, the lab was a small warehouse – had these series. In fact, a lot of it, you can trace back to the 1950s, first published paper of this magnetic compression, and some of the recovery is in 1958, really great work done, and – but before the transistor was commercialized. And we’re talking about pulsed-electrical currency. So, it’s pretty wild, what people were able to demonstrate even then. 
+
+KEVIN SCOTT: Yep.
+
+DAVID KIRTLEY: And in those systems, those small systems, and these were funded by the federal government, so I’m all supportive of all the research money we can put into fusion, because we wouldn’t be here without it, small research projects, but literally in a small system that was 10 feet long, and that I helped build and, like, actually turned the wrenches to assemble the thing. 
+
+We built a small system that did exactly this, made a plasma, super-heated it up to thermonuclear fusion conditions. Fusion happened, we saw it push back the magnetic field. We measured fusion reactions, we measured fusion particles. We measured a lot of it, and we did that on the program

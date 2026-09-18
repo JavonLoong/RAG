@@ -1,0 +1,23 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt  it’s just it’s all kind of connected to me. I like cooking, I like making stuff. I kind of like getting into the world and doing things. 
+
+I have too many hobbies, actually. Like, I could answer that. I could spend an hour on that question. 
+
+KEVIN SCOTT: Yeah, I reject that assertion. I don’t think that there’s anything – (laughter).
+
+SAM SCHILLACE: (Laughter.) You and I have that in common.
+
+KEVIN SCOTT: Yeah, there’s no such thing as too many hobbies.
+
+SAM SCHILLACE: But that’s, yeah, you know, you got me going on leather working recently, so that’s kind of…I’ve got a pile that I look at guiltily every once in a while. I think I should do something with that.
+
+KEVIN SCOTT: Oh, you should totally do something with that. (Laughter.) Cool. 
+
+Well, thank you so much for taking the time to chat with us today. This has been a great conversation, and I’m happy to have you on the show.
+
+SAM SCHILLACE: A lot of fun, yeah. Yeah, super fun. I’ve been – had been looking forward to it. So, it’s great. 
+
+[MUSIC]
+
+CHRISTINA WARREN: All right, that was a super fascinating conversation with Sam Schillace. So one of the really interesting things you were talking about, you know, you're getting into AI, and one of the things that was said was like that, AI, what's so interesting about it is that it's not that it thinks like us, but that it doesn't, could you expand a little bit more about that?
+
+KEVIN SCOTT: Well, I mean, one of the things with AI, is, we're just seeing it more and more over the last handful of years is being an assistive tool, like a thing that helps us with the things that we're just not great at. And, you know, this has been sort of true with most of computing technology. You know, CPUs are better than human beings at arithmetic, like their computer algorithms are better at dealing with certain types of complexity than human brains are. And like, this is certainly true with AI. There are things about human creativity, and like intuition, and, you know, all of these things that we actually take for granted, that are very hard for AI systems to do. Whereas like, there are all of these things to do with complexity that AI is getting increasingly good at doing. And so the thing that I think we ought to be doing over the coming years is like just sort of leaning more and more into those differences than trying to, you know, build things that are exactly like a human brain, because like, basically, what we want to do is build these tools that can help us offload all of the repetitive, irritating cognitive things

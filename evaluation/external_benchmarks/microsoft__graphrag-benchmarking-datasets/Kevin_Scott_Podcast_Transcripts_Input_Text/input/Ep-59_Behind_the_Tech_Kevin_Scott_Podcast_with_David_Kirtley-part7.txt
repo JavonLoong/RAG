@@ -1,0 +1,15 @@
+Ep-59_Behind_the_Tech_Kevin_Scott_Podcast_with_David_Kirtley.txt  it as – we actually as this as an interview question, typically. And we ask it in a number of ways, but there’s a Venn diagram of how – how much do you gravitate towards theory, experimental, or hardware and computation?
+
+And we actually put them in three individual buckets of different versions of applied and different benefits. And typically at Helion we hire people that can do a little of all of them. Like that’s a pretty hard requirement that you can do some. And then we ask, essentially, like, "Tell me about where you’ve been in your career? Have you been focused on hardware or theory or computation? But now where do you want to go? What is what drives you? What’s your passion? What get – what do you wake up in the morning thinking, like, ‘Oh, I want to go build this thing, or I want to learn more on the theory of the things I’ve been building for my PhD work,’" or whatever. 
+
+And so – so yeah, I definitely see that, and different people gravitate towards different things, and to build real systems you need all of that, right?
+
+KEVIN SCOTT: Correct.
+
+DAVID KIRTLEY: You have to have theory, otherwise you’re not going to build a thing that works. You have to have simulation, so you can – you don’t just have to trial and error everything, or use empirical studies for everything that, because you have that mix. And so I think that’s true. 
+
+In fact, in my background, you know, we haven’t talked about this too much, and we can. But when I got into fusion, I got into it as that applied, the desire to build and test these things. And I struggled early actually, because it was so theory, and so far out in timeline and an application. And I had to actually take a pause in my career and fusion to look at it, and decide, you know, what do really I want to focus on?
+
+KEVIN SCOTT: Yeah, and it’s so interesting. Sometimes people, I think, beat themselves up, because, and I think PhD programs sort of do this to you, like, you know, many, many, many PhD programs, like, convince you that, you know, that the thing you need to do is sort of this singular individual accomplishment, like it’s your project and your thing and almost anything useful that you’re going to do in the real world is like lots of people working on very complicated problems that are too big for one person to solve alone. 
+
+And when you get into that mode, you get this new superpower of teams, where you can have the person that’s a better theoretician, and a person who’s better at the hardware, and a person who loves to run experiments in the lab, and a person who likes to write the code, and you can build that complementarity

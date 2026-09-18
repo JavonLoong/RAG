@@ -1,0 +1,44 @@
+The TEC-1 is a single-board kit computer first produced by the Australian hobbyist electronics magazine Talking Electronics in the early 1980s.
+ It was based on the Zilog Z80 CPU, had 2K of RAM and 2K of ROM in a default configuration.
+ Later versions used a 4k ROM with two different versions of the monitor software selectable via a switch.
+ This allowed the early software presented in the magazine to be used with the later version of the TEC-1.
+Knight Tyme is a computer game released for the ZX Spectrum, Amstrad CPC, Commodore 64 and MSX compatibles in 1986.
+ It was published by Mastertronic as part of their Mastertronic Added Dimension label.
+ Two versions of the ZX Spectrum release were published: a full version for the 128K Spectrum (which was published first) and a cut-down version for the 48K Spectrum that removed the music, some graphics and some locations (which was published later).
+Space Defender is a fixed shooter game for the Apple II computer, created by Daniel Schuyler and published by Bel-Air Software in 1982.
+ It requires an Apple II with a minimum of 48K RAM.
+The Saturn family of 4-bit microprocessors was developed by Hewlett-Packard in the 1980s for programmable scientific calculators/microcomputers.
+ It succeeded the "Nut" family of processors used in earlier calculators.
+ The original Saturn chipset was first used in the HP-71B hand-held BASIC-programmable computer, introduced in 1984.
+ Later models of the family powered the popular HP 48 series of calculators, among others.
+ The HP 49 series initially used the Saturn CPU as well, until the NEC fab could no longer manufacture the processor for technical reasons in 2003.
+ Therefore, starting with the HP 49g+ model in 2003, the calculators switched to use a Samsung S3C2410 processor with ARM920T core (part of the ARMv4T architecture) to run an emulator of the Saturn architecture in software.
+ In 2000, the HP 39G and HP 40G were the last calculators introduced based on the Saturn hardware.
+ The last calculators based on the Saturn emulator were the HP 39gs, HP 40gs and HP 50g in 2006, as well as the 2007 revision of the hp 48gII.
+ The HP 50g, the last calculator utilizing this emulator, was discontinued in 2015 when Samsung stopped producing the ARM processor it was based on.
+Mugsy is a strategy and management computer game for the 48K ZX Spectrum.
+ It was well-received, mainly due to its innovative graphic style, and was followed two years later by a sequel.
+The DF-224 is a space-qualified computer used in space missions from the 1980s.
+ It was built by Rockwell Autonetics.
+ As with many spacecraft computers, the design is very redundant, since servicing in space is at best difficult and often impossible.
+ The configuration had three CPUs, one active and two spares.
+ The main memory consisted of six memory units, each with 8K 24-bit words of plated wire memory, with up to 48K words total.
+ Four memory modules could be powered up at one time, resulting in a maximum of 32K words of available memory, though some applications such as the Hubble Space Telescope used fewer memory banks to allow for graceful failure modes.
+ There were three I/O processors, one operational and two backups.
+ The power supply consisted of 6 independent power converters, with overlapping coverage of the operating functions.
+ The processor used fixed-point arithmetic with a two's complement format.
+Hareraiser is a computer game, originally released in 1984 in the UK for most home computer platforms.
+ It was released in two parts; "Prelude" and "Finale".
+ A prize worth £30,000 was on offer if the game could be solved.
+ The game was released on Acorn Electron, Amstrad CPC, BBC Micro Model B, Commodore 64, Commodore VIC-20 EX, Dragon 32, MSX, Oric Atmos 48k and Sinclair ZX Spectrum in 1984 at £8.95 for each part.
+Atic Atac is an arcade-adventure video game developed and published by Ultimate Play the Game, released for the ZX Spectrum and the BBC Micro in 1983.
+ The game takes place within a castle in which the player must seek out the "Golden Key of ACG" through unlocking doors and avoiding enemies.
+ It was Ultimate's second game to require 48K of RAM; most of their previous games for the Spectrum ran on unexpanded 16K models.
+Nuclotron is the world's first superconductive synchrotron, exploited by the Joint Institute for Nuclear Research in Dubna, Russia.
+ This particle accelerator is based on a miniature iron-shaped field superconductive magnets, and has a particle energy up to 7 GeV.
+ It was built in 1987-1992 as a part of Dubna synchrophasotron modernisation program (the Nuclotron ring follows the outer perimeter of the synchrophasotron ring).
+ 5 runs of about 1400 hours total duration have been provided by the present time.
+ The most important experiments tested the cryomagnetic system of a novel type, and obtained data on nuclear collisions using internal target.
+The Dubna 48K (Дубна 48К) is a Soviet clone of the ZX Spectrum home computer.
+ It was based on an analogue of the Zilog Z80 microprocessor.
+ Its name comes from Dubna, a town near Moscow where it was produced, and "48K" stands for 48 KBs of RAM.

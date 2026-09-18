@@ -1,0 +1,15 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt  the shivers up your spine or goosebumps. 
+
+But, like, that, to me, still is qualitatively different than, like, what I get when I listen to this performance because it’s, like, this – this human composer from a different time who was, like, trying to communicate something to everyone else. And then this performer from another different generation and a set of experiences who takes this work and interprets it in a way that no other performer interprets it that produces this emotional response in me. 
+
+And, like, part of the beauty of that is that, you know, it’s this stacking of human connection that has nothing to do with – 
+
+SAM SCHILLACE: Oh, of course. Like, of course, like, the definition of that is I want to stack a bunch of human connections up. Then you can’t do that if there’s no humans in the stack, right? Like, of course not, by that definition.
+
+One of the things I really like, though, is somebody – I forget who gave this example. Someone who was talking to a bunch of students, and they said, “Do you think it’s possible to build a computer that’s roughly the size and shape – roughly the size of a human brain with all the capabilities of the brain.” And the students, you know, mostly said, “No.” And then he said, “Well, what did you use to come up with that definition? You used a computer that’s roughly the size of the human brain with the capabilities of the human brain,” right? So, it’s like, there’s a little bit of tautology in there of, like…
+
+To your point, though, it depends on, like, the definition. Like, I think you’re right, like, there’s… You can’t replace humans by something that’s not human definitionally, right, like, if part of the meaning and the emotion is about the human connection.
+
+KEVIN SCOTT: Well, and look, I think the single most important thing for people to get through their heads is, like, it is not necessarily a goal of the AI work, certainly not the goal of the AI work that we’re doing or that I’m doing, is to replace humans. So, you even look at something, like, GitHub Copilot. The reason that you build an AI that helps people turn natural language expressions of a thing that they want code to do into actual code is to help you, you know, be able to get to the more important parts of your job more quickly.
+
+SAM SCHILLACE: Right. We did get a very nasty letter early on in writing – doing Writely from the Medieval Scribes Guild, saying that we were replacing scribes by doing this word – newfangled word processor thing. I’m kidding, but like, you know, of course, like, nobody cared, right? (Laughter

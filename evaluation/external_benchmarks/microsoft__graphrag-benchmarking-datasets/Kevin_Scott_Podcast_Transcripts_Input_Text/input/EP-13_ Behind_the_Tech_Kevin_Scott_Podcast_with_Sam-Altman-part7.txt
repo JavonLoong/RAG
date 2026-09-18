@@ -1,0 +1,20 @@
+EP-13_ Behind_the_Tech_Kevin_Scott_Podcast_with_Sam-Altman.txt :  Yup.  And so, what --
+SAM ALTMAN:  There's like nothing that's more fun than a great physics class, right?  That's just the most intellectually stimulating.  But --
+KEVIN SCOTT:  What was your favorite physics class?
+SAM ALTMAN:  Ooh.  Well, I'll answer my favorite physics book, but it's related to my favorite physics class.  Quantum Electrodynamics I think is the best science book ever written.
+KEVIN SCOTT:  And this is Murray Gell-Mann's book?
+SAM ALTMAN:  Richard Feynman.
+KEVIN SCOTT:  Okay.
+SAM ALTMAN:  And it's like a series of four lectures.  But everyone always, like, wants to focus on the parts of physics we don't perfectly understand, and then there's like, a few areas where they're incredibly beautiful and we clearly -- like, we don't understand what's happening like in an easily modellable level, but the math we understand perfectly.
+And that was this example.  And there was a class I took that was basically teaching this, of like, wow, like there's this, like, big piece of reality that we actually just perfectly understand, or we understand well enough to work with and model in.  And you know, it's amazing.
+KEVIN SCOTT:  Yeah, and so, quantum electrodynamics, just for the -- for the audience (laughter) who is also pretty broad -- so this is the -- this is the study of the very, very small scale interactions of --
+SAM ALTMAN:  Basically everything but gravity.
+KEVIN SCOTT:  Yeah.
+SAM ALTMAN:  But all of the other forces between particles.
+KEVIN SCOTT:  Yeah.  Yeah, it is -- it is fascinating stuff. 
+SAM ALTMAN:  I highly recommend the book.  It's a short read.  There's no math in it.  It's really fun.
+KEVIN SCOTT:  So why not become a physicist?
+SAM ALTMAN:  Well, physics has been a bad field to go into as a career for a long time now.  And I remember, there was this thing where all of the kids that were studying physics in Stanford ended up going to work in, like, finance, which I almost briefly got tempted into doing too.  I actually accepted an offer to an intern, and then I realized I really didn't want to do that.  But there was, like, clearly something wrong with physics as a career path the time I was there.  Maybe it's better now. 
+KEVIN SCOTT:  Just in the sense that it was going to be hard to get a job. 
+SAM ALTMAN:  All the really smart physics kids weren't going to do physics after they graduated.
+KEVIN

@@ -1,0 +1,48 @@
+Hasbro Family Game Night is a video game originally released for the PlayStation 2 and Wii published by Electronic Arts.
+ It is a mini-game collection consisting of six Hasbro board games - Battleship, Boggle, Connect Four, Sorry!
+, Sorry!
+ Sliders and Yahtzee.
+ The games all have traditional versions as well as "advanced" variants exclusive to the Family Game Night package.
+ The mini-game collection is hosted by Mr. Potato Head.
+ It was released on November 11, 2008.
+Boggle is a word puzzle video game based off the word game of the same name.
+ It was published on September 30, 1997 by Hasbro Interactive, and developed by PCA, Inc. and Third-i Productions.
+ The game was released for Windows 95.
+A Game client is a network client that connects an individual user to the main game server, used mainly in multiplayer video games.
+ It collects data such as score, player status, position and movement from a single player and send it to the game server, which allows the server to collect each individual's data and show every player in game, whether it is an arena game on a smaller scale or a massive game with thousands of players on the same map.
+ Even though the game server displays each player's information for every player in a game, players still have their own unique perspective from the information collected by the game client, so that every player's perspective of the game is different, even though the world for every player is the same.
+ The game client also allows the information sharing among users.
+ An example would be item exchange in many MMORPG games where a player exchange an item he/she doesn't want for an item he/she wants, the game clients interconnect with each other and allows the sharing of information, in this exchanging items.
+ Since many games requires a centralized space for players to gather and a way for users to exchange their information, many game clients are a hybrid of client-server and peer-to-peer application structures.
+Data East USA, Inc. v. Epyx, Inc. 862 F.2d 204, 9 U.S.P.Q.2d (BNA) 1322 (9th Cir.
+ 1988) is a court case in which Data East, a video game manufacturer, contended that Epyx, a competing video game manufacturer, licensed and distributed a video game, "International Karate", that infringed on the copyright of a video game developed by Data East, "Karate Champ".
+ After a district court sided with Data East, the United States Court of Appeals for the Ninth Circuit court on appeal reversed the decision of copyright infringement.
+ This judgment was based on the lack of "substantial similarity" between the games, because the identified similarities were inherent to all karate video games.
+Word Streak (formerly Scramble with Friends) is a word game developed by Zynga with Friends for iPhone, iPod Touch, and Android and released in January 2012.
+ Gameplay is similar to that of "Boggle" - players try to find as many words as possible in a jumbled 4x4 grid of letters by connecting adjacent letters to form words within a two-minute time frame - though with extra features and a different scoring system.
+ Words may be formed vertically, horizontally, and diagonally.
+ "Scramble with Friends" is one of the top ranking games in the iOS application store, available as both a free ad-supported version and an ad-less paid version.
+ "Scramble with Friends" replaced "Scramble Challenge" at the end of 2011, but did not retain the solitaire option of the latter.
+Dofus is a Flash-based tactical turn-oriented massively multiplayer online role-playing game (MMORPG) developed and published by Ankama Games, a French computer game manufacturer.
+ Originally released solely in French, it has since been translated into many other languages.
+ It is primarily a pay-to-play game, though it still offers a limited amount of free content.
+ Its success has led to the marketing of spin-off products, such as books, art, comics and a movie released in 2016.
+ It has also led to the development of two continuations: "Dofus Arena", released at the beginning of 2006, which is an alternative "tournament" version of "Dofus"; and "Wakfu", a continuation of "Dofus".
+ The game has attracted over 25 million players worldwide and is especially well known in France.
+ Today, there are more than 1.5 million subscribers every month on this game.
+An online Word game is a word game based in an online venue.
+ Like many online games, many online word games are accessed via web browsers such as Facebook, Thaibg, and etc.
+WordCrex is a mobile app similar to the famous word game Scrabble and Wordfeud.
+ The iOS-version was released June 2, 2016 and the Android-version 8 september 2016.
+ The game was presented as the first free fair word game challenge.
+ "WordCrex" was developed by two Dutch creative friends Jelle Verwaijen and Dimitri Dirkzwager.
+ It is different than most word games because the players use the same set of seven letters to form words.
+ This way the luck factor of getting the right letters is not a decisive factor anymore.
+ "WordCrex" is a multiplayer game.
+ Games can be played with 2, 3 or 4 players per game.
+Camouflage is a television game show airing on GSN.
+ Hosted by Roger Lodge, and billed as "the hidden word game where the answer is always right in front of you", "Camouflage" originally aired for 40 episodes from July 2 to 27, 2007.
+ The show is a word game, with contestants searching for a hidden word or phrase in a string of jumbled letters.
+ The show is produced by Enjoy the Ride Productions in association with McB Entertainment.
+Boggle is a word game designed by Allan Turoff and originally distributed by Parker Brothers.
+ The game is played using a plastic grid of lettered dice, in which players attempt to find words in sequences of adjacent letters.

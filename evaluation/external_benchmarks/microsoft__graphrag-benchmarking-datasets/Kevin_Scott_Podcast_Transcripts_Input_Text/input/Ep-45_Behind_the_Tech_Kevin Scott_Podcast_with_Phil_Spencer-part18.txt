@@ -1,0 +1,15 @@
+Ep-45_Behind_the_Tech_Kevin Scott_Podcast_with_Phil_Spencer.txt ’s iterative on something that we’ve already done or completely new. We’re going to work that over multiple years, in the case of these big games that we were talking about, to deliver something. And that end result in the feedback that you get is the thing that gives me momentum into the next thing. 
+
+But that’s, like, I said, that’s – that’s kind of how I’m wired. I like the completeness of that. I mean, I’m enthralled by… I think, like, you think 300, 400 years ago, there’s, like, architects in Europe working on these massive churches that are going to take 200 years to build. And they’re in the middle of this, and if you’re, like, a mason, you know that you didn’t see the beginning and your life will not exist – you won’t live long enough to see the end. And these people throw themselves into these builds.
+
+And we have similar kind of projects at Microsoft, as you know, that take, like, multiple, multiple decades, especially some of these things where they’re way out; the horizon three things. And I am just so impressed by people that have that amount of kind of intellectual drive to see through it. 
+
+For me, that tighter feedback loop is just part of how I’m wired. And I’m glad we have those people that can think longer term about infrastructure and longer term investments. It’s not just longer term, but kind of it’s at a different level in the stack, the things that we do. And the conversations, one of the reasons I always love having conversations with you, because the conversations of how different people think about these problems and opportunities are just awesome feedback into what we do. 
+
+KEVIN SCOTT: Yeah, well, but so, you know, that said, you are managing a bunch of things that take multiple years to go do. So, there’s both infrastructure things, like xCloud, for instance, and there’s also, like, these games which are, you know, like a triple-A game is a thousand people worth of complexity working over multiple years.
+
+PHIL SPENCER: Yeah.
+
+KEVIN SCOTT: So, how do you manage that? Yeah, it might be obvious to someone just getting into the field, like how you go, do your two-month project where you, you know, you’re porting this books project for a new CD-ROM format and writing it. But, like, a thousand people for three years to, like, get to the thing where you start getting the feedback, like, how does – how does that work? 
+
+PHIL SPENCER: Yeah, it’s been real learning for me, just being transparent on this. Like, the biggest one of these things, as I moved into this job ahead of Xbox, which is now eight years ago, which is kind of crazy to think about

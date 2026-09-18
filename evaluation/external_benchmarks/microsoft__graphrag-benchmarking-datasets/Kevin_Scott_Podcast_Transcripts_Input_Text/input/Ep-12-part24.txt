@@ -1,0 +1,35 @@
+Ep-12.txt  you and what you've told me about 
+your aspirations, like I don't think that this is a good move for you. And sometimes I would tell 
+people, it's like this isn't a bad option. Like, you are now faced with a tough choice, like I think 
+it's a -- you know, you've got a good option here and you've got a good option there. 
+And the thing that I found, though, like even it's a horrifying thing like when you are leading you 
+know a group of people and like you and in a very sort of very concrete way are dependent on 
+them to like be able to achieve all of the things that, you know, you're trying to get your 
+company to achieve. 
+But I found like having those conversations like I think because people believe that I had a 
+genuine interest in like their success and their happiness, like I wound up being able to hold onto 
+a bunch of people like way longer than I would have otherwise. 
+BILL COUGHRAN: I think that's right. 
+KEVIN SCOTT: But it was hard to do because it feels very scary. 
+BILL COUGHRAN: Yeah, it's risky. It feels risky. I understand. I think the other thing 
+which I saw at Google and I suspect you've seen in your arc, too, is Google hired a lot of very 
+bright kind of new grads or it was their first or second job, and it was fairly common for people 
+after a few years to kind of wonder what the world looked like outside of the particular confines 
+of Mountain View at the time. And that's not irrational for a young person. 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+18
+KEVIN SCOTT: No. 
+BILL COUGHRAN: And on the other hand, Google wanted to retain those people. And there 
+were some difficult challenges in that. 
+KEVIN SCOTT: So, what's -- what are the most interesting things that you're seeing in 
+venture now? So, like, it's -- it is an exciting time right now because like, there's a lot of venture 
+capital out there. It's never been easier to start a technology company because you have open 
+source, you have all this cloud infrastructure, you have like an increasingly powerful set of 
+capabilities that let small teams accomplish big things. 
+And like you're at Sequoia, which is like one of the top venture capital firms in the world. So, 
+like, what's interesting right now? 
+BILL COUGHRAN: Well, there's clearly a lot of interest in software around machine learning. 
+I think that there's a bunch of companies trying to create tooling or do vertical applications. 
+I think there aren't very many companies proposing to do platforms because you've got 
+Tensor

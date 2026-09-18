@@ -1,0 +1,19 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt  always get a job. 
+
+Now, of course, the idea of me doing software development right now is pretty laughable, but it provided, you know, a frame that helped me actually take risk.  And it also allows me these moments in my career where I keep coming back to it, you know.  
+
+I'm working on this project right now where — with the Census Bureau, the U.S. Census Bureau.  And part of it is that they're going to implement the largest instantiation of differential privacy that we have ever seen.  And it is so powerful.  And they're doing it for all the right reasons, and it is complicated and challenging.  And the number of people who know what differential privacy is, you know, can be counted on my hands and toes.  
+
+KEVIN SCOTT:  So, for the listeners, what is differential privacy?  
+
+danah boyd:  So if you think about the census data, they provide tabulations — these files that tell you how many people are in a block and different things about race or age, sex, and they give it to you in a way that they don't want information to be uniquely identified. It's not meant to be personally identifiable.  It's meant to provide statistical information. 
+
+The difficulty is that computing has advanced and it is not hard right now, with the amount of data that an organization like the Census Bureau puts out, to reconstruct individual entries out of these tabulated forms.  So, in other words, you can take all the census data, and you can imagine how — you know, what are individuals?  And with that, you can match that against commercial data. 
+
+And in matching it against commercial data, you can reidentify people.  Now, the key to the census is confidentiality.  The public needs to be confident that their data is not going to be abused.  And there are horrible points in history where it was abused, and we worked really hard to shore up those laws. 
+
+Well, the difficulty is that when you break a technical system through a technical means, you can build laws around it, but they're not going to necessarily solve the most important thing, which is that we have to make certain that we can say to the public, "This data is confidential." 
+
+So over a decade ago, the Census Bureau began looking at differential privacy.  And why differential privacy is important and what it means is that it's an attempt to not allow that reconstruction.  So, in order to do that, it takes tabulated data and it inserts noise.  And that noise is not just arbitrary, that noise is very much mathematically dictated based on a set of priorities and values.  
+
+So how much confidentiality do you want to guarantee in there referred to as privacy?  How much accuracy is important within the system and how do you balance between these?  And, you know, where can you allocate that

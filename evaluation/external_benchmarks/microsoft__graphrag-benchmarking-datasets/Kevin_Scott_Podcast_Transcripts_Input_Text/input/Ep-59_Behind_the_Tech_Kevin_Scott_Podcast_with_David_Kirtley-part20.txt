@@ -1,0 +1,13 @@
+Ep-59_Behind_the_Tech_Kevin_Scott_Podcast_with_David_Kirtley.txt  And when you have a big coil, I saw some – and one of the manufacturers I was visiting earlier this year, they were really proud of this 300 ton magnet they had developed. There was one unit, it was 300 tons. And it had – they developed a boat to move it around, and a specialty crane to move it around, and all those things.
+
+And I’m like, I’m just thinking internally like, this is slow, this is too slow. Like, you need to have this broken into little pieces. And every time we get to a decision point of, okay, great, I need a forklift to move this, it’s like, whoa, are you sure we can’t spend a little bit more engineering time, break this into a more modular piece? Sometimes you can’t. Sometimes the physics demands that it just has to be this way. 
+
+KEVIN SCOTT: Yeah, and, you know, I think, too, you know, and this is another interesting thing that you all do. You know, sometimes you’re building, like, very bespoke things. And sometimes, like, you are, like, taking things that are useful for not just building fusion reactors. 
+
+So, like, rather than having to go build a, you know, a new smelting process, a new metallurgy and, like, new whatever to build a 300 ton magnet, and you’re going to make exactly one of these things ever. Like, you are, you know, building – you’re using things where you can build lots of them, and, like, maybe other people can benefit from them as well. So, you’ve got economies of scale in, like, the components of your system, which is fantastic.
+
+DAVID KIRTLEY: Yeah, and the way you make it, I think there was something I learned about rockets early in my career that just floored me, because I had – like, as an engineer, I had never thought about it, which is the way solid rocket boosters on the space shuttle. But then now, you know, the Falcon rockets, it’s like, what sets the size? Oh, bigger rockets are better. They’re more efficient. They’re, you know, on and on, but in fact, there’s a train tunnel you have to move this rocket through.
+
+And if you can’t move the rocket through the train tunnel, then rather than having a factory that builds rockets, you have to make a factory each time you want to build a rocket. And it just radically changes the business model. And it changes the – your ability to learn and be reliable and low cost.
+
+And so, that – we think about that. Like, what’s the biggest machine I’ll ever make? It’s not – it’s not in power. It’s scaled by I have to fit one of these through a train tunnel. And that’s the biggest

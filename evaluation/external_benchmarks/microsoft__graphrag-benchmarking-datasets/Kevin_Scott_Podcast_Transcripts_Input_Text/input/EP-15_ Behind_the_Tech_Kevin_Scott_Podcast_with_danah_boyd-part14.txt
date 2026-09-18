@@ -1,0 +1,23 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt . 
+
+danah boyd:  And when we built a world of the perpetual beta, we lost quality assurance.  And so whether we're talking about safety or security, we need a narrative of quality assurance that comes back and really brings into the fold people who are trying to destroy the system in order to make it better.  
+
+KEVIN SCOTT:  Yeah.  
+
+danah boyd:  And that kind of — everything from threat modeling to red-teaming to quality assurance to different forms of bug bounties, they need to go beyond what we normally talk about in cyber into a much more rich environment, because when people can exploit a search engine by just certain kinds of strategic queries, not to mention SEO, we're not actually thinking right if we think we can just consume clean data and spit out answers.  
+
+KEVIN SCOTT:  Yep.  
+
+danah boyd:  We need to think that through.  
+
+KEVIN SCOTT:  Yeah, and you know, it's an interesting set of problems because I think you nailed it on the head when you said that it's literally impossible — as probably, you know, some sort of undecidability thing, even, for us to be able to like completely think of every possible bad use that could come of a software system or like a set of data that we are — that we're gathering. 
+
+And I've operated a bunch of large-scale systems in the past, and like the thing that you try to do with these things to make them robust is you do as much as you possibly can, like using every trick in the book, and you sort of come at things from a gazillion different perspectives to try to stress test it before you start exposing it to the real world. 
+
+And then once it's exposed to the real world, like you sort of continue measuring all of these signals that are sort of indicative of bad things happening or about to happen, and you try to build these systems in a way where they're as agile as humanly possible, where as soon as something bad happens, like you very quickly get the problem sorted out. 
+
+And I sort of feel like we need to — like we know, like we're talking about a Web service, like a thing that renders a Web page, or like a screen on a mobile application to a billion users, like we know pretty well how to make sure that that thing is reliable and up and the user experience renders in the proper way. 
+
+And we've had, what, 30 years, 20 good solid years of figuring out what that bag of tricks is for making those things robust.  I sort of feel like we're in the early days of like figuring out what our bag of tricks are for making the sort of data interactions, like data handling stuff as robust as it needs to be. 
+
+danah boyd:  Well, I think "robust" is the right language because

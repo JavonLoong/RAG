@@ -1,0 +1,13 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt ’re actively aware of this and managing it. Like you’re never – there’s no easy, like you know, if you snap a bunch of people together that are all the same person, that team will fail, right? There’s always tension in these teams. There has to be if they’re going to be high functioning. That is the fundamental skill.
+
+KEVIN SCOTT: Yeah, and I think the thing for managers as well is realizing that you can realize all of what we just said and still be a victim to some of the stuff yourself, and which is why it’s really important, if you are leading things to like have people in your network who can help you go deal through your own shortsightedness, where intellectually you should understand how to go deal with it, and yet, you just aren’t because you’re a human being.
+
+SAM SCHILLACE: This is actually a really good illustration of one of my favorite things in tech, in general, is that favorite patterns that shows up in a bunch of different ways, which is this tension between long term and short term, right? The manifestation is, like, the tension between what I know I should do in the long term versus what I want to do right now. I always joke, it’s like, well, I want to be on a diet, but there’s a donut in front of me and I’m eating that thing, you know? Like, that kind of the easy way to think about it. 
+
+But, like, here, right, you know what you should do. You know you should build and manage this thing in the long term, but it’s, like, hard to do because what you want is a day-to-day life where you don’t have to deal with tension among your team members. And so, you’re kind of biased in this direction of picking the easy thing. 
+
+And the thing you mentioned of, like, you know, reaching out to outside groups and stuff like that is a common solution to that. You have an externality. You pick something that’s an external forcing function that makes the short-term kind of equivalently expensive in some way to the long term or reduces the cost of long term. So, you do the long-term thing.
+
+But that – like, that pattern manifests in architecture. It manifests in development tooling. I mean, it manifests everywhere in the tech industry. I see it as, like, one of the fundamental challenges of doing what we do very well at scale. 
+
+KEVIN SCOTT: Yeah so going back to what, you know, we were talking about 10 minutes ago, just in terms of career advice, like, one of the other thing, nuggets that you had in there that is worth calling out is it is very important, I think, to choose to go work on things that are hard. Like, usually, the meaningful things, things that have impact, like, things that

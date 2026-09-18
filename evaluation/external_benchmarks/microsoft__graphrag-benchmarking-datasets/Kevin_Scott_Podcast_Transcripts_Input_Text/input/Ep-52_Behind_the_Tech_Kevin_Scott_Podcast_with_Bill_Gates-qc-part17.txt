@@ -1,0 +1,19 @@
+Ep-52_Behind_the_Tech_Kevin_Scott_Podcast_with_Bill_Gates-qc.txt  that in a smart way.
+
+So understanding algorithms, understanding why certain things are fast and slow, that is fun. The systems work that in my early queries, just one computer and later kind of a network of computers, now that systems where you have data centers with millions of CPUs, it’s incredible the optimization that that can be done there. Just how the power supplies work or how the network connections work. Anyway almost every area of computer science, including database type techniques, programing techniques, this kind of forces us to think about in a really new way. 
+
+KEVIN SCOTT: Yeah, I could not agree more. 
+
+So last-last question. I know that you are incredibly busy, and you have the ability to choose to work on whatever it is that you want to work on. But I want to ask you anyway, what do you do outside of work for fun? I ask everybody who comes on the show that.
+
+BILL GATES: No, that’s great. I get to read a lot. I get to play tennis a lot. During the pandemic, I was down in California in the fall and winter, and I’m still enjoying that. Although the Foundation’s meeting in person and some of these Microsoft OpenAI meetings, it’s been great that we’ve been able to do those in person. But some we can just do virtually. 
+
+So anyway, I play pickleball because I’ve been playing for over 50 years, tennis, and I like to read a lot. I goofed off and went to the Australian Open for the first time because it’s nice warm weather down there, and that was kind of spectacular.
+
+KEVIN SCOTT: I actually I actually want to push on this idea you read a lot. So you say you read a lot, which is not the same as like what most people say when they say they read a lot. You’re famous for carrying around like a giant tote bag of books with you everywhere you go, and you read an insane amount of stuff, everything from really difficult science books, all the way to fiction. How much do you actually read? Like, what’s a typical pace of reading for Bill Gates? 
+
+BILL GATES: You know, if I don’t read a book in a week, then I’m really – I relook at what I was doing that week. If I’m on vacation, then I’ll hope to read more like five, six or seven. Of course, books are quite variable in size. But over the course of the year, I should be able to read close to 80-plus books. 
+
+I have younger children who read even more than I do. So it’s kind of like, oh, geez I have to be – which Sowell books am I going to read? I still read all the Smil, Pinker some authors that are just so profound and have shaped my thinking.
+
+But reading is kind of relaxing. I should read

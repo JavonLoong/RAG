@@ -1,0 +1,25 @@
+EP-27_ Behind_the_Tech_2020-Year-In-Review.txt  to biology happens to us. 
+
+[MUSIC]
+
+CHRISTINA WARREN:  So, that was Stanford professor and bioengineer, Dr. Drew Endy.
+
+KEVIN SCOTT:  Okay, and next, we’ll hear from neuroscientists and bioengineer Dr. Tom Daniel.
+
+CHRISTINA WARREN:  Yeah. Tom is a professor and faculty member at the University of Washington. His research and teaching meld neuroscience, engineering, computing and biomechanics to understand the control and dynamics of movement in biology. 
+
+So, if I remember correctly, Kevin, you and Tom spend a good amount of time talking about flies, like – buzz buzz – flies. 
+
+KEVIN SCOTT:  Yup. Tom does this really fascinating work with exploring how insects navigate the world by looking at their neurobiology and electromechanical systems. And he told us all about these things on flies called halteres. According to Tom, halteres is derived from the fly’s hind wing, and they are these super tiny non-aerodynamic knobs that flap just like wings, just completely fascinating. So, I will let Tom explain it. He can do a much better job that I can.
+
+[MUSIC]
+
+TOM DANIEL: They're like tiny dumbbells that the fly oscillates a counter phase to the wings. They're so small, there's no aerodynamic forces, but they're packed, they're festooned with sensory structures. As it turns out, they're like this little knob on a stick, and as that vibrates-- experiences bending forces-- but if the fly rotates in a direction orthogonal to the flap, it generates a Coriolis force, a gyroscopic sensor.
+
+And lo' and behold, these systems are exquisitely sensitive to rotational forces. So, they're basically measuring–I apologize for the math–the cross product of their flap (Laughter) with their body rotation, okay? And so we – we had this idea that they're able – or they're physically able to respond to Coriolis forces, but we really wanted to nail whether the neural system actually has the equipment to measure that. And so we were able to stick electrodes into the neurons that go into these tiny modified hindwings, and measure their encoding properties, and you can show that they encode information at astronomically high rates, and do so for Coriolis forces.
+
+But that sort of led to an interesting question is – these are what you would call a vibrating structural gyroscope, which is basically the same idea that you have in all these gyroscopic sensors in your cellphone, or anything else. They operate at a tiny, tiny fraction of the energy costs. I'm not going to stick a fly inside my cellphone. (Laughter) But bear with me, we do some odd things like that.
+
+[MUSIC]
+
+CHRISTINA WARREN:  It’s so wonderful and weird. (Laughter.) I

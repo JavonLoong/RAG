@@ -1,0 +1,55 @@
+Helix 69 is a hairpin RNA structure containing 19 nucleotides in large subunit of the ribosome.
+ Ribosome consists of large and small subunits joined together with inter subunit bridges.
+ Helix 69 interacts with the helix 44 (h44) of the small subunit to form the largest interface of two subunits called inter-subunit bridge B2a.
+ Helix 69 is proposed to be a good drug target for antibacterial drugs.
+ Many of the recent crystal structures have shown the involvement of this hairpin in different stages of the protein translation process.
+ By targeting bacterial helix 69 specifically, protein synthesis in bacteria could be halted thus killing the bacteria.
+Ribosomal ribonucleic acid (rRNA) is the RNA component of the ribosome, and is essential for protein synthesis in all living organisms.
+ It constitutes the predominant material within the ribosome, which is approximately 60% rRNA and 40% protein by weight, or 3/5 of ribosome mass.
+ Ribosomes contain two major rRNAs and 50 or more proteins.
+ The ribosomal RNAs form two subunits, the large subunit (LSU) and small subunit (SSU).
+ The LSU rRNA acts as a ribozyme, catalyzing peptide bond formation.
+ rRNA sequences are widely used for working out evolutionary relationships among organisms, since they are of ancient origin and are found in all known forms of life.
+DNA damage-binding protein or UV-DDB is a protein complex that is responsible for repair of UV-damaged DNA.
+ This complex is composed of two protein subunits, a large subunit DDB1 (p127) and a small subunit DDB2 (p48).
+ When cells are exposed to UV radiation, DDB1 moves from the cytosol to the nucleus and binds to DDB2, thus forming the UV-DDB complex.
+ This complex functions in nucleotide excision repair, recognising UV-induced (6-4) pyrimidine-pyrimidone photoproducts and cyclobutane pyrimidine dimers.
+Ribozymes (ribonucleic acid enzymes) are RNA molecules that are capable of catalyzing specific biochemical reactions, similar to the action of protein enzymes.
+ The 1982 discovery of ribozymes demonstrated that RNA can be both genetic material (like DNA) and a biological catalyst (like protein enzymes), and contributed to the RNA world hypothesis, which suggests that RNA may have been important in the evolution of prebiotic self-replicating systems.
+ The most common activities of natural or in vitro-evolved ribozymes are the cleavage or ligation of RNA and DNA and peptide bond formation.
+ Within the ribosome, ribozymes function as part of the large subunit ribosomal RNA to link amino acids during protein synthesis.
+ They also participate in a variety of RNA processing reactions, including RNA splicing, viral replication, and transfer RNA biosynthesis.
+ Examples of ribozymes include the hammerhead ribozyme, the VS ribozyme, Leadzyme and the hairpin ribozyme.
+Nuclear cap-binding protein complex is a RNA-binding protein which binds to the 5' cap of pre-mRNA.
+ The cap and nuclear cap-binding protein have many function in mRNA biogenesis including splicing, 3'-end formation by stabilizing the interaction of the 3'-end processing machinery, nuclear export and protection of the transcripts from nuclease degradation.
+ When RNA is exported to the cytoplasm the nuclear cap-binding protein complex is replaced by cytoplasmic cap binding complex.
+ The nuclear cap-binding complex is a functional heterodimer and composed of Cbc1/Cbc2 in yeast and CBC20/CBC80 in multicellular eukaryotes.
+ Human nuclear cap-binding protein complex shows the large subunit, CBC80 consists of 757 amino acid residues.
+ Its secondary structure contains approximately sixty percent of helical and one percent of beta sheet in the strand.
+ The small subunit, CBC20 has 98 amino acid residues. Its secondary structure contains approximately twenty percent of helical and twenty-four percent of beta sheet in the strand.
+ Human nuclear cap-binding protein complex plays important role in the maturation of pre-mRNA and uracil-rich small nuclear RNA.
+Ribosomal particles are denoted according to their sedimentation coefficients in Svedberg units.
+ The 60S subunit is the large subunit of eukaryotic 80S ribosomes.
+ It is structurally and functionally related to the 50S subunit of 70S prokaryotic ribosomes.
+ However, the 60S subunit is much larger than the prokaryotic 50S subunit and contains many additional protein segments, as well as ribosomal RNA expansion segments.
+In molecular biology, exonuclease VII (EC 3.1.11.6 , "Escherichia coli exonuclease VII", "E. coli exonuclease VII", "endodeoxyribonuclease VII", "Exodeoxyribonuclease VII") is a bacterial exonuclease enzyme.
+ It is composed of two nonidentical subunits; one large subunit and 4 small ones.
+ Exonuclease VII catalyses exonucleolytic cleavage in either 5'-3' or 3'-5' direction to yield 5'-phosphomononucleotides.
+ The large subunit also contains an N-terminal OB-fold domain that binds to nucleic acids.
+The AB5 toxins are six-component protein complexes secreted by certain pathogenic bacteria known to cause human diseases such as cholera, dysentery, and hemolytic-uremic syndrome.
+ One component is known as the A subunit, and the remaining five components make up the B subunit.
+ All of these toxins share a similar structure and mechanism for entering targeted host cells.
+ The B subunit is responsible for binding to receptors to open up a pathway for the A subunit to enter the cell.
+ The A subunit is then able to use its catalytic machinery to take over the host cell's regular functions.
+The ribosome ( ) is a complex molecular machine, found within all living cells, that serves as the site of biological protein synthesis (translation).
+ Ribosomes link amino acids together in the order specified by messenger RNA (mRNA) molecules.
+ Ribosomes consist of two major components: the small ribosomal subunit, which reads the RNA, and the large subunit, which joins amino acids to form a polypeptide chain.
+ Each subunit is composed of one or more ribosomal RNA (rRNA) molecules and a variety of ribosomal proteins (r-protein or rProtein).
+ The ribosomes and associated molecules are also known as the "translational apparatus".
+A ribosomal protein (r-protein or rProtein) is any of the proteins that, in conjunction with rRNA, make up the ribosomal subunits involved in the cellular process of translation.
+ A large part of the knowledge about these organic molecules has come from the study of "E. coli" ribosomes.
+ All ribosomal proteins have been isolated and many specific antibodies have been produced.
+ These, together with electronic microscopy and the use of certain reactives, have allowed for the determination of the topography of the proteins in the ribosome.
+ "E. coli", other bacteria and Archaea have a 30S small subunit and a 50S large subunit, whereas humans and yeasts have a 40S small subunit and a 60S large subunit.
+ Equivalent subunits are frequently numbered differently between bacteria, Archaea, yeasts and humans.
+ More recently, a near-complete (near)atomic picture of the ribosomal proteins is emerging from the latest high-resolution cryo-EM data (including PDB ID: 5AFI).

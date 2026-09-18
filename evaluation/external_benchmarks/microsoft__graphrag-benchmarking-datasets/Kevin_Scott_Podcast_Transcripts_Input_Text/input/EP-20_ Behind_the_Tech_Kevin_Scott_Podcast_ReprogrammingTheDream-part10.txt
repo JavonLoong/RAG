@@ -1,0 +1,21 @@
+EP-20_ Behind_the_Tech_Kevin_Scott_Podcast_ReprogrammingTheDream.txt  a similar sort of effect in these communities today.
+
+GREG SHAW:  Yeah, you offer a number of different suggestions related to education and skilling, and that sort of thing.  I'm curious, what would you say is your advice to young people who are might be growing up in rural central Virginia or Oklahoma, where I'm from? You know, how should they prepare for jobs of the future?
+
+KEVIN SCOTT:  Yeah.  I think, I've chatted with a bunch of people about this over the past few weeks, and you know, when I get this question about what we need to do to make AI accessible to those kids in rural and middle America, yeah, some of the things that we need to do are just very prosaic, I think.
+
+So, the tools themselves have never been more powerful.  Like the really interesting thing to me is that first machine learning project that I did, 16 years ago, now, required me to sit down with like a couple of graduate-level statistical machine learning textbooks, and a whole stack full of fairly complicated research papers.
+
+And then I spent six months writing a bunch of code, from scratch, to use machine learning to solve the particular problem I was trying to solve at the time.  
+
+If I look at the state of opensource software and cloud platforms, and just the online training materials that are available for free to everyone, a motivated high school student could do that same project that I did 16 years ago, probably in a weekend, using modern tools.
+
+And so, you know, I think that the thing that we really need to be doing is figuring out how to take these tools that are now very accessible, and like we shouldn't feel intimidated by them, in any shape, form or fashion, and figure out how to get those into high school curricula so that we are teaching kids in a project-oriented way, like how to use these tools to solve real world problems.
+
+I think getting kids those skills is super important.  Like the other thing that we need to think about is just how we're connecting people to the digital infrastructure that is going to increasingly be running our future.
+
+And so, you know, there are things like the availability of broadband that are a huge, huge deal.  You know, I think we write about, in the book, my visit to our datacenter in Boydton, which is in Mecklenburg County, about an hour-and-a-half, two hours away from where I grew up.
+
+And this is one of the most sophisticated technology installations anywhere in the world.  Like there's an enormous amount of network bandwidth coming into this facility, and like the amount of compute power that is just in this sort of acres of datacenter infrastructure that we have there is just staggering.
+
+And we have a bunch of high-skilled technology workers who are building and operating this infrastructure, on behalf of all of Microsoft's cloud customers. And

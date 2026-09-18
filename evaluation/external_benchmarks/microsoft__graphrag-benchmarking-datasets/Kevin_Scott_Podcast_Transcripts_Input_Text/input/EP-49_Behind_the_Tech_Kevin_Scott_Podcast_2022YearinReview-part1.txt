@@ -1,0 +1,24 @@
+EP-49_Behind_the_Tech_Kevin_Scott_Podcast_2022YearinReview.txt ../Behind the Tech with Kevin Scott podcast
+Episode 49 – Year in Review
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.
+
+[MUSIC]
+
+CHRISTINA WARREN: Hello and welcome to a special episode of Behind the Tech. I’m Christina Warren, Senior Developer Advocate at GitHub
+
+KEVIN SCOTT: And I’m Kevin Scott.
+
+CHRISTINA WARREN: And today, we are doing our Year in Review episode, our year unwrapped if you will, and this means that we’re going to revisit a few fascinating conversations with our guests from 2022. We’ve had some amazing people on the show this year. We had Alexis Ohanian, who is the founder of Reddit and is married to Serena Williams. Simone Giertz, who literally deconstructed a Tesla and made it into a pickup truck, just for the joy of making things. And of course Randall Munroe, who writes the incredible web comic XKCD.
+
+KEVIN SCOTT: Yeah it really has been an amazing year just in terms of the interesting people we got to chat with. Sometimes I wonder how we got fortunate enough to be able to have these conversations and that folks are willing to let us record them to share with everyone. It's also crazy that I think this is our 3rd year in Review episode. Like we’ve been doing this for a while now, which I don’t really think about all that much, so that’s sort of cool. 
+
+CHRISTINA WARREN: It is cool, yeah I was thinking about that earlier and thinking yeah we’ve been doing this for a while and it’s been amazing to see all the incredible people that come through. And it’s an honor that they’ve chosen to spend their time with us.
+
+One of the things that came up in so many of your conversations this year was representation, and what we can do in tech as an industry to make sure that we are bringing all different kinds of voices and lived experiences into the room.
+
+KEVIN SCOTT: Yeah, I mean it really is interesting that representation came up pretty much across the board, no matter who I was talking to this season. It’s just a reminder of how important it is, and it’s just so exciting to see that conversation be organically on the top of people’s minds.
+
+CHRISTINA WARREN: I think the fact that it came up organically was one of the things that really stood out to me. And because it emerged as such a powerful theme this year, I was thinking

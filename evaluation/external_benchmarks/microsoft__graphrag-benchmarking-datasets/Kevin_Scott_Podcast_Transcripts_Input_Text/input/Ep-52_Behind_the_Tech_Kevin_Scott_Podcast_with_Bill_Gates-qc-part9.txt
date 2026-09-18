@@ -1,0 +1,15 @@
+Ep-52_Behind_the_Tech_Kevin_Scott_Podcast_with_Bill_Gates-qc.txt  young. 
+
+KEVIN SCOTT: Yeah, well, so I’m going to say this to you, and I’m just interested in your reaction because like, you will always tell me when an idea is dumb. But like, one of the things that I’ve been thinking for the last handful of years is that one of the big changes that’s happening because of this technology is that for 180 years, from the point that Ada Lovelace wrote the first program to harness the power of a digital machine, up until today, the way that you’d get a digital machine to do work for you is you either have to be a skilled programmer, which is like a barrier to entry that’s not easy, or you have to have a skilled programmer anticipate the needs of the user and to build a piece of software that you can then use to get the machine to do something for you. 
+
+And this may be the point where we get that paradigm to change a little bit, where because you have this natural language interface and these AIs can write code and like they will be able to actuate a whole bunch of services and systems, that we sort of give ordinary people the ability to get very complicated things done with machines, without having to have like all of this expertise that you and I spent many, many years building. 
+
+I don’t know whether you think that’s a dumb idea or not.
+
+BILL GATES: No, absolutely, every advance hopefully lowers the bar in terms of who can easily take advantage of it. The spreadsheet was an example of that, because even though you still have to understand these formulas, you really didn’t have to understand logic or symbols much at all. And it had the input and the output so closely connected in this grid structure that you didn’t think about the separation of those two. And that’s kind of limiting in a way to a super abstract thinker, but it was so powerful in terms of the directness; oh, that didn’t come out right, let me change it. 
+
+Here, there’s a whole class of programs of taking like corporate data and presenting it or doing complex queries against, okay, have there been any sales offices where we’ve had 20% of the headcount missing, and are our sales results affected by that? You can just – now you don’t have to go to the IT department and wait in line and have them tell you, oh, that’s too hard or something. 
+
+Most of these corporate learning things, whether it’s a query or a report or even a simple workflow where if something happens, you want to trigger an activity, the description in English will be the program. And when you want it to do something extra, you’ll just pull out that English, or whatever your language is, and type that in. And so, there’s a whole layer of query assistance and programing that will be accessible to any employee. 
+
+And the same thing is true of,

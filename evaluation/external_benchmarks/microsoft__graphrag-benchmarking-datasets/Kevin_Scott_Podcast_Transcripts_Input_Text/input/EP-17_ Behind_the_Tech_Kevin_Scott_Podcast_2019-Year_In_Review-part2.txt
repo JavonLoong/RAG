@@ -1,0 +1,17 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt  this creates greater risk of ever-growing wealth inequality as well. To be really candid, I think that with the rise of the last few waves of technology, we actually did a great job creating wealth in the East and the West Coast, but we actually did leave large parts of the country behind, and I would love for this next one to bring everyone along with us. 
+
+KEVIN SCOTT:  So that was Andrew Ng.  Andrew is founder and CEO of Landing AI, founding lead of the Google Brain Project, and a cofounder of Coursera.  He really is a true leader in artificial intelligence and machine learning.  And I can't agree with him more.  
+
+CHRISTINA WARREN:  He's so smart.  And what happened is that actually led to a really interesting discussion about computer literacy and bringing AI not just to tech companies, but to all industries.  So, here's more from Kevin's conversation with Andrew Ng. 
+
+ANDREW NG: Once upon a time, society used to wonder if everyone needed to be literate. Maybe all we needed was for a few monks to read the Bible to us and we didn't need to learn to read and write ourselves because we'd just go and listen to the priest or the monks. But we found that when a lot of us learned to read and write that really improved human-to-human communication. 
+
+I think that in the future, every person needs to be computer literate at the level of being able to write these simple programs. Because computers are becoming so important in our world and coding is the deepest way for people and machines to communicate. There's such a scarcity of computer programmers today that most computer programmers end up writing software for thousands of millions of people. 
+
+But in the future if everyone knows how to code, I would love for the proprietors of a small mom and pop store at a corner to be able to program an LCD display to better advertise their weekly sales. So, I think just as literacy, we found it having everyone being able to read and right, improved human-to-human communication. I actually think everyone in the future should learn to code because that's how we get people and the computers to communicate at the deepest levels. 
+
+KEVIN SCOTT: I think that's a really great segue into the main topic that I wanted to chat about today, AI, because I think even you have used this anecdote that AI is going to be like electricity. 
+
+ANDREW NG: I think I came up with that. 
+
+KEVIN SCOTT: Yeah. I know this is your brilliant quote and it's spot on. The push to literacy in many ways is a byproduct of the second and third industrial revolution. We had this transformed society where you actually had to be literate in order to function in this quickly industrializing world. So, I wonder how many analogues you see between the last industrial revolution and what's happening with AI right now.

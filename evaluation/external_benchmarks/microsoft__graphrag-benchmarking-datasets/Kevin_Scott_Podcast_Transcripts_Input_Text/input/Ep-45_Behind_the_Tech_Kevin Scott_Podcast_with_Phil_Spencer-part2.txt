@@ -1,0 +1,23 @@
+Ep-45_Behind_the_Tech_Kevin Scott_Podcast_with_Phil_Spencer.txt  the Xbox line of consoles, and launching Game Pass.
+
+And as a heads up to you listeners. Phil and I know each other pretty well. We’ve been on Microsoft’s Senior Leadership Team together for several years, and you may have seen us gaming together recently for the Build Conference. That was a ton of fun. 
+
+It’s so great to have you on the show today, Phil. 
+
+PHIL SPENCER: It’s good to be here. Kevin Thanks for having me. 
+
+KEVIN SCOTT: So the way that we usually start these conversations is by going all the way back to childhood, and I’d love to understand, like, how you got interested in technology, math, science, like whatever it was that got you on this journey. 
+
+PHIL SPENCER: Yeah, it’s interesting. I think for me, it probably centers on my parents, who were kind of early investors in things I was interested in. I grew up, I don’t know if it’s like a lot of kids, but as a comic book reading, D&D playing, videogame playing kid. My wife likes to say that I haven’t changed much in the years. That’s kind of still who I am. 
+
+But I remember my family bringing home first, it was a Pong machine back in the day, showing my age, and then an Atari 2600 and really getting interested in videogames in my home. The arcade down the street, my friends would ride, we’d ride our bikes down and play Robotron, Galaga, the games of the day, and had a ton of fun.
+
+And I remember when I got my 2600 at home, there literally was this question in my mind if I would ever leave the house again, or was this going to be the end of me? 
+
+My dad, Perch, who is a chemical engineer by trade, so into tech and as in his workplace, computers are playing more of a role, brought a computer home, Sinclair ZX81. We brought it home. It was the first machine I ever had. We started typing in programs from the back of like Compute Magazine and buying books of code, you know, BASIC programs that we would type in. 
+
+I kind of learned to code debugging my typos or misprints in those magazines, took some classes at school when I was in junior high on the Apple II. That was kind of the thing. 
+
+And then I ended up in high school working in a videogame store, Computer Mart in Vancouver, Washington, sitting behind the desk. And, you know, families would come in, whether they had like a Commodore or an Atari or a PC, and wanting to buy videogames or buy a system. 
+
+And it was a cool opportunity for me to just kind of be along with different people who had come in on their journey, what was interesting to them. I was playing most of the games in

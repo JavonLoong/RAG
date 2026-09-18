@@ -1,0 +1,22 @@
+Chryseobacterium scophthalmum is a Gram-negative and rod-shaped bacteria from the genus of Chryseobacterium which has been isolated from the gills of a turbot (Scophthalmus maximus) in Scotland.
+ "Chryseobacterium scophthalmum" produces flexirubin.
+Chryseobacterium artocarpi is a Gram-negative and non-spore-forming bacteria from the genus of Chryseobacterium which has been isolated from rhizosphere soil from the tree Artocarpus integer.
+ "Chryseobacterium artocarpi" produces flexirubin.
+Chryseobacterium gallinarum is a Gram-negative and rod-shaped bacteria from the genus of Chryseobacterium which has been isolated from the pharyngeal scrape of a chicken in Saxony-Anhalt in Germany.
+ "Chryseobacterium gallinarum" has the ability to degrade keratin.
+Chryseobacterium echinoideorum is a Gram-negative, rod-shaped, aerobic and non-motile bacteria from the genus of Chryseobacterium which has been isolated from a sea urchin (Tripneustes gratilla) on the Penghu Island on Taiwan.
+ "Chryseobacterium echinoideorum" produces flexirubin.
+Chryseobacterium frigidum is a Gram-negative, aerobic and non-motile bacteria from the genus of Chryseobacterium which has been isolated from high Arctic tundra soil near Ny-Ålesund in Norway.
+Chryseobacterium oleae is a bacterium from the genus of Chryseobacterium which has been isolated from the rhizosphere of the olive tree Olea europaea in Seville in Spain.
+ "Chryseobacterium oleae" can promote the plant growth.
+Elizabethkingia meningoseptica is a gram-negative rod-shaped bacterium widely distributed in nature (e.g. fresh water, salt water, or soil).
+ It may be normally present in fish and frogs; while it may be isolated from chronic infectious states, as in the sputum of Cystic Fibrosis patients.
+ In 1959, the American bacteriologist Elizabeth O. King (who isolated "Kingella kingae" in 1960) was studying unclassified bacteria associated with pediatric meningitis at the Centers for Disease Control and Prevention in Atlanta, when she isolated an organism (CDC group IIa) that she named "Flavobacterium meningosepticum" ("Flavobacterium" means "the yellow bacillus" in Latin; "meningosepticum" likewise means "associated with meningitis and sepsis").
+ In 1994, it was reclassified in the genus "Chryseobacterium" and renamed "Chryseobacterium meningosepticum"("chryseos" = "golden" in Greek, so "Chryseobacterium" means a golden/yellow rod similar to "Flavobacterium").
+ In 2005, a 16S rRNA phylogenetic tree of Chryseobacteria showed that "C. meningosepticum" along with "C. miricola" (which was reported to have been isolated from Russian space station Mir in 2001 and placed in the genus "Chryseobacterium" in 2003) were close to each other but outside the tree of the rest of the Chryseobacteria and were then placed in a new genus "Elizabethkingia" named after the original discoverer of "F. meningosepticum".
+Chryseobacterium hispalense is a Gram-negative and non-motile bacteria from the genus of Chryseobacterium which has been isolated from a rainwater pond in Spain.
+ "Chryseobacterium hispalense" can promote plant growth.
+Chryseobacterium gleum is a bacterium from the genus of Chryseobacterium which has been isolated from a high vaginal swab from a human in London in England.
+ "Chryseobacterium gleum" can cause infections in humans.
+Chryseobacterium indologenes is a Gram-negative and non-motile bacteria from the genus of Chryseobacterium which has been isolated from a human.
+ "Chryseobacterium indologenes" is a pathogen of American bullfrogs (Lithobates catesbeianus) and humans.

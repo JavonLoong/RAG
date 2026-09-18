@@ -1,0 +1,35 @@
+Ep-12.txt  comes in and you'll sort of forget temporarily all about the old stuff.
+You know, I think these older technologies that pop back up, it's almost a puzzle why they went 
+out of fashion in the first place. You know, it's like you look high performance computing for 
+instance, we were building in the '70s, '80s, and '90s like these very sort of idiosyncratic 
+supercomputers and very high performance machines that all were different in little ways.
+So, like they had a good idea about how do the memory hierarchy or a good idea about how to 
+do networking or a good idea about how to split the computation up across a bunch of different 
+processors.
+And the thing that caused them to go out of fashion is like there was this sort of catalyst, you 
+know, driven by the rapid growth of the Internet to sort of standardize your compute 
+architectures on commodity CPUs, commodity memory, commodity networks, like commodity 
+everything. And so, like you just sort of created at massive scale like large, large amounts of 
+compute where all of the like individual units of compute looked exactly the same and were built 
+as cheaply as possible.
+And like that works really well for, you know, sort of the problems that we had for the first 20 
+years or so of like the commercial explosion of the Internet.
+What we're seeing right now is like the problems are different again, but like different in the 
+same way that they were like a bunch of years ago. And so, like now we are -- we're digging 
+back up all of that good work that folks did a few decades ago and are realizing like how 
+valuable it still is in these new contexts.
+It's really fun, because I spent a bunch of the early parts of my career thinking about these things. 
+Like I did an internship at the National Center for Supercomputing Applications like where we 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+22
+like when I was there we had just taken delivery of this machine called the CM5 from a company 
+called Thinking Machines, founded by, you know, a famous computer scientist, Danny Hillis, 
+who like I hope we will get to come on this show at some point. Like Danny is like a super 
+awesome human being and like just like maybe the most brilliant mad scientist I've ever met. I 
+love Danny.
+But anyway, you know, this machine was just epically big and like epically cool and just sort of 
+like it was -- it was a challenge to program this thing, but like when you could harness all of its
+power, it could do miraculous things.
+And, you know, I never in my life would have thought that all of this stuff that I did back in the
+'90s was going to be relevant again one day.

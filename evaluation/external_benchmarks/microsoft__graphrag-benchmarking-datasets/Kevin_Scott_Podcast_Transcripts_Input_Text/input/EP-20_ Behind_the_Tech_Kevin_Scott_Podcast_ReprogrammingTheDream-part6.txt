@@ -1,0 +1,20 @@
+EP-20_ Behind_the_Tech_Kevin_Scott_Podcast_ReprogrammingTheDream.txt  had set them up, you know, one after one, as I go.
+
+Like, once we get here, we will really have cracked the nut, so to speak.  The flipside of that is that AI still isn't able to solve very basic problems, like things that, you know, a human toddler can do are at the moment outside of the grasp of AI systems.
+
+And so, you know, one of the things that I would love to encourage people to think about is like it's sort of very difficult to draw parallels between artificial intelligence and human intelligence because, just because something is hard and challenging for a human being, doesn't mean it's going to be hard and challenging for a machine.
+
+And, and vice versa, just because something is easy for a human being, doesn't mean that it's going to be easy for a machine.  So, in my opinion, the best way for us to think about AI is imagine it as a tool.  It is a tool that can help us to automate tasks and to assist human beings in doing the work that they think is important.
+
+And when you look at it through that lens, like it becomes an incredibly powerful problem-solving tool, and again, you know, one that I think is increasingly accessible for everyone, for you know, going in and tackling some, you know, really, really important issues that like we as human beings need to tackle.
+
+And where most of the benefit is going to be, you know, creating this abundance that doesn't exist before because we simply don't have enough human  horsepower to solve the problems in a way that creates benefits for everyone, if that makes sense.
+
+GREG SHAW:  No.  That's great.  You know, one of the thing we really wrestled with in writing the book, you know, the first several chapters of the book tell some great stories, and you know kind of develop the narrative.
+
+The, the latter part of the book, you know, presents some promising stories and case studies, but where we really wrestled is, you know, in the middle of the book, you wrote a chapter called, "How Models Learn."
+This is Chapter 7 of the book, and you talk about things like supervised learning and deep neural networks.  Do you want to maybe geek out for a minute on why those things are important in thinking about AI?
+
+KEVIN SCOTT:  Yeah, so, I think it is very useful for folks to have at least some high-level concepts in their head about how AI works.  You know, and I'm going to go super-fast, and this is one of the challenges with writing the book.
+
+Like that chapter might have been the most difficult thing to write because I was trying to make it accessible for folks like your dad and my mom, and still, you know, hue closely up to like the deep technical complexity and nuance of what actually is going on, on

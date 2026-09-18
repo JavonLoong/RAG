@@ -1,0 +1,27 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt  that's happening at Microsoft Research, is that you can take some of this data, so like the weather data, weather forecasts, like all of the sort of historical information, like stuff that like you used to get embedded into a farmer's almanac, which was almost you know like a little bit like astrology. But like there was real, you know, data and trending that people built into these almanacs that helped people decide, like, very prosaic things like when to put the seeds in the ground.  And like we know that if you apply technology to that process to very simple things like when to plant in a particular location given historical and predicted weather trends, that we can make huge improvements in crop productivity.  
+
+We see it in India where, you know, some of these very poor parts of India like when you put a little bit of technology in, like you can get double-digit percentage improvements, and like that is the difference between people starving and people getting fed.  
+
+danah boyd:  Oh, absolutely.  
+
+KEVIN SCOTT:  And it's just great to see happening. 
+
+danah boyd:  And the important thing about something like agriculture is it has to happen around the globe.  
+
+KEVIN SCOTT:  It has to happen. 
+
+danah boyd:  Right?  It just has to.  And same with water resources.  
+
+KEVIN SCOTT:  Yep.  
+
+danah boyd:  We need to understand and model out water resources, because, I mean, just take the continent of Africa, right?  There are so many places across that continent where things are possibly fragile if we don't work out where that is or how to deal with it. 
+
+KEVIN SCOTT:  Yep.  
+
+danah boyd:  And so it's both the technology of desalination, which is wonderful, but it's also the modeling to understand what the ripples are around that.  
+
+KEVIN SCOTT:  And there's so many ways you — I mean, this is the thing where I really want people to get like super excited about jumping in because for all of these things, like making better use of your water resources, like there are hundreds and hundreds of ways.  Like so for instance, like one of the ways that you can make more efficient use of water in agriculture is like all of the agricultural chemicals that we use — so pesticides and fertilizers and whatnot — are massively diluted with water. 
+
+So like the chemical concentration, like, the active compound is like a tiny part of like the thing that gets sprayed over the crop, which means that you're wasting all of this water that the — you know, chemicals are going into places where they're not needed.  It's just this hugely wasteful thing. 
+
+And there's all sorts of like interesting new technology where you can very precisely deliver the chemicals to the crop without dil

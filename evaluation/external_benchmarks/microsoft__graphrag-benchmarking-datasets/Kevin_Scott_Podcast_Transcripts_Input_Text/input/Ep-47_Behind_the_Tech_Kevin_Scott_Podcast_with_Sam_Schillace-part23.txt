@@ -1,0 +1,15 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt  no matter how smart they are or how good they are as a futurist or a scientist or an engineer, to predict exactly what the future is going to be like in 20 or 30 years. And, you know, he had some practice with this because he was a science fiction writer in addition to being, like, a really quite a good engineer. 
+
+SAM SCHILLACE: Right
+
+KEVIN SCOTT: His framework for looking at the future is, like, you know, don’t try to make very specific predictions about the future. Like, make predictions about what the shape of any possible future must be, like, where the progress trend’s going, like, what is going to have to be, like, a set of things that will be true in the future, and then sort of direct your effort, like, to your point, along those vectors. 
+
+Yeah, you could not have predicted when we were – you know, even when you and I were in college, that we were all going to be carrying a smartphone around in our pockets. Like, it’s… I think of smartphones, right, are even, like, a little bit crazier than the, like, Tricorders from Star Trek.
+
+SAM SCHILLACE: Yeah, and, like, in that era, I remember the Cray-1 was, like, the hot computer. And I think that’s about as powerful as, like, an iPhone 4 or something like that, you know. So, you know, like, even if you knew Moore’s Law intimately and you like math and did the math, like, you still don’t have a visceral feel for how much that’s going to change the world, right?
+
+KEVIN SCOTT: Yeah, but you just named the trend. So, the trend is, like, you have these exponential progress curves on the price of compute, the density and the density of compute, the, like, energy density of batteries, like, the transmission in receiving bandwidth of wireless communication. And so, like, all of these things are sort of inflecting up. And so, if you look at all of that, like, you may not predict Android or the iPhone, but something’s going to happen there. 
+
+SAM SCHILLACE: One of my favorite things right now is the learning rate thing, right? Like, we understand there’s about an 18% generational learning rate with solar panels and about a 6% generational learning rate with batteries. Every time you double the deployment, you get that percentage increase in efficiency. And, like, you know, it seems kind of funny, like, where did that come from? But if you look back, like, literally, like, 40 years, you can see it. 
+
+And I was just talking to my wife yesterday about EVs, and we’re looking at, like, buying an EV. And I remember

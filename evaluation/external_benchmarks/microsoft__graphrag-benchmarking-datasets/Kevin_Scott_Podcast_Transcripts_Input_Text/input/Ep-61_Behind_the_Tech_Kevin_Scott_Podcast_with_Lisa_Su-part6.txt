@@ -1,0 +1,15 @@
+Ep-61_Behind_the_Tech_Kevin_Scott_Podcast_with_Lisa_Su.txt  or walk into your data center and see those products, so that’s what I enjoy.
+
+KEVIN SCOTT: Well, and there is – there is just this fine thing, I think, about hardware in general, because even when you’re writing a program, you don’t get the same sense as you’re building it. Even if you’re sort of assembling it piece by piece, you don’t get the same sense that you get when you’re, like building your own PC, like where you buy a motherboard and a case and a power supply and a CPU, and you like just sort of are assembling this thing physically, and you, at the end get to have, like have this working physical artifact.
+
+LISA SU: Yeah, so, Kevin, am I encouraging you to come over to the hardware side, or –
+
+KEVIN SCOTT: No, look, I’ve been doing both for a very long time, but – like, I’m thinking right now, actually, so the machine that I’m on right now, taping this, has a – like a – AMD, like 32-core threadripper CPU, and I’m getting – which I, you know, very custom configured. I’m getting ready to do another build, and like, I’m probably going to, you know, hand assemble this next one, because I haven’t built my own PC in a long time.
+
+LISA SU: Oh, Kevin, that’s very exciting. I must send you our latest threadripper because we just kind of got the next generation out there. It’s pretty cool, but – look, I completely agree with you. I mean, the opportunity to kind of build tech and touch tech is super cool, and it’s great for getting students into STEM that I know is something that’s very important to you, and to me as well.
+
+KEVIN SCOTT: Yeah, so you – you’re majoring in electrical engineering at MIT, and then what’s next? You go to grad school? You go straight into the workforce? Like, like how are you making that decision, because like that’s a really interesting time in your career.
+
+LISA SU: Yeah, I was a – what they call a lifer at MIT, so I did my undergraduate, master’s, and PhD at MIT. It wasn’t a super-easy decision, I think you’re right, Kevin, because – you know, at the time, all my friends were graduating, they were getting jobs, you know, they were moving to cool places, but I felt like I wasn’t done learning and there was still more to learn, and I really appreciate sort of my PhD advisor, you know? His name was Dimitri Antoniadis. He was – you know, one of the people who built sort of the very early simulation, you know, capabilities for semiconductors.
+
+And like, I felt like there was more to learn, and so

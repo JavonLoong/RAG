@@ -1,0 +1,13 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  just saying that because I’m shilling for Microsoft. It’s like, I do it myself, and it makes me 30% more productive, at least. So, I tell them that, and the software I’m writing is about saying, how can I write code such that it’s going to be more composable when I use AI to do it, right? 
+
+So, for example, there’s a ZIP, the ZIP file format, right, compressed files. There’s a library for that, and it has its quirks. I wrote one myself; I have my own ZIP decoder. And the interface is so simple that when I want to say, now compress that and stick it in the ZIP, it’s one function, three parameters, done, right? 
+
+Clear licensing. I don’t have to worry about all the licensing all over the place. And that’s a difficulty when you start stitching with AI. It’s like, well, wait a minute, where did that data come from? Where did that code come from? (Laughter.) Where did – do you have the right license for that chunk of code right there? 
+
+So, I’m creating a substrate of code that’s like, this is clearly licensed, right? And here’s how you program leveraging AI, right? This is how we have to do it. This is how we’re going to 10x our abilities, right, is by leveraging AI. You can’t just go and lock yourself in a room and think you’re going to hammer out some code, because by the time you’re done, someone else who has got AI has already done it 10 times over. So, you better learn how to do it with AI, right? So, this is what I’m currently engaged in. 
+ 
+KEVIN SCOTT: That is super cool. So, last question for you that I also ask everyone. And I know some of the things in the past that you might have answered to this question. But you’re doing a ton of stuff, and I think you enjoy all of the, quote unquote, work that you’re doing. But outside of work, what do you love to do? 
+ 
+WILLIAM ADAMS: I just bought a mountain bike a few weeks ago, and that’s something I used to do. I used to actually race mountain bikes, cross country mountain bikes. I used to kayak; I used to do all sorts of physical things. And I would say a few years there of Microsoft plus new kids made a lot of that go down. But now the kids are – the youngest one is eight, the oldest one is 10. So, now it’s back to mountain biking, and my son’s kicking my butt, you know? (Laughter.) 
+
+So, I like mountain biking, I like tinkering. I’ve got maybe 10 3D printers in my house, laser cutters, CNC

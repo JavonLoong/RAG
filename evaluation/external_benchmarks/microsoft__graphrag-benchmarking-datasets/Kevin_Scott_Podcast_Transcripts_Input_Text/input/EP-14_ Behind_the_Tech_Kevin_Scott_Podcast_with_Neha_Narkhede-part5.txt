@@ -1,0 +1,17 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt  is different, you know?  The way people interact with each other is different.  Georgia Tech is in Midtown, and that's right in the heart of Atlanta, and that's very different from suburbia in the Valley. 
+KEVIN SCOTT:  And Georgia Tech is like a really good computer science and engineering school. 
+NEHA NARKHEDE:  Absolutely. 
+KEVIN SCOTT:  And so, like not only was it this new city and new culture you're getting accustomed to, but I'm sure that first year was --  
+NEHA NARKHEDE:  It was pretty tough. 
+KEVIN SCOTT:  -- pretty hardcore.  (Laughter.) 
+NEHA NARKHEDE:  It was pretty tough.  They sort of have these mandatory operating systems and theory classes, and I'm still wondering, like, what I actually learned in theory and if it was applicable to what I do right now.  But it was pretty hard, right?  And I was ambitious.  I wanted to finish it within three semesters.  Didn't want to stay all four semesters in order to get the right H-1B path out. So, yeah, it was a tough I think period of struggle, I would say. 
+KEVIN SCOTT:  What was your favorite class either undergrad or grad when you were studying computer science?  
+NEHA NARKHEDE:  I want to say it was -- no surprise that it was operating systems.  Because it wasn't just, you know, reading books and taking tests, it was actually reading a bunch of research papers and then in the second half, actually building something new.  
+Working in groups, and so I think that sort of hands-on experience and using the latest sort of research to learn what's happening in the operating system world was the most interesting part.  
+KEVIN SCOTT:  And was -- 
+NEHA NARKHEDE:  I almost flunked, I think.  There was a point when I was like, I need to pull two-nighters.  (Laughter.)  
+KEVIN SCOTT:  Nice.  Well, so you know it's really interesting, when I was studying computer science, both undergrad and in grad school, the operating systems course was usually -- it was either that or compilers, where it was the first place where you had to write a really big program for the first time.  
+NEHA NARKHEDE:  Absolutely. 
+KEVIN SCOTT:  And it was like complicated, it's the first place where you're really thinking about software architecture and like how all of this stuff fits together. 
+NEHA NARKHEDE:  Absolutely. 
+KEVIN SCOTT:  And like how you're, you know, sort of dealing with all of the modules and decomposition of things.  And so, was that like

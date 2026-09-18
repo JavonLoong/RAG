@@ -1,0 +1,43 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt :  That's awesome.
+
+DANNY HILLIS:  The Museum of Modern Art, yeah.
+
+KEVIN SCOTT:  And then, you know, like, the funny thing, I, like, I mean, obviously, it wasn't a real connection machine, but there was in Jurassic Park.  It was the computer that --
+
+DANNY HILLIS:  Oh yeah, yeah, that was a lot of fun for us.  That's right.  You do see it in background scenes.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  But they actually did buy the real shell of one.
+
+KEVIN SCOTT:  Yeah. And so, for, like, five or six years there your company made the fastest computers in the world.
+
+DANNY HILLIS:  We did. And, yeah, there was a list, and actually, you had to go quite far down the list before it wasn't one of our machines.
+
+KEVIN SCOTT:  Yeah.  Which is, you know, again, like, for something that you started this company when you were, you know, when you were a student at MIT and, like, it went on to, like, have this, like, lasting mark on the world.  And, like, the thing that you and I have chatted about a bunch of times is, like, we're now building a new flavor of super computers to train AI models, like these deep neural networks, and the architecture of the machines that we're building right now is more or less what you built 30 years ago. 
+
+DANNY HILLIS:  Like it's a lot faster.
+
+KEVIN SCOTT:  A lot faster.
+
+DANNY HILLIS:  But yeah, it's fundamentally the same architecture.
+
+KEVIN SCOTT:  Yeah. You had this idea that sort of informed, like --
+
+DANNY HILLIS:  Yep, and --
+
+KEVIN SCOTT: -- three decades of artificial intelligence.
+
+DANNY HILLIS: -- and you pretty much programmed them, you know, the way that we programmed is things like MapReduce and so on,
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  That we sort of built into the hardware actually in these days.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  So --
+
+KEVIN SCOTT:  Yeah, and like, that's, look, that's one of the slightly nicer things now versus then.  The frameworks that you code in are, like, so much, so much more powerful, so like you end up, like, writing 1,000 lines of python code.
+
+DANNY HILLIS:  Oh yeah, that's amazing.  And that's the advantage of sort of starting with, you know, the advantage of all

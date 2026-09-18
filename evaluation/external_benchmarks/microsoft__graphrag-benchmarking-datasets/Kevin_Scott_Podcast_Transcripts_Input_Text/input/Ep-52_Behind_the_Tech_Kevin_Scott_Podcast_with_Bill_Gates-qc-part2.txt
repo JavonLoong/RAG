@@ -1,0 +1,17 @@
+Ep-52_Behind_the_Tech_Kevin_Scott_Podcast_with_Bill_Gates-qc.txt -4 outside of OpenAI was actually to you last August at a dinner that you hosted with Reid and Sam Altman and Greg Brockman and Satya and a whole bunch of other folks. 
+
+The OpenAI folks had been very anxious about showing you this because your bar for AI had been really high, and I think it has been really helpful actually, the push that you had made on all of us for like what acceptable high ambition I would look like. 
+
+And so, I wanted to ask you, what was that dinner like for you? What were your impressions like? What had you been thinking before, and like what, if anything, changed in your mind after you had seen GPT-4? 
+
+BILL GATES: Yeah, so AI has always been the holy grail of computer science. And when I was young, Stanford Research had Shakey the Robot that was trying to pick things up. And there were various logic systems that people were working on. So the dream was always some sort of reasoning capability. 
+
+Overall progress in AI until machine learning came along was pretty modest. Even speech recognition was just barely reasonable. And so, we had that gigantic acceleration with machine learning, particularly in sort of sensory things, recognizing speech, recognizing pictures. And it was phenomenal, and it just kept getting better, and scale was part of that. But we were still missing anything that had to do with complex logic, with being able to, say read a text and do what a human does, which is, quote, “understand” what’s in that text. 
+
+And so, as Microsoft was doing more with OpenAI, I had a chance to go see them myself independently a number of times, and they were doing a lot of text generation. They had a little robot arm. 
+
+The early text generation still didn’t seem to have a broad understanding. Like, it could generate a sentence saying, “Joe is in Chicago,” and then two sentences later, say, “Joe’s in Seattle,” which in its local probabilistic sense was a good sentence, but a human has a broad understanding of the world from both experience and reading that you understand that can’t be.
+
+And so, as they were enthusing about GPT-3 and even the early versions of GPT-4, I said to them, hey, if you can pass an advanced placement biology exam where you take a question that’s not part of the training set, or a bunch of them, and give fully reasoned answers, knowing that a biology textbook is one of many things that’s in that training corpus, then you will really get my attention because that would be a heck of a milestone. And so, please work on that. 
+
+I thought that they’d go away for two or three years because my intuition has always been that we needed to understand knowledge representation and symbolic reasoning in a more explicit way, so that we were one or two inventions short of something where it was

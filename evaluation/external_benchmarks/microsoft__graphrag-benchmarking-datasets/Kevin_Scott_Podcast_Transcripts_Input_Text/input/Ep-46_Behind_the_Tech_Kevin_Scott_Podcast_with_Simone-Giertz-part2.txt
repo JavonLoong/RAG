@@ -1,0 +1,16 @@
+Ep-46_Behind_the_Tech_Kevin_Scott_Podcast_with_Simone-Giertz.txt KEVIN SCOTT: Simone Giertz is a Swedish inventor maker, robotics enthusiast, TV host, professional YouTuber, and most recently, entrepreneur. She briefly studied engineering physics at the Royal Institute of Technology in Stockholm and has since built a career creating amazing things and sharing the process of their creation with the world. Giertz builds robots that do all kinds of impractical and funny things, like an alarm clock that slaps the user, a lipstick applier, and famously, a toothbrush helmet that launched her YouTube career. She’s an inspiration to everyone who follows her. 
+
+Simone, thank you so much for joining us today.
+
+SIMONE GIERTZ: Thank you. Thanks for having me. 
+
+KEVIN SCOTT: Well, so maybe we can start our conversation with your childhood and how you got interested in making.
+
+SIMONE GIERTZ: I mean, for me, it didn’t really start in my childhood, to be honest. Like, I was always interested in making things, but – and I remember, I mean, I studied woodworking in school and stuff like – like, I’m from Sweden and all kids do that and sewing. And I really enjoyed it, and I was always like a very free range kid and kind of just running around and making my own mistakes and trying to figure things out. 
+
+But I definitely wasn’t like a tech whiz kid. Like, my brother was. He was always picking apart computers and learning programming, and I was like, no, I don’t think that’s for me. And then it wasn’t until I was 23, 24, where I remember it, like, hitting me and being like, “wow, this is so cool.” But I never saw myself as somebody who would think that that stuff was interesting. Yeah, but then once I did, it was just like full force ahead.
+
+KEVIN SCOTT: Do you remember what the inspiration was, like that moment that you had when you were 23, 24 years old, that made you think, wow, this is something I’d like to do?
+
+SIMONE GIERTZ: You know, I think it’s, really for me, it’s the thing that excites me about tools, and I do really think of programming as a tool, is when you realize what you can use it to do. Like, I was never excited about them on their own. It was more like, wait, so you’re telling me if I learn how to program just, like, basic JavaScript and CSS, then I can make a website where there’s head – like, hair growing out of the screen. And I can turn my cursor into a razor blade and I can shave that fake hair off, you know? So, it was just, for me, it was like – it was very much once I realized, like, all the stupid, silly stuff I could do with it, yeah… 
+

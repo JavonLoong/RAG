@@ -1,0 +1,26 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt 10,000 years, right.
+
+DANNY HILLIS:  Yeah, actually, that was a funny thing.  What we learned was that actually, most of the things that we tested worked fine the first time.  But we had to repair the machines that tested them about 10 times to make that. It's actually very hard to make a machine that tests 10,000 years' worth of cycles without the machine breaking.
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  So, yeah, pretty much everything that we've had that, you know, moves or we've tested it for 10,000 years' worth of motion.
+
+KEVIN SCOTT:  And there's sort of some incredible things in there, like, you have one of the -- you have a mechanism in there that is, like involves a gigantic quartz lens.
+
+DANNY HILLIS:  Yes. That's the photocell.  How do you make a mechanical photocell?  And the answer is that you, first of all you build like a meter-wide quartz lens, and it shines light onto a box, which when it heats up it expands, and that expansion is what triggers it.
+And the reason you need that is because you need something to adjust the clock to keep it on time.  If nobody visits it for a thousand years or something, the way that it adjusts itself is that it -- during the summer, the summer solstice, the light shines down the shaft, focuses with that quartz lens.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  Causes the thing to expand, and then that adjusts the clock.
+
+KEVIN SCOTT:  Yeah, and, like, this, I mean, to me it sounds almost like something from a, like, Indiana Jones or a Tomb Raider movie that, you know, like, some future civilization is going to discover this, and, like it's going to be like an archeology project to figure out, like, why this thing is there doing what it's doing.
+
+DANNY HILLIS:  Well, that is also a lot of what I was thinking about when I was designing it is what would it be like to find this after a thousand years of, you know, it being lost or undiscovered.
+
+And actually, the fun thing was that I realized that you'd really like to know how long it had been undiscovered.  So, one of the interesting things about it is that when you go up to the clock, it initially reads the time the last person was there.  And then, you wind it.  So, it knows what time it is, but it doesn't tell you until you wind it.
+
+KEVIN SCOTT:  Oh.
+
+DANNY HILLIS:  And then, when you wind it, it moves the dates forward and it moves the astronomical display of the

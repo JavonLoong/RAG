@@ -1,0 +1,36 @@
+The GR connector, officially the General Radio Type 874, was a type of RF connector used for connecting coaxial cable.
+ Designed by Eduard Karplus, Harold M. Wilson and William R. Thurston at General Radio Corporation, it was widely used on General Radio's electronic test equipment and some Tektronix instruments from the 1950s to the 1970s.
+The C connector is a type of RF connector used for terminating coaxial cable.
+ The connector uses two-stud bayonet-type locks.
+ The C connector was invented by Amphenol engineer Carl Concelman.
+ It is weatherproof without being overly bulky.
+ The mating arrangement is similar to that of the BNC connector.
+ It can be used up to 11 Ghz, and is rated for up to 1500 volts.
+The U-229 is a cable connector currently (as of 2009 ) used by the U.S. military for audio connections to field radios, typically for connecting a handset.
+  There are five-pin and six-pin versions.
+ This type of connector is also used by the National Security Agency to load cryptographic keys into encryption equipment from a fill device.
+A camlock is an interchangeable electrical connector often used in temporary electrical power production and distribution.
+ The most common form is the "16" series, rated at 400 amperes with 105 °C terminations.
+ Also in common use is the "15" series ("mini-cam"), rated at 150 amperes.
+ A larger version is made denoted as the "17" series with ratings up to 760 A.
+ A ball nose version and a longer nose standard version exist-the latter is the most common.
+ Another version is the "Posi-lok" which has controlled interconnection sequencing to a panel and a shrouded connector body.The early version original connector was hot-vulcanized to the cable body;later versions use dimensional pressure to exclude foreign material from the connector pin area;the tail of the connector insulator body is trimmable to fit the cable outer diameter.
+An SR connector, or CP connector (from Russian: "Cоединитель Pадиочастотный", radio frequency connector) is a type of Russian made RF connector for coaxial cables.
+ Based on the American BNC connector, the SR connector differs slightly in dimensions due to discrepancies in imperial to metric conversion, though with some force they can still be mated.
+ There are however types of SR connectors that do not resemble their American counterpart.
+In stage lighting, a multicable (otherwise known as multi-core cable or mult) is a type of heavy-duty electrical cable used in theaters to power lights.
+ The basic construction involves a bundle of individual conductors surrounded by a single outer jacket.
+ Whereas single cables only have three conductors, multicable has ten or more.
+ They are configured to run in six or eight-circuit varieties.
+ Typically, both ends of multicable have a specific connector known as a Socapex Connector.
+ Technicians then combine the cables with break-outs and break-ins, which essentially are an octopus-like adapter with one Socapex end and six to eight Edison, twist-lok, or stage pin style connectors.
+A cable gland (in the U.S. more often known as a cable connector or fitting) is a device designed to attach and secure the end of an electrical cable to the equipment.
+ A cable gland provides strain-relief and connects by a means suitable for the type and description of cable for which it is designed—including provision for making electrical connection to the armour or braid and lead or aluminium sheath of the cable, if any.
+ Cable glands may also be used for sealing cables passing through bulkheads or gland plates.
+The SHV (safe high voltage) connector is a type of RF connector used for terminating a coaxial cable.
+A very-high-density cable interconnect (VHDCI) is a 68-pin connector that was introduced in the SPI-3 document of SCSI-3.
+ The VHDCI connector is a very small connector that allows placement of four wide SCSI connectors on the back of a single PCI card slot.
+ Physically, it looks like a miniature Centronics type connector.
+ It uses the regular 68-contact pin assignment.
+ The male connector (plug) is used on the cable and the female connector ("receptacle") on the device.
+The MHV (miniature high voltage) connector is a type of RF connector used for terminating coaxial cable.

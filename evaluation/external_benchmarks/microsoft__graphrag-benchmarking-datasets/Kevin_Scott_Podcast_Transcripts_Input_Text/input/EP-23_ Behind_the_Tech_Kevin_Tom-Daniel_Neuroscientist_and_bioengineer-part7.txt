@@ -1,0 +1,15 @@
+EP-23_ Behind_the_Tech_Kevin_Tom-Daniel_Neuroscientist_and_bioengineer.txt  the point you're making, which is that we, today, cannot synthesize chemical sensors with the efficiency of sensing that we see in biological systems, okay-- 
+
+KEVIN SCOTT: Right.
+
+TOM DANIEL: --today. And the reason is there's this beautiful and elegant protein amplification pathway in chemical sensing, in biology in humans, in dogs, and in insects, in everything, that senses chemicals, which is nearly every living creature.
+
+KEVIN SCOTT: It just seems like just sort of an extraordinary potential thing, like this gyroscopic system that you were describing, that's biological, that probably outperforms like any of the – you know, so all our cellphones right now have a gyroscopic MEMS, you know, probably a MEMS device which, you know, through some combination of micromachining and lithography and like a bunch of complicated mechanical processes, does something miraculous, right? Like they are, there are far, far better gyroscopes than the big ones that we had 30 years ago, but they still are not even remotely approaching the performance, probably energy efficiency, you know, like – and there may be other things that you could do with your biological gyroscopic devices. And so like imagining how you might be able to use more biology to sort of synthesize some of these structures is a very interesting thought.
+
+TOM DANIEL: Yeah, so, let me, let me pull on two threads. I think you bring up a really good point. Thread one is the difference between these manufactured vibrating structural gyroscopes (VSGs) that are micromachines, they're MEMS devices, is they typically deploy, in any one device, relatively few sensors, meaning they're measuring six degrees of freedom, right, but typically with not many more sensors in them, right?
+
+In contrast, living systems have incredible redundancy. So, in the fly, there's may just on one haltere, one little knob sticking off, about a thousand sensors. Okay, maybe I'm exaggerating. Maybe it's 800, but it's a heck of a lot more than a handful, right? And the clues are two-fold. One is the efficiency of information transduction is very, very high, higher than in, say, transistor systems. And because of that, you can afford to deploy a lot of sensors.
+
+So, redundancy is not expensive. And redundancy becomes an advantage. Okay, so that's sort of thread one, the conversion of a mechanical energy into electrical potential or chemoelectrical energy is very efficient in living systems, and efficiency we are still trying to understand, okay? That leads to  your deeper question, which is there something we can fabricate that will get this level of efficiency? And the answer is probably. (Laughter) Okay?
+
+The answer is that, with protein engineering, can we build efficient protein systems that do the sorts of energy conversion out of thermodynamic

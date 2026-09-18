@@ -1,0 +1,17 @@
+Ep-55_Behind_the_Tech_Kevin_Scott_Podcast_with_Mira_Murati.txt  of design it together versus hand it off and then go back and forth. Or, like, you know, design something that could not be manufactured. 
+
+So, that was very powerful, working with teams that had different backgrounds, domain expertise, figuring out how to design something that has never been done before, adopting new ideas, very quickly kind of killing old ideas and moving on to the next one and just, like, figuring out the right problem to work on at the right time. 
+
+KEVIN SCOTT: Yeah, I mean, I think that is, like, an incredibly important thing. This idea of, like, you do your work and then throw it over the wall to, like, the next, you know, person or team and the change that has to go do the next thing is, you know, there’s a certain sort of efficiency that you can get from doing things that way, but if you’re trying to make something brand new, it’s very difficult to, like, have these sort of waterfall processes like that. 
+
+I mean, there are so many jokes about, you know, like one of the things I was going to ask you about as a mechanical engineer is, like, hey, did you spend any time in the machine shop? Because, like, there’s this tension between -- 
+
+MIRA MURATI: Yes, plenty. 
+
+KEVIN SCOTT: -- mechanical engineers and machinists. It’s like, oh, you like gave me this print and, like, there’s no way to make it. Or, you know, there’s the tension in software engineering between the product managers and the engineers. Like, you know, the product manager says, “We’re going to go do this thing,” and the engineers are like, “Oh, are you crazy?” And so, like, it usually works better when everybody is, like, in the conversation, so it’s super interesting to hear you say that’s how you all did your work. 
+
+MIRA MURATI: Yeah, totally. And, yeah it’s funny that you mention it because, I -- as a mechanical engineer, I was often machining my own parts just to understand sort of the constraint, limitations, and also just the challenges of doing it. 
+
+And it was very similar at Tesla, where the, you know, design engineers were often on the floor, you know, fitting, testing the parts, and just working very closely with manufacturing engineers. And I think that, like you said, it’s key to innovating at scale past a certain size of the company. It’s difficult to innovate if you’re just throwing things over the wall and, you know, like bureaucracy can kick in or processes and, you know, but as they grow, companies can lose their vision and sort of stop pursuing new ideas. 
+
+But, you know, if you kind of cut through that and minimize sort of the layers of

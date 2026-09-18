@@ -1,0 +1,15 @@
+Ep-55_Behind_the_Tech_Kevin_Scott_Podcast_with_Mira_Murati.txt  so, you know, just being able to, like, sustain that over time is -- because at some point, too, you also you know, like, you probably had enough success from your career at Tesla where you could have chosen, like, you know, just from a success perspective to not do the hardest thing. You could be like, all right, well, I could go do something slightly easier than, like, try to make an AGI, like, in a nonprofit, right? That’s -- that sounds impossibly hard. (Laughter.) 
+
+MIRA MURATI: If -- when you put it like that, yes. (Laughter.) Yes. In fact, yeah. 
+
+KEVIN SCOTT: One of the things that I think has helped OpenAI be very successful is you have really excellent people -- folks who are, you know, in their particular domain, whether it’s, you know, figuring out how to, like, wring numeric performance out of a GPU. 
+
+Or if it’s someone who understands how to do safety and alignment work. Or whether it’s someone who understands, like, how to architect a deep neural network -- someone who understands distributed systems. So you have, like, just people who are at the very top of their game in each one of those areas. 
+
+And you also have this mission -- you know, like, how do you -- how do you go solve this incredibly complicated problem that, you know, not just OpenAI but, like, humanity has been, you know, sort of thinking about for thousands of years. And, like, how do you make that a reality? And, like, how do you do it in a way where, you know, it creates massive benefits for humanity? 
+
+So, but you’ve got this third thing that’s interesting, which is a way to keep people focused on moving forward and progress. So, like, you could have the mission and you could have all of these smart people, but like, they could be running in a thousand different directions and, like, their work could not be accruing to, like, a thing that’s making progress. 
+
+And I think that’s sort of the extraordinary third thing that you all have been able to do. And I don’t know -- don’t know whether you share that same perspective or, you know, like, it -- you know, I’m just sort of curious on your take of, like, what that missing element is ‘cause, like, lots of labs out there with really smart people spending a lot of money and, you know, they’ve got an interesting intellectual mission and they still haven’t been able to make the sort of progress that you all have made. 
+
+MIRA MURATI: It’s incredibly hard. Like you said, you know, you can have these incredibly talented people and high density of them and they’re innately curious and they’re,

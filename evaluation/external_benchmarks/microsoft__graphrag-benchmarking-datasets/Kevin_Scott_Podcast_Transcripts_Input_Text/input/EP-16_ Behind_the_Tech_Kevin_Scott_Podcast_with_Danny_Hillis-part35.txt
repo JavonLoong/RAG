@@ -1,0 +1,27 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt  undiscovered.  So, one of the interesting things about it is that when you go up to the clock, it initially reads the time the last person was there.  And then, you wind it.  So, it knows what time it is, but it doesn't tell you until you wind it.
+
+KEVIN SCOTT:  Oh.
+
+DANNY HILLIS:  And then, when you wind it, it moves the dates forward and it moves the astronomical display of the sun and the moons and the stars forward until it gets to the current time, the current date. Then, everything stops and now you've reached that it's when the next person comes, they'll see when you wound it.
+
+KEVIN SCOTT:  So, you're even thinking about the gamification of, like, how you get the clock wound.
+
+DANNY HILLIS:  Well it's --
+
+KEVIN SCOTT:  That's awesome.
+
+DANNY HILLIS:  --it's definitely, or the storification or, you know, that's one of the things I really learned at Disney is how important, well, first of all, the hardest part of building a 10,000-year clock is that people have to care about it.  Because if they don't care about it, then they'll just salvage it from metal or something like that.
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  So, that's the hardest design problem.  And I think I learned things at Disney that helped me with that design problem in the same way I kind of learned stuff at MIT that helped me with the material science problems and things like that.
+
+KEVIN SCOTT:  Right.  Yeah, but I am just sort of fascinated by the, you know, the breath of your curiosity and expertise, because for many people, like, you would go, like a PhD and a thing, and like that would be your area of expertise, and like, you know, the way that you achieve impact in the world is, like, you know, getting deeper and, you know, more focused on this thing.
+
+And, like, you know, like, we have these crazy broad conversations about things like -- 
+
+DANNY HILLIS:  Well, I was incredibly fortunate in the mentors that I had.  I mean, if you just think of people like Marvin Minsky, Claude Shannon, Richard Feynman, those were all people like that.  They were people that had curiosity and so, you know, I was just lucky to have had them as an example of a, sort of a different way of approaching the world.  And so, it's just, you know, I have a lot of fun every day, I have to say.
+
+KEVIN SCOTT:  So, so we're almost --
+
+DANNY HILLIS:  But let's face

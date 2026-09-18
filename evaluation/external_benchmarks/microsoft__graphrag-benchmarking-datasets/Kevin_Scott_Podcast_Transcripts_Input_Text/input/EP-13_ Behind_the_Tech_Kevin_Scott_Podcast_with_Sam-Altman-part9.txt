@@ -1,0 +1,12 @@
+EP-13_ Behind_the_Tech_Kevin_Scott_Podcast_with_Sam-Altman.txt pt, or --
+SAM ALTMAN:  No, no at all.
+KEVIN SCOTT:  Not at all.
+SAM ALTMAN:  Yeah.  So again, there were all these, like, things that I -- that I studied at college that didn't -- then I, like, went heads down on one project for like eight years -- seven years, whatever it was -- and they kind of were -- just sat in the back, but then, later, like came to be super valuable. 
+So, one of the things I did after Loopt, I ran it for like, yeah, seven or eight years.  And then, one of the best decisions I made and a thing that I think a lot of people could do and don't is I took an entire year off.  And like most people who are -- it's an incredibly luxury, but most people who have worked as an engineer in the tech industry for a number of years and don't have -- you know, are young enough or free enough, they don't have familial obligations, they could save up and do this.  
+Like, my cost of living -- because I was, like, living in hostels in cheap parts of the world -- was like a tiny fraction of the rent of a San Francisco apartment.  And I, like, just studied stuff I was interested in.  I read, like, stacks and stacks of textbooks.  I talked to people that we were working on problems that I was interested in, and it was the time I came back to AI, finally, because that happened to be here AI started to work.  Deep learning started to work.  
+I got really into nuclear energy and ended up becoming the chairman of two nuclear energy companies that year that are now doing super well, and a whole bunch of other areas that I pursued that then became important investment areas for YC.  But they started because I had some -- enough background knowledge from college to be conversant in stuff like biology.  And then, they kind of bloomed because I had this year to just, like, really follow the things I was interested in without the press of a job.
+KEVIN SCOTT:  And let's talk a little bit about this, like, talking to people who are working on the things that you're interested in because Nathan Myhrvold, who was Microsoft's first CTO --
+SAM ALTMAN:  I love that man.
+KEVIN SCOTT:  Yeah, he is -- he's a super interesting cat.  Like, he -- he was Stephen Hawking's post-doc, I think, for a while. 
+SAM ALTMAN:  Yup.
+KEVIN SCOTT:  Also, like, you know, sort of his training was in -- in physics and math.  He's like a very good archaeologist.  He's -- you know, like he wrote these Modernist Cuisine

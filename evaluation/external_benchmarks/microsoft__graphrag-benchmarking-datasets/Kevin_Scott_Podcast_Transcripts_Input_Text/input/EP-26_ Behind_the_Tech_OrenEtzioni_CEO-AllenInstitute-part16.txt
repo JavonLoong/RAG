@@ -1,0 +1,17 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt  you always able to see, you know, this through line through all of this stuff that you were doing, like, everything always connects back to AI? Or was it, like, all right, these are just super interesting problems of the moment that I have the skill you know to address and the interest in. 
+
+OREN ETZIONI: Anybody who tells you that over a long career and here I’m betraying my age, I’ve been doing this for 30-plus years, there’s a connecting through line and a grand plan is either far smarter than I am, or far more strategic, or is just kind of selling you a bill of goods, you know, the Brooklyn Bridge, as they say. There are themes that I’ve always been fascinated by.  
+
+For example, all the companies that have started have always been about empowering the consumer with information – particularly about price, like when to buy your airline ticket, right, that was so you get the best price. That was Farecast, or the first company I co-founded with Professor Dan Weld on online comparison shopping, “Where do you find the best price?” particularly this was in the world before Amazon. 
+
+Amazon was just getting started. So, and it wasn’t just, by the way, about price, it was also about selection, right? Nowadays, we kind of assume we can always find it at a decent price at Amazon, say, but A, sometimes you can get a better price elsewhere, and B, at the time, often it wasn’t clear where to buy a particular good. 
+
+So that was a big theme for me. And the toolkit, we all have our toolkit. Certainly, AI and information retrieval related to that, machine learning, that was my go-to toolkit, so it was natural to go there. 
+
+But I kind of view a lot of these as side adventures. I feel like my two long-term passions are – one is the fundamental intellectual question of AI that we talked about earlier, “How do we build an intelligent machine?”  And then the second one is, “How do we use AI as a technology to make the world a better place?”
+
+And, you know, better search engine can do that, better shopping can do that. Right now, at the Allen Institute of AI – or AI2, as I call it – a project that I’m particularly proud of is semantic scholar. How do we make scientific research more efficient and more productive using AI? And actually a callout to Microsoft Research and the work on the Microsoft Academic Graph. Right? We’ve made extensive use of those resources to build Semantic Scholar. 
+
+KEVIN SCOTT: That is awesome. So, I want to dig a little bit into the particulars of these big models that folks are building right now, particularly around language, although soon they’re going to be multimodal and you know sort of applied to a bunch of different domains. 
+
+But one of the

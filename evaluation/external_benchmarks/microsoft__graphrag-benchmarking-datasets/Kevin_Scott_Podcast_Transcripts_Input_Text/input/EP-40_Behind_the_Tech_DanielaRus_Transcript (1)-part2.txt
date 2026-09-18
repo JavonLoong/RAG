@@ -1,0 +1,17 @@
+EP-40_Behind_the_Tech_DanielaRus_Transcript (1).txt  research focuses on robotics, mobile computing and data science. 
+
+Daniela is a class of 2002 MacArthur Fellow, a member of the National Academy of Engineers, and the recipient of the 2017 Engelberger Robotics Award from the Robotics Industries Association. Her work is dedicated to envisioning a future where robots are integrated into the fabric of everyday life. Welcome to the show Daniela.
+
+DANIELA RUS: Thank you so much. I’m excited to be here.
+
+KEVIN SCOTT: Yeah, we’re super excited to have you. And so, I would love to start our conversation today by talking a little bit about how you got interested in technology in the first place. Were you a kid when the spark got lit, or was it later?
+
+DANIELA RUS: So, I grew up in Romania, and during the time of my childhood in Romania, there was not much activity on TV, but I watched Lost In Space with great fervor. That was one of the few shows there was on TV at that time. I also read the books of Jules Verne, and I fantasized about faraway places and about superpowers. But I was also interested in poetry, and art, and history, and math and literature, and just about anything else I could get my hands on. But the constraints of growing up in Romania and being good at math and physics put me directly on the STEM track. 
+
+DANIELA RUS: And so, at that time, it was standard practice for high school age students to spend a week each month working in a factory. The Romanian government believed this would help us get some trade skills, and it would be easier to join the proletariat this way. So, for some time, one week each month, I worked in a factory that made spare parts for locomotives, and I was a teenager at that time. This work didn’t feel very useful to me then.
+
+But as I look back, I can now see many ways in which this experience contributed to my career journey, because I learned how to use machines, such as a lathe. I made screws from scratch, and I began to understand the physical aspects of making things. 
+
+And as the math we learned in school became more abstract, I realized that I wanted to do something related to STEM, but also something with a physical component. And, in my opinion, getting to be at MIT to work with the most extraordinary students on building new robots, designing and inventing new machines is really living the dream. It’s getting to work on an area that brings together the world of computation and the physical world of mechanisms and materials. 
+
+KEVIN SCOTT: That is so interesting. I mean, I – it’s hard to imagine what it must have been like as a teenager, but I’ve got to say I’m pretty impressed that you learned to cut threads on a lathe when you were in high

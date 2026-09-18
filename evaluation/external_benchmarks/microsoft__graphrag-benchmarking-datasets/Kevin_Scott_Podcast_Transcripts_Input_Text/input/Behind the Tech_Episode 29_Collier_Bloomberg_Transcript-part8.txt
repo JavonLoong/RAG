@@ -1,0 +1,13 @@
+Behind the Tech_Episode 29_Collier_Bloomberg_Transcript.txt  spread out.
+
+And so, you know, it’s sort of all these little details. And it’s really about figuring out how to get the feel to be sort of what we want. And then the hardest part actually is just making it so that it doesn’t break when you’re trying to use it on stage, and it gets dumped off the back of a truck or you know whatever, whatever happens on tour and checked as checked baggage. And in some ways, that’s the hardest thing because it’s just incredibly hard to make really, really rugged, really rugged gear.
+
+KEVIN SCOTT:  Have you, so this is a weird tangent, but have either of you watched the Wintergatan videos, the Marble Machine videos? Like that looks like the most fragile like machine I’ve ever seen. Like I don’t know how Martin kept the thing together for the tour that he was on.
+
+BEN BLOOMBERG:  It, that kind of stuff is super scary. And actually when we started working together I had just finished this robot opera which was – it’s a long story, but it was commissioned as a birthday present for the Prince of Monaco, and we did, we did this crazy production, you know, sort of Broadway scale with all these – you know, it was three 50-foot trailers of gear, and it was all custom hardware, all sort of custom robots that had been built from scratch at the Media Lab. And just seeing all that hardware sort of on tour, and seeing all the really scary moments when things would fall apart, or catch on fire, or almost squish somebody, or – you know, and it was an amazing show. But if it was just going to be the two of us, and just starting out, I think when we started working together, I was sort of really sensitive to that. 
+
+So, we were, we were really cautious at the beginning, and I think we’ve gotten sort of more and more adventurous as time, as time goes. 
+
+KEVIN SCOTT:  You know, what I’ve done over the years with technology, like you’re sort of building things, and you’ve got billions of people who use it, and so you’re like constantly worried about the fragility of things, and robustness and fault tolerance and reliability and whatnot, because you know, the consequences of something failing are – like you just impact a lot of people. For you all, it seems to me that, you know, one of the special things about what you do with music is that, you know, done well, like you are completely capturing someone in this immersive emotional state, and like mistakes, you know, like a cough, or like there are very easy ways to sort of pull you out of that immersion, and so like in that sense, like the stuff really has to be robust, right?
+
+JACOB COLLIER:  I think it’s a mixture of

@@ -1,0 +1,13 @@
+Ep-59_Behind_the_Tech_Kevin_Scott_Podcast_with_David_Kirtley.txt  way to do that is with lasers. It gets super high pressure, super high pressure where fusion happens. And then if you did your work right, it ignites, which means you get massive amounts of fusion power output, again, mostly in heat. Boiled water runs steam turbines.
+
+What we do is something that takes some of those, the best of both, the physics of both, but then new engineering to do what we call direct energy recovery. So, we take our fuel, trap it in a magnetic field that keeps it all protected, like in a Hall thruster or in a plasma thruster. And then rather than holding on to it forever until it ignites, we just squeeze it with magnetic field, squeeze it as fast as we can. Fusion happens, pushes back on that magnetic field. 
+
+And now, I regenerate – I directly recover that electricity from that magnetic field back to recharge my systems in the same way that for a thruster, I want to be as efficient as possible. And every electron, and every joule and every watt, I want to do that in fusion, too. The key is what we found is if you can be really efficient on the engineering and do really good engineering, you get to do less physics. The fusion physics is the hard part. And I want to minimize that, so that I can build fusion systems smaller, cheaper, and all of those things.
+
+KEVIN SCOTT: Yep. And so, like, by contrast, like, the way that we’ve generated nuclear power for a while now for, like, powering the electric power grid has been fission reactors, where you basically put fissile material together. Like, they get very hot, and then you generate steam that turns turbines correctly, or correct. 
+
+DAVID KIRTLEY: Exactly, exactly. You get the hot rocks that boil water, and very, very good at releasing heat, which is both the positive and the challenge, and then, and use that to boil water, like, we know how to do, and then power the grid. And we – I think about it almost as: the way we do fusion is like jumping over the combustion engine and going right to the electric car, where you are efficient in terms of electricity through that whole process. So, you can get more of whatever you need. And for us, that’s electricity out. 
+
+KEVIN SCOTT: So, I want to talk more about the engineering and technology. But I guess, you know, an interesting question for everyone is, like, why start a fusion power company? Like, we’ve been trying to build fusion reactors since when, the 1960s, maybe, maybe earlier? And we have, I think there’s this sort of joke that physicists make where, you know, like, fusion’s always been 30 years away. Like, every year, you want to ask when it’s coming. 
+
+And so,

@@ -1,0 +1,34 @@
+Ep-12.txt  language processing on unsupervised learning. 
+And in both of these cases, like the workloads are just because you have gotten human 
+supervision out of the direct training loop, like you don't have to produce a bunch of label 
+training data, like you're sort of -- reinforcement learning, you're gathering all of your data to 
+train the model inside of a simulation environment, and the unsupervised learning, like, you just 
+have like a large, like, Internet corpus of data that you're training on and you're trying to like 
+induce some structure out of it. 
+So, they're like absolutely insatiable in terms of their compute appetite. I mean, it's just mind 
+boggling and like at least with the unsupervised models, and I think the same thing is true with 
+these reinforcement learning models, the more compute that you can throw at them, like the 
+better the result you get. And so, like there's just this real tangible incentive to like throw them 
+more compute. 
+And it's happening at exactly the same time where Moore's Law is running out of steam. And it's 
+not Moore's Law that's the problem, it's sort of the Dennard scaling that's the problem. Like, we 
+can put, you know, tens of billions of transistors on a die now, we just can't power them all. 
+BILL COUGHRAN: Correct. 
+KEVIN SCOTT: And so like you've -- like, we really are having to like revisit computer
+architecture and, you know, like, how do you cool these things? How do you design their 
+networks? Like, what is the memory hierarchy? I mean, it's just crazy that all of this is relevant 
+again. 
+BILL COUGHRAN: No, I agree. And we're having, obviously, a revolution again in computer 
+architecture for all the reasons you point out. And you know, John Hennessy and Patterson just 
+won the Turing Award for basically having thought about computer architectures in different 
+ways, done RISC, written their book, and kind of I think they reopened the door as part of their 
+Turing Award speech and some of the speeches they've given since, suggesting it's time to 
+rethink computer architecture. So -- 
+KEVIN SCOTT: Yeah, I completely agree with them. 
+BILL COUGHRAN: The other thing that's been interesting with the insatiable appetite for 
+computing, and it worries me a little bit, I still believe that universities are the best training 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+10
+ground for people doing computer science work. You know, maybe not everybody should take 
+the time to go get a PhD, but I think having a rigorous program with lots of mathematics and 

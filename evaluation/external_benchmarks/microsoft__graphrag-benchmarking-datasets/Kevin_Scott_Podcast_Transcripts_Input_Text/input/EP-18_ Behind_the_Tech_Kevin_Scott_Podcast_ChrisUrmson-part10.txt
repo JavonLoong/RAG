@@ -1,0 +1,19 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt  behave in the future is somewhat a function of what you think it is, right?  
+
+KEVIN SCOTT:  Right.  
+
+CHRIS URMSON:  A pedestrian is very unlikely to move at 60 miles an hour.  You know, whereas a car, you know, that can happen.  And so you -- the way you interact with these vehicles and actors changes.  
+
+KEVIN SCOTT:  Interesting.  And so while you were at Carnegie Mellon, like, were you a graduate student or faculty?  Like, that -- the DARPA Grand Challenge, like, happens.  And I remember this was just one of those shockingly cool things as a computer scientist.  Like, I -- I wasn’t a roboticist or like even an AI person, and I was like paying very close attention to this program and what was happening because at the time, it was just sort of shocking the notion that you could have an autonomous vehicle that could, like, navigate a complicated environment by itself.  So you were part of that.  
+
+CHRIS URMSON:  Yeah, it was really cool.  It -- so this was -- I was a graduate student and then I worked for a company and then I was a faculty member.  So, we kind of went through three different phases of life I guess there.  And, yeah, it was really cool.  And it was a “grand challenge” because back in 2002, we were not sure you could actually do this.  So -- 
+
+KEVIN SCOTT:  And so, what was the “this”?  
+
+CHRIS URMSON:  Yeah, so there were three different events.  There were two grand challenges and then the urban challenge.  And the Grand Challenge was to get a robot -- we called it a robot back then -- to drive across the desert and do 150 miles, nominally from Los Angeles to Las Vegas.  And it had to do it in less than 10 hours, and it had to do it on a given day. 
+
+So, you know, we showed up, launched the robots in the morning and, you know, some number of hours later, they come back, hopefully.  
+
+And when it kicked off in 2000 and -- probably late 2002, 2003, we were -- like I said, like, we had conversations where, is this even doable?  You know, there had been a lot of great work in this space before, there’d been No Hands Across America, which was at Carnegie Mellon program that had actually used neural networks to drive a car down the freeway -- or at least steer a car down the freeway.  It didn’t do gas and brake and there’d been some great work by Ernst Dickmanns in Europe and some interesting work in Japan. 
+
+But the idea you’d drive off-road for 150 miles was just -- like it was

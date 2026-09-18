@@ -1,0 +1,54 @@
+Activprimary is a software application designed specifically for teachers and children in the primary education sector who use an Activboard Interactive Whiteboard, Promethean's Interactive Whiteboard.
+ Activprimary was designed and implemented by Nigel Pearce together with a software development team at Promethean (Blackburn, England).
+ Activprimary is similar in functionality to the software application Activstudio but is designed with a simpler user interface aimed towards the younger learner.
+The Tandy-12 is a computerized arcade game produced by the Tandy Corporation for sale in its Radio Shack chain of stores.
+ The Tandy Corporation acquired Radioshack in 1970.
+ The arcade game featured "12 challenging games of skill".
+ However, most of these were based on luck and freestyle ability.
+ Directions for the game are still available on the Radio Shack website.
+ The game had its packaging updated several times since its original release.
+ It was packaged with the game unit itself, a manual, a cardboard playing board, and a set of plastic tokens.
+ The manual is available online.
+ The 1981 Tandy-12 Model number is 60-2159.
+ The 1982 Tandy-12 Model number is 60-2159.
+Floating licensing is a software licensing approach in which a limited number of licenses for a software application are shared among a larger number of users over time.
+ When an authorized user wishes to run the application they request a license from a central license server.
+ If a license is available the license server allows the application to run.
+ When they finish using the application, or when the allowed license period expires, the license is reclaimed by the license server and made available to other authorized users.
+An open API (often referred to as a public API) is a publicly available application programming interface that provides developers with programmatic access to a proprietary software application or web service.
+ APIs are sets of requirements that govern how one application can communicate and interact with another.
+ APIs can also allow developers to access certain internal functions of a program, although this is not typically case for web APIs.
+ In the simplest terms, an API allows one piece of software to interact with another piece of software, whether within a single computer via a mechanism provided by the operating system or over an internal or external TCP/IP-based or non-TCP/IP-based network .
+ In the late 2010s, many APIs are provided by organisations for access with HTTP.
+ APIs may be used by both developers inside the organisation that published the API or by any developers outside that organisation who wish to register for access to the interface.
+A model-driven application is a software application that the functions or behaviors are based on, or in control of, some evolutionary applied models of the target things to the application.
+ The applied models are served as a part of the app in which it can be changed at runtime.
+ The "target things" are what the application deals with, such as the objects and affairs in business for a business application.
+ Follows the definition of application in "TOGAF", a model-driven business application could be described as an IT system that supports business functions and services running on the models of the (things in) business.
+ Gartner Group defined the model-driven packaged applications as "enterprise applications that have explicit metadata-driven models of the supported processes, data and relationships, and that generate runtime components through metadata models, either dynamically interpreted or compiled, rather than hardcoded."
+ Business process management is the significant practice of model-driven application architectural style.
+ A BPM system is model-driven if the functions are operating on business process models which are built and changed at the application time but not the design or implementation time; the biggest advantage is that it can deal with the continuous changing business process directly without modifying the software.
+ Model-driven application architecture is one of few technology trends to driven the next generation of application modernization, that claimed by some industrial researchers in 2012.
+ Note that it should be distinguished from the Model-Driven Architecture (MDA); the latter is a software design approach for the development of software systems and generally does not specify a specific system style or the runtime configuration.
+Imagini is a London-based software firm founded in 2006.
+ It uses images instead of questions to do marketing tasks such as psychographic marketing research and social networking.
+ Using Imagini's "VisualDNA" technology, Web visitors respond to queries such as "My biggest vice is..." or "My idea of love is..." by clicking on images, and software algorithms analyse the choices made to learn more about that particular person's preferences, likes and attitudes; then, a profile is constructed of the person which the firm describes as that person's "Visual DNA".
+ One software application matches up a person's choices with that of others in a database, and suggests possible others with similar dispositions and worldviews.
+ An additional application takes consumer's responses to images and uses this information to write a person's personal profile which can be used in places such as online dating sites.
+ Information obtained by Imagini software can be used by web marketers to develop a better understanding of consumer preferences.
+ In 2007, "The Guardian" noted that Imagini had high-powered financial backing.
+StarTeam is a revision control system used in software development, especially when a project involves multiple teams in different locations.
+ StarTeam is an SCM and SDLC software application, created by Starbase Corporation, which was acquired by Borland in January 2003 which was acquired by Micro Focus meanwhile.
+ The application is client-server, backed by a relational database that retains all changes made to a project during its evolution as well as the project requirements, task assignments, threaded discussions and bug tracking.
+ Microsoft SQL Server and Oracle database are supported database servers.
+VisionPLUS is a financial software application from First Data Corporation.
+ Originally developed by the Paysys Research and Development Group, this application is mainly used for credit card transaction processing by banks and transaction processing companies, storing and processing credit card, debit card, prepaid, closed end loan accounts and similar financial transactions such as Visa, MasterCard, American Express, Europay, and private label transactions against those accounts.
+ More than 600 million cards around the world are processed on different versions of this application software.
+Ivi Inc. also called Ivi, is a Seattle-based American corporation which offers a software application providing live video streaming over the Internet for a flat rate.
+ Ivi (pronounced 'ivy') is the first online cable company.
+ The Ivi TV player is a downloadable software application that runs on Windows, Macintosh, or Linux computers that offers live television over the Internet.
+Software monetization is a strategy employed by software companies and device vendors to maximize the profitability of their software.
+ The software licensing component of this strategy enables software companies and device vendors to simultaneously protect their applications and embedded software from unauthorized copying, distribution, and use, and capture new revenue streams through creative pricing and packaging models.
+ Whether a software application is hosted in the cloud, embedded in hardware, or installed on premise, software monetization solutions can help businesses extract the most value from their software.
+ Another way to achieve software monetization is through paid advertising and the various compensation methods available to software publishers.
+ Pay-per-install (PPI), for example, generates revenue by bundling third-party applications, also known as adware, with either freeware or shareware applications.

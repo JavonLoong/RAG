@@ -1,0 +1,21 @@
+Ep-41-Behind_The_Tech-Neal_Stephenson-FINAL_2.txt , or is it something that we bounce back from in a creative and positive way. So, I don’t claim to have any particular insight. With the 2016 election and some other things that surprised me, like COVID, I’m kind of stepping back a little bit from any attempt to claim I know what’s going to happen next, because clearly, I don’t. 
+
+KEVIN SCOTT: Oh, I don’t know. You seem to always have. Maybe what we need to do –
+
+NEAL STEPHENSON: I mean, I think a big one to watch and sort of a longer term kind of mega trend is carbon capture. 
+
+KEVIN SCOTT: Yeah. 
+
+NEAL STEPHENSON: I mean, Termination Shock is about solar geoengineering, which is kind of a temporary Band-Aid approach, but I’m super curious to see how that plays out over the next couple of decades. 
+
+KEVIN SCOTT: Totally agree with you there and I – I think the thing that we’re seeing right now is there are some really powerful tools coming online that help with that problem. One of the things that we’ve been tracking for three or four years now is if you pick up an issue of Science or Nature any given week, with greater frequency, you see people across a whole bunch of scientific disciplines using machine learning in places where they would have just used combinatorial optimization or numerical optimization in the past to, like, solve a problem like airfoil design or, you know, protein structure prediction or like, pick your thing.
+
+And you know, at least for these numerical optimization problems in physics, like, we don’t believe that there’s anything wrong with the differential equations that describe the physical systems, but the way that you use the differential equations to actually simulate something just requires a lot of tradeoffs. So they don’t have closed-form analytical solutions, obviously, because they’re all nonlinear and all kinds of wonky. 
+
+So, when you get into simulation space, you’re making tradeoffs about physical scale or time scale or, like, available computation or whatnot. And people are really, now – like, I think it’s going to really take off this year – are using machine learning to learn something about the structure of these problem spaces that can dramatically accelerate the performance of the simulation or optimization. 
+
+And so, like, there are things that are already being published at conferences where, like, we can send you this paper, like a group at Caltech, they invented a thing that they call a neural operator for solving the Navier-Stokes flow equations for computational fluid dynamics. And they didn’t get a 10 percent speed up or a factor of two speed up in performance without losing accuracy. Like, they got a thousand times speed up. 
+
+NEAL STEPHENSON: Wow. 
+
+KEVIN SCOTT: And so, I think, you know, when you see things where

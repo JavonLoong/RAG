@@ -1,0 +1,34 @@
+The M864 is an US made 155 mm artillery shell.
+ It carries a dual-purpose ICM submunition warhead and incorporates Base bleed technology to increase its range.
+ The projectile is capable of delivering 24 M46 and 48 M42 dual-purpose anti-materiel/anti-personnel sub-munitions at ranges out to 29 kilometers.
+ Base bleed technology was developed to reduce the amount of base drag on a projectile, thereby increasing the achieved range.
+ The drag is reduced by a gas generator located on the base of the projectile.
+ Once ignited, the gas generator bleeds hot gas into the projectiles wake which causes the flow of air at the base to be less turbulent.
+ The decrease in turbulence, reduces base drag, which typically accounts for 50 percent of total drag.
+ The amount of thrust produced by the base burner unit is negligible and does not serve the same function as the rocket motor on a rocket assisted projectile (RAP).
+The G7 is a South African 105 mm howitzer, produced by Denel Land Systems (DLS).
+ With a maximum range of 32 km it outranges all existing 105 mm howitzers, as well as most current 155 mm howitzers (Denel's own 155's not included).
+ During development, it was known as the "Light Experimental Ordnance" (LEO), with the G7 label being chosen later to fit in with Denel's two existing howitzer products, the G5 towed 155 mm howitzer and the G6 self-propelled 155 mm howitzer.
+The M121/A1 155mm Projectile was a chemical artillery shell designed for use by the U.S. army.
+ It was designed to be used with approximately 6.5 lbs of GB or VX nerve agents.
+The M795 155mm projectile is the US Army and US Marine Corps' standard 155mm high explosive (HE) projectile for howitzers.
+ It is a bursting round with fragmentation and blast effects.
+The 155 mm Gun Motor Carriage M12 was a U.S. self-propelled gun developed during the Second World War.
+ It mounted a 155 mm gun derived from the French Canon de 155mm GPF field gun.
+The GCT 155mm is a French self-propelled artillery vehicle currently in use by the armies of France and Saudi Arabia.
+ It replaced the former Mk F3 155mm in French Army service.
+ The GCT 155mm's primary advancement is that it incorporates and provides full armor and nuclear-biological-chemical (NBC) protection for its crew of four, while the former Mk F3 155mm offered no protection and could carry only two of its four crew members.
+ Though 60% heavier than the American M109, the GCT 155mm is faster, fires faster and incorporated a more sophisticated fire control system.
+ The GCT 155mm saw combat with the Iraqi Army in the Iran–Iraq War.
+The 155 mm self-propelled gun Mk F3, or the Canon de 155 mm Mle F3 Automoteur (Cn-155-F3-Am), was developed in the early 1950s by the French Army to replace their American M41 Gorilla 155mm self-propelled guns.
+ The Mk F3 is the smallest and lightest 155 mm motorized gun carriage ever produced, and because of its size and low cost it has found considerable success on the export market.
+ Constructed on a modified AMX-13 light tank chassis, the Mk F3 is novel in incorporating room inside for only two of the eight required crewmen (the others riding in support vehicles).
+ This allows the 155 mm gun to be placed on a smaller chassis than that employed by other armies, but exposes the outside crew members to arms fire.
+The M104 155mm Projectile was a chemical artillery shell designed for use by the U.S. Army.
+ It was specifically designed to carry about 11.7 pounds of sulfur mustard H or HD blister gas.
+The 155 GH 52 APU (which stands for "155 mm gun-howitzer, 52 calibers, auxiliary power unit"), Finnish designation 155 K 98 ("155 mm kenttäkanuuna 1998" or "155 mm field gun 1998"; FDF terminology doesn't recognise gun-howitzers), is a Finnish towed artillery piece developed in 1998.
+ It is largely based on the 155 K 83 with some major enhancements.
+ It can be moved on the field short distances with its own auxiliary diesel engine, which is used in all 56 units used by the Finnish defence forces, is a 78-kilowatt Deutz diesel engine.
+ The Egyptian units are not equipped with the APU.
+The M107 155mm projectile was the standard 155mm high explosive (HE) projectile for howitzers of the US Army and US Marine Corps'.
+ A bursting round with fragmentation and blast effects (range is not known), the M107 is being superseded in the US military by the M795.

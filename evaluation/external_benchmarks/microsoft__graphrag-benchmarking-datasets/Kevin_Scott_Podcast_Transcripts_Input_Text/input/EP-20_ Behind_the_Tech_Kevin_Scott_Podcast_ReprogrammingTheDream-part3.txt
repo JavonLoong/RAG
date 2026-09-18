@@ -1,0 +1,25 @@
+EP-20_ Behind_the_Tech_Kevin_Scott_Podcast_ReprogrammingTheDream.txt   So, whether it's you know, like the set of things that we're using right now to record this podcast because we can't be physically approximate with one another.
+
+You know, so this, the amazing networking technology that we have, right now, like computers that let us stay in touch with one another, and interact, and collaborate, and you know, do really interesting things wouldn't otherwise be possible.
+
+But, like I have particularly been involved with the development of AI, for the past 15 years or so.  So, like one of the first big projects that I worked on when I left academia to go work in industry was a machine learning thing, and I've just sort of watched this technology progress in both power and accessibility.
+
+And, and like what I mean, in particular, by that is like power is like what you are able to accomplish with the tools and machine learning, and accessibility is like who is able to use these tools to create things? 
+
+It's just been on this incredible curve, on both dimensions, and I sat down to, you know with you, what is it now, two-and-one-half years ago when we started this whole process?
+
+GREG SHAW:  It seems like only yesterday.
+
+KEVIN SCOTT:  Yes, it does, but you know, the thing that I wanted to make sure was that people understood stories of how they could choose to use this technology to help build a better world for themselves and for their communities, in like this very inclusive way.
+
+And like I wanted to make sure that there are things about the development of machine learning, and it's uses, that we need to be cautious about, but like I want people to also feel sort of hopeful about what it is that they can do with these tools.
+
+GREG SHAW:  Yeah, well, the podcast is Behind, you know, Behind the Tech, and one of the things that I've really enjoyed is learning your story, you know, from Gladys, Virginia, to you know, places like Illinois and Europe, and into Silicon Valley.
+
+So, it's a really terrific story.  I want to jump into the introduction here, and a topic on AI.  In the introduction you addressed the question that is on everyone's mind, which is, when will general – or artificial general intelligence or AGI, when will it be available? You know, when will computers be as smart as humans? So, I'd like to ask you to read a passage from the introduction in which you address that question.
+
+KEVIN SCOTT:  Okay, yeah, I'd be happy to.  
+
+“Even though I have neither the expertise nor the crystal ball to predict exactly when AGI might arrive, I’ve been involved with modern technology long enough, and read enough history, to know that we’ve often underestimated the speed with which  futuristic technology suddenly arrives. 
+
+AI has historically been limited in what it has

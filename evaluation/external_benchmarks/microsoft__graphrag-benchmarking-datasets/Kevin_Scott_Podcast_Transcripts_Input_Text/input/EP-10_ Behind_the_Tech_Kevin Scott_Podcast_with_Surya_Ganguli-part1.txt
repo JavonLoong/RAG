@@ -1,0 +1,17 @@
+EP-10_ Behind_the_Tech_Kevin Scott_Podcast_with_Surya_Ganguli.txt ../SURYA GANGULI: (VOICEOVER) A lot of people, of course, listening to your podcast and out there in the world have become incredibly successful based on the rise of digital technology.  But I think we need to think about digital technology now as a suboptimal legacy technology. To achieve energy efficient artificial intelligence, we've really got to take cues from biology.
+
+[MUSIC]
+
+KEVIN SCOTT:  Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC] 
+
+CHRISTINA WARREN:  Hello, and welcome to the show.  I'm Christina Warren, Senior Cloud Advocate at Microsoft.  
+KEVIN SCOTT:  And I'm Kevin Scott. 
+CHRISTINA WARREN:  Today, we're excited to have with us Surya Ganguli. 
+KEVIN SCOTT:  Yeah, Surya is a professor at Stanford working at the intersection of a bunch of different, super interesting fields.  So, he's a physicist.  He's a neuroscientist.  He is actually quite familiar with modern psychology, and he's a computer scientist.  And so, he's applying all of this interest that he has across all of these different fields, trying to make sure that we're building better and more interesting biologically and psychologically inspired machine learning systems in AI.
+CHRISTINA WARREN: I love it. It’s so cool. So, I know that you and Surya are going to have like a totally serious, totally informed and thought-provoking conversation about all things AI, but I wonder if maybe, first, we can kind of go into, like, the pop culture aspect of AI, you know, with all the different movies, and comics, and various cult classics.  
+KEVIN SCOTT:  That would be great.
+CHRISTINA WARREN:  Right?  Because a lot of times, these things really kind of indulge our imagination, but also our fears about AI.  Like, you know, I'm a really big fan of the film Blade Runner, the Ridley Scott classic, which is based on the Philip K. Dick book.  And there are other things, like even Westworld, and films like 2001 A Space Odyssey.  A lot of these kind of views of AI aren't necessarily positive, right?
+KEVIN SCOTT:  Yeah.  I think it's a really challenging  thing because I think when you think about AI in general, like

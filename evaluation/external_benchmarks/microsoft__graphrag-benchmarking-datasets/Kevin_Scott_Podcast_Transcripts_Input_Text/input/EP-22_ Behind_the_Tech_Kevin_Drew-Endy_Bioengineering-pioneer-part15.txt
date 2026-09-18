@@ -1,0 +1,13 @@
+EP-22_ Behind_the_Tech_Kevin_Drew-Endy_Bioengineering-pioneer.txt  if you put those two facts together, you can take a kilowatt hour of electricity and make grams of new biomass. 
+ 
+And so the significance of that, if you're following along, is that ceiling of 90 terawatts of energy that powers biosynthesis is not an absolute limit. To the extent we can generate electricity by any mechanism -- solar panels are a fine example -- we can make biomass from that. So, making electro biosynthesis come true is very, very exciting to me.
+
+KEVIN SCOTT:  Yeah, it's -- I want to go back to what you said just a few minutes ago about how we take a lot of biology for granted. And, you know, I had one of these moments of wonder a few weeks ago where my son, who's nine years old, was doing this project for a school where about photosynthesis and plants. 
+
+And the experiment was he took five dried cranberry beans from the pantry, which in my mind are not seeds but food, and he wrapped them in a paper towel and stuck them in a plastic bag, and taped them to a window to let them germinate. And then he planted them, and I'm, like, thinking to myself, my god, like, this is, you know, maybe a more complicated machine than almost any that we deal with where this little dried thing that was, you know, like, I didn't even realize was alive can be coaxed not just to life, but into something that can replicate itself. And, like, all I needed was water and sunshine and soil, and you know, I'd taken those sorts of things for granted my entire life. So, like, that's maybe one reason why I take them for granted. 
+
+And like, maybe another reason is I'm a computer scientist by training. I deal with things that are complex, but they're complex in a way where, you know, a lot of it is just sort of human fabricated, right? We've sort of built computer science. Like, some of it's phenomenological and like, you know, there are theoretical, weird things about our mathematics and computer science that are, like, very surprising, and they get to be intractable in ways that there's nothing we can do about. 
+
+But for the most part, like, it's pretty orderly, and biology just seems… I don't want to call it disorderly. Maybe it's just I think it's disorderly because I just don't have a big enough brain to comprehend it or because its complexity is, you know, just on another scale. 
+
+But I just sort of wonder, like, you know, what your thoughts are on this. Like, how much of this is because biology is so complicated, you know, that we've had a hard time wrestling it to the ground, and like, and on the other hand, like, we've just sort of coevolved with

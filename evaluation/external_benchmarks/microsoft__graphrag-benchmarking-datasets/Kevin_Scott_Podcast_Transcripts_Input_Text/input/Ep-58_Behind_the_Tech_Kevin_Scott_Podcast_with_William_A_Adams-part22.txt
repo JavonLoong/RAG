@@ -1,0 +1,33 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt . 
+
+And, you know, there, you just have to be very – it’s not a thing where you’re like, okay, well, this is some wild bet, and, like, we can afford for it to fail. It is a thing where you have to be very disciplined year after year about how you’re going to go get after this thing, and make sure that you’re tracking everything that’s going on in the – 
+
+WILLIAM ADAMS: Oh, you’re market making, right? 
+
+KEVIN SCOTT: Correct.
+
+WILLIAM ADAMS: You’re not following, you’re market making at that point. And that’s, like you said, the word “discipline.” It’s like, you’ve decided that the market is going to be a certain way, and you’re going to make it that way. And you have to have the discipline. And you also have to have the foresight or discipline to be able to say, it’s not going our way, you know? (Laughter.) And you correct for it. 
+ 
+KEVIN SCOTT: Correct. And you have to be unbelievably truthful with yourself about that. 
+ 
+WILLIAM ADAMS: Right, or else you end up wasting billions chasing elephants or whatever. 
+
+KEVIN SCOTT: Yeah.
+
+WILLIAM ADAMS: So, the other point I wanted to make about something I did in the office of the CTO was do you remember Africa? (Laughter.) 
+ 
+KEVIN SCOTT: Oh yeah, tell the story, please. This is so important. 
+ 
+WILLIAM ADAMS: (Laughter.) So, Africa was interesting. There’s African engineers within Microsoft who came to me, you know, to say, “Oh, William, you know, you’re office of the CTO, maybe you can help us out, you know, your influence, blah, blah, blah.” And they basically said, “Look, the continent of Africa has zero engineers on it. The whole continent, one point however many billions of people, however big Africa is, which, you know, a third of the planet, or whatever it is, no engineering from Microsoft. We think this is a problem because we’re not leveraging the smartness that’s there.” 
+
+KEVIN SCOTT: Which is very, very interesting, because, like, we have – we have a couple of… more than a couple, but, like, you know, the folks that I’m – that I work closely with. So, we had Hoop [Somuah], who was Satya’s TA when I became CTO.
+
+WILLIAM ADAMS: Yeah, right.
+
+KEVIN SCOTT: Hoop was from Nigeria?
+
+WILLIAM ADAMS: He’s from Ghana.
+
+KEVIN SCOTT: Ghana.
+
+WILLIAM ADAMS: But yeah, close enough. (Laughter.)

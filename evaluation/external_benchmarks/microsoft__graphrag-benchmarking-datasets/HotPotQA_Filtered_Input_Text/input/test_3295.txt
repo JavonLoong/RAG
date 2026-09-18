@@ -1,0 +1,42 @@
+Brake bleeding is the procedure performed on hydraulic brake systems whereby the brake lines (the pipes and hoses containing the brake fluid) are purged of any air bubbles.
+ This is necessary because, while the brake fluid is an incompressible liquid, air bubbles are compressible gas and their presence in the brake system greatly reduces the hydraulic pressure that can be developed within the system.
+ The same methods used for bleeding are also used for purging, where the old fluid is replaced with new fluid, which is necessary maintenance.
+Fluid deforms continuously on the application of shear stress, no matter how much small is it.
+ Fluid comprises both gases and liquid.
+ The technique of using liquid for power transmission is called as hydraulics while which uses gases for power transmission is called Pneumatics.In most hydraulic systems, mineral oils will be used while in most pneumatic systems, atmospheric air will be used.
+A clutch is a mechanical device which engages and disengages power transmission especially from driving shaft to driven shaft.
+A winch is a mechanical device that is used to pull in (wind up) or let out (wind out) or otherwise adjust the "tension" of a rope or wire rope (also called "cable" or "wire cable").
+ In its simplest form it consists of a spool and attached hand crank.
+ In larger forms, winches stand at the heart of machines as diverse as tow trucks, steam shovels and elevators.
+ The spool can also be called the winch drum.
+ More elaborate designs have gear assemblies and can be powered by electric, hydraulic, pneumatic or internal combustion drives.
+ Some may include a solenoid brake and/or a mechanical brake or ratchet and pawl device that prevents it from unwinding unless the pawl is retracted.
+Roto Hydramatic (sometimes spelled Roto Hydra-Matic or Roto-Hydramatic) was an automatic transmission built by General Motors and used on some Oldsmobile and Pontiac and Holden models from 1961–1965.
+ It was based on the earlier, four-speed Hydramatic, but was more compact, providing only three forward speeds plus a small 8" fluid coupling with a stator inside of the fluid coupling.
+ Oldsmobile, one of the users of this transmission, called the fluid couplings stator the "Accel-A-Rotor."
+ The lightweight, aluminum-cased transmission was sometimes nicknamed the "Slim Jim."
+ HydraMatic Division calls the Roto a four range, three gear HydraMatic.
+ It counts the stator multiplication @ 3.50 to one as a first gear, and when road speed and the two coupling halves speed match, it counts the same gear with fluid now passing straight through the stator as 2nd gear at 2.93 to one.
+ Second gear (or third range) has a ratio of 1.56 and because the fluid coupling is drained for this gear ratio making the front clutch apply makes this a rare automatic that is in FULL mechanical lock-up (coupling drained) in second gear.
+ Fourth range the coupling fills releasing the front clutch makes a ratio of 1 to 1.
+ This transmission, like single and dual range, and dual coupling hydramatics also have the feature of split torque in the transmission whereby in fourth or high gear only 40-to 50% depending on transmission, 40% in Roto's case, but because of the design the coupling is only required to carry 40% of the engine torque.
+ The rest is (60%) is in full mechanical connection making these hydramatics the most efficient automatic until the wide spread use of the lock-up torque converter.
+A polyphase system is a means of distributing alternating-current electrical power.
+ Polyphase systems have three or more energized electrical conductors carrying alternating currents with a definite time offset between the voltage waves in each conductor.
+ Polyphase systems are particularly useful for transmitting power to electric motors.
+ The most common example is the three-phase power system used for industrial applications and for power transmission.
+ A major advantage of three phase power transmission (using three conductors, as opposed to a single phase power transmission, which uses two conductors), is that, since the remaining conductors act as the return path for any single conductor, the power transmitted by a balanced three phase system is three times that of a single phase transmission but only one extra conductor is used.
+ Thus, a 50% / 1.5x increase in the transmission costs achieves a 200% / 3.0x increase in the power transmitted.
+A heat exchanger is a device used to transfer heat between a solid object and a fluid, or between two or more fluids.
+ The fluids may be separated by a solid wall to prevent mixing or they may be in direct contact.
+ They are widely used in space heating, refrigeration, air conditioning, power stations, chemical plants, petrochemical plants, petroleum refineries, natural-gas processing, and sewage treatment.
+ The classic example of a heat exchanger is found in an internal combustion engine in which a circulating fluid known as engine coolant flows through radiator coils and air flows past the coils, which cools the coolant and heats the incoming air.
+ Another example is the heat sink, which is a passive heat exchanger that transfers the heat generated by an electronic or a mechanical device to a fluid medium, often air or a liquid coolant.
+The G56 manual transmission is the only manual transmission currently available in a full-size pickup truck.
+ It is also the only manual transmission being optioned in Class-4 and Class-5 trucks.
+ The transmission uses Mopar ATF+4 transmission fluid.
+ Ram trucks began running this transmission in the 2005 model-year trucks as a mid-year change to phase out the cast-iron 6-speed New Venture Gear 5600 transmission.
+A fluid coupling or hydraulic coupling is a hydrodynamic device used to transmit rotating mechanical power.
+ It has been used in automobile transmissions as an alternative to a mechanical clutch.
+ It also has widespread application in marine and industrial machine drives, where variable speed operation and controlled start-up without shock loading of the power transmission system is essential.
+A hydraulic brake is an arrangement of braking mechanism which uses brake fluid, typically containing glycol ethers or diethylene glycol, to transfer pressure from the controlling mechanism to the braking mechanism.

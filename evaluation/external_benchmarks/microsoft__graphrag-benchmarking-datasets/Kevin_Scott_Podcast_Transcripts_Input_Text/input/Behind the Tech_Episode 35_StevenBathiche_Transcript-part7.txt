@@ -1,0 +1,15 @@
+Behind the Tech_Episode 35_StevenBathiche_Transcript.txt  we try to mix all these kind of technologies together to create optimal systems.
+
+KEVIN SCOTT:  Yeah. One of the things that I’ve always believed, and it may be a convenient belief, not a good one, is that you can be so much more creative when you have lots of different tools that you have at your disposal. And you don’t need to be a master even at all of the tools, but just knowing a little bit about a lot of things can let you discover stuff that you wouldn’t be able to do otherwise, or to approach problems in ways that you wouldn’t be able to do otherwise. And it seems like that’s something that you may believe as well.
+
+STEVIE BATHICHE:  Hundred percent. A big part of invention, engineering, product development is managing complexity, and moving complexity around, in fact. Like, if you think about, high level, what we can do and if you understand the different systems and the different disciplines, you can effectively move complexity around where it’s hard in one area, but not so hard in another area, you know? 
+
+And that’s why I love this boundary that I kind of work in between hardware and software. And I can move it back and forth, you know, and I could do something really hard in optics and like, ooh, man, but then, like, shift it over to software and have software essentially solve the problem instead of doing an optics, or vice versa, right?
+
+KEVIN SCOTT:  Yeah, and I think it’s everywhere. I mean, just an example. Like, I spent a couple of hours yesterday making a mount for a tablet, just sort of a silly thing, but I wound up solving the problem of, like, how to hold this little touchscreen tablet on a flexible arm with 3D printing, and laser cutting, and C&C machining. And there were parts, like mechanically, of building this thing that were easy in each of those tool sets that would have been very hard in the others. And, like, just having those tools at your disposal and knowing how to use them, like, made a thing that would have taken, like, a few days to build into something that took like an hour, which is awesome.
+
+STEVIE BATHICHE:  Oh, yeah. I mean, I’m a big believer in having the right tool. It’s just, you know, it changes the whole game.
+
+KEVIN SCOTT:  Yeah. So, let’s talk a little bit more about some of the stuff that you’ve been doing with AI, which is a relatively new but extremely powerful tool that we’re increasingly use to do exactly what you’re talking about, like this taking something that’s very, very complex to solve any other way and making it possible using this new tool. So, talk a little bit about what you have been doing with edge AI.
+
+STEVIE

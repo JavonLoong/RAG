@@ -1,0 +1,17 @@
+EP-21_ Behind_the_Tech_Kevin_Eric-Horvitz_Chief-Scientific-Officer_Microsoft.txt  an AI winter, where it was no longer like this fashionable thing in graduate programs. 
+
+So, you -- when you got into AI, was it right before the AI winter that we had or, you know, was Stanford in some way like a unique island where the enthusiasm for the field was undiminished over time? 
+
+ERIC HORVITZ: Well, first of all, I want to make a comment on that 1955 proposal. I’ve often said that that proposal is written so well and it’s so aspirational that if you submitted it today to DARPA or the National Science Foundation, you’d probably going to a high grant score and be funded, so just go for it. 
+
+I mean, as written. So, back to your question. When I first jumped in, it was ’84. It was kind of a warm time and getting hotter. It was the time where the rule-based expert system, these production systems that, for example, backward chaining through these modular human expert rules were becoming quite popular. 
+
+And I remember one of my first meetings was IJCAI at UCLA, and it was just an amazing time of excitement and inspiration with thousands of attendees. It felt like NeurIPS feels today. But ’84, ’85, ’86, there was kind of a collapse of interest and a bunch of startups going out of business that had been funded during the earlier time when it was discovered it was just kind of hard to build these systems and maintain them and maybe these logical systems weren’t as powerful and as promising as people thought they’d be, and weren’t as easy to use or build. 
+
+I looked over the history quite carefully and you know, what’s called “AI Winter” for us -- and I say us -- it’s I and students at Stanford that were studying similar topic areas, and we had very close friends that we met at conferences and workshops at MIT and CMU and a few other places that created this invisible college of grad students that were looking for a different way to do things. 
+
+And in many ways, we were up against the glowing cinders -- you might call them ashes -- of what had been really exciting just two or three years before, typically pioneered by the people who were our mentors and advisors, which created some tension. 
+
+And what we were looking for was going back to the basics and building on the shoulders of the great statisticians and probabilists and folks who had done inference and optimization over decades. We discovered that the AI of the time and in the early ‘80s to mid ‘80s was defining itself as, “No, no, no, no, that’s Operations Research’” Or, “No, no, no, there are too many numbers there. Numbers aren’t symbols, we want to manipulate symbols.”
+
+There was lots of tension there, and at times, for me in particular, I specifically sought out new advisors at the time and moved over to

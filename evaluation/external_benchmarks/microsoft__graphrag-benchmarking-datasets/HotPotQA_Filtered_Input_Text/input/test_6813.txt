@@ -1,0 +1,56 @@
+Google Docs, Google Sheets, and Google Slides are a word processor, a spreadsheet and a presentation program respectively, all part of a free, web-based software office suite offered by Google within its Google Drive service.
+ The three apps are available as web applications, and as mobile apps for Android and iOS.
+ The apps are compatible with Microsoft Office file formats.
+ The suite also consists of Google Forms (survey software), Google Drawings (diagramming software) and Google Fusion Tables (database manager; experimental).
+NuFX archive is an archive file format that supports lossless data compression that is given the file extension ".
+SHK".
+ A NuFX archive or .
+SHK file may contain one or more files or directories and with the extension .
+SDK even contains entire floppy disk images.
+ This format actually specified via the NuFX file format, was meant to replace and "Binary II" format back in the 1980s which had the .
+BNY or .
+BQY extensions... file envelopes with no compression.
+ The .
+SHK file format permits a number of compression algorithms.
+ This format was originally created in 1980s by Andy E. Nicholas and was first implemented within his ShrinkIt utility.
+The OS/360 Object File Format is the standard object module file format for the IBM DOS/360, OS/360 and VM/370, Univac VS/9, and Fujitsu BS2000 mainframe operating systems.
+ In the 1990s, the format was given an extension with the XSD-type record for the MVS Operating System to support longer module names in the C Programming Language.
+ This format is still in use by the z/VSE operating system (the follow-on to the DOS/360 Operating System).
+ In contrast, it has been superseded by the GOFF file format on the MVS Operating System (the follow-on to the OS/360 Operating System) and on the z/VM Operating System (the follow-on to the VM/370 Operating System).
+ Since the MVS and z/VM loaders will still handle this older format, some compilers have chosen to continue to produce this format instead of the newer GOFF format.
+XAP is the file format used to distribute and install application software and middleware onto Microsoft's Windows Phone 7/8/8.1/10 operating system, and is the file format for Silverlight applications.
+ Beginning with Windows Phone 8.1, XAP will be replaced by APPX as the file format used to install apps on the Windows Phone platform, a move which was done by Microsoft in order to unify the app development platforms for Windows Store apps and Windows Phone apps.
+EULUMDAT is a data file format used for specification of photometric data especially intensity distributions from light sources such as lamps and luminaries.
+ The file extension is .
+ldt.
+ The format was proposed by Axel Stockmar (Light Consult Inc., Berlin) in 1990.
+ The format is the European equivalent to the IES file format specified in IESNA LM-63.
+ The data in an EULUMDAT file is usually measured using a goniophotometer.
+ The IES file format is more formally specified and many measuring instruments
+Waveform Audio File Format (WAVE, or more commonly known as WAV due to its filename extension) (rarely, Audio for Windows) is a Microsoft and IBM audio file format standard for storing an audio bitstream on PCs.
+ It is an application of the Resource Interchange File Format (RIFF) bitstream format method for storing data in "chunks", and thus is also close to the 8SVX and the AIFF format used on Amiga and Macintosh computers, respectively.
+ It is the main format used on Windows systems for raw and typically uncompressed audio.
+ The usual bitstream encoding is the linear pulse-code modulation (LPCM) format.
+The BMP file format, also known as bitmap image file or device independent bitmap (DIB) file format or simply a bitmap, is a raster graphics image file format used to store bitmap digital images, independently of the display device (such as a graphics adapter), especially on Microsoft Windows and OS/2 operating systems.
+3D Builder is a 3D computer-aided design tool for Microsoft Windows that makes it easy to create, view, edit, and 3D print 3D objects.
+ It is developed by Microsoft and available for free in the Windows Store for all Windows platforms including Desktop, Phone, Holographic/HoloLens, and XBox.
+ The user interface supports touch and uses a ribbon similar to the Office Mobile tablet apps.
+ The app is easy for beginners but contains powerful tools available in higher end CAD software.
+ Although the app supports a wide range of common 3d file formats, it is the primary viewer for the 3MF file format.
+ The app is included with Windows 10 desktop and is widely viewed as one of the most used 3D apps worldwide.
+The functionality of mobile devices running the Android operating system, the most used mobile operating system globally, can be extended using "apps" – specialized software designed to offer users the means to use their devices for certain additional purposes.
+ Such apps are compiled in the Android-native APK file format which allows easy redistribution of apps to end-users.
+ZIP is an archive file format that supports lossless data compression.
+ A .
+ZIP file may contain one or more files or directories that may have been compressed.
+ The .
+ZIP file format permits a number of compression algorithms, though DEFLATE is the most common.
+ This format was originally created in 1989 by Phil Katz, and was first implemented in PKWARE, Inc.'s PKZIP utility, as a replacement for the previous ARC compression format by Thom Henderson.
+ The .
+ZIP format is now supported by many software utilities other than PKZIP.
+ Microsoft has included built-in .
+ZIP support (under the name "compressed folders") in versions of Microsoft Windows since 1998.
+ Apple has included built-in .
+ZIP support in Mac OS X 10.3 (via BOMArchiveHelper, now Archive Utility) and later.
+ Most have built in support for .
+ZIP in similar manners to Windows and Mac OS X.

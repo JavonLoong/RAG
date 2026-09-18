@@ -1,0 +1,33 @@
+Gabriel Levin (Born 1948, Paris) is a poet, translator and essayist.
+ He lives in Jerusalem with his wife and children.
+ Levin is one of the founding editors of Ibis Editions, a small non-profit press devoted to the publication of the literature of the Levant, and serves as its Editor-at-large.
+ Levin's work has appeared in numerous literary magazines, including PN Review, The Times Literary Supplement, the Chicago Review, Raritan and Parnassus.
+"To these Dark Steps", a volume written in response to operation "Cast Lead" (2008), was set by British composer Alexander Goehr for tenor, children's choir, and ensemble and premiered September 2012 at the CBSO Centre in Birmingham.
+ Levin is the son of the American novelist Meyer Levin (best known for "Compulsion", the first "non-fiction novel") and French novelist Tereska Torres.
+The leftover hash lemma is a lemma in cryptography first stated by Russell Impagliazzo, Leonid Levin, and Michael Luby.
+In mathematics, in the theory of discrete groups, superrigidity is a concept designed to show how a linear representation ρ of a discrete group Γ inside an algebraic group "G" can, under some circumstances, be as good as a representation of "G" itself.
+ That this phenomenon happens for certain broadly defined classes of lattices inside semisimple groups was the discovery of Grigory Margulis, who proved some fundamental results in this direction.
+Augustine of Canterbury (born first third of the 6th century – died probably 26 May 604) was a Catholic Benedictine monk who became the first Archbishop of Canterbury in the year 597.
+ He is considered the "Apostle to the English" and a founder of the Catholic Church in England.
+In mathematics, Ratner's theorems are a group of major theorems in ergodic theory concerning unipotent flows on homogeneous spaces proved by Marina Ratner around 1990.
+ The theorems grew out of Ratner's earlier work on horocycle flows.
+ The study of the dynamics of unipotent flows played a decisive role in the proof of the Oppenheim conjecture by Grigory Margulis.
+ Ratner's theorems have guided key advances in the understanding of the dynamics of unipotent flows.
+ Their later generalizations provide ways to both sharpen the results and extend the theory to the setting of arbitrary semisimple algebraic groups over a local field.
+In differential geometry, a subfield of mathematics, the Margulis lemma (named after Grigory Margulis) is a result about discrete subgroups of isometries of a non-positively curved Riemannian manifolds (e.g. the hyperbolic n-space).
+ Roughly, it states that within a fixed radius, usually called the Margulis constant, the structure of the orbits of such a group cannot be too complicated.
+ More precisely, within this radius around a point all points in its orbit are in fact in the orbit of a nilpotent subgroup (in fact a bounded finite number of such).
+Gregori Aleksandrovich Margulis (Russian: Григо́рий Алекса́ндрович Маргу́лис , first name often given as Gregory, Grigori or Grigory; born February 24, 1946) is a Russian-American mathematician known for his work on lattices in Lie groups, and the introduction of methods from ergodic theory into diophantine approximation.
+ He was awarded a Fields Medal in 1978 and a Wolf Prize in Mathematics in 2005, becoming the seventh mathematician to receive both prizes.
+ In 1991, he joined the faculty of Yale University, where he is currently the Erastus L. De Forest Professor of Mathematics.
+The fifth season of the Russian reality talent show "The Voice" premiered on 2 September 2016 on Channel One with Dima Bilan and Leonid Agutin returning as coaches alongside Polina Gagarina and Grigory Leps.
+ Dmitry Nagiev returns as the show's presenter.
+ Darya Antonyuk was announced the winner on 30 December 2016 marking Leonid Agutin's first win as a coach.
+The napkin folding problem is a problem in geometry and the mathematics of paper folding that explores whether folding a square or a rectangular napkin can increase its perimeter.
+ The problem is known under several names, including the Margulis napkin problem, suggesting it is due to Grigory Margulis, and the Arnold's rouble problem referring to Vladimir Arnold and the folding of a Russian ruble bank note.
+ Some versions of the problem were solved by Robert J. Lang, Svetlana Krat, Alexey S. Tarasov, and Ivan Yaschenko.
+ One form of the problem remains open.
+In mathematics, the multiplicative ergodic theorem, or Oseledets theorem provides the theoretical background for computation of Lyapunov exponents of a nonlinear dynamical system.
+ It was proved by Valery Oseledets (also spelled "Oseledec") in 1965 and reported at the International Mathematical Congress in Moscow in 1966.
+ A conceptually different proof of the multiplicative ergodic theorem was found by M. S. Raghunathan.
+ The theorem has been extended to semisimple Lie groups by V. A. Kaimanovich and further generalized in the works of David Ruelle, Grigory Margulis, Anders Karlsson, and François Ledrappier.

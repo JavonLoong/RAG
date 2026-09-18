@@ -1,0 +1,17 @@
+EP-49_Behind_the_Tech_Kevin_Scott_Podcast_2022YearinReview.txt  much it matters to him personally. 
+
+PHIL SPENCER: The feedback on the work that we do, good and bad, is out there front and center. And while there’s obviously good days and bad days for myself and the teams and the products that were building, for me, that complete loop of we have an idea, whether it’s iterative on something that we’ve already done or completely new. We’re going to work that over multiple years, in the case of these big games that we were talking about, to deliver something. And that end result in the feedback that you get is the thing that gives me momentum into the next thing. 
+ 
+But that’s, like, I said, that’s – that’s kind of how I’m wired. I like the completeness of that. I mean, I’m enthralled by… I think, like, you think 300, 400 years ago, there’s, like, architects in Europe working on these massive churches that are going to take 200 years to build. And they’re in the middle of this, and if you’re, like, a mason, you know that you didn’t see the beginning and your life will not exist – you won’t live long enough to see the end. And these people throw themselves into these builds.
+ 
+And we have similar kind of projects at Microsoft, as you know, that take, like, multiple, multiple decades, especially some of these things where they’re way out; the horizon three things. And I am just so impressed by people that have that amount of kind of intellectual drive to see through it. 
+ 
+For me, that tighter feedback loop is just part of how I’m wired. And I’m glad we have those people that can think longer term about infrastructure and longer term investments. It’s not just longer term, but kind of it’s at a different level in the stack, the things that we do. And the conversations, one of the reasons I always love having conversations with you, because the conversations of how different people think about these problems and opportunities are just awesome feedback into what we do.
+
+CHRISTINA WARREN: That was Phil Spencer, CEO of Gaming at Microsoft. We’ve got one more guest from this season that we want to make sure and we highlight today. I don’t want to say we saved the best for last but...Randall Munroe, the physicist and artist behind XKCD, is such a fascinating person to listen to.
+
+KEVIN SCOTT: Yeah XKCD is one of my absolute favorite things on the whole Internet, so I was beyond thrilled to have the opportunity to get to chat with Randall.
+
+CHRISTINA WARREN: It’s one of my favorite things as well. Let’s take a listen to some of what you two talked about.
+
+RANDALL MUNROE: when I started drawing comics about this science stuff, I really wasn’t expecting it, but people started sending me questions now

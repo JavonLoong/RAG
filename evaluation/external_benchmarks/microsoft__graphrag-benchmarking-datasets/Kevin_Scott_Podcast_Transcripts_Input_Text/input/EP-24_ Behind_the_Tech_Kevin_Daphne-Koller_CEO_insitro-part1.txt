@@ -1,0 +1,32 @@
+EP-24_ Behind_the_Tech_Kevin_Daphne-Koller_CEO_insitro.txt ../[MUSIC]
+
+DAPHNE KOLLER: I think one of the very, very thin silver linings around this very dire situation that we find ourselves in is that there is, I hope, a growing appreciation among the general public for what science is able to do for us today and how much of that ability rests on decades of basic science work by many, many people.
+
+[MUSIC]
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC]
+
+CHRISTINA WARREN: Hello. Welcome to Behind the Tech. I’m Christina Warren, senior cloud advocate at Microsoft.  
+
+KEVIN SCOTT: And I’m Kevin Scott. 
+ 
+CHRISTINA WARREN: Today, our guest is Daphne Koller, who’s the CEO and founder of insitro, which is a company that works at the convergence of biology and machine learning. 
+
+KEVIN SCOTT: Yeah, I’m guessing everyone has a newfound appreciation for how important biomedicine and biotechnology is at this time with the COVID-19 pandemic still raging around us. And I think Daphne is doing some of the most interesting work right now in the field that is, as we’ve seen with several of our other guests, like, this really powerful combination of biology and machine learning and high-performance computing and laboratory automation. Like, what they’re doing is really wonderful work. And Daphne is just sort of a brilliant computer scientist and has had many, many different chapters in her career that are inspirational. 
+
+CHRISTINA WARREN: That’s so true, Kevin. I cannot wait to hear this conversation. 
+
+KEVIN SCOTT: Yeah, so let’s get started. 
+
+[MUSIC]
+
+KEVIN SCOTT: Our guest on the show today is Daphne Koller. Daphne is a machine learning pioneer. She’s CEO and founder of insitro — a company that applies machine learning to pharmaceutical development. Daphne was a computer science professor at Stanford, co-founder and co-CEO of Coursera, and is a MacArthur fellow. 
+
+She was also named one of Time Magazine’s 100 most influential people, and I’ve had a copy of her book — Probabilistic Graphical Models on my bookshelf for more years than I know. So, welcome to the show, Daphne. 
+ 
+
+DAPHNE KOLLER: Thank you, glad to be here. And I would be very impressed if you actually read

@@ -1,0 +1,18 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt  in the ecosystem of simply being rigorous on reporting their costs would enable everybody else to start whole new – really sub areas of the field. 
+
+KEVIN SCOTT: Yeah, I think that’s an interesting idea and, certainly, something we will think about. I mean, one of the interesting things that I’ve seen in – so, my Microsoft Research reports to me at Microsoft. And, you know, one of the things that we’ve struggled with this same thing even internally, right? So, like, you may imagine that, you know, Microsoft is you know like has a very big capital and R&D budget, which means that you know, once we have one of these models, then everyone can use it, which isn’t even true internally. 
+
+So, you know, the amount of resources required to train a very big model and then to, like, go serve it in an application where you may have a billion users is –it’s sort of daunting on the training side, there’s just limited amount of compute. 
+
+[34:15]
+And so, like, you have to decide who is going to be training what. And on the serving side, we really do very carefully measure how much it costs to, you know, in terms of compute and power and depreciation on the capital for a single API call to a thing, because we have to make sure that when we’re putting it into a product or a service that you know, you’re profitable still. 
+ 
+And, so, you know, our teams inside of the company even have these issues about, like, you know, what engineering work do I have to do to make this thing useful for me? Because we haven’t even sorted the problems of access out inside of the company. And I know for a fact, you know, that everyone is struggling with this right now because these models are so big. 
+
+OREN ETZIONI: That makes a lot of sense, yeah. 
+
+KEVIN SCOTT: Yeah, so, you started your career – or early parts of your career, you were doing, you know, a bunch of super-interesting stuff in information retrieval and you – you know, you were starting companies, you – like I think may have built the first comparison shopping site on the Web. 
+
+How did you – it sounds like you’ve always been interested in artificial intelligence, and you know, my question is: Like, have you – you know, were you always able to see, you know, this through line through all of this stuff that you were doing, like, everything always connects back to AI? Or was it, like, all right, these are just super interesting problems of the moment that I have the skill you know to address and the interest in. 
+
+OREN ETZIONI: Anybody who tells you that over a long career and here I’m betraying my age, I’ve been doing this for 30-plus years

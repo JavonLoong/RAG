@@ -1,0 +1,24 @@
+Behind the Tech_Episode 30_Collier_Bloomberg_Transcript.txt ../JACOB COLLIER:
+I can imagine a world where there’s some kind of creative feedback from human to AI where the human gets a cool idea based off something that the human could never have imagined. If it generates ideas or makes space, then humans will fill it and that’s cool. That’s exciting.
+
+[MUSIC]
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC]
+
+CHRISTINA WARREN:  Hello, welcome to Behind the Tech. I’m Christina Warren, Senior Cloud Advocate at Microsoft.
+
+KEVIN SCOTT:  And I’m Kevin Scott.
+
+CHRISTINA WARREN: And today our guests are Ben Bloomberg and Jacob Collier in a bonus episode of their conversation with Kevin. If you didn’t catch the first half of their chat in the last show, definitely have a listen. 
+
+As many of you know, Jacob is a multi-Grammy Award-winning instrumentalist, songwriter, arranger and producer. He’s up for three Grammys this year, including Album of the Year. And Ben is a creative technologist and recent PhD graduate from MIT.  Jacob and Ben began their collaboration about six years ago and have partnered to create music, and video, and a one-man stage tour…well, you really just need to jump on YouTube and see for yourself because what they do is incredible.
+
+KEVIN SCOTT:  Yeah, you have no idea how excited I was to do this interview. Like we’ve been trying to get Jacob on the podcast for a while. I am an enormous fan of his and have been for several years now. I think like many people I discovered him on YouTube, where he began his musical career making these YouTube videos that were sort of visual and audio, just these rich, multilayered experiences, like everything from these sort of whimsical songs. Like he made this, video in a recording of The Flintstones, and won Grammy for that, like Flintstone’s arrangement. But he’s also like composed some incredibly compelling new music.
+
+The thing that makes him relevant to this podcast, which is about technology, is that they use technology in such interesting ways to help Jacob realize his vision, and like part of that is like, you know, how you put a song together that is so layered and interesting, with you know, so many vocals and so many instruments. 
+
+Like part of this is like how you translate that into a live performance which is very, very hard. And then part of

@@ -1,0 +1,15 @@
+Ep-45_Behind_the_Tech_Kevin Scott_Podcast_with_Phil_Spencer.txt  and enjoyable. 
+
+But like this point that you made about how like the games themselves are so complex, that you have to build layers of tooling to help manage this complex task of making a modern videogame, so you know, maybe we can talk a little bit about that. 
+
+So just for folks who know nothing about the gaming industry, like let’s take a, you know, top title, something like, you know, Halo, for instance, like, what does it take to make a game like that? 
+
+PHIL SPENCER: Yeah. Well, you’re talking now, when you think about all of the people involved in a creative process, whether it’s the multiplayer, people playing with each other online or the single player, which in a lot of ways are games that share asset, but are separate games from a creative design construct, you might have a thousand people that are part of actually getting a game out the door. You’re going to spend 100, 200 million, maybe even $300 million to get a game done of what we call like kind of your top, triple-A franchises of today, from us or a third party. I mean, it’s as big as any Hollywood blockbuster movie in terms of the production cost of getting the game done.
+
+And maybe there’s some ego in this statement as somebody who comes from the games industry, but I’ll say the complexity is higher because you’re kind of rewriting the film format, while you’re kind of creating the assets if you’re doing engine work at the same time. So the runtime is usually being evolved, if not created from scratch, while you’re creating these assets. 
+
+And this is why I think your point about the use of machine learning and AI, there’s always this draw from some of, hey, we can have more believable AI characters, we can have kind of algorithmically created worlds that you can go, and how cool would that be, and us in the games industry kind of come back to, and if we could just help me test this game, you know, that would be such a huge, huge breakthrough for us because it is as much about when I say tests, kind of validating the content, validating the scripts, validating the edge cases of a game. These are the things, as these games get so big, that are really, really the kind of depth of where time is spent and frankly, a lot of variability is spent in ensuring a game gets done. 
+
+We kind of know what it means to create a character or a world at least, or a scene. You know, we’ll do it a few times, and now we’ve got a benchmark validating all of that content for the tens of millions, if not hundreds of millions of players before they get it. That is the part that is just kind of not infinitely complex, but close to it, I think. 
+
+KEVIN SCOTT: Yeah, well and I think

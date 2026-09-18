@@ -1,0 +1,30 @@
+In topology, a branch of mathematics, the Knaster–Kuratowski fan (named after Polish mathematicians Bronisław Knaster and Kazimierz Kuratowski) is a specific connected topological space with the property that the removal of a single point makes it totally disconnected.
+ It is also known as Cantor's leaky tent or Cantor's teepee (after Georg Cantor), depending on the presence or absence of the apex.
+Georg Cantor's first set theory article was published in 1874 and contains the first theorems of transfinite set theory, which studies infinite sets and their properties.
+ One of these theorems is "Cantor's revolutionary discovery" that the set of all real numbers is uncountably, rather than countably, infinite.
+ This theorem is proved using Cantor's first uncountability proof, which differs from the more familiar proof using his diagonal argument.
+ The title of the article, "On a Property of the Collection of All Real Algebraic Numbers" ("Ueber eine Eigenschaft des Inbegriffes aller reellen algebraischen Zahlen "), refers to its first theorem: the set of real algebraic numbers is countable.
+In mathematics, a Jónsson–Tarski algebra or Cantor algebra is an algebraic structure encoding a bijection from an infinite set "X" onto the product "X"×"X".
+ They were introduced by .
+ , named them after Georg Cantor because of Cantor's pairing function and Cantor's theorem that an infinite set "X" has the same number of elements as "X"×"X"; the term "Cantor algebra" is also occasionally used to mean the Boolean algebra of all clopen subsets of the Cantor set, or the Boolean algebra of Borel subsets of the reals modulo meager sets (sometimes called the Cohen algebra).
+The Cantor medal of the Deutsche Mathematiker-Vereinigung is named in honor of Georg Cantor, the first president of the DMV.
+ It is awarded at most every second year during the yearly meetings of the society.
+ The prize winners are mathematicians who are associated with the German language.
+In mathematics, a Cantor space, named for Georg Cantor, is a topological abstraction of the classical Cantor set: a topological space is a Cantor space if it is homeomorphic to the Cantor set.
+ In set theory, the topological space 2 is called "the" Cantor space.
+ Note that, commonly, 2 is referred to simply as the Cantor set, while the term Cantor space is reserved for the more general construction of "D" for a finite set "D" and a set "S" which might be finite, countable or possibly uncountable.
+In mathematics, the Smith–Volterra–Cantor set (SVC), fat Cantor set, or ε-Cantor set is an example of a set of points on the real line ℝ that is nowhere dense (in particular it contains no intervals), yet has positive measure.
+ The Smith–Volterra–Cantor set is named after the mathematicians Henry Smith, Vito Volterra and Georg Cantor.
+ The Smith-Volterra-Cantor set is topologically equivalent to the middle-thirds Cantor set.
+In his work on set theory, Georg Cantor denoted the collection of all cardinal numbers by the last letter of the Hebrew alphabet, ת (transliterated as Taf, Tav, or Taw.)
+ As Cantor realized, this collection could not itself have a cardinality, as this would lead to a paradox of the Burali-Forti type.
+ Cantor instead said that it was an "inconsistent" collection which was absolutely infinite.
+In set theory and order theory, the Cantor–Bernstein theorem states that the cardinality of the second type class, the class of countable order types, equals the cardinality of the continuum.
+ It was used by Felix Hausdorff and named by him after Georg Cantor and Felix Bernstein.
+ Cantor constructed a family of countable order types with the cardinality of the continuum, and in his 1901 inaugural dissertation Bernstein proved that such a family can have no higher cardinality.
+In set theory, the Schröder–Bernstein theorem (named after Felix Bernstein and Ernst Schröder, also known as Cantor–Bernstein theorem, or Cantor–Schröder–Bernstein after Georg Cantor who first published it without proof) states that, if there exist injective functions "f" : "A" → "B" and "g" : "B" → "A" between the sets "A" and "B" , then there exists a bijective function "h" : "A" → "B" .
+ In terms of the cardinality of the two sets, this means that if |"A"| ≤ |"B"| and |"B"| ≤ |"A"| , then |"A"| = |"B"| ; that is, "A" and "B" are equipollent.
+ This is a useful feature in the ordering of cardinal numbers.
+In the philosophy of mathematics, specifically the philosophical foundations of set theory, limitation of size is a concept developed by Philip Jourdain and/or Georg Cantor to avoid Cantor's paradox.
+ It identifies certain "inconsistent multiplicities", in Cantor's terminology, that cannot be sets because they are "too large".
+ In modern terminology these are called proper classes.

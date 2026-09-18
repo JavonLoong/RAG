@@ -1,0 +1,23 @@
+EP-22_ Behind_the_Tech_Kevin_Drew-Endy_Bioengineering-pioneer.txt  how many side conversations and kind of one-to-one pairings of people meeting each other and having those sorts of interactions than what you might typically have when you've got, you know, 5,000 or 10,000 people crammed into a convention center. 
+
+KEVIN SCOTT:  Yeah, awesome. 
+
+CHRISTINA WARREN:  All right. Well, I'm curious right now to hear from Drew Endy and hear from his perspective, from a bioengineer perspective, all the different things that are going on right now.
+
+KEVIN SCOTT:  Great. Let's get started with Drew.
+
+[MUSIC]
+
+KEVIN SCOTT:  Our guest today is Drew Endy. Drew is a member of the Stanford University Bioengineering faculty. His research teams have pioneered amplifying genetic logic, rewritable DNA data storage, reliably reusable standard biological parts, and genome refactoring. Drew helped launch the new undergraduate majors in bioengineering at both MIT and Stanford. He also co-founded the iGEM Competition, a global genetic engineering olympics, now engaging over 6,000 students annually. In 2013, the White House recognized Drew for his work on opensource biotechnology. 
+
+Welcome, Drew. I'm so glad to have you on the show today.
+
+DREW ENDY:  Kevin, it's great to be here with you. Thank you.
+
+KEVIN SCOTT:  So, we usually get these conversations kicked off by talking a little bit about how you got into science and technology. So, were you interested in biology as a kid?
+
+DREW ENDY:  I grew up in Pennsylvania outside of Philadelphia near Valley Forge, and so, you know, I remember running around outside all the time, right? And so, that gives me, especially in the summertime, you know, those hot, humid eastern summers, a lot of engagement with biology, with the fireflies blinking, right? 
+
+And I was blessed to go to a public high school that had multiple offerings in biology. And so, we would do things like go camping on a stream and bring dissolved oxygen meters and just measure overnight at 3:00 a.m., 3:30 a.m., you know, how much dissolved oxygen is there in the stream, and collect the insects, the benthic macro invertebrates, like, oh my gosh. So, that was definitely a positive. 
+
+There's another side of it, though, which was like, “Oh, hey, memorize the Latin species names of 200 insects.” And I was lucky to get a D minus that quarter in biology, you know. Like, it just wasn't my thing. And so, I had that experience growing up sort of love of nature, call it, love of the outdoors, but not love of memorization. And there's a lot of memorization built into biology as a student, if you will.

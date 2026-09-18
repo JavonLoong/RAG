@@ -1,0 +1,53 @@
+The Siri Remote is a remote control device released in tandem with the 4th Generation Apple TV at an Apple Keynote Address by CEO Tim Cook on October 26, 2015 by Apple Inc. The Remote is designed specifically to work with the always-on Siri capable Apple TV.
+ The device is a successor of the original Apple Remote.
+ It is also compatible with the Apple TV 4K.
+The Apple Remote is a remote control device released in or after October 2005 by Apple Inc. for use with a number of its products which use infrared capabilities.
+ The device was originally designed to interact with the Front Row media program on the iSight iMac G5 and is compatible with some later desktop and portable Macintosh computers.
+ The first three generations of Apple TV used the Apple Remote as their primary control mechanism.
+ It has now been replaced with the Siri Remote in the fourth generation.
+ Prior to the Apple Remote, Apple produced several nameless IR remotes for products such as the Macintosh TV, TV tuner expansion boards, and the PowerCD drive.
+NetSupport Manager is a Windows-centric cross-platform remote control software, allowing remote screen control and systems management from a Windows or Windows Mobile device of Windows, Mac, Linux, Solaris and Mobile devices.
+ It was first released for DOS only networks in 1989.
+ It supports thumbnail display of unlimited remote systems (since version 10), and allows navigation between remote systems in a manner similar to a KVM switch.
+ Functionality includes file transfers, chat, and hardware/software inventory including software updates. Fewer features are supported for Linux and Mac clients.
+ In 2012 NetSupport introduced new software versions allowing Remote Control from iOS and Android tablets and smartphones as well as a new Mac OS Control.
+ Version 12 was released in October 2013, which extended platform support to include ChromeOS clients.
+ Mobile Remote Control from iOS and Android was also extended with additional capabilities.
+ All versions of NetSupport Manager require the pre-installation of the software on both the local (Control) and remote (Client) computers/devices prior to use.
+In electronics, a remote control is a component of an electronic device used to operate the device wirelessly from a distance.
+ For example, in consumer electronics, a remote control can be used to operate devices such as a television set, DVD player, or other home appliance, from a short distance.
+ A remote control is primarily a convenience feature for the user, and can allow operation of devices that are out of convenient reach for direct operation of controls.
+ In some cases, remote controls allow a person to operate a device that they otherwise would not be able to reach, as when a garage door opener is triggered from outside or when a Digital Light Processing projector that is mounted on a high ceiling is controlled by a person from the floor level.
+Front Row is a discontinued media center software application for Apple's Macintosh computers and Apple TV for navigating and viewing video, photos, podcasts, and music from a computer, optical disc, or the Internet through a 10-foot user interface (similar to Windows Media Center and Kodi).
+ The software relies on iTunes and iPhoto and is controlled by an Apple Remote or the keyboard function keys.
+ The first version was released October 2005, with two major revisions since.
+ Front Row was removed and discontinued in Mac OS X 10.7.
+A universal remote is a remote control that can be programmed to operate various brands of one or more types of consumer electronics devices.
+ Low-end universal remotes can only control a set number of devices determined by their manufacturer, while mid- and high-end universal remotes allow the user to program in new control codes to the remote.
+ Many remotes sold with various electronic include universal remote capabilities for other types of devices, which allow the remote to control other devices beyond the device it came with.
+ For example, a VCR remote may be programmed to operate various brands of televisions.
+MacScan is an anti-malware utility for Apple's Mac OS X developed by SecureMac.
+ It is aimed at removing malware (including spyware, Trojan horses, keystroke loggers, and tracking cookies).
+ It was the first anti-spyware program released for Mac OS X.
+ In addition, the application scans for remote administration programs, like Apple Remote Desktop, allowing users to verify that such programs are installed only with their authorization.
+Apple Remote Desktop (ARD) is a Macintosh application produced by Apple Inc., first released on March 14, 2002, that replaced a similar product called "Apple Network Assistant".
+ Aimed at computer administrators responsible for large numbers of computers and teachers who need to assist individuals or perform group demonstrations, Apple Remote Desktop allows users to remotely control or monitor other computers over a network.
+Apple Watch (stylized as WATCH) is a line of smartwatches developed, designed, and marketed by Apple Inc. It incorporates fitness tracking and health-oriented capabilities with integration with iOS and other Apple products and services.
+ The original generation of the device was available in four variants: Apple Watch Sport, Apple Watch, Apple Watch Hermès, and Apple Watch Edition; each distinguished by different combinations of cases and first- or third-party interchangeable bands.
+ Apple Watch relies on a wirelessly connected iPhone to perform many of its default functions such as calling and texting.
+ It is compatible with the iPhone 5 or later models running iOS 8.2 or later, through the use of Wi-Fi or Bluetooth.
+ Announced by Apple CEO Tim Cook in September 2014, the device was released in April 24, 2015.
+ The Apple Watch quickly became the best-selling wearable device with the supply of 4.2 million smartwatches in the second quarter of the 2015 fiscal year.
+ The second generation of Apple Watch, released in September 2016, includes two tiers: Apple Watch Series 2 and Apple Watch Series 1, which includes the S1P chip, but is otherwise identical to the original.
+ The Series 3 was announced at a presentation at Apple Park on September 12, 2017 and was released on September 22, 2017.
+Trainmaster Command (TMCC) is Lionel's electronic control system for O scale 3-rail model trains and toy trains that mainly ran from 1994 to 2006.
+ Conceptually it is similar to Digital Command Control (DCC), the industry's open standard used by HO scale and other 2-rail DC trains.
+ It has one advantage over DCC, in that TMCC-equipped locomotives can run simultaneously with non-TMCC locomotives and Lionel Legacy engines as well as LionChief and LionChief Plus equipped locomotives.
+ The latter require a dedicated remote controller.
+ MTH Corporation's DCS controller can be configured to control TMCC locomotives, and all four systems (TMCC, Legacy, LionChief/LionChief+ and DCS) can be operated on the same track simultaneously.
+ Each simply requires a constant track voltage (18 volts).
+ TMCC/Legacy "broadcasts" it's signal to the antenna on the locomotives which listen for signals that first identify the particular locomotive by number and then it issues given commands as to speed, direction, sounds, lighting and other features.
+ DCS performs similar functions but transmits a carrier over the rails which are picked up through the locomotive's electrical pickup contacts.
+ While TMCC/Legacy and DCS remote controls relay operator commands to a device that transmits them to the train (Command Base or Track Interface Unit), LionChief/LionChief+ also issue remote control commands but the remote and locomotive are married and each locomotive requires a separate remote control.
+ This system requires no additional wiring as the control is directly "narrowcast" to the locomotive in the same way as a television remote control or garage door opener functions.
+ In 2017, Lionel released a universal remote for LionChief+ that will learn addresses for up to three locos at a time, simplifying the operation of multiple trains.

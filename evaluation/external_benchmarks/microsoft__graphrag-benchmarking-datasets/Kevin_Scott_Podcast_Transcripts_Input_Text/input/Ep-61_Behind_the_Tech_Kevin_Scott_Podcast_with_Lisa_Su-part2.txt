@@ -1,0 +1,22 @@
+Ep-61_Behind_the_Tech_Kevin_Scott_Podcast_with_Lisa_Su.txt  my first AMD system that I’d built in a really long time, but I also helped build a threadripper system for a friend, who claims that they needed more compute than I think they actually did, but it was really fun for me, anyway, and so I’m right there with you. I don’t have the same, you know, passion for low-level languages and system calls like you do, but I’m a huge fan of Lisa Su and AMD, and I’m really looking forward to this interview.
+
+[MUSIC]
+
+KEVIN SCOTT: Dr. Lisa Su is Chair and Chief Executive Officer at AMD, where she’s led the company’s transformation into a high-performance and adaptive computing leader. She’s passionate about working closely with partners to deliver the next generation of computing and AI solutions that can solve the world’s most important challenges. 
+
+In 2018, she was elected to the National Academy of Engineering in 2021. She was recognized by the IEEE with its highest semiconductor honor, the Robert N. Noyce medal, and was appointed by President Biden to the President’s Council of Advisors on Science and Technology. 
+
+She also serves on the Board of Directors for the semiconductor Industry Association.
+
+Lisa, welcome to Behind the Tech. Thank you so much for joining me today.
+
+
+LISA SU: Oh, it’s great to be here with you, Kevin. Thanks for having me. 
+
+KEVIN SCOTT: Yeah. So we always start with folks from the beginning. So I’m just curious how you got interested in the first place in science and technology, like did it start when you were a kid, with your parents, with – like, what were – how did it begin.
+
+LISA SU: Yeah, absolutely, so you know, Kevin I was born in Taiwan. I actually grew up in New York, and my dad was a mathematician. He was actually statistician, and so, you know, we would sit at the dining room table, and he would, you know, make me do multiplication tables with him so that I had to be decent at math, but I I’ve always really enjoyed, you know, sort of just seeing how things worked and building things, so one of my earliest engineering memories was my brother and I were playing with his remote-controlled car, and it was kind of going down the hallway, and then it just suddenly stopped, and I was like, "Why did it stop?" And so, you know, I opened it up and saw there was a loose wire, and if I put the wire back in, it started working again, and that was just super-interesting, that that’s how things worked, so I think that’s –
+
+KEVIN SCOTT: How old were you?
+
+LISA SU: I don’t know, I was probably 10, or something like that, and my brother was younger, my younger brother, and yeah, I just kind of got curious about how things

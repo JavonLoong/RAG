@@ -1,0 +1,19 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  over time, got to powering questions and all sorts of other things. So that was really exciting to see how the tech transfer happens from academic research to actual products.  
+
+KEVIN SCOTT:  Explain to folks like how it’s different.  Like, building a product where it just sort of has to work all the time for all of the users is sometimes different from building a thing that’s good enough to write a paper about. 
+
+PERCY LIANG:  Yeah, definitely.  I think there is quite a big gap between what counts as a product and what counts as a paper.  The desiderata are also different, right?  I think in academia, the currency is intellectual ideas.  Do you have something interesting to say?
+
+A lot of the techniques actually are interesting, but they aren’t really ready to be deployed because they don’t work nearly well enough.  And if you’re launching a product, it has to work, like you said, 99% of the time at least.  And it can’t make embarrassing errors and it has to be fast and usable.  
+
+So I think there’s a lot of pieces that have to go into making a product.  Also, in academia, people work on data sets, but the data sets are insufficient to represent the diversity of things that you would see in the real world.  So that’s something that needs to be solved as well. 
+
+I think there’s actually a lot of interesting research problems around the kind of ecosystem of product deployment, which are not so much the focus of academic research probably because it’s actually hard to get an idea of that ecosystem, but it’s super valuable.  
+
+KEVIN SCOTT:  So did you ever -- like either yourself or the teams that you work with struggle with this split between like the sort of very intellectually interesting and challenging part of building a product versus the very like, you know, sort of mundane, “grunty” part of building a product? 
+
+PERCY LIANG:  So, at that time, I wasn’t interested in writing a paper, I just wanted to kind of execute.  I don’t think there was so much of that tension.  It was just “do whatever it takes to get this out the door.”  
+
+KEVIN SCOTT:  It’s super interesting because I’ve had -- I’ve managed teams of people doing machine learning work and -- who had PhDs in machine learning.  And like the thing that attracted them to machine learning in the first place is they were interested in like the core research, like the challenging problem, like, how to make this very complicated thing, like, you know, one epsilon better than what preceded it, and who got frustrated very quickly with what production machine learning looks like, which is more like lab science than it is like theoretical computer science, for instance.  
+
+Sometimes I’ve had -- I’ve had people who, you know, like,

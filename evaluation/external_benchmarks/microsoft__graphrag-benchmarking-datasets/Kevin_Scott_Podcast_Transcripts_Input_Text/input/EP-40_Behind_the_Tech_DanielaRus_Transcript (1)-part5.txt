@@ -1,0 +1,15 @@
+EP-40_Behind_the_Tech_DanielaRus_Transcript (1).txt ates me, because if I think about how I might go, solve the – or try to solve the coffee challenge, if I were a graduate student now, I would probably strap one of these commodity six axis robotic arms. I would 3D print a custom end effector for it. I’d put it on some sort of mobile cart. 
+
+And it feels to me a little bit like that’s sort of cheating, right? That’s still not the dexterous manipulation of objects that humans can do quite easily from the time that they’re infants. So, how do you think about how the field is progressing? So, on the one hand, it’s, like, fantastic that we have all of this robotic technology that is practically solving a bunch of important problems, but we still aren’t quite there yet with full human level dexterity.
+
+DANIELA RUS: Well, absolutely, and this remains a very big challenge in the field. But as you said, we’re making progress and we are also understanding the impact of the various components of the machine for solving the problem. And so, I really believe that in order to solve any meaningful problem, you really need to have the right machine body for that problem. You really need to have the right machine brain and the right interaction with the machine. 
+
+So, what do I mean by this? Well, let’s say you want to run GPT3 on your mobile phone. You can’t, because you don’t have a body that’s capable of that task. Let’s say you want a robot that needs to climb stairs, but all you have is a robot on wheels. The robot is not going to be able to deliver on the challenge. 
+
+And so, the body plays an important role in how we think about solutions to problems. But once you have a body, you also need to have a brain that’s able to control the body to deliver on what it’s meant to do. And that requires advancements in theory, advancements in algorithms, advancements in systems and architectures. 
+
+So, really, we need to connect the two pieces. We need to think about the body and the brain as being connected, as influencing one another. And in my research, I started thinking about design as a process that simultaneously considers the robot body and the robot brain, or the machine body and the machine brain, because these ideas are not limited to robots. Computers also fall under the same category.
+
+So, in some sense, a few years ago, we started working on what we call the robot compiler, where the idea is you give the machine or you give the computational design platform the task you want the machine to do. And what you expect is a solution that involves the hardware configuration, and also the software and programming environment required to deliver the function of that machine. 
+
+And oh, and I didn’t tell you about interaction. So, if you want to use the machine, then you have to

@@ -1,0 +1,18 @@
+EP-10_ Behind_the_Tech_Kevin Scott_Podcast_with_Surya_Ganguli.txt  totally make sense.
+And like because we got ourselves unified as a country around this bold goal that we had to, you know, go to the moon and start the space race, like I think it gave this incredible permission to all of these artists and thinkers to like sort of imagine like what this future could be.  And I sort of feel like we're missing that a little bit right now with AI. Anyway we could wax poetic about all of this for a really long time, but like I –
+CHRISTINA WARREN:  We could go on and on, but—
+KEVIN SCOTT: And on and on--
+CHRISTINA WARREN: But we have -- we should probably meet our guest, right?
+KEVIN SCOTT:  Yeah, let's talk to Surya.
+
+[MUSIC]
+
+KEVIN SCOTT:  I'm very pleased to introduce today's guest, Surya Ganguli. Surya is an Assistant Professor of Applied Physics, and by courtesy of Neurobiology and Electrical Engineering at Stanford University.  He's considered by many to be one of the leading experts in the field of artificial intelligence.  Welcome, Surya, and thanks for being on the show.
+SURYA GANGULI:  Yeah, thanks for having me.
+KEVIN SCOTT:  So, I got to be familiar with your work through the work that I've started doing with Stanford's Human-Centered AI Institute.  And so, we're going to get to all the cool stuff that you're doing right now, but I'm super curious.  You’ve got this crazy interesting educational background where you just -- you seem super curious.  Where did that come from?  How did you start in tech as a kid?
+SURYA GANGULI:  Yeah, that was kind of my misspent, wayward youth.  (Laughter.)  So, you know, I kind of always wanted to be a scientist.  And then, you know, I grew up in Irvine.  I read all the books in the public high school about artificial intelligence, and they were all written by old professors at MIT.  So, I kind of wanted to work in AI even in high school.
+So, I went to MIT.  I took my first AI course.  This was, you know, end of the '90s, or so.  It was all old-school expert systems, logic-based systems, all that.
+KEVIN SCOTT:  And what year was this?
+SURYA GANGULI:  This was around -- in the middle of the '90s, essentially.  
+KEVIN SCOTT:  Okay, great.
+SURYA GANGULI:  So then, you know, I asked my professor, "Shouldn't we try to reverse engineer the brain?" and I'll never forget his answer.  He told me, "No, no,

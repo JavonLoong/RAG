@@ -1,0 +1,17 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt , we had like – like 5,000 different titles, partly because I realized at some point, my God, like, this company’s people systems are basically like, I don’t know, like a Windows 95 computer connected to the modern Internet, unpatched, giving everyone root access. And like, if that’s your situation, then you probably are going to end up with really random, hard–to–document, like, incentive systems in the company. And you will never spot who is acting according to which. 
+
+And I think, you know, like, I don’t know, these days, all our people systems, titling, comm frameworks, levels, disciplines, and sub disciplines, and all these kinds of things exist in a GitHub repository, that you have to formulate a pull request against if you want to make a change. And then there’s going to be a discussion and unless it is committed, this is not happening. 
+
+And that’s not actually that crazy of a change, although it’s a little bit of a hard tool to initially explain to the HR team. But once you’re there, everyone loves it because now, you know, that – something that was previously kind of crazy, suddenly is totally… like, there’s a shared understanding of how the system evolves forward. 
+
+KEVIN SCOTT: Yeah. I – so, I love that example. I think you and I were chatting about that at some event a few months ago. And I was like, this is – it’s like, really, really inventive and creative, because part of the struggle that you deal with in these complicated organizations, where you’ve got a lot of different people with a lot of different information is just sort of sharing context. 
+
+Like, how did this decision get made? What is the real problem that we’re trying to solve? Like, what have we tried before that didn’t work? And, like, what did we try before that did work? And, like, what can we all learn from these? So, like, having a way to, like, codify these decisions, like, where you’ve got the whole pull request history and, I mean, I think it’s really smart. 
+
+TOBI LÜTKE: And it’s extremely powerful. Like, we’ve been doing, like, I've been working on this one a while, and I actually, you know, write code along on this repository, which is doing this kind of thing. And they’re using, like, tools, which are, again, made by engineers for engineering problems, but actually generalized to people system cases in ways that I think isn’t clear to people. 
+
+So, for instance, you’ll like this because this is your thing. Probably the most sort of politics–inducing process that I’ve ever encountered in my company is headcount allocation. 
+
+KEVIN SCOTT: Yeah. (Laughter.)
+
+TO

@@ -1,0 +1,35 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt  the way.
+
+KEVIN SCOTT:  So, was he an epidemiologist by training?
+
+DANNY HILLIS:  Yep, that's right.
+
+KEVIN SCOTT:  Okay, and what did your mom do?
+
+DANNY HILLIS:  Well, actually, my mom is a great story, because my mom quit school to put my father through medical school.  And I always knew she was super smart.  But because she wasn't educated, people did not treat her like she was smart, and she had a southern accent, and in those days that caused you to be ignored.
+
+KEVIN SCOTT:  Yeah, well, it might still cause you to be ignored.
+
+DANNY HILLIS:  Well, when I went to high school, she went back to college and finished college.  And then, when I went to college, she went to graduate school, and got her PhD in biostatistics.
+
+KEVIN SCOTT:  Wow.
+
+DANNY HILLIS:  Yeah, and then all of the sudden everybody started taking her seriously as a statistician and --
+
+KEVIN SCOTT:  Well, I mean, that is an amazing story.  I mean, sad that they didn't take her seriously before she got her PhD in life.
+
+DANNY HILLIS:  Well, it has a happy ending.
+
+KEVIN SCOTT:  That's great.  And so, when you were a kid it was like, this was before the personal computing revolution, so, like, what was your first contact with computers?
+
+DANNY HILLIS:  So, partly, I was very fascinated by technology, because I was far away from it. So, I was in places where, you know, it wasn't happening.  And so, that made it sort of more enticing for me.  And when I was living Kolkata, I went down to the British Council had a library of English books.  You couldn't take them out, but you could read them there.  And I found Boole's “Laws of Thought.”
+
+KEVIN SCOTT:  Wow.
+
+DANNY HILLIS:  And, you know, it was too advanced for me, but I kind of got the basic idea of Boolean logic, and I thought this is really cool.  
+
+This is how computers work.  And so, I wanted to build one, but, of course, I couldn't.  You couldn't buy a transistor or --
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  -- or a relay or anything.  So, I built my own switches by using screen from screen doors and nails that stuck into them.  And I cannibalized lots of flashlights, and I built my first computer, which was a, basically a fixed logic array that played tic tac toe.  So, you would

@@ -1,0 +1,50 @@
+Tijuca Point ( ) is a prominent rock point forming the northwest side of the entrance to Hound Bay on the north coast of South Georgia.
+ The name Penguin Point was probably applied to this feature by DI personnel who made a running survey of this coast in 1930.
+ Following the SGS, 1951–52, it was recommended that this name be altered to avoid confusion with the many other "Penguin" names.
+ The name Tijuca Point was given by the United Kingdom Antarctic Place-Names Committee (UK-APC) for the "Tijuca", a three-masted barque built at Nantes in 1866.
+ From 1908 onwards, she was used as a transport vessel by the Compania Argentina de Pesca, lying between Buenos Aires and the whaling station at Grytviken.
+ She foundered in 1946.
+Picoeukaryotes are picoplanktonic eukaryotic organisms that range in size from 0.2 – 2.0 µm.
+ They are distributed throughout the world’s marine and freshwater ecosystems and constitute a significant contribution to autotrophic communities.
+ Though the SI prefix pico- might imply an organism smaller than atomic size, the term was likely used to avoid confusion with existing size classifications of plankton.
+Restitution Point ( ) is a point marking the north side of the entrance to South Bay in Prince Olav Harbor, on the north coast of South Georgia.
+ The name Factory Point, derived from the nearby whaling station (now no longer operating), was given for this feature by DI personnel in 1929.
+ There is also a Factory Point at Leith Harbor, less than 20 nautical miles (37 km) to the NW.
+ Since Factory Point in Leith Harbor is better known locally, it has been retained.
+ To avoid confusion the name Factory Point is rejected for the feature now described, and a new name Restitution Point is approved.
+ The S.S. years at Prince Olav Harbor before the shore station was built there.
+Turret Point ( ) is a point marked by conspicuous high rock stacks, forming the east limit of King George Bay on the south coast of King George Island, in the South Shetland Islands.
+ The point was charted in 1937 by DI personnel on the "Discovery II" who gave the name Turret Rocks, but this has led to confusion with a group of rocks lying close offshore.
+ The United Kingdom Antarctic Place-Names Committee (UK-APC) recommended in 1960 that since the feature originally named is a land feature, the term point be used to avoid confusion and ambiguity.
+Classic Hits (known as Kool Gold until June 17, 2012) is a 24-hour music format produced by Dial Global.
+ Its playlist is composed of oldies music from the mid-1960s to mid-1980s, from artists such as Billy Joel, The Beatles, The Temptations, Fleetwood Mac, Hall and Oates and dozens more artists mainly targeted at listeners 45-54.
+ It was known as The Oldies Channel until they changed their name to "Kool Gold" to avoid confusion with the ABC Radio/Citadel Media "The True Oldies Channel".
+ It was branded as Kool Gold Timeless Classics as part of Dial Global's revamped satellite format group, but has then reverted to its original Kool Gold ident to avoid confusion with Citadel's former Timeless format, which once used the "Timeless Classics" positioner.
+Cheapman Bay is a bay 4 mi wide, indenting the south coast of South Georgia close west of King Haakon Bay.
+ The name Cheapman Strand was given to a feature in this vicinity by an American sealing expedition which visited South Georgia in 1877–78.
+ The name was recorded as Chapman Strand and applied to this bay by Matthews in 1931.
+ Langestrand (long beach) has been used locally for the beach at the head of the bay and appeared for the bay itself on a British Admiralty chart of 1931.
+ However, the South Georgia Survey, 1951–52, reported that "Langestrand" is a descriptive term, not a placename, and is applied by sealers to at least four other beaches in South Georgia.
+ To avoid confusion, the name Cheapman Bay has been approved for this feature and all other names rejected.
+A UIMID (user identity module identifier) is a 32-bit Electronic Serial Number (ESN) stored in a R-UIM or CSIM ('smart card') used for TDMA or CDMA2000 phones (mainly the latter).
+ It is given a different name to avoid confusion with the hardware ESN stored in the phone.
+ In all known systems the UIMID displaces the ESN in signaling (based on setting bit 1 of the 'UsgInd' field to '1' in the card).
+ Because the UIMID is allocated from the same numbering space as ESN its existence is transparent to the network.
+ The reason the UIMID is transmitted instead of the ESN is because the card contains the MIN or IMSI and devices such as the HLR running the ANSI-41 mobility management protocol insist on a static association between these identifiers for subscription validation.
+ The HLR will store the MIN or IMSI alongside the ESN in each record, and if an ANSI-41 message is received containing a different pair it will be rejected as invalid.
+The terms inoculation, "vaccination", and "immunization" are often used synonymously to refer to artificial induction of immunity against various infectious diseases.
+ This is supported by some dictionaries.
+ However, there are some important historical and current differences.
+ In English medicine, inoculation referred only to the practice of variolation until the very early 1800s.
+ When Edward Jenner introduced smallpox vaccine in 1798, this was initially called "cowpox inoculation" or "vaccine inoculation".
+ Soon, to avoid confusion, smallpox inoculation continued to be referred to as "variolation" (from variola = smallpox) and cowpox inoculation was referred to as "vaccination" (from Jenner's use of "variolae vaccinae" = smallpox of the cow).
+ Then, in 1891 Louis Pasteur proposed that the terms vaccine and vaccination should be extended to include the new protective procedures being developed.
+ "Immunization" refers to the use of all vaccines but also extends to the use of antitoxin, which contains preformed antibody to e.g. diphtheria or tetanus exotoxins. "Inoculation" is now more or less synonymous in nontechnical usage with "injection" etc., and the question e.g. 'Have you had your flu injection/vaccination/inoculation/immunization?'
+ should not cause confusion.
+ The focus is on what is being given and why, not the literal meaning of the technique used.
+John Joseph "Johnny" Kelley (December 24, 1930 – August 21, 2011) was the winner of the 1957 Boston Marathon and the marathon at the 1959 Pan American Games and a member of two United States Olympic Marathon teams.
+ He was often dubbed John "The Younger" to avoid confusion with Johnny "The Elder" Kelley, the winner of the 1935 and 1945 Boston Marathons.
+ The two men were not related.
+Brutus Island ( ) is a small island lying near the center of Prince Olav Harbour on the north coast of South Georgia.
+ The descriptive name Saddle Island was given for this feature, probably by a British expedition under Ernest Shackleton, 1921–22, but the same name is used elsewhere in the Antarctic; to avoid confusion a new name has been approved for this feature.
+ The name Brutus Island, after the hulk "Brutus", which was towed across with coal from South Africa by two small catchers and has for many years been moored alongside the whaling station in Prince Olav Harbour, was proposed by Harold Salvesen.

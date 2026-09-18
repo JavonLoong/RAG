@@ -1,0 +1,16 @@
+EP-9_ Behind_the_Tech_Kevin Scott_Podcast_with_Reid_Hoffman.txt  me.  
+REID HOFFMAN:  Yep.  And the other thing that was amazing for me at Stanford, so I talked about the students, but I met some professors there -- and, because, you know, both you and I going through our high schools, like, oh, we're super smart, I'm very smart, you know, because you look around and you say, "Well, I've got intellectual capability and it's not arrogant, it's just I am smart."  
+I went to Stanford and I met people, like some of the professors, Peter Galison and Jean-Pierre Dupuy and I went, "I am never going to be as smart as you.  Ever."  
+KEVIN SCOTT:  Right.  Yes.  
+REID HOFFMAN:  Like, I could train my whole life and it's never going to happen.  
+KEVIN SCOTT:  Yeah.  
+REID HOFFMAN:  Okay, so, smart is only part of the thing.  What else am I doing?  (Laughter.) 
+KEVIN SCOTT:  Yeah, yes.  And so you declare symbolic systems at some point, which -- explain symbolic systems to folks.  
+REID HOFFMAN:  It’s a combination of kind of psychology and philosophy and science and it's like what is that way that we understand it ourselves and what are the ways that we talk to each other and we get there? So I was going to create my own major because Stanford actually has a pretty good program for doing that.  And then as I started doing it, I literally read the, oh, we're creating this new interdisciplinary major called Symbolic Systems.  And it's kind of a combination of cognitive science and artificial intelligence.  
+And one of the things it allowed you to do was to declare your own concentration.  So,  I made a new concentration, so as opposed to a new major, called computation and cognition because it's like, well, what are the things that we learn from computation that make us better cognitively?  And what are the ways in which cognition is like computation?  
+KEVIN SCOTT:  Right. 
+REID HOFFMAN:  Was the thing that I was like, okay, that's the -- that's what I want to work on. 
+KEVIN SCOTT:  And was that influenced at all by the -- like Hoftstadter's book had come out, so yeah, that was -- yeah.  
+REID HOFFMAN:  And I'd been planning on re-reading it recently.
+KEVIN SCOTT:  I should do the same thing.  It's been a long while.  And, like, that was book was amazingly impactful.  
+So, in some ways, it was a little bit of a brave move I think at the time to choose an AI-ish discipline, because

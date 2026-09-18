@@ -1,0 +1,15 @@
+EP-40_Behind_the_Tech_DanielaRus_Transcript (1).txt  most extraordinary students on building new robots, designing and inventing new machines is really living the dream. It’s getting to work on an area that brings together the world of computation and the physical world of mechanisms and materials. 
+
+KEVIN SCOTT: That is so interesting. I mean, I – it’s hard to imagine what it must have been like as a teenager, but I’ve got to say I’m pretty impressed that you learned to cut threads on a lathe when you were in high school. Like, that’s – that’s one of the coolest things I’ve heard in a while. (Laughter.) So, you – you got all of this experience as a high school student. So, where did you go to college and what did you major in? 
+
+DANIELA RUS: So, I went to college at the University of Iowa. My family migrated to the U.S. just around the time I was finishing high school. And as an undergraduate student, I studied computer science, mathematics and astronomy. And then, one day, I had a chance to speak with our then distinguished lecturer, this is Professor John Hopcroft. John is one of the giants and founding fathers of computer science. 
+
+So, he gave a talk and after the talk, I had a chance to talk with him, and he told me that classical computer science was solved. Okay, so, by that, he meant that a lot of the algorithmic architecture and systems problems that were posed at the beginning of the field had solutions. And then John said, “It is time for the great applications of computing.” I think he used the word “grand” applications of computing, and the application he was most passionate about at that time was robotics. And he saw robotics as a way of enabling computation to interact with the physical world. 
+
+Now that, to me, was absolutely fascinating. It was a tremendous opportunity, and I decided to go and work with John. So, I recall an early conversation with John where he said, “Wouldn’t it be great to have robots that could make and bring coffee?” And this kind of became a challenge for my Ph.D. studies. 
+
+But the robots that existed back then were just these big, bulky, large industrial manipulators that could not execute the kind of delicate operation that’s needed to pick up a coffee cup or a teaspoon.
+
+So, John’s coffee challenge enabled me to realize the important role of the body of the machine in the process of generating autonomous behavior. And I started working on algorithms for computing that interacts with the physical world. I did not have much of a chance to – to think about different types of robot bodies, but I was thinking about what a different kind of robot could, in principle, do. 
+
+So, I worked on in-hand manipulation, so essentially moving things with your hands. I learned on pushing objects, on rotating objects, on moving furniture. I developed a lot of algorithms

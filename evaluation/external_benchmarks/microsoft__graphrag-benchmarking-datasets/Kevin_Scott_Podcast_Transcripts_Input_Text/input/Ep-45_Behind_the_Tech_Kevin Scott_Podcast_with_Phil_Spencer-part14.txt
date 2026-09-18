@@ -1,0 +1,17 @@
+Ep-45_Behind_the_Tech_Kevin Scott_Podcast_with_Phil_Spencer.txt  in something called human-centered design and engineering, the HCDE department at UW, and which is this mix of kind of human condition and code, and even hardware and the interaction between all of these things. When I was there, it was scientific and technical communication. It’s changed names a couple of times. 
+
+But I found that department through this Engineering 101 class and I just love the idea that we would be sitting there working on computers, building UI elements, writing code, and that intersection of kind of the human condition and the capability of technology was just so interesting to me.
+
+And that’s the department I joined and four years later, I was done and got offered a software development engineer job at Microsoft after my two year internship. 
+
+KEVIN SCOTT: So what was it like in those early days at Microsoft, either internship or fulltime engineer? So I obviously wasn’t there in the early days and my – you know, my impression of what it was like has been through talking with folks like you who were actually there. And there was this famous Douglas Coupland book called Microserfs that yeah, talking to a bunch of Microsoft folks who were there at the time Coupland wrote the book, it sounds like it got some things right. 
+
+So yeah, I’m just sort of interested. I mean, it was a very different time and probably felt magical because this was like when Microsoft was on its just really exponential rise, mostly because the personal computing ecosystem was on its exponential rise. 
+
+PHIL SPENCER: Yeah, a little bit like my UW decision, University of Washington decision. So, Min-Yi, who was the vice president in charge of Microsoft Press and the CD-ROM group, offered me this internship, and my choice was between going and joining or going back to Computer Mart for another summer, a job I loved. And his pitch to me, or the internship pitch was at the end of summer, I get to keep my PC that I’m working on, and that’s what flipped the bid for me and had me join Microsoft for that internship the first year. Because I was right across the bridge, I worked full time for the first two years, and I’d just kind of alternate my classes and where I was.
+
+In terms of the environment here, you know, it was, I’m going to guess – I’ve looked at this before. I think there was about 3,500 employees when I started my internship. And what are we now, like 200,000 or some kind of crazy number like that? 
+
+KEVIN SCOTT: Yeah.
+
+PHIL SPENCER: It – I will say the similarities are mostly in name today, like, comparing what it was like back then to what it is today. But I will say it’s still kind of an engineering-led, product led company. Back then, the transparency – everything, like I had the full Windows install base, codebase

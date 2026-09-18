@@ -1,0 +1,37 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt  like, you stopped doing Thinking Machines, and, like, moved on to something else.  Like, talk a little bit about, like, how, like, what happened there.
+
+DANNY HILLIS:  So, well, first of all, I didn't know anything about making a business.  So, I made a lot of mistakes in how I set up the business.  And at some point we started taking money away from Cray Computer, which had been the most profitable Fortune 500 company when we started, and stopped being so profitable as we started selling these parallel machines.
+
+And so, they got some laws passed that you couldn't export anything more powerful than a Cray.  And also, the DOD had to spend any super computer it bought, it had to be op code compatible with.
+
+KEVIN SCOTT:  Wow.
+
+DANNY HILLIS:  So, we basically, it all got totally blindsided by that.  And because we had sort of managed the company for growth, growth, growth, growth, it was just an exponential curve.  When that didn't happen, we ran into a cash crunch.  And so, we had to sort of do, you know, Chapter 11 distressed sale.  You know, so it went from sort of everything looking great and, you know, very, very quickly went downhill.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  I learned a lot of I mean, if I knew what I knew now, I'd never get a business in that position. 
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  But I wasn't really thinking about the business, and, so, but it had a happy ending, which was that a lot, the whole hardware side of the company got bought by this workstation company called Sun Microsystems.  And so that team went, and I managed to, Sun agreed to give every employee that came a share of Sun Microsystems stock for a share of Thinking Machine stock.
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  So, they all did very well.
+
+KEVIN SCOTT:  Oh, that's great.
+
+DANNY HILLIS:  And so, it did sort of help make the web happen, and stuff like that.
+
+KEVIN SCOTT:  And some of those people went on to, like, have very senior roles --
+
+DANNY HILLIS:  Oh, yeah.
+
+KEVIN SCOTT:  -- at Sun Microsystems and did very all sort of, like, cool things there.
+
+DANNY HILLIS:  Yeah.  So and part of it went to Oracle and did very well there.  So, it was, you know, still a really nice, I'd say alum team.
+
+KEVIN SCOTT:  Yeah.  
+
+DANNY HILLIS:

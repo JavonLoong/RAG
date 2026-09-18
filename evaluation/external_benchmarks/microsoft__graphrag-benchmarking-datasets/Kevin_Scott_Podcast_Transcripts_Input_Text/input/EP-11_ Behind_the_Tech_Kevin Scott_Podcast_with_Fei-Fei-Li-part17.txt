@@ -1,0 +1,16 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt  LI:  Absolutely.  We had an alum who one of the grandparents unfortunately passed away due to a delay of ambulance service.  Now, she's working on machine learning and optimizing ambulance dispatch. 
+KEVIN SCOTT:  Yeah. 
+FEI-FEI LI:  I think that's why we need all walks of life is they because they bring the understanding and empathy you said and also the experience to innovate and create in ways that just one slice of people couldn't possibly cover.  
+And you said the right thing, people is at the heart of all this.  When AI4ALL was founded, our slogan was, "AI would change the world, who will change AI?" 
+KEVIN SCOTT:  Right. 
+FEI-FEI LI:  That is the core of this problem.  
+KEVIN SCOTT:  Yeah, it's awesome.  So, what are you most excited about?  And I'll ask it two different ways.  So, like, what are you most excited about from a research perspective right now in AI?  And, like, what are you most excited about from a social good perspective, like --  
+FEI-FEI LI:  And, hopefully, they actually are not mutually exclusive. 
+KEVIN SCOTT:  Yes, I very much hope that they're not.  (Laughter.)  
+FEI-FEI LI:  I think from basic research science point of view, there is one direction that I'm exploring with my collaborators at -- students at Stanford that really excites me.  And it goes back to what we were saying about the babies and Scientists in the Crib because early childhood is this rich period of learning the world that is in such fascinating ways. 
+This is where you're not labeling a thousand cat images and showing it to a baby and saying, "Cat, cat, cat," right?  That just doesn't work.  They're just exploring out of curiosity and all that.  
+So, there's a project at Stanford I'm involved in and I have students working on it, it's curiosity-based learning is where we design machine learning agents and put them unfamiliar environment and they have capability to interact with the objects in the environment and watch how the agent, through these kind of curiosity-based learning, develop capabilities of recognizing objects or understanding physical properties of objects. 
+KEVIN SCOTT:  And is this a variation of reinforcement learning where -- 
+FEI-FEI LI:  It uses reinforcement learning.  It uses, definitely, deep learning as the early representation of the world.  Deep learning is very useful.  It's a combination of deep learning and reinforcement learning.  It's curiosity driven, so -- 
+KEVIN SCOTT:  And how do you articulate the -- so, like, there must be some metric for it, right?  
+FEI-FEI LI:  Right.  Curiosity is expressed through your

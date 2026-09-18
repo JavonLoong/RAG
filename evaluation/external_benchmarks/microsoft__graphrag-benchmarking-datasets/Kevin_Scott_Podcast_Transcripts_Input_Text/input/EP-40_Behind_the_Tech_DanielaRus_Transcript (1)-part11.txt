@@ -1,0 +1,21 @@
+EP-40_Behind_the_Tech_DanielaRus_Transcript (1).txt  safety-critical applications.
+
+KEVIN SCOTT: Yeah, that’s really, really fascinating. I’d love to learn more about that work. 
+
+So, just switching gears for just a second, you run the MIT Computer Science and AI lab, which is one of the iconic computer science research institutions. So, tell us a little bit about what it’s like to do your job.
+
+DANIELA RUS: Well, Kevin, I am honored and humbled to be able to work with such brilliant colleagues and students at MIT and at CSAIL. Everyone here is advancing computer science with the objective to contribute towards the future of computing and to making the world better through computing. And through this work, there are foundational contributions to computing, but also there is a lot of inspiration for applications and businesses. 
+
+And so, being part of this community is inspiring and mind bending. The community has an extraordinary history. And you can think of CSAIL as having two parts, CS for computer science and AI for artificial intelligence. 
+
+The AI part of our name goes back to 1956 when Marvin Minsky decided one summer to gather his friends. They went to the woods of New Hampshire. They spent a month discussing the deepest questions in science, and when they emerged from the woods, they told the world, “We coined a new field of study, artificial intelligence,” which is about the science and engineering of creating machines with human-like characteristics in how they move in the world, how they see the world, how they play games, even how they learn. 
+
+And so, our members have been advancing these ideas from the very beginning with such imagination and insight. 
+
+The CS side has an equally proud history that goes back to 1963 when the big dream was for two people to use the same computer at the same time, right? (Laughter.) And those computers were about as big as the rooms we sit in. And so, can you imagine in 60 short years, we moved from dreaming that two people might use the same gigantic machine to a world where everybody computes, everybody benefits, through smartphones and other means of computation. And so, it’s really extraordinary.
+
+So, I will tell you that CSAIL has always been about moonshots, about big dreams, about how to go from science fiction to science and then reality, and this is so inspiring. And for our students and researchers, no question is too crazy. No future is too far off. Everyone takes pride in imagining the impossible and then finding ways to make it possible. 
+
+And so, it’s really an extraordinary privilege to be part of this tradition and to have a chance to develop programs and opportunities to support the dreams of our researchers.
+
+KEVIN SCOTT: Yeah, so I’d love to hear what you think some of those big moonshots are. I know one of the things that I’m fascinated by that you’re working on is soft robotics. So, if you could tell

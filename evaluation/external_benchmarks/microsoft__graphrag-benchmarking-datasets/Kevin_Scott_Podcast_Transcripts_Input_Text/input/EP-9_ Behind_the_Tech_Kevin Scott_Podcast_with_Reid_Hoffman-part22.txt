@@ -1,0 +1,19 @@
+EP-9_ Behind_the_Tech_Kevin Scott_Podcast_with_Reid_Hoffman.txt  48.  If I get 55, you get 45.  
+KEVIN SCOTT:  Right.  
+REID HOFFMAN:  A non-zero-sum game is we figure out a way that, well, actually, I may still get 55, but maybe you get 50.  Right?  And so the pie grows.  
+KEVIN SCOTT:  Right.  
+REID HOFFMAN:  And I actually think one fundamental part of ethics that should go across all ethical systems, all value structures is we should prefer non-zero-sum games. 
+KEVIN SCOTT:  Correct.  
+REID HOFFMAN:  Right?  
+KEVIN SCOTT:  Yeah, that's one of the points that I make in this book that I'm writing right now is that when you're thinking about how you apply AI, like you should pick important zero-sum societal problems and try to figure out how to put a set of incentives and policies in place to convert those zero-sum social good things into non-zero-sum games through the use of AI. 
+REID HOFFMAN:  Yeah. 
+KEVIN SCOTT:  And, like, health care potentially is one of them where we have this very interesting system right now where we have a finite amount of our gross domestic product we can spend on health care.  You can spend all of it -- I think you're the one who actually said this to me, you can spend 100 percent of GDP and still not solve the fundamental problem, which is we're mortal. 
+And so, it's this terrible zero-sum game in a sense because you're always having to decide, you know, what the tradeoffs are. And like anything that we can do technologically to create abundance in this system to like get better diagnostics cheaper for everyone, to like be able to sort of influence things in a way where you're getting better healthcare outcomes for everyone, like, we should be doing.  And it's like hard to do without some flavor of technology, like whether that's AI or something else. 
+REID HOFFMAN:  Yeah, that's what progress looks like.  That's the universe we all want to be in because we'll all be better off.  
+KEVIN SCOTT:  And so this book, Non-Zero, that you referenced, I think the subtitle of that is like the Arrow of Human Destiny or something.  
+REID HOFFMAN:  Yes. 
+KEVIN SCOTT:  And it's like a really powerful -- like people should go read it. 
+REID HOFFMAN:  Yes. 
+KEVIN SCOTT:  Because it's one of the things that gives you a framework for being hopeful about technology in the future.  
+REID HOFFMAN:  Yeah. 
+KEVIN SCOTT:  Let's talk a little bit about Blitzscaling.   Why did you decide

@@ -1,0 +1,31 @@
+Ep-12.txt  Yeah, it's interesting. When I went to Stanford, my primary work as a 
+graduate student was in numerical modeling. My thesis was on numerical techniques for partial 
+differential equations, fluid flow, and things like that. 
+Did a lot of work with linear algebra and so forth. But it was all early high-performance 
+computing work. And in those days, you know, there were controlled data machines around and 
+Crays were starting – Cray-1 was starting to appear and so forth. And so, there was a lot of 
+interest in different ways to do abstractions in early high-performance computing work. 
+And it's interesting. All that linear algebra, things that I got familiar with then have been 
+rediscovered, of course, as part of the machine learning revolution that we're having today. 
+KEVIN SCOTT: Yeah, I mean, it's really, really fascinating like as I spent a bunch of my time 
+trying to figure out like what the infrastructure needs to look like to support training very largescale models. I, in a very small way, had been doing work when I was in grad school in highperformance computing. And it's just remarkable to me. 
+Like, I thought, you know, funny enough when I took my job at Google in 2003 that all of the 
+stuff that I'd done in graduate school was like gone forever and like I would never -- I'd never see 
+the day where it was useful again. And then I'm, you know, sitting here in 2019, and surprise, 
+surprise. Relevant. (Laughter.) 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+9
+BILL COUGHRAN: No, it's true. And, of course, high-performance computing developed 
+hybrid machines, (inaudible) architectures, all kinds of things that are reappearing now in the 
+machine learning context, so --
+KEVIN SCOTT: Yeah, well, you know, it's sort of interesting, right? And I'd love to get your 
+take on this. We're at this moment now where there are certain flavors of machine learning, so 
+this simulation-based reinforcement learning stuff that has achieved some fairly spectacular 
+results that have been publicly disclosed over the past few years, like mostly in game playing, 
+and then there's like recent stuff and natural language processing on unsupervised learning. 
+And in both of these cases, like the workloads are just because you have gotten human 
+supervision out of the direct training loop, like you don't have to produce a bunch of label 
+training data, like you're sort of -- reinforcement learning, you're gathering all of your data to 
+train the model inside of a simulation environment, and the unsupervised learning, like, you just 
+have like a large, like, Internet

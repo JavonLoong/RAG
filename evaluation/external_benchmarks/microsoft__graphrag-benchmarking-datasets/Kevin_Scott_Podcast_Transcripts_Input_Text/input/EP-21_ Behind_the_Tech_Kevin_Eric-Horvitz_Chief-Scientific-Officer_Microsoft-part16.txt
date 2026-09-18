@@ -1,0 +1,17 @@
+EP-21_ Behind_the_Tech_Kevin_Eric-Horvitz_Chief-Scientific-Officer_Microsoft.txt  out what to display to people to help them make a decision. 
+
+So, there’s this open-world issue that became very important to me as part of understanding the bigger role of AI in larger human settings. To me, it was more or less obvious in high-stakes areas, you had to consider these things. 
+
+And then when I was becoming the AAAI president, it was a time where there were lots of initial discussions about “the Singularity coming” and there was both Utopian and dystopian views being debated. 
+
+And so, I decided to make the theme of my presidency, “AI in the open world.”  And there’s an open world of, “How do you put a system that’s limited into more complex worlds and give it the ability to understand its own abilities” and to be really much more omnipresent about the reality of helping humans out or controlling a system that has a function in the world, not just this narrow wedge of expertise on a certain particular classification topic or prediction. 
+
+And a second theme was thinking more deeply about the influences of our projects in the world. This is 2008. And when it came to that part, in my presidential address -- each president gives an address -- I talked about the technical aspects and the social and societal aspects. And I called together a group of about 25 people to create a study that I called the Long-Term Futures of AI and its Influences. And we had three subgroups meeting. 
+
+And we ended up doing something very interestingly and analogous to the Asilomar meeting that the biologists had held in 1975 I think it was looking at recombinant DNA. We ended up doing a workshop -- and three-day workshop at Asilomar, where we all came back from our breakout groups to do reports. It was the first time I heard this phrase from this short-term, acute challenges group. We had a long-term group, a short-term problems group, and then an ethics and legal team as part of this effort. 
+
+But it really drew me in and got me excited. I remember this phrase, “criminal AI.”  And I said, “Wow, what is criminal AI?”  And this group reported their findings about the malevolent use of AI by state and non-state actors and where it could go. 
+
+We had another team -- I specifically asked a team to look at could they take something as -- might call it fanciful, but interesting as Isaac Asimov’s Laws of Robotics, which folks have read about in his robot series, and actually codify them in a system with modern AI techniques so that the system could be proven to be reliable and responsibility to human beings and to society. 
+
+And we had a great breakout session on that topic. And we looked at ethics and legal issues. So, that whole experience and working with the community on these topics, which resonated deeply with me, per my interest in

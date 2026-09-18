@@ -1,0 +1,13 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  students to the raw, kind of the bare metal, so to speak.  For example, in the first class I show people how to do stochastic gradient descent, and it's -- I, you know, code it up, and it's 10 lines of code, and not using PyTorch and TensorFlow.
+
+And I want people to understand that some of these ideas are actually pretty, pretty simple, and -- but, you have to kind of -- but, I wanted people to get exposed to the simplicity, rather than being kind of scared off by, oh, that's underneath the PyTorch wrapper, and because at some level all of these pieces are actually quite, you know, understandable.
+
+KEVIN SCOTT:  Yeah, and I think that's a great thing that you're doing for your students because one of the things that I do worry about, a little bit, is that we have these very powerful abstractions, but the abstractions make a bunch of assumptions that are not necessarily correct, that for instance, that stochastic gradient descent is the best numerical algorithm to fit the parameters of a deep neural network.  
+
+It's very good, the technique, but like we shouldn't assume that that is a solved problem.  Like, in fact, there was this paper NeurIPS, a couple of years ago, on -- I think the title was "Neural Ordinary Differential Equations," where they were like modeling the interior state of a DNN and using ordinary differential equations, and using -- I think something like fourth order Runge-Kutta, or something to solve it, which is very, very, very different from -- you know, stochastic gradient descent.  And like the fact that -- like that sort of exploration is great that it's still happening.
+
+PERCY LIANG:  Yeah, one thing that I do in the AI class is be very kind of structured about the framing of a class, in terms of modeling and algorithms, right?  So, you can think about, for a given problem, how do you construct the model?  It could be a neuronal architecture, but it could -- I talk about some other topics like graphical models.  It could be like what your vision network looks like.
+
+And then, separately, you think about how I'm going to, you know, perform inference or do learning in these type of models. And I think that the coupling is something that I find students often kind of find it hard to think about because, knee -- your knee-jerk reaction to solve a problem is just go directly solve a problem, but figuring out how to model the situation, which specifies kind of what you want to do, and then the algorithms are how you want to do it, is really I think a powerful way to, you know, think about the world.
+
+KEVIN SCOTT:  So, as an NLP person what do you think about all of this stuff happening with self-supervised learning,

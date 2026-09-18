@@ -1,0 +1,17 @@
+Ep-52_Behind_the_Tech_Kevin_Scott_Podcast_with_Bill_Gates-qc.txt  what language you speak. It can bridge that gap between the parents and the teacher, and it can be there to help the parent understand where the roadblocks are for the child and to even potentially get very personalized to the child’s needs and sort of help them on the things that they’re struggling with. I think it’s really, really very exciting. 
+
+BILL GATES: Yeah, just the language barriers, we often forget about that. And that comes up in the developing world. India has a lot of languages. I was at the Bangalore Research Lab as part of that trip, and they’re taking these advanced technologies and trying to deal with the tail of languages, so that’s not a huge barrier. 
+
+KEVIN SCOTT: One of the things that you said at the GPT-4 dinner at your house is that you had this experience early in Microsoft’s history where you saw a demo that changed your way of thinking about how the personal computing industry was going to unfold, and that caused you to pivot the direction of the company. I wonder if you might be willing to share that with everyone. 
+
+BILL GATES: Yeah, so Xerox had made lots of money on copying machines. They got out ahead. Their patents were there. The Japanese competition hadn’t come in. And so, they created a research center out in Palo Alto, which was forever known by its acronym, Palo Alto Research Center, PARC. 
+
+And at PARC, they assembled an incredible set of talent. Bob Taylor and others were very good judges of talent. So you end up with Alan Kay, Charles Simonyi, Butler Lampson. And I don’t want to leave anybody out, but there’s like a bunch of other people. 
+
+And they create a graphics user interface machine. They weren’t the only ones. There were people over in Europe doing some of these things, but they combined it with a lot of things. They put it on a network. They got a laser printer. And Charles Simonyi was there programing this and did a word processor that used that very graphical bitmap screen and let you do things like fonts, stuff we take for granted now. 
+
+And so, I went and visited Charles at PARC at night, and he demoed what he had done with this Bravo word processor. And then he printed on the laser printer a document of all the things that should be done if there were cheap, pervasive computers. And he and I brainstormed that, and he updated the document and printed it again, and it just blew my mind. 
+
+The agenda for Microsoft came out of – that’s like in – that’s 1979 that I’m with him, and computers are still completely character mode. So that’s when the commitment to do software for the – the Mac emerges from Steve Jobs having a similar experience with Bob Belville at Xerox PARC. 
+
+And you know, PARC built a very – Xerox built

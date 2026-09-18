@@ -1,0 +1,15 @@
+EP-22_ Behind_the_Tech_Kevin_Drew-Endy_Bioengineering-pioneer.txt  make those connections across those three domains. I'm certainly learning a ton, and I'm – like Drew is totally inspirational in that, like, he's one of the pioneers in exploring this new frontier for all of us.
+
+CHRISTINA WARREN:  Yeah. Let me ask -- and I realize this might be kind of a loaded question, and I don't mean to put you on the spot, but how do you think that we encourage more people to kind of follow Drew's footsteps? 
+
+KEVIN SCOTT:  I think there are a bunch of things that we can do. Like, part of it is I really do think that we need to reimagine some of the curriculum that we're teaching K-12 and at university, where the boundaries between these disciplines and the, you know, the skills that we're trying to teach people are so siloed. 
+
+You know, the thing that occurred to me when we were chatting with Drew is that it feels to me, and I don't know whether this is right or not because I haven't been in the academy for a while, that it's easier now to have these cross-department research collaborations and to teach courses that don't neatly fit into the orthodoxy of a particular profession. And like, that's nothing but a good thing. 
+
+But to really get kids to participate in this, to study these things is you have to have really fantastic K-12 teachers and to give them the opportunity to explore in whatever way feels natural to them. You know, it sounded like Drew and I are wired a little bit alike in that, like, I have always had a hard time learning for the sake of just putting new things into my head. I want to understand the context and, like, why am I learning this? And I hate memorizing things because, you know, you should have things memorized according to someone. Like, it's just never been a good enough reason for me to go learn anything.
+
+And I'm even finding it a little bit, right now, and I'm doing a whole bunch of stuff with trying to do factor analysis on the COVID-19 outbreak in the United States to understand what it is from a data perspective that may be causing outbreaks in different geographies to be quantitatively different from one another. 
+
+And the tools that I'm using are a whole bunch of things that I could have learned earlier, but I didn't because I didn't really understand how useful they could be. So I'm, like, doing a ton of stuff with Bayesian analysis and some of it's new in the past five years, like the really good tools for doing probabilistic programming with Monte Carlo, Markov Chain Monte Carlo simulation techniques. Like, the tools are new and, like, what you can do with them is different. 
+
+But like, the baseline approach was -- been around, like, I could have chosen to take all of these courses when I was

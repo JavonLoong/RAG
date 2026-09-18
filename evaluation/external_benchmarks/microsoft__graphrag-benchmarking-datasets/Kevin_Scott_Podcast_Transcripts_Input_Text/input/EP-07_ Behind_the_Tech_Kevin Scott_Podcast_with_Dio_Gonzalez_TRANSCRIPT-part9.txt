@@ -1,0 +1,37 @@
+EP-07_ Behind_the_Tech_Kevin Scott_Podcast_with_Dio_Gonzalez_TRANSCRIPT.txt  And so we, the engineers, had to provide that way for the character TDs to enable that.  
+
+KEVIN SCOTT:  Right. 
+
+DIO GONZALEZ:  So what we did a lot of this writing this library right of this dependency graph, evaluation -- evaluation library, which actually is called LibEE and it actually won an Academy Technology Award. 
+
+KEVIN SCOTT:  Wow. 
+
+DIO GONZALEZ:  Yeah.  Yeah.  Yeah.  Last year.  And so we wrote that core.  So, and then of course write the whole software on top of it to then have the animators and the riggers do that. 
+
+KEVIN SCOTT:  Is there any -- are there any interesting characters in particular that you worked on?  
+
+DIO GONZALEZ:  Yes.  Yes.  Because the movie that -- because that was, at that time, by the way, this was -- all of the studios -- because Pixar was doing the same, and when I worked at Pixar, by the way, I worked on the similar, you know, their equivalent, which is they were rewriting all of the software because the legacy one didn't take advantage of GPUs, right?  
+
+KEVIN SCOTT:  Right.   
+
+DIO GONZALEZ:  In their computers these days, so that's why we wrote everything from scratch.  So that's why I'm super proud. The very first movie that completely used the software is How to Train Your Dragon 2. 
+
+KEVIN SCOTT:  Nice. 
+
+DIO GONZALEZ:  So, that's the movie -- 
+
+KEVIN SCOTT:  Which is an amazing movie. 
+
+DIO GONZALEZ:  Yes.  That's the movie that like is super close to my heart and I love it.  And so, again, because I'm the engineer and I know how it was done, like I admire because I see things that, you know, your regular viewer doesn't see.  
+
+And I know -- they don't need to appreciate it, but I do.  Like, when I see the scenes with like hundreds of dragons, you know how hard that is?  Like, over 100 rigs, film quality.  And you know how many nodes?  Those are millions of nodes in our dependency library, right?  
+
+KEVIN SCOTT:  Yeah. 
+
+DIO GONZALEZ:  And in our library that have to be evaluated and then you know sent and animated, so I'm really proud of that.  
+
+KEVIN SCOTT:  That's awesome.  You should be proud of it. 
+
+DIO GONZALEZ:  Yes.  Yes.  
+
+KEVIN SCOTT:  I'm, it's a -- it's always interesting to me this being

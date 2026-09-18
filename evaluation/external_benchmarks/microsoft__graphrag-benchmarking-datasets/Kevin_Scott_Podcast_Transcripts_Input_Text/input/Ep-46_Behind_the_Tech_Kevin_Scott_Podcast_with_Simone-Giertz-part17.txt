@@ -1,0 +1,13 @@
+Ep-46_Behind_the_Tech_Kevin_Scott_Podcast_with_Simone-Giertz.txt ’m just – it’s one of those ideas where you’re like, I think of it and then I’m like, somebody must have done this. Like, there is no way nobody has done this. And then I, like, Google, and you get to the bottom of the image search or you, like, search on YouTube and you can’t find anything. And you’re like, nobody’s done this. (Laughter.) And yeah, so I’m stoked. It’s been a fun project on every level so far, and – and really complicated, but super fun.
+
+KEVIN SCOTT: It sounds crazy complicated, actually.
+
+SIMONE GIERTZ: It has been crazy complicated, but I’ve – I’ve started working… Like, one of the push and pulls of my career is in the beginning, I was so stubborn about putting in, like, every screw myself. And I think a part of it is, like, being a woman in a field with not a lot of women, and I always felt like I was always wanting to be ready. If anyone questioned my skills or questioned who had build a – built a project, I would be able to say, like, no, I did absolutely everything. No dude ever touched this project. 
+
+But then, like, in recent years, I really like – I love working with other people. It’s so fun to problem solve with other people, and I’ve started working with this engineer. He helped me on the companion chair, and the puzzle table and the scissor lamp. So, we’ll like design it together in Fusion and sit and problem solve together. And it’s let me, like – I’ve – I’m learning so much. It’s letting me do much more complex projects than I would have the bandwidth to do myself. 
+
+So yeah, it’s been super fun to just, like, try to solve these incredibly specific problems. Like, I spent probably a week just popping bubble wrap, trying to figure out the optimal shape and surface to pop bubbles reliably and to make sure that we could perfectly control pop location, because it needs to pop within a very small area for it to resonate in the tube. And just, like, getting to spend so much time on such specific problems is – is such a treat.
+
+KEVIN SCOTT: Do you do any 3D printing for prototyping?
+
+SIMONE GIERTZ: Yeah. Yeah, I do. So, it’s – the first thing I tend to grab for is my laser cutter because it’s always the fastest. Like, you can do something within a couple of minutes. But then 3D printing and then last is just C&C’ing. So, it’s nice to have like things in different tiers of prototyping. But yeah, this – this build is going to have some 3D printed elements, but most of it is going to be C&C’d. And I got

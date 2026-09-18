@@ -1,0 +1,19 @@
+Behind the Tech_Episode 36_PeterLee_Transcript.txt  wondering what the heck is that about? So it’s just pure curiosity driven research, and that’s sort of the frame that I grew up with. 
+
+But to your point, what we’re seeing today is that more and more, what we do, and even just to survive as a civilization depends on researchers and scientists being able to get drawn in and solve problems, respond to crises, help us become hopefully more resilient to the future. And that sort of crisis response science, I think, is getting to be incredibly important. And it won’t work if society doesn’t trust what we’re doing. And that trust is – is so hard to earn.
+
+You know, another story. When I was a professor, I was an assistant professor. I didn’t have tenure. And we had a change in department head, a very good friend of mine now, Jim Morris, but at the time, he became department head, I didn’t know who he was. And so, he was brand new department head. He was going to have one-on-one meetings with all the faculty. So it was my turn. And he asked me what I did, and I explained all this functional programing stuff to him. And he sort of scrunched his nose and said, “Well, why would anyone work on that stuff? You know, what is it good for?” 
+
+And I was so nervous about the meeting, I just sort of stammered out, “Well, it’s just so beautiful.” And Jim’s response was, “Well, if it’s beauty that you care about, maybe you should be a professor in the fine arts college instead of computer science.” (Laughter.) 
+
+KEVIN SCOTT:  That’s brutal. 
+
+PETER LEE:  I know. And of course, you know, in time, we became really close and even did some research together. 
+
+But it it’s that kind of thing where part of what researchers do, there’s a portion of it that is sort of curiosity driven, that’s searching for truth and beauty. But now, more and more, there’s another part of it that is really important to, like, making sure voting machines work correctly, to helping us find, you know, drugs and vaccines for things like COVID-19, understanding, you know, where the next wildfires might happen because of climate change, and all of these sorts of things that are so important. 
+
+You know, if an asteroid that has the power to destroy life on the planet were to come towards Earth, you’re going to call in researchers to try to figure out how to prevent that from happening. 
+
+That mode of what we do is just getting so, so important, and especially at a place like Microsoft Research, you know, where we have an obligation to situate our work in the real world. It’s gotten really important.
+
+And you’re right, how we explain what we do so that people have

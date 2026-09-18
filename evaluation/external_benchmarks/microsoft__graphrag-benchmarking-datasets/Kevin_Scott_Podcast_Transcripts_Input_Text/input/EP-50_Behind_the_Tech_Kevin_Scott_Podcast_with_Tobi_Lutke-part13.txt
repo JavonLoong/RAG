@@ -1,0 +1,13 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt  sort of – it gets harder, the bigger you get, you know, probably quadratically, at least, and you know, you’re just sort of fighting against a bunch of impulses, right? 
+
+Like, one of the catastrophic failings of sports teams is, like, if you get an egomaniac on the team who, like, wants the whole game to be about them. And, like, you sort of see those pathologies inbig companies. 
+
+TOBI LÜTKE: Absolutely. Yeah, I mean, with business is like, people have, like, a different incentive hierarchy than the team. And – and, you know, that’s a book, which made a really big impression on me. I read it, like, sort of, like, very early, and then recently, again, written by James Carse, which is it’s named Finite and Infinite Games. And it’s actually – it’s a pretty dense, philosophical book. But it feels extremely actionable, because it really explains how, you know, the – you know, some things are, I mean… 
+
+Like, the world is, like, completely controlled by finite games, partly because they have clear goals, and they are measurable, and they’re fun, and they’re easy to communicate, and they are… you just know how you do. Like, there’s a score, and you know if you’re winning, but there are infinite games as well. 
+
+So, like, for instance, like, every person on planet Earth is, I think, I hope, engaged in an infinite game towards wisdom, towards, like, education. Like, these are unwinnable games. They have no goal orientation, and there’s no way to finish them, right? Like, those could go on forever. But we’ve structured the world in such a way that we encode these infinite pursuits underneath finite games, like school, like Grade 1, Grade 2. Like, you can win Grade 1 by qualifying for Grade 2, and you can win the math test by getting a high score.
+
+One thing which is unfortunate, I think, which happens at some point is that people end up getting so addicted sort of in this sort of empty calories, dopamine way to how they’re doing on the finite games and the scores, that they completely lose their pursuit of more important infinite goals. And I think that’s  a problem that’s avoidable. It’s a cultural thing. 
+
+And, again, I could talk about how this informs some of the things we’re doing at Shopify, but, like, I don’t actually know how to get the most value out of these ideas, per se. I just know that eventually, we will figure out how to turn what I just said into the perfect fortune cookie. And once it is compressed this way in such a way that it “losslessly” uncompresses into the right set of

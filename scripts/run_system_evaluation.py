@@ -285,6 +285,65 @@ def keyword_coverage(hits: list[str], keywords: list[str]) -> float:
     return round(len(set(hits)) / len(keywords), 6)
 
 
+def expected_passage_id(record: dict[str, Any]) -> str:
+    notes = str(record.get("grading_notes") or "")
+    match = re.search(r"Relevant passage id:\s*([^\s,;]+)", notes, flags=re.IGNORECASE)
+    return match.group(1).strip() if match else ""
+
+
+def expected_source_ids(record: dict[str, Any]) -> list[str]:
+    notes = str(record.get("grading_notes") or "")
+    passage_id = expected_passage_id(record)
+    if passage_id:
+        return [passage_id]
+    sentence_match = re.search(
+        r"support sentence ids:\s*([^;]+)",
+        notes,
+        flags=re.IGNORECASE,
+    )
+    if sentence_match:
+        return [
+            item.strip()
+            for item in sentence_match.group(1).split(",")
+            if item.strip() and item.strip().lower() != "none"
+        ]
+    return []
+
+
+def retrieval_contains_passage_id(retrieval_items: list[Any], passage_id: str) -> bool:
+    if not passage_id:
+        return False
+    return bool(retrieval_source_id_hits(retrieval_items, [passage_id]))
+
+
+def retrieval_source_id_hits(retrieval_items: list[Any], source_ids: list[str]) -> list[str]:
+    hits: list[str] = []
+    normalized_ids = [(source_id, normalize_text(source_id)) for source_id in source_ids if source_id]
+    if not normalized_ids:
+        return hits
+    for source_id, normalized in normalized_ids:
+        for item in retrieval_items:
+            if normalized and normalized in normalize_text(stringify_record(item)):
+                hits.append(source_id)
+                break
+            if isinstance(item, dict):
+                metadata = item.get("metadata")
+                if isinstance(metadata, dict):
+                    for key in ("passage_id", "sentence_id", "document_id", "chunk_id"):
+                        if normalize_text(metadata.get(key, "")) == normalized:
+                            hits.append(source_id)
+                            break
+                    if hits and hits[-1] == source_id:
+                        break
+                for key in ("passage_id", "sentence_id", "document_id", "chunk_id"):
+                    if normalize_text(item.get(key, "")) == normalized:
+                        hits.append(source_id)
+                        break
+                if hits and hits[-1] == source_id:
+                    break
+    return hits
+
+
 def classify_hallucination_risk(
     retrieval_coverage: float,
     answer_coverage: float,
@@ -332,6 +391,10 @@ def evaluate_records(
     full_evidence_coverage_count = 0
     risk_counts: Counter[str] = Counter()
     retrieved_item_counts: list[float] = []
+    passage_id_expected_count = 0
+    passage_id_hit_count = 0
+    gold_id_expected_count = 0
+    gold_id_hit_count = 0
 
     for item in dataset:
         output = find_output(item, output_index)
@@ -349,6 +412,10 @@ def evaluate_records(
         retrieval_hits = keyword_hits(retrieval_text, keywords)
         answer_hits = keyword_hits(answer_text, keywords)
         citation_hits = keyword_hits(citation_text, keywords)
+        expected_pid = expected_passage_id(item)
+        expected_ids = expected_source_ids(item)
+        source_id_hits = retrieval_source_id_hits(retrieval_items, expected_ids)
+        passage_id_hit = retrieval_contains_passage_id(retrieval_items, expected_pid) if expected_pid else None
         retrieval_coverage = keyword_coverage(retrieval_hits, keywords)
         answer_coverage = keyword_coverage(answer_hits, keywords)
         citation_coverage = keyword_coverage(citation_hits, keywords)
@@ -371,6 +438,13 @@ def evaluate_records(
             retrieval_question_hits += 1
         if retrieval_coverage == 1:
             full_evidence_coverage_count += 1
+        if expected_pid:
+            passage_id_expected_count += 1
+            if passage_id_hit:
+                passage_id_hit_count += 1
+        if expected_ids:
+            gold_id_expected_count += len(expected_ids)
+            gold_id_hit_count += len(set(source_id_hits))
         if not has_retrieval_result:
             no_result_count += 1
 
@@ -401,6 +475,10 @@ def evaluate_records(
                 "retrieval_evidence_keywords": retrieval_hits,
                 "answer_evidence_keywords": answer_hits if not retrieval_only else [],
                 "citation_evidence_keywords": citation_hits if not retrieval_only else [],
+                "expected_passage_id": expected_pid or None,
+                "retrieval_passage_id_hit": passage_id_hit,
+                "expected_source_ids": expected_ids,
+                "retrieval_source_id_hits": source_id_hits,
                 "retrieval_keyword_coverage": retrieval_coverage,
                 "answer_keyword_coverage": answer_coverage if has_answer and not retrieval_only else None,
                 "citation_keyword_coverage": citation_coverage if has_answer and not retrieval_only else None,
@@ -421,6 +499,16 @@ def evaluate_records(
             "question_recall_at_k": safe_rate(retrieval_question_hits, total_questions),
             "keyword_recall_at_k": safe_rate(retrieval_keyword_hits_total, total_expected_keywords),
             "average_keyword_coverage": average(retrieval_coverages),
+            "passage_id_recall_at_k": safe_rate(passage_id_hit_count, passage_id_expected_count)
+            if passage_id_expected_count
+            else None,
+            "passage_id_expected_count": passage_id_expected_count,
+            "passage_id_hit_count": passage_id_hit_count,
+            "gold_id_recall_at_k": safe_rate(gold_id_hit_count, gold_id_expected_count)
+            if gold_id_expected_count
+            else None,
+            "gold_id_expected_count": gold_id_expected_count,
+            "gold_id_hit_count": gold_id_hit_count,
             "full_evidence_coverage_rate": safe_rate(full_evidence_coverage_count, total_questions),
             "no_result_rate": safe_rate(no_result_count, total_questions),
             "average_retrieved_count_at_k": average(retrieved_item_counts),

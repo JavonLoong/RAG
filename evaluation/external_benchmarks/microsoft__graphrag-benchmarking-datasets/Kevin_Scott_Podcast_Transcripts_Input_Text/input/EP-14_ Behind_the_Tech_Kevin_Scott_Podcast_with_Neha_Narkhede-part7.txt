@@ -1,0 +1,15 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt HEDE:  Absolutely.  That's when I first started thinking about I want to be a systems, you know, and more importantly, distributed systems programmer.  
+KEVIN SCOTT:  So, what did you do after you graduated?  
+NEHA NARKHEDE:  You know, I sort of focused on databases more in my master's.  When I graduated, I actually -- before I graduated, I interned at Oracle in the database group.  And so, I decided to take my full-time job there because this was beginning of 2008.  And so, we were facing a lot of challenges and -- 
+KEVIN SCOTT:  Okay, you're a lot younger than I am.  (Laughter.) 
+NEHA NARKHEDE:  Yes.  (Laughter.)  Yeah.  In some sense, it gives away our ages.  (Laughter.) 
+But this was like beginning of 2008 and, you know, just before graduating, I'd taken this business economics class where we learned -- we were putting together a case study about the top five banks.  And so, we could see it coming, right?  
+And so I decided to take the job with Oracle rather than go to the startup world, where I really wanted to be, it's because I really wanted to make sure I could stay in the country safely, right?  
+KEVIN SCOTT:  Right.  
+NEHA NARKHEDE:  So, it was a very H-1B safe path into Oracle.  So, I think Oracle was an interesting experience, I want to say.  On the one hand, I got to learn what it takes to create high-quality enterprise software. 
+KEVIN SCOTT:  Which team were you in at Oracle? 
+NEHA NARKHEDE:  I was in the database search team.  So, Oracle Text is what it was called.  
+KEVIN SCOTT:  Gotcha. 
+NEHA NARKHEDE:  Search within the database.  And so it was interesting, I thought, but it was also, you know, slow -- the velocity at which I wanted to learn new technologies, going back to my roots, I had given up a lot to get there.  
+And so, I wanted to make sure that I'm learning a lot.  And so that's when I spent one year at Oracle.  I made up my mind that I want to take the risk anyway, and just venture into the startup world with a particular focus in open-source communities, because I thought that open source is going to allow me to learn more, and LinkedIn was on the short list because we had a nice page where we advertised our open-source projects and the teams that worked on it. So, it seemed very cool.  
+KEVIN SCOTT:  Yeah.  And I'm going to want to go

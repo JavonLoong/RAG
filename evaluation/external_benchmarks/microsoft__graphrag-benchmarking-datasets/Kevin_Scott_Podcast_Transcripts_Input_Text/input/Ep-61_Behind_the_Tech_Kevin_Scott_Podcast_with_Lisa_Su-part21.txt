@@ -1,0 +1,13 @@
+Ep-61_Behind_the_Tech_Kevin_Scott_Podcast_with_Lisa_Su.txt  look at it as, in the data center, you need the – it’s called the big iron so that you can train and infer the most complex models.
+
+You have the opportunities at the edge, when you think about all the data that’s at the edge, and then you have the opportunities at the client and kind of reshaping what PCs do, what mobile phones do, and all of that requires AI capability, although it may not necessarily be exactly the same technology, I think they all want to interoperate together. 
+
+So it has been a super busy year, several years, from the standpoint of, you know, really extending our roadmap from, let’s call it more general purpose processing, to more of the AI capability. And as we go forward, I think we’re going to see AI in all of our computing products, like whether – you know, data center, edge, client, and it’s a fun place to be, but you know, we’re – we’re super-happy with the work that we’re doing, you know, certainly in Azure, but also on the – on the PC and Windows side, like you know, very excited about, you know, what’s going on with the Windows evolution, and you know, the Copilot capabilities there as well.
+
+KEVIN SCOTT: Yeah, I think one of the interesting things, and again, it just sort of get abstracted away from folks because, you know, you don’t need to think about all of this to make an API call to – you know, Azure OpenAI API service, but – and you all have understood this for quite a while, because you have some of the most powerful supercomputers on the top 500 list for scientific workloads:
+
+When you’re building these big systems, you have to think about everything, so how you get power into the data center, like how you cool things, how you design racks, how you build your networks, and I think that’s the other really exciting piece here. It’s not just about the chips, but it’s about everything you have to put around the chips, and you really have to have partnerships, you know, like the one that we have to think about the full system design, because otherwise, you have one highly performing thing and if everything around it is not equally high performing, then – you know, it just doesn’t work.
+
+LISA SU: Yeah, I think that’s what, you know, we all view as the opportunity, right? The opportunity is, you know, through – you know, deep partnerships like what we have, to really, you know, sort of move computing to the next level of, yes, chips, systems, and then – you know, also just what you’re doing in terms of the model development itself, and you know, bringing those things synergistically together we can build, you know, better overall systems, you know, going forward.
+
+KE

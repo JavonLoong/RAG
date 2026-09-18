@@ -1,0 +1,19 @@
+Behind the Tech_Episode 31_AshleyLlorens_Transcript.txt  doing a show in Prague, you know, and then eventually, you know, being able to turn a lot of those scientific advancements into real-world technologies for the Navy and other sponsors. So, just a tremendous set of adventures as I kind of reflect on it. 
+
+KEVIN SCOTT:  And what did you major in in college? 
+
+ASHLEY LLORENS:  Yeah, so my undergrad was computer engineering. ECE is kind of a joint college anyway, but my undergrad was computer engineering, and then my master’s research focused on electrical engineering, digital signal processing. And then when I entered the professional environment, I immediately discovered machine learning, which eventually led me to artificial intelligence. 
+
+So, it’s interesting how, you know, 20 years – 20-some-odd years ago, you could go through a whole degree without ever bumping into machine learning. I didn’t discover machine learning until I got into my professional environment, but then I was kind of immediately hooked. 
+
+You know, early in my career, I wouldn’t have dared say I was into artificial intelligence. Like, that’s not what you said, you know, and you definitely didn’t talk about neural networks at all if you wanted to get your research funded. So, but you know, as I advanced from you know machine learning for human systems, you know, kind of as decision support tools for humans, to more robotics and autonomous systems, it naturally leads you to grander thoughts about artificial intelligence. You’re creating an agent that’s going to go out in the world and perceive and understand its environment and act on the basis of its own perception. 
+
+And in my case, you know, I spent a lot of time developing technologies for underwater robots – autonomous underwater systems. And so, you know, this is not a clean laboratory setting. This is the ocean. So, you’re creating something that has to go out there and fend for itself in an open environment. 
+
+And it naturally leads you to you know grander questions about more robust and generalizable forms of intelligence, which it’s been amazing to kind of have an opportunity to think more and more about as I advance in my career. 
+
+KEVIN SCOTT:  Yeah, it’s – I mean, you and I probably were in school at the same time – I think I’m a little bit older than you are but like we were in school in the ‘90s, I’m guessing. 
+
+ASHLEY LLORENS:  Yes. 
+
+KEVIN SCOTT:  And, yeah, you’re totally right, like, there was, like, when I was getting my – or working on my PhD, I dropped out, much to my advisor’s chagrin. You know, like, you are absolutely right, like, you just didn’t mention neural networks if you wanted, you know, you wanted to graduate and get your papers published. (Laughter.)

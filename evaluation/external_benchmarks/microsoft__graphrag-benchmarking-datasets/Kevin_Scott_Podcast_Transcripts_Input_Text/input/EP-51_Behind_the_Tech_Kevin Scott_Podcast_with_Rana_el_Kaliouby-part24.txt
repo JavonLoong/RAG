@@ -1,0 +1,19 @@
+EP-51_Behind_the_Tech_Kevin Scott_Podcast_with_Rana_el_Kaliouby.txt  do you think we need to do next to attack that other 93%, those nonverbal cues which become so important to human interaction?
+
+KEVIN SCOTT: Yeah, I think it’s maybe the most important question we should be asking right now. So, it’s easy for me, at least, and I think this is true for other people in technology, to get really carried away with the capability of a thing, so, like, what it can do, or, like, how it can do it. And, like, that’s certainly true with these powerful models.
+
+Like, I honestly have been, even though I’ve been very, very, very deep in this stuff for a really long time, and, you know, we have, you know, in partnership with OpenAI, been, I think, on the forefront of this stuff for the past handful of years. And so, like, we can even see what we think is coming, I’ve been surprised that we accomplished as much as we did this year. 
+
+But even though all of that’s sort of a fascinating “what,” like the thing that’s really challenging with these things is, like, what you choose to go do with them. And I think this is some of what Rana is getting at. 
+
+So, part of what I hope that we have more conversations about in the coming year is how we can build all of this capability into applications, where you’re serving the user, and where you don’t actually forget the emotional element. I mean, the thing that we sometimes forget is that, you know, there are pretty sophisticated AI systems already that, you know, materialize your Twitter feed or, you know, figure out what it is that you’re going to see on TikTok when you open that app. 
+
+CHRISTINA WARREN: Yeah.
+
+KEVIN SCOTT: And, you know, what those systems optimize for it isn’t necessarily the full gamut of emotions that, you know, sort of enrich human beings. Like, a lot of it is like, oh, I’m going to show you something sensational to keep you, like, right here in this -
+
+CHRISTINA WARREN: Right.
+
+KEVIN SCOTT: In this experience. And so, the thing that I hope we can learn from folks like Rana is, like, how we can build these systems in ways where they’re provoking the right emotion, and where they can take emotional feedback from people to help you, yeah, help you basically feel the way that you want to feel, from interacting with your technology, not feel the way someone else wants you to feel. Like, that’s the difference between agency and manipulation.
+
+CHRISTINA WARREN: I love that, I love that. And you’re right, that is the difference between the two. And I think that, you know, that’s certainly what Rana was talking about some of her core values

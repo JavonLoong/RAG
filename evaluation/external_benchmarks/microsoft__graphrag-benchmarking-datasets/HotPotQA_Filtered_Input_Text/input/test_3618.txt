@@ -1,0 +1,36 @@
+Motivic integration is a notion in algebraic geometry that was introduced by Maxim Kontsevich in 1995 and was developed by Jan Denef and François Loeser.
+ Since its introduction it has proved to be quite useful in various branches of algebraic geometry, most notably birational geometry and singularity theory.
+ Roughly speaking, motivic integration assigns to subsets of the arc space of an algebraic geometry, a volume living in the Grothendieck ring of algebraic varieties.
+ The naming 'motivic' mirrors the fact that unlike ordinary integration, for which the values are real numbers, in motivic integration the values are geometric in nature.
+In algebraic geometry, the function field of an algebraic variety "V" consists of objects which are interpreted as rational functions on "V".
+ In classical algebraic geometry they are ratios of polynomials; in complex algebraic geometry these are meromorphic functions and their higher-dimensional analogues; in modern algebraic geometry they are elements of some quotient ring's field of fractions.
+Noncommutative algebraic geometry is a branch of mathematics, and more specifically a direction in noncommutative geometry, that studies the geometric properties of formal duals of non-commutative algebraic objects such as rings as well as geometric objects derived from them (e.g. by gluing along localizations or taking noncommutative stack quotients).
+ For example, noncommutative algebraic geometry is supposed to extend a notion of an algebraic scheme by suitable gluing of spectra of noncommutative rings; depending on how literally and how generally this aim (and a notion of spectrum) is understood in noncommutative setting, this has been achieved in various level of success.
+ The noncommutative ring generalizes here a commutative ring of regular functions on a commutative scheme.
+ Functions on usual spaces in the traditional (commutative) algebraic geometry multiply by points; as the values of these functions commute, the functions also commute: "a" times "b" equals "b" times "a".
+ It is remarkable that viewing noncommutative associative algebras as algebras of functions on "noncommutative" would-be space is a far-reaching geometric intuition, though it formally looks like a fallacy.
+The Éléments de géométrie algébrique ("Elements of Algebraic Geometry") by Alexander Grothendieck (assisted by Jean Dieudonné), or EGA for short, is a rigorous treatise, in French, on algebraic geometry that was published (in eight parts or fascicles) from 1960 through 1967 by the Institut des Hautes Études Scientifiques.
+ In it, Grothendieck established systematic foundations of algebraic geometry, building upon the concept of schemes, which he defined.
+ The work is now considered the foundation stone and basic reference of modern algebraic geometry.
+Nicolae Popescu, Ph.D., D.Phil.
+ (] ; 22 September 1937 – 29 July 2010) was a Romanian mathematician and Emeritus Professor.
+ Popescu was elected a Member of the Romanian Academy in 1992.
+ He is best known for his contributions to Algebra and the theory of Abelian categories.
+ Since 1964 and until 2007 he collaborated on the characterization of abelian categories with the well-known French mathematician Pierre Gabriel.
+ His areas of expertise were: Category theory, Abelian categories with Applications to Rings and Modules, adjoint functors, limits/colimits, Theory of Sheaves, Theory of Rings, Fields and Polynomials, and Valuation Theory; he also had interests and published in the following areas: Algebraic Topology, Algebraic Geometry, Commutative Algebra, K-Theory, Class-Field theory, and Algebraic Function Theory.
+ He published between 1962 and 2008 more than 102 papers in peer-reviewed, mathematics journals, several monographs on the theory of sheaves, and also six books on abelian category theory and abstract algebra.
+ In a Grothendieck-like, energetic style, he initiated and provided scientific leadership to several seminars on category theory, sheaves and abstract algebra which resulted in a continuous stream of high-quality mathematical publications in international, peer-reviewed mathematics journals by several members participating in his Seminar series.
+ His book "Abelian Categories with Applications to Rings and Modules" continues to provide valuable information to mathematicians around the world.
+ His latest contributions have also branched into valuation and number theory.
+ He has published over 110 original, peer-reviewed articles in mathematics, mostly in category theory, algebraic geometry, and Galois and number theory.
+The terminology of algebraic geometry changed drastically during the twentieth century, with the introduction of the general methods, initiated by David Hilbert and the Italian school of algebraic geometry in the beginning of the century, and later formalized by André Weil, Serre and Grothendieck.
+ Much of the classical terminology, mainly based on case study, was simply abandoned, with the result that books and papers written before this time can be hard to read.
+ This article lists some of this classical terminology, and describes some of the changes in conventions.
+Derived algebraic geometry (also called spectral algebraic geometry) is a branch of mathematics that generalizes algebraic geometry to a situation where commutative rings, which provide a local chart, are replaced by ring spectra in algebraic topology, whose higher homotopy accounts for the non-discreteness (e.g., Tor) of the structure sheaf.
+ Grothendieck's scheme theory allows the structure sheaf to carry nilpotent elements. Derived algebraic geometry can be thought of as an extension of this, and provides natural settings for intersection theory (or motivic homotopy theory) of singular algebraic varieties and cotangent complexes in deformation theory (cf. F. Francis).
+In universal algebraic geometry, algebraic geometry is generalized from the geometry of rings to geometry of arbitrary varieties of algebras, so that every "variety of algebra" has its own algebraic geometry.
+ The two terms algebraic variety and "variety of algebra" should not be confused.
+In mathematics, particularly in algebraic geometry, complex analysis and number theory, an abelian variety is a projective algebraic variety that is also an algebraic group, i.e., has a group law that can be defined by regular functions. Abelian varieties are at the same time among the most studied objects in algebraic geometry and indispensable tools for much research on other topics in algebraic geometry and number theory.
+In mathematics, algebraic geometry and analytic geometry are two closely related subjects.
+ While algebraic geometry studies algebraic varieties, analytic geometry deals with complex manifolds and the more general analytic spaces defined locally by the vanishing of analytic functions of several complex variables.
+ The deep relation between these subjects has numerous applications in which algebraic techniques are applied to analytic spaces and analytic techniques to algebraic varieties.

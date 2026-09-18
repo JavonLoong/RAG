@@ -1,0 +1,27 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt ../[MUSIC]
+
+danah boyd: The only reason I applied was that this boy in my class told me that it was a program for men, it was not for girls.  And I was, like, "Hmfft," I'm going to go.  (Laughter.)  It was very simple. And, you know, that kept happening, where when people told me I didn't belong, I just became determined to stay.  
+
+[MUSIC]
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+In this podcast, we're going to get behind the tech. We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today. Stick around.  
+
+[MUSIC]
+
+CHRISTINA WARREN:  Hello, and welcome back to Behind the Tech.  I'm Christina Warren, Senior Cloud Advocate at Microsoft.
+  
+KEVIN SCOTT:  And I'm Kevin Scott.  Today, our guest is danah boyd, Partner Researcher at Microsoft, and Founder and President in Data & Society.
+
+CHRISTINA WARREN:  You know, I'm so excited about this conversation.  I have been a fan of danah's, and I've looked up to her — I think I was in high school when I started reading her blog.  She's amazing and watching her career and seeing all the amazing things that she's written and things that she's done, I really can't wait to hear what you two talk about.
+
+KEVIN SCOTT:  Yeah, she — she really is one of my — one of my favorite people in the world.  She's just genuinely a fantastic human being.  She's so smart.  She's such a good computer scientist, and the thing that she's dedicated her life to is trying to study the intersection of, like, very difficult, very complicated high technology and society, and how those technologies both influence and impact society, and how society should be, you know, more sort of forcefully informing the things that we're doing in tech.  
+So, it's just sort of fantastic to have someone like danah thinking these thoughts, and driving these conversations, and I'm really looking forward to chatting with her today.  
+
+CHRISTINA WARREN:  Well, let's get to it.
+
+KEVIN SCOTT:  All right.  Let's chat with danah.
+
+ [MUSIC]
+
+KEVIN SCOTT:  So, our guest today is danah boyd.  Danah is a tech scholar and researcher who looks at the intersection of people, social practices and technology. She's a Partner Researcher at Microsoft, and Founder and President in

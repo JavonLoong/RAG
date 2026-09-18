@@ -1,0 +1,13 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt  language gets developed, you can see the interaction between vision and language, one of the most exciting areas of research that I'm doing right now is the interplay between vision and language.  The vision is, for me, is just highly fascinating.  
+KEVIN SCOTT: So, tell us a little bit about your PhD work.  So, like, you're in this program, you've got a neuroscience advisor and like basically a computer vision advisor.  And so, like, what does your dissertation research look like?
+FEI-FEI LI:  Yeah, (Laughter.) so that was a great question.  So, I literally did a combination of cognitive neuroscience and computer vision.  
+So, on the cognitive neuroscience part, I started my PhD in the first year of 21st century, 2000.  And little did the public know that even today's AI revolution owes a lot to the incredible advances in cognitive science, starting from '70s, '80s, and going well into the '90s, because we're mapping out some of the incredible capabilities of human intelligence system, including vision. 
+ And one of the most fascinating area of vision at that time I was studying is our ability to understand natural world.  We -- an earlier study by a English scientist living in France, Simon Thorpe, shows within 150 milliseconds of seeing a complex visual, seeing humans are already capable of understanding if this thing contains an animal with it-- or it doesn't.  And here, we're talking about all kind of potential animals in all kind of environment. 
+KEVIN SCOTT:  Right.  
+FEI-FEI LI:  So, that processing was fascinating.  So, one of my study in PhD time was actually to quantify how much we see at the moment we open our eye from objects to people to movements -- 
+KEVIN SCOTT:  And how do you do that experiment? 
+FEI-FEI LI:  Oh, that's fun.  So, in cognitive neuroscience, it's called psychophysics.  So, what I would do at that time is collect hundreds of photos from Flickr, actually, and these photos are all daily user uploaded photos.  So, it goes from like birthday parties to, you know, surfing in the ocean, to all kind of topics. 
+And then we put a program where you code up a program, and then you put a human subject in front of a computer screen and then you flash the photo quickly and you control the amount of time you flash the photo. 
+We literally went down to 27 milliseconds, all the way to 500 milliseconds to show the photo to the human.  And then we control how long the picture gets seen and then we ask the people to write down what they see.  
+KEVIN SCOTT:  Interesting.  
+FEI-FEI LI:  And we pay $10 for the undergrads who participate

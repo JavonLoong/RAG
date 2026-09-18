@@ -1,0 +1,41 @@
+In mathematics, Abel's identity (also called Abel's differential equation identity) is an equation that expresses the Wronskian of two solutions of a homogeneous second-order linear ordinary differential equation in terms of a coefficient of the original differential equation.
+In mathematics, a Poincaré–Steklov operator (after Henri Poincaré and Vladimir Steklov) maps the values of one boundary condition of the solution of an elliptic partial differential equation in a domain to the values of another boundary condition.
+ Usually, either of the boundary conditions determines the solution.
+ Thus, a Poincaré–Steklov operator encapsulates the boundary response of the system modelled by the partial differential equation.
+ When the partial differential equation is discretized, for example by finite elements or finite differences, the discretization of the Poincaré–Steklov operator is the Schur complement obtained by eliminating all degrees of freedom inside the domain.
+An adjoint equation is a linear differential equation, usually derived from its primal equation using integration by parts.
+ Gradient values with respect to a particular quantity of interest can be efficiently calculated by solving the adjoint equation.
+ Methods based on solution of adjoint equations are used in wing shape optimization, fluid flow control and uncertainty quantification.
+ For example formula_1 this is an Itō stochastic differential equation.
+ Now by using Euler scheme, we integrate the parts of this equation and get another equation, formula_2, here formula_3 is a random variable, later one is an adjoint equation.
+In theoretical physics and applied mathematics, a field equation is a partial differential equation which determines the dynamics of a physical field, specifically the time evolution and spatial distribution of the field.
+ The solutions to the equation are mathematical functions which correspond directly to the field, as functions of time and space.
+ Since the field equation is a partial differential equation, there are families of solutions which represent a variety of physical possibilities.
+ Usually, there is not just a single equation, but a set of coupled equations which must be solved simultaneously.
+ Field equations are not ordinary differential equations since a field depends on space and time, which requires at least two variables.
+In the following we solve the second-order differential equation called the hypergeometric differential equation using Frobenius method, named after Ferdinand Georg Frobenius.
+ This is a method that uses the series solution for a differential equation, where we assume the solution takes the form of a series.
+ This is usually the method we use for complicated ordinary differential equations.
+Eugen Cornelius Joseph von Lommel (19 March 1837, Edenkoben – 19 June 1899, Munich) was a German physicist.
+ He is notable for the Lommel polynomial, the Lommel function, the Lommel–Weber function, and the Lommel differential equation.
+ He is also notable as the doctoral advisor of the Nobel Prize winner Johannes Stark.
+In mathematics, the characteristic equation (or auxiliary equation) is an algebraic equation of degree formula_1 upon which depends the solution of a given formula_2th- order differential equation or difference equation.
+ The characteristic equation can only be formed when the differential or difference equation is linear and homogeneous, and has constant coefficients.
+ Such a differential equation, with formula_3 as the dependent variable and formula_4 as constants,
+In filtering theory the Zakai equation is a linear stochastic partial differential equation for the un-normalized density of a hidden state.
+ In contrast, the Kushner equation gives a non-linear stochastic partial differential equation for the normalized density of the hidden state.
+ In principle either approach allows one to estimate a quantity function (the state of a Dynamical system) from noisy measurements, even when the system is non-linear (thus generalizing the earlier results of Wiener and Kalman for linear systems and solving a central problem in estimation theory).
+ The application of this approach to a specific engineering situation may be problematic however, as these equations are quite complex.
+ The Zakai equation is a bilinear stochastic partial differential equation.
+ It was named after Moshe Zakai.
+The finite water-content vadose zone flux method represents a one-dimensional alternative to the numerical solution of Richards' equation for simulating the movement of water in unsaturated soils.
+ The finite water-content method is an ordinary differential equation alternative to the Richards partial differential equation.
+ The Richards equation is difficult to approximate in general because it does not have a closed-form analytical solution except in a few cases.
+ The finite water-content method, is perhaps the first generic replacement for the numerical solution of the Richards' equation.
+ The finite water-content solution has several advantages over the Richards equation solution.
+ First, as an ordinary differential equation it is explicit, guaranteed to converge and computationally inexpensive to solve.
+ Second, using a finite volume solution methodology it is guaranteed to conserve mass.
+ The finite water content method readily simulates sharp wetting fronts, something that the Richards solution struggles with.
+ The main limiting assumption required to use the finite water-content method is that the soil be homogeneous in layers.
+In mathematics, an inseparable differential equation is an ordinary differential equation that cannot be solved by using separation of variables.
+ To solve an inseparable differential equation one can employ a number of other methods, like the Laplace transform, substitution, etc.

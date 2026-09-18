@@ -1,0 +1,17 @@
+EP-22_ Behind_the_Tech_Kevin_Drew-Endy_Bioengineering-pioneer.txt  samples from Allentown and figuring out how to get the nitrogen out of the sewage in a collaboration led by some great, great folks, Irv Kugelman, and others. 
+
+In any case, this gave me cover to just mainline biochemistry and all the basic knowledge I needed in the life sciences. It also taught me that the way engineering was approaching biology was not at the same level of resolution that the biologists were approaching biology, that there was a disconnect. 
+
+And so, that set me up to hunt down and find people I could learn from who were engineers, you know, pioneering that frontier of what would become 21st century bioengineering, who really were embracing biology at the level of atoms and molecules, the living matter of biology.
+
+And I was super lucky to come across a chemical engineer, John Yin, who is now at Madison. But at the time, he was just returning from a postdoc in Germany and setting up shop at Dartmouth College. And Dartmouth, you would think of as an undergraduate liberal arts college. But they have an amazing engineering school that, one of the things that's cool about is there's no departments. Like, everybody's in one building and there's like 30 faculty.
+
+And they took all their chemical engineering faculty said, “Because we only have three chemical engineers in the whole school, please, everybody do bio.” And so, there's this nice little cluster of bio. And John and others were really operating on this frontier. I couldn't get into the big programs because my GPA coming out undergrad was like a two. So, you know, but Dartmouth took a took a bet on me. And I think I graduated with a class of four engineering PhDs for the whole school, right, to give you a sense of scale.
+
+But it was such a blessing to be able to play intellectually and to learn from John, and to take his advice. He set me up to-- what I could do as an engineer. It's like this give and get, like what's my value add to the biology world. And it was the tools of engineering. It was the ability to handle code and run some numbers, to use differential equations to model a process.
+
+And so, I could bring that engineering perspective, which was then very new into the biology community, which is such a wonderful scientific community, very welcoming, very patient, you know, helping people immigrate into biology as a science. And so, John set me up. 
+
+At first, I tried to model HIV on a computer and the evolution of HIV, and I crashed and burned on that pretty hard at the beginning of my PhD, mostly because the literature was not consistent. I could read the papers, but I could read a hundred papers, but I couldn't relate them to each other, so I couldn't codify the knowledge and put it into a computer program. 
+
+So, John had this great advice.

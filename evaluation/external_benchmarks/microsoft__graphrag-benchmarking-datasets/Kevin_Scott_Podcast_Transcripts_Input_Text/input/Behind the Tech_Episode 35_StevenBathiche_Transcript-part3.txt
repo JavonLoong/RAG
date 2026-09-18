@@ -1,0 +1,15 @@
+Behind the Tech_Episode 35_StevenBathiche_Transcript.txt  lot of robots when I was younger, and that kind of set me off in college as well.
+
+KEVIN SCOTT:  And who was supporting you and that interest when you were a kid? Were your parents scientists or engineers, or did you have those folks around you or you were just figuring this out on your own?
+
+STEVIE BATHICHE:  My parents are not scientists or engineers, but they were just supportive and letting me do whatever I wanted. I was a good kid, but, you know, I broke a lot of stuff and, you know, I didn’t really get yelled at too much for that. And I like building things, taking things apart. You know, my dad helped me get my first computer. It was like Atari, one of the really old ones, Atari 130, you know. I was in Saudi Arabia at the time, so I didn’t get exposed to, like, the typical computers that were exposed in the U.S. So, I got, like, Atari and ACORN, and you know, that sort of thing. 
+
+And my dad was just – there was – everyone was just very supportive, both my parents. It wasn’t until really high school where I started getting, like, my teachers being great mentors, and then in college, when I had, you know, people that really changed my life forever.
+
+KEVIN SCOTT:  Where did you guys move to in Virginia? Like, where did you go to high school?
+
+STEVIE BATHICHE:  In Northern Virginia, Broad Run High School. I’m in Ashburn over here, about 40 minutes away from D.C., very rural sort of kind of place. It’s built up now. You know, this is where all the datacenters are, by the way. (Laughter.) So, if you, like, drive around, there’s like datacenters left and right – all over. And that wasn’t, like, the case before. This is where – AOL was here. That’s where they started, you know, kind of crazy stuff.
+
+KEVIN SCOTT:  And so,  when you went to college, did you know you wanted to major in engineering?
+
+STEVIE BATHICHE:  Yeah, oh yeah. I mean, I think, like, in high school, I was really inspired by the robotics that were happening at MIT. There was a professor there named Rodney Brooks, and I would just read their papers and, like, trying to understand. But I got into this technique that they had developed called subsumption architecture. And it was inspired by ants or, like, insects and how to basically develop a control system for a robot. And so, you know, I wanted to build something like that myself, and I did that. And – and so, I knew, like, computers and engineering was kind of my path. And Virginia

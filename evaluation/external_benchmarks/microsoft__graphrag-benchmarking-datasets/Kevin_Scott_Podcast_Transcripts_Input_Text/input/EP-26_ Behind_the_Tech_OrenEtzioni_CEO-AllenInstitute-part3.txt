@@ -1,0 +1,15 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt  when I read Hofstadter’s book the first time – or tried to read it – because it is intellectually dense. But it really had a remarkable impact on a bunch of people. And I’m guessing it still sort of informs some of the things that you’re doing today, because you know, in a sense, what all of us are doing a little bit with the pursuit of artificial intelligence is not just figuring out what the machines are capable of, but like what does that say about human intelligence itself, which we really don’t understand in a deep sense? 
+
+OREN ETZIONI: That’s exactly right. One way to think about artificial intelligence or I’ll just use “AI” for short, is really it’s almost a funny pun or homonym. It really, in my mind, refers to two very different things. One is a set of technological capabilities, which I’m sure we’ll talk about some more, but are getting increasingly powerful with speech recognition, with facial recognition, with things like GPT-3, and at the same time, it’s a kind of vision, right, of how do we build human-level intelligence, artificial general intelligence, and so on. 
+
+And those two things are actually very different in the sense – in my opinion – in the sense that the technology is progressing very well, but it’s still very, very far off from the ultimate vision of the field. 
+
+KEVIN SCOTT: Yeah, well, and you know, I think the interesting thing that we all have seen over the past several decades is we keep solving these problems that we think are reflective of high human intelligence, and as soon as we’ve solved them, we decide that, “Oh, well, maybe that wasn’t really what is the core of human intelligence.” 
+
+You know, I remember when it was chess playing and then it was Go playing and then it’s these feats of perception that we’ve been able to do and, you know, like, there are still these things that are – for human beings, like, very, very easy that I don’t think we think of as being cognitively sophisticated that completely elude the ability of machines – common sense reasoning, navigating physical environments, and all sorts of fun stuff. 
+
+So, you know, I do think we have been confused about what the definition of intelligence is for a very long while now, which makes going after it interesting. (Laughter.) 
+
+OREN ETZIONI: Well, what you’re saying is so true, right? There are writings in the ‘60s and the ‘70s and later talking about, say, chess, right, as the pinnacle of intelligence. And you can sort of see why, right? For most people, playing Grandmaster Chess is an incredible feat of intelligence. Very elusive. And then to find out that the machine can do it is startling. 
+
+At the same time, there is something called Moravec

@@ -1,0 +1,15 @@
+Ep-60_Behind_the_Tech_Kevin_Scott_Podcast_2023_Year_in_Review.txt  Does that mean our standard of living would be 10 times? What does that mean? Would we have access to cleaner access to clean water.  
+ 
+Desalination is the classic. There’s a – there’s a trigger at the one to two cent per kilowatt hour, where if you can have electricity at that cost, then now you can desalinate water through electrolysis and other methods directly. Clean water is now cheaper than it was to actually, like, pull it out of a river and purify it. And so, suddenly, you know, you enable some of those things, which are clear.  
+ 
+But I think through, you know, if you had, you know, the computational access, where you can have large scale servers at – at everybody’s house, you’ve got to get the – maybe the server price down. But now you can actually do really interesting things on the computation and the cooling around that. 
+ 
+KEVIN SCOTT: Yeah. Look, I think one of the things that maybe people don’t appreciate or think about clearly enough, is maybe everything good that has ever happened in the history of humankind is humans discovering new sources of energy, and being able to put that energy to work solving problems that benefit humans.  
+ 
+And so, in a sense, like, you actually want to be able to consume more energy. You don’t want the consumption of energy to be a bad thing, because nominally consuming more energy means you’re doing more of those useful things for humanity, you know, like, electrolysis. 
+ 
+Like, I mean, one of the things here in the state of California is, like, we have parts of the state where you have abundant water, and you have parts of the state where you have no water. And, like, one of the reasons that California is habitable is we spend an enormous amount of energy pumping water from places where it’s abundant to places where it’s scarce. And, like, I think you’re going to have to do more of that in the future with climate change.  
+ 
+So, you know, you really do want a world where you have cheap, abundant energy, which is why I think the problem you’re working on is – like, I think artificial intelligence is a pretty important problem. That’s the thing I spend most of my time working on. But I think your problem is more important than my problem, and my problem is dependent on your problem. (Laughter.)  
+ 
+DAVID KIRTLEY: Yeah, at some scale, your problem – our two problems work together. Yeah, I – I don’t know that we know, frankly, what happens if you have more energy, more low-cost electricity, particularly ones – it has to be low cost. That’s really important. If it just costs a lot more and you have more of it, it doesn’t actually help – help the situation where the essentially effective

@@ -1,0 +1,28 @@
+The Jodrell Bank Centre for Astrophysics at the University of Manchester, is among the largest astrophysics groups in the UK.
+ It includes the Jodrell Bank Observatory, the MERLIN/VLBI National Facility, and the Jodrell Bank Visitor Centre.
+ The Centre was formed after the merger of the Victoria University of Manchester and UMIST which brought two astronomy groups together.
+ The Jodrell Bank site also hosts the headquarters of the SKA Organisation (SKAO) - a global entity that is set to become an International Governmental Organisation (IGO).
+ The SKA will be the largest telescope in the world - construction is expected to start at the end of this decade.
+Sir Alfred Charles Bernard Lovell, OBE, FRS (31 August 19136 August 2012) was an English physicist and radio astronomer.
+ He was the first Director of Jodrell Bank Observatory, from 1945 to 1980.
+Stargazing Live is a British live television programme on astronomy that has been broadcast yearly since its first broadcast on BBC Two in January 2011.
+ The series is primarily presented by scientist Brian Cox and comedian and amateur astronomer Dara Ó Briain with support from TV presenter and biochemist Liz Bonnin and astronomer Mark Thompson.
+ It is broadcast from Jodrell Bank Observatory and has featured live links from scientific facilities in Hawaii, South Africa, Norway and NASA.
+The Jodrell Bank Observatory (originally the Jodrell Bank Experimental Station, then the Nuffield Radio Astronomy Laboratories from 1966 to 1999; ) is a British observatory that hosts a number of radio telescopes, and is part of the Jodrell Bank Centre for Astrophysics at the University of Manchester.
+ The observatory was established in 1945 by Sir Bernard Lovell, a radio astronomer at the University of Manchester who wanted to investigate cosmic rays after his work on radar during the Second World War.
+ It has since played an important role in the research of meteors, quasars, pulsars, masers and gravitational lenses, and was heavily involved with the tracking of space probes at the start of the Space Age.
+ The managing director of the observatory is Professor Simon Garrington.
+Dr Mary Almond, (born 2 January 1928) is an English physicist, radio astronomer, palaeomagnetist, mathematician, and computer scientist who completed an early PhD in radio astronomy at Jodrell Bank Observatory in 1952.
+The Multi-Element Radio Linked Interferometer Network (MERLIN) is an interferometer array of radio telescopes spread across England.
+ The array is run from Jodrell Bank Observatory in Cheshire by the University of Manchester on behalf of Science and Technology Facilities Council (STFC) as a National Facility.
+The Very Small Array (VSA) was a 14-element interferometric radio telescope operating between 26 and 36 GHz that is used to study the cosmic microwave background radiation.
+ It was a collaboration between the University of Cambridge, University of Manchester and the Instituto de Astrofisica de Canarias (Tenerife), and was located at the Observatorio del Teide on Tenerife.
+ The array was built at the Mullard Radio Astronomy Observatory by the Cavendish Astrophysics Group and Jodrell Bank Observatory, and was funded by PPARC (now STFC).
+ The design was strongly based on the Cosmic Anisotropy Telescope.
+The Astrophysical Virtual Observatory (AVO) Project conducted a research and demonstration programme on the scientific requirements and technologies necessary to build a VO for European astronomy.
+ The AVO has been jointly funded by the European Commission (under FP5 - Fifth Framework Programme) with six European organisations participating in a three year Phase-A work programme, valued at 5 million euro.
+ The partner organisations were the European Southern Observatory (ESO) in Munich, Germany, the European Space Agency (ESA), AstroGrid (funded by PPARC as part of the UK's E-Science programme), the CNRS-supported Centre de Données Astronomiques de Strasbourg (CDS), the University Louis Pasteur in Strasbourg, France, the CNRS-supported TERAPIX astronomical data centre at the Institut d'Astrophysique in Paris, France, and the Jodrell Bank Observatory of the Victoria University of Manchester, United Kingdom.
+Roger Clifton Jennison (18 December 1922 – 29 December 2006) worked as a radio astronomer at Jodrell Bank under the guidance of Robert Hanbury Brown.
+ Jennison made a number of discoveries in the field of radio astronomy, including the discovery of the double nature of radio source Cygnus A (3C 405.0) with M K Das Gupta and the mapping of Cassiopeia A with V Latham.
+The Lovell Telescope is a radio telescope at Jodrell Bank Observatory, near Goostrey, Cheshire in the north-west of England.
+ When construction was finished in 1957, the telescope was the largest steerable dish radio telescope in the world at 76.2 m (250 ft) in diameter;

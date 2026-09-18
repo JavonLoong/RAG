@@ -1,0 +1,18 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt , like, you know, how do we get those processes of resilience into every stage?  And you know, I think about those days of CD-ROMs, right?  Your next possible round was the next rev of it, you know?  Anything that went wrong, the worst — the best you could do was recall.  
+
+We're no longer in that stage, so that means that the responsibility to be responsive is so much greater.  And I will say, as an industry, we — I think we are responsible for figuring out ways of building resilience.  And I think that the ways that we're expected to have constant economic growth at whatever cost is just fundamentally dangerous.  
+
+And so, I hope that we'll have that moment where we step back and say, you know what?  It is worth it to spend resources to actually make certain that we don't mess this up.  
+
+KEVIN SCOTT:  Yeah, I completely agree with you.  And I think there are ways where you can get a really good, healthy balance where the tradeoffs between the two I think are less — you know, like progress versus resilience, robustness, safety, probably like all of the things that we really care about, like you can strike a good balance between the two where you're much better off pushing unilaterally in one direction or the other. 
+
+danah boyd:  Absolutely.  And I think that the other thing that we have to hold onto is the idea that it's not just the decision-making within one institution, it's actually how it's all connected, right?  
+
+So, if I even look at the most troubling exploits going on right now, they're not in one institution, they're sitting between.  So, it's the idea that people are manipulating Wikipedia in order to target search engines, right?  Okay, who's responsible there?  Yes, Google and Bing have serious responsibilities there.
+Yes, Wikipedia has responsibilities, but where else?  And where is it when that exploit also leverages, say, the news media?  Right?  A totally different sector.  
+
+And so when I look at incidences that we keep seeing where media manipulators and extremists target the news media in order to target search engines, in order to make these two steps.  It's like, you know, this has become this moment of, like, oh, it's news media's fault, it's tech industry's fault.  It's like, guys, we have a system here. 
+
+And so, like that other big challenge for me is how do you build a resilient system with unequal resources, right?  Because the news media has a very different amount of resources than the tech industry does.  At the same time, it has a different kind of power in this.  
+
+And that's what concerns me is that these challenges for me with progress, they have to happen in this collective fashion

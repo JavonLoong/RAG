@@ -1,0 +1,13 @@
+EP-05_ Behind_the_Tech_Kevin Scott_Podcast_with_Danielle Feinberg.txt , I took a couple classes through the art department. And my senior year, I took a year-long animation class. That was more traditional animation. But for my senior film, I managed to use some computer animation for my senior film. 
+KEVIN SCOTT: Oh, that's awesome. Do you still have that laying around? 
+DANIELLE FEINBERG: I do. The lighting is atrocious. I didn't know what lighting was at all. It's really funny, embarrassing. The whole thing's embarrassing. But it sure was fun. And so I started to get a little bit of a sense, but there were no role models. There was no information anywhere. And so it was kind of scrapping to try and figure out what to do to get qualified. 
+It turned out, I probably didn't even have to think that hard about it. Because having gotten a computer science degree and specialized in computer graphics, no one had any experience. So, when I ended up applying to Pixar, they were like, "You're great, come work on this next film, A Bug's Life, because we need people that know computer science. And if you know computer graphics, fantastic." 
+KEVIN SCOTT: I remember going to see A Bug's Life when I was taking a graduate computer graphics seminar. 
+DANIELLE FEINBERG: Oh, really? 
+KEVIN SCOTT: And so we -- yeah, this was a great part of this class, these full-length, animated movies. So, there was Bug's Life. And there was Antz from DreamWorks, I guess. 
+DANIELLE FEINBERG: Yeah. Yeah. 
+KEVIN SCOTT: And the pipeline was just starting to go. And so part of our duty as scholars, we would go see these movies. 
+DANIELLE FEINBERG: Shoot, that's so hard. 
+KEVIN SCOTT: Yes, so difficult. And it just struck me that the progress was so fast. How was experiencing that as a Pixar employee? Because it must have been like just exponential curve after exponential -- 
+DANIELLE FEINBERG: Oh, it was insane. So, coming in after Toy Story, I'm coming in early '97. Toy Story came out in November of '95. And Bug's Life comes out towards the end of '98. So, I worked on A Bug's Life for over a year and a half. And sort of seeing a little bit of how Toy Story was made and the giant leaps they had made just in the software we were using to make A Bug's Life. 
+And the problems that were faced were, like, on Toy Story, you're making plastic toys that have very defined ways in which they move. The best thing the computer can do is make plastic. For whatever dumb reason, that's the easiest thing to simulate

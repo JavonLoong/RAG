@@ -1,0 +1,23 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt  know, what kind of part could we have, and, you know, sitting around blank sheet of paper literally, you know, here's a plot of land, what could we do with it, and all the crazy ideas about what to do with it, and Disney has a great brainstorming process called a (inaudible) for doing that.
+
+And then, going all the way to the day that, you know, opening day where I brought my kids into the park.
+
+KEVIN SCOTT:  Wow.
+
+DANNY HILLIS:  And the park, I don't know if you've ever visited all the Disney parks, one of the design principles is there's always something in the center of this, kind of the dramatic orienting thing, like the castle.
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  And there's a lot of storytelling reasons for that.  But there's something special.  And in the Animal Kingdom is this amazing tree with animals growing in the bark and things like that.  And it's just an incredible thing.  And I go in there with my five-year-old kids or say, and we look and walk in, we look at the tree, and they look up at me and they say, "Daddy, did you make that or did God?"  I was like, okay, this is like the peak dad experience.
+
+KEVIN SCOTT:  That is pretty good. So, and you were working with computer scientists, engineers, artists.
+
+DANNY HILLIS:  Well, all the different kinds of people, and what I thought of as an interdisciplinary team before I went to Disney, my idea of interdisciplinary got broadened out.  One thing that Disney is really great about, and actually Hollywood is really great about, is they have kind of a different way of doing big projects, as usual in tech, which is the studio model.
+
+So, let's say Disney makes a movie.  Actually, there are some Disney employees that make the movie, but mostly it is a set of people that, you know, Disney knows a great director, knows a great actor, knows a great screenwriter, and so they pull those things together, and a lot of people who are used to working with each other have roles.  And they've worked with each other on multiple projects in different combinations.
+
+And I realized that was really kind of a very efficient way to do innovation.  It wasn't, I mean, and also having seen the sort of downside of, you know, what the difficulty of being a small company where, you know, you have to get a lot of things exactly right for it to work, some of which had nothing to do with the product or the customers or things like that.
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  And so, it was sort of nice that to sort of see

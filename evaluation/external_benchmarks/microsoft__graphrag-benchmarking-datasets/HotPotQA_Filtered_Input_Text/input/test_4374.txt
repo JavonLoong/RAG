@@ -1,0 +1,39 @@
+Freemium is a pricing strategy by which a product or service (typically a digital offering or application such as software, media, games or web services) is provided free of charge, but money (premium) is charged for additional features, services, or virtual goods.
+ "Freemium" is a portmanteau of "free" and "premium".
+ The business model has been in use by software industry since the 1980s as a licensing scheme.
+ A subset of this model used by the video gaming industry is called free-to-play.
+Tales of Maj'Eyal is an open source roguelike video game released 2012 for Microsoft Windows, Mac OS X, and Linux.
+ "Tales of Maj'Eyal" is available as donation-supported Freeware/Donationware from the developers.
+ Donations grant some exclusive online features (Freemium model).
+ The game may also be purchased through the digital distribution outlets Steam or GOG.
+ The game's TE4 game engine source code is under a GNU GPLv3 license, the game's assets are licensed for use "with the Tales of Maj'Eyal game only."
+The BitTorrent Open Source Licence, is derived from the Jabber Open Source License, which is an Open Source Initiative (OSI) approved license.
+ Former versions of the BitTorrent client (before 6.0) and related pieces of software are licensed under this License which is available here: https://web.archive.org/web/20110809153637/http://www2.bittorrent.com/legal/bittorrent-open-source-license
+The Binding of Isaac is an indie roguelike video game designed by Edmund McMillen and Florian Himsl, initially released in 2011 for Microsoft Windows; the game was later ported for OS X, and Linux operating systems.
+ The game's title and plot are inspired by the Biblical story of the Binding of Isaac: after Isaac's mother receives a message from God demanding the life of her son as proof of her faith, Isaac flees into the monster-filled basement of their home, where he must fight to survive.
+ Players control Isaac or one of six other unlockable characters through a procedurally generated dungeon in a roguelike manner, fashioned after those of "The Legend of Zelda", defeating monsters in real-time combat while collecting items and power-ups to defeat bosses and eventually Isaac's mother.
+Common Development and Distribution License (CDDL) is a free and open-source software license, produced by Sun Microsystems, based on the Mozilla Public License (MPL).
+ Files licensed under the CDDL can be combined with files licensed under other licenses, whether open source or proprietary.
+ In 2005 the Open Source Initiative approved the license.
+ The Free Software Foundation (FSF) considers it a free software license, but one which is incompatible with the GNU General Public License (GPL).
+ In 2017, according to Black Duck Software the CDDL is the 16th most popular FOSS license (with less than 1% use), after the AGPLv3.
+Dungeon Crawl Stone Soup is a free and open source roguelike computer game, which is the actively community-developed successor of the 1997 roguelike game "Linley's Dungeon Crawl", originally programmed by Linley Henzell.
+Cataclysm: Dark Days Ahead, or "CDDA", is an open source survival horror roguelike video game.
+ "Cataclysm: Dark Days Ahead" is a fork of the original game "Cataclysm".
+ CDDA features text based graphics but has an alternative graphical tiles version.
+DRL (formerly DoomRL), short for Doom, the Roguelike, roguelike video game developed by ChaosForge.
+ Since 2002 in-development and based on the first-person shooters "Doom" and "Doom II", it was released for Microsoft Windows, Linux and OS X.
+ Following a cease and desist notice from "Doom" trademark owner, ZeniMax Media, the game's names was changed to "DRL" in 2016.
+<onlyinclude>An open-source license is a type of license for computer software and other products that allows the source code, blueprint or design to be used, modified and/or shared under defined terms and conditions.
+ This allows end users and commercial companies to review and modify the source code, blueprint or design for their own customization, curiosity or troubleshooting needs.
+ Open-source licensed software is mostly available free of charge, though this does not necessarily have to be the case.
+ Licenses which only permit non-commercial redistribution or modification of the source code for personal use only are generally not considered as open-source licenses.
+ However, open-source licenses may have some restrictions, particularly regarding the expression of respect to the origin of software, such as a requirement to preserve the name of the authors and a copyright statement within the code, or a requirement to redistribute the licensed software only under the same license (as in a copyleft license).
+ One popular set of open-source software licenses are those approved by the Open Source Initiative (OSI) based on their Open Source Definition (OSD).
+</onlyinclude>
+WURFL (Wireless Universal Resource FiLe) is a set of proprietary application programming interfaces (APIs) and an XML configuration file which contains information about device capabilities and features for a variety of mobile devices, focused on mobile device detection.
+ Until version 2.2, WURFL was released under an "open source / public domain" license.
+ Prior to version 2.2, device information was contributed by developers around the world and the WURFL was updated frequently, reflecting new wireless devices coming on the market.
+ In June 2011, the founder of the WURFL project, Luca Passani, and Steve Kamerman, the author of Tera-WURFL, a popular PHP WURFL API, formed ScientiaMobile, Inc to provide commercial mobile device detection support and services using WURFL.
+ As of August 30, 2011, the ScientiaMobile WURFL APIs are licensed under a dual-license model, using the AGPL license for non-commercial use and a proprietary commercial license.
+ The current version of the WURFL database itself is no longer open source.

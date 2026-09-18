@@ -1,0 +1,17 @@
+EP-23_ Behind_the_Tech_Kevin_Tom-Daniel_Neuroscientist_and_bioengineer.txt  different climates, and I just found that fascinating.
+
+After a while, he said, “Hey, do you want to join my lab and be a grad student?” And I didn't actually know what graduate school was. I said “Sure!” And so that got me going in this interface. I think today we are really doing more and more to break those barriers. So there are bioengineering departments. And candidly, the word "bio" comes in front of lots of words, you know, bioengineering, you know, biomathematics, biophysics, biochemistry, you know, so.
+
+KEVIN SCOTT: So, tell us a little bit about your research that you did as a graduate student.
+
+TOM DANIEL: Yeah, I did two different things. So, I started a master's degree at Wisconsin, and I got my PhD at Duke. At Wisconsin, because I was really interested in fluid mechanics, that faculty member said, “You know, fish swim really fast, why is that?” And there was this theory building in the literature that there's something novel about the polymer coating of fish, mucus, right? And nobody had really looked at it in any detailed way. And so, he got me into his lab, and we started doing fluid dynamics experiments on what was called polymer drag reduction. And I ended up publishing as a second-year graduate student, a paper on polymer drag reduction, the novel sort of chemistry and physics of the slimy covering of fish. That's where I began.
+
+KEVIN SCOTT: And so– like, you know, whenever I hear fluid dynamics, like I can sort of visualize Novier-Stokes equations and my exposures to fluid dynamics has always been less about the analytical modeling and more about computer simulation of these systems, so were you doing computer simulation stuff in your graduate work?
+
+TOM DANIEL: Not then. So, Kevin, I have to remind you of era. (Laughter). This is the 1970s, and yes, I did computer simulations of flow in my undergraduate classes. It was FORTRAN, and we had to write our own numerical solutions to very, very simple things, okay? The project I worked on in my master's was much more a mixture of experimental fluid mechanics and imaging flows, okay?
+
+KEVIN SCOTT: Oh, interesting.
+
+TOM DANIEL: Then, at Duke, I moved onto looking at a couple of different flow problems in biology.  We got very interested in the fluid mechanics of insect feeding, like mosquitos, blood feeding, and things like that-- what is going on that allows the mosquito to feed on blood, how is this related to disease transfer, like malaria, what are the relationships there? And also locomotion and fluids, movement and fluids. And so, it was a variety of things like that, and again, a mix of computational work, and then experimental work.
+
+KEVIN SCOTT:

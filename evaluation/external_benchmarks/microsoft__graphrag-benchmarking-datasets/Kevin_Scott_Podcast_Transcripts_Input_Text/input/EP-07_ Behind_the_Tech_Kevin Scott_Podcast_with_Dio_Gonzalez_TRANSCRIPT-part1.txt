@@ -1,0 +1,33 @@
+EP-07_ Behind_the_Tech_Kevin Scott_Podcast_with_Dio_Gonzalez_TRANSCRIPT.txt ../DIO GONZALEZ: (VOICEOVER) And so they made us draw lines, not even curved lines, it was just straight lines.  And they explained us how to do it.  Like, you find the formula, then you program it, and then tah-dah, lines.  (Laughter.)  
+And that was like my -- like "ah-hah" moment and my mind exploded….
+But that part, when we were able to draw pictures, that's when I'm like, "That's it, I'm in."  
+
+[MUSIC]
+
+KEVIN SCOTT:  Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC] 
+
+CHRISTINA WARREN:  Hello, and welcome to the show.  I'm Christina Warren, senior cloud developer advocate at Microsoft.  
+
+KEVIN SCOTT:  And I'm Kevin Scott.  Today, we'll be talking with Dio Gonzalez.  
+
+KEVIN SCOTT:  Dio is so inspiring, -- there's here technical work on virtual and mixed reality, which I think is really amazing and it's this whole element of constantly working to build tools to help people unlock their creativity.  
+
+DIO GONZALEZ:  And she's also a mentor and an advocate for girls and women in tech.  
+
+KEVIN SCOTT:  Yeah, so much great work and such an inspiring person.  She has this amazing story, like so many of the folks that we chat with here on the podcast.  So, let's talk to Dio and find out what's she's been up to. 
+[MUSIC] 
+
+KEVIN SCOTT:  All right, coming up next, Dio Gonzalez. Dio is originally from Venezuela.  She attended Purdue University, where she helped to set up its first virtual reality facility.  She's worked in the animation industry at Pixar and DreamWorks Animation.  She also worked for Unity Labs, before joining Microsoft in December 2017 as a principal software architect in Central Engineering.  Welcome, Dio.  
+
+DIO GONZALEZ:  Hi, thank you.  
+
+KEVIN SCOTT:  So, you and I met a few years ago at – 
+
+DIO GONZALEZ:  I know.  (Laughter.) 
+
+KEVIN SCOTT:  -- at Grace Hopper.  I actually took your portrait for this site that I do also called Behind the Tech.   
+
+DIO GONZALEZ

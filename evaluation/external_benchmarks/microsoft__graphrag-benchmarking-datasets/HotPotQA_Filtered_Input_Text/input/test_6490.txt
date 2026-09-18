@@ -1,0 +1,9 @@
+The Intel 8088 (""eighty-eighty-eight"", also called iAPX 88) microprocessor is a variant of the Intel 8086.
+ Introduced on July 1, 1979, the 8088 had an 8-bit external data bus instead of the 16-bit bus of the 8086.
+ The 16-bit registers and the one megabyte address range were unchanged, however.
+ In fact, according to the Intel documentation, the 8086 and 8088 have the same execution unit (EU)—only the bus interface unit (BIU) is different.
+ The original IBM PC was based on the 8088.
+The EDUC-8, pronounced "educate", was an early microcomputer kit published by Electronics Australia in a series of articles starting in August 1974 and continuing to August 1975.
+ Electronics Australia initially believed that it was the first such kit, but later discovered that Radio-Electronics had just beaten it with their Mark-8 by one month.
+ However, Electronics Australia staff believed that their TTL design was superior to the Mark-8, as it did not require the purchase of an expensive microprocessor chip.
+The COMX-35 was a home computer that was one of the very few systems to use the RCA 1802 microprocessor, the same microprocessor that is also used in some space probes.

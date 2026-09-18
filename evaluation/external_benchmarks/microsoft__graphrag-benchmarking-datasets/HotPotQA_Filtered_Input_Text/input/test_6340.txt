@@ -1,0 +1,49 @@
+Frederick Duncan Michael Haldane {'1': ", '2': ", '3': ", '4': "} (born 14 September 1951), known as F. Duncan Haldane, is a British born physicist who is Eugene Higgins Professor of Physics at the physics department of Princeton University, and a Distinguished Visiting Research Chair at Perimeter Institute for Theoretical Physics.
+ He won the 2016 Nobel Prize in Physics with David J. Thouless and John Michael Kosterlitz.
+Serge Haroche (born 11 September 1944) is a French physicist who was awarded the 2012 Nobel Prize for Physics jointly with David J. Wineland for "ground-breaking experimental methods that enable measuring and manipulation of individual quantum systems", a study of the particle of light, the photon.
+ This and his other works developed laser spectroscopy.
+ Since 2001, Haroche is a Professor at the Collège de France and holds the Chair of Quantum Physics.
+ In 1971 he defended his doctoral thesis in physics at the University of Paris VI, his research has been conducted under the direction of Claude Cohen-Tannoudji.
+François Baron Englert (] ; born 6 November 1932) is a Belgian theoretical physicist and 2013 Nobel prize laureate (shared with Peter Higgs).
+ He is Professor emeritus at the Université libre de Bruxelles (ULB) where he is member of the Service de Physique Théorique.
+ He is also a Sackler Professor by Special Appointment in the School of Physics and Astronomy at Tel Aviv University and a member of the Institute for Quantum Studies at Chapman University in California.
+ He was awarded the 2010 J. J. Sakurai Prize for Theoretical Particle Physics (with Gerry Guralnik, C. R. Hagen, Tom Kibble, Peter Higgs, and Robert Brout), the Wolf Prize in Physics in 2004 (with Brout and Higgs) and the High Energy and Particle Prize of the European Physical Society (with Brout and Higgs) in 1997 for the mechanism which unifies short and long range interactions by generating massive gauge vector bosons.
+ He has made contributions in statistical physics, quantum field theory, cosmology, string theory and supergravity.
+ He is the recipient of the 2013 Prince of Asturias Award in technical and scientific research, together with Peter Higgs and the CERN.
+The Nobel Prize in Physics (Swedish: "Nobelpriset i fysik" ) is a yearly award given by the Royal Swedish Academy of Sciences for those who conferred the most outstanding contributions for mankind in the field of physics.
+ It is one of the five Nobel Prizes established by the will of Alfred Nobel in 1895 and awarded since 1901; the others being the Nobel Prize in Chemistry, Nobel Prize in Literature, Nobel Peace Prize, and Nobel Prize in Physiology or Medicine.
+Since 1901, the Nobel Prize in Literature (Swedish: "Nobelpriset i litteratur" ) has been awarded annually to an author from any country who has, in the words of the will of Alfred Nobel, produced "in the field of literature the most outstanding work in an ideal direction" (original Swedish: "den som inom litteraturen har producerat det mest framstående verket i en idealisk riktning").
+ Though individual works are sometimes cited as being particularly noteworthy, here "work" refers to an author's work as a whole.
+ The Swedish Academy decides who, if anyone, will receive the prize in any given year.
+ The academy announces the name of the chosen laureate in early October.
+ It is one of the five Nobel Prizes established by the will of Alfred Nobel in 1895; the others are the Nobel Prize in Chemistry, Nobel Prize in Physics, Nobel Peace Prize, and Nobel Prize in Physiology or Medicine.
+The Nobel Prizes are awarded annually by the Royal Swedish Academy of Sciences, the Swedish Academy, the Karolinska Institute, and the Norwegian Nobel Committee to individuals who make outstanding contributions in the fields of Chemistry, Physics, Literature, Peace, Physiology or Medicine and Economics.
+ All but the economics prize were established by the 1895 will of Alfred Nobel, which dictates that the awards should be administered by the Nobel Foundation.
+ The Nobel prize in Economics, or The Sveriges Riksbank Prize in Economic Sciences in Memory of Alfred Nobel, was established in 1968 by the Sveriges Riksbank, the central bank of Sweden, for outstanding contributions in the field of Economics.
+ Each prize is awarded by a separate committee; the Royal Swedish Academy of Sciences awards the Prizes in Physics, Chemistry, and Economics, the Swedish Academy awards the Prize in Literature, the Karolinska Institute awards the Prize in Physiology or Medicine, and the Norwegian Nobel Committee awards the Prize in Peace.
+ Each recipient receives a medal, a diploma and a cash prize that has varied throughout the years.
+Brian David Josephson, {'1': ", '2': ", '3': ", '4': "} (born 4 January 1940), is a Welsh theoretical physicist and professor emeritus of physics at the University of Cambridge.
+ Best known for his pioneering work on superconductivity and quantum tunnelling, he was awarded the Nobel Prize in Physics in 1973 for his prediction of the Josephson effect, made in 1962 when he was a 22-year-old PhD student at Cambridge University.
+ Josephson is the only Welshman to have won a Nobel Prize in Physics.
+ He shared the prize with physicists Leo Esaki and Ivar Giaever, who jointly received half the award for their own work on quantum tunnelling.
+The Nobel Prize in Chemistry (Swedish: "Nobelpriset i kemi" ) is awarded annually by the Royal Swedish Academy of Sciences to scientists in the various fields of chemistry.
+ It is one of the five Nobel Prizes established by the 1895 will of Alfred Nobel, who died in 1896.
+ These prizes are awarded for outstanding contributions in chemistry, physics, literature, peace, and physiology or medicine.
+ As dictated by Nobel's will, the award is administered by the Nobel Foundation and awarded by a committee that consists of five members elected by the Royal Swedish Academy of Sciences.
+ The first Nobel Prize in Chemistry was awarded in 1901 to Jacobus Henricus van 't Hoff, of the Netherlands.
+ Each recipient receives a medal, a diploma and a monetary award prize that has varied throughout the years.
+ In 1901, van 't Hoff received 150,782 SEK, which is equal to 7,731,004 SEK in December 2007.
+ The award is presented in Stockholm at an annual ceremony on December 10, the anniversary of Nobel's death.
+The Nobel Prize in Physiology or Medicine (Swedish: "Nobelpriset i fysiologi eller medicin" ) is awarded annually by the Swedish Karolinska Institute to scientists and doctors in the various fields of physiology or medicine.
+ It is one of the five Nobel Prizes established by the 1895 will of Alfred Nobel (who died in 1896), awarded for outstanding contributions in chemistry, physics, literature, peace, and physiology or medicine.
+ As dictated by Nobel's will, the award is administered by the Nobel Foundation and awarded by a committee that consists of five members and an executive secretary elected by the Karolinska Institute.
+ While commonly referred to as the Nobel Prize in Medicine, Nobel specifically stated that the prize be awarded for "physiology or medicine" in his will.
+ Because of this, the prize can be awarded in a broader range of fields.
+ The first Nobel Prize in Physiology or Medicine was awarded in 1901 to Emil Adolf von Behring, of Germany.
+ Each recipient receives a medal, a diploma and a monetary award that has varied throughout the years.
+ In 1901, von Behring received 150,782 SEK, which is equal to 7,731,004 SEK in December 2008.
+ In 2013, the prize was awarded to James E. Rothman, Randy W. Schekman and Thomas C. Südhof; they were recognised "after discovering how cells precisely transport material".
+ The award is presented in Stockholm at an annual ceremony on December 10, the anniversary of Nobel's death.
+David Jeffrey Wineland (born February 24, 1944) is an American Nobel-laureate physicist at the National Institute of Standards and Technology (NIST) physics laboratory.
+ His work has included advances in optics, specifically laser cooling trapped ions and using ions for quantum computing operations.
+ He was awarded the 2012 Nobel Prize in Physics, jointly with Serge Haroche, for "ground-breaking experimental methods that enable measuring and manipulation of individual quantum systems."

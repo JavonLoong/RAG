@@ -1,0 +1,13 @@
+Ep-59_Behind_the_Tech_Kevin_Scott_Podcast_with_David_Kirtley.txt  rocket. And, you know, so small is good if you can accomplish what you want to accomplish inside of the envelope of small. 
+
+And so, I think it’s actually one of the genius things about what you all are doing. Like, if you look at these efficient plants that we, you know, are attempting to build, like, they’re just gigantic projects. They cost tens of billions of dollars to make one. And, like, they’re at such a huge scale that, you know, and I’m guessing part of, like, the reason they’re at a huge scale is, like, you’re trying to amortize the – like, you fall into sort of the reverse trap of what you just said. 
+
+You convince yourself that this thing is going to be expensive. And so, the only way you can really, you know, recover the cost of things, like, you’ve got to build this giant thing that helps you amortize the, you know, the development and construction costs. And, yeah, but what you all are doing are building these things that are going to be much more compact, potentially, which is just genius, I think.
+
+DAVID KIRTLEY: Thank you. Yeah, I think that – I think the way you said it is that you convince yourself of the outcome. And so, you get into a trap early. You say, you know, it doesn’t matter what the control system of the cockpit weighs on my rocket, it’s going to be huge rocket anyway. So then, you then just bake that in, that inefficiency into the system, where we try very hard not to, even from, you know, from the point of view of some anecdotes of where a lot of our magnetic coils are modular. They’re made all the same. 
+
+And in fact, not only are they made all the same, but they’re made up of subcomponents. And those subcomponents are all the same. So, our given – we may have 100 magnetic coils that have four pieces each or four, like, main coil segments, but you end up making 400 of those segments. I mean, there’s all kinds of manufacturing benefits for that. 
+
+But then the one I didn’t really appreciate is that we break those segments into pieces, like, a human can pick up. And so, now, you get a delivery and a human picks it up and moves it over to the table. And when you have a big coil, I saw some – and one of the manufacturers I was visiting earlier this year, they were really proud of this 300 ton magnet they had developed. There was one unit, it was 300 tons. And it had – they developed a boat to move it around, and a specialty crane to move it around, and all those things.
+
+And I’m like, I’m just thinking internally like, this is slow, this is too slow. Like, you

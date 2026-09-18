@@ -1,0 +1,35 @@
+Ep-12.txt [MUSIC]
+KEVIN SCOTT: So, next up we'll meet with Bill Coughran. Bill is one of my engineering 
+heroes. He's a researcher, teacher, entrepreneur, and business executive whose career includes 
+big jobs like head of the computing sciences research division at Bell Labs, the birthplace of 
+UNIX, the C and C++ programming languages and other technologies that are foundations of our 
+modern tech world. And Bill was SVP of Search, Infrastructure, Maps and Local at Google. 
+Bill is now a partner at Sequoia where he invests in, advises, and coaches tech entrepreneurs.
+[MUSIC]
+KEVIN SCOTT: The thing that I think everybody will tell you about Bill is he is just by 
+temperament and depth of knowledge one of the best people in the world to work with as an 
+engineer. And everybody who's ever worked for Bill wants to continue to work for Bill as long 
+as they possibly can. I'm thrilled that you are here with us today. 
+I've been hesitant to ask you to come on because we've had lots and lots of people on the show, 
+you in some ways are the most intimidating one because I admire you so much. (Laughter.) 
+BILL COUGHRAN: You're very kind, Kevin. Thank you for the invitation. And I also, as I 
+think you and some of the audience probably knows, I don't spend a lot of time doing public 
+things. But with a kind invitation, I'm very pleased to be here. 
+KEVIN SCOTT: Yeah, and we're delighted. So, I really want to get into your story. So, you 
+got your PhD in computer science --
+BILL COUGHRAN: Yes. 
+KEVIN SCOTT: -- from Stanford. 
+BILL COUGHRAN: No, I finished my PhD and then I went to Bell Labs. I did do work as a 
+commercial programmer while I was at Caltech, but that was a side job. But I went to Bell Labs 
+and I did a lot of work in fluid modeling and semiconductor modeling early on. 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+4
+And then became interested in what today would be called distributed computing and kind of 
+shifted to that. And then I was asked at some point to become the leader of a group, and then 
+ended up I stepped up a few steps and ended up as the head of the computing science research 
+center. 
+KEVIN SCOTT: So how did that transition go for you? I mean, I've always been interested in 
+this because you know I think the people who have worked for you and with you admire both 
+your ability as a like a technical leader as well as your technical ability. And, like, those two 
+things don't always go hand in hand. 

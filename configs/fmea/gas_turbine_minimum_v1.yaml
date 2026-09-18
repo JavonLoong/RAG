@@ -1,0 +1,21 @@
+template: gas_turbine_minimum_v1
+description: 燃气轮机 FMEA 最小可审核字段模板；不自动生成无证据的评分。
+
+fields:
+  - {name: equipment, label: 设备, required: true}
+  - {name: component, label: 部件/系统, required: true}
+  - {name: failure_mode, label: 故障模式, required: true}
+  - {name: cause, label: 原因, required: true}
+  - {name: effect, label: 影响, required: true}
+  - {name: detection_method, label: 检测方法, required: true}
+  - {name: recommended_action, label: 建议措施, required: true}
+
+evidence_policy:
+  per_field_required: true
+  unknown_value: null
+  show_conflicts: true
+  allow_human_correction: true
+
+scoring_policy:
+  automatic_s_o_d_scores: false
+  reason: 任务清单明确暂缓自动生成无依据的 FMEA 评分

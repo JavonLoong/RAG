@@ -1,0 +1,15 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt  panels and about a 6% generational learning rate with batteries. Every time you double the deployment, you get that percentage increase in efficiency. And, like, you know, it seems kind of funny, like, where did that come from? But if you look back, like, literally, like, 40 years, you can see it. 
+
+And I was just talking to my wife yesterday about EVs, and we’re looking at, like, buying an EV. And I remember when the Tesla came out, that was, like, six generations of batteries ago. Originally, like, the 300-mile range that everybody wants was really hard to achieve. And now, all of a sudden, like, every EV that’s out there has a 300-mile range. And you’re like, wow, like, did they all get smarter or whatever? Like, well, no, kind of they did. But, like, also, batteries just got way better because there’s a baked-in learning rate. And so, you know.
+
+And you look at a lot of climate, like, alternative energy and climate change. Like, I still think people don’t fully factor this in, that, like, solar is going to just keep getting better. And, you know, all these – wind has another – wind I think is 12%. You know, you can see the learning rates in a bunch of these technologies. 
+
+KEVIN SCOTT: Yeah.
+
+SAM SCHILLACE: So, like, you just – that trend is durable for a while.
+
+KEVIN SCOTT: Yeah, and you get to the point where, at a certain level of scale, you – you just get much broader participation in an ecosystem than in the beginning. So, it was sort of an elite thing, you know, like, elite – elite engineering schools and, like, just a very small handful of companies could have even conceived of building something like the Tesla Roadster when, you know – like, when – when Tesla really started getting going. 
+
+Today, like, you know, I was hanging out with someone the other day where, like, they’ve got two classic cars they’re converting into EVs right now. And like, you can buy all the components offline, the motors, the inverters, the power management systems, the – like, all the components in the car talk over this car area network that’s standardized. Yeah, like, not everything is great, but it’s almost like the early days of the PC ecosystem where you just sort of buy a bunch of stuff, build your own PC. Like, you can buy a bunch of stuff, build your own electric car.
+
+SAM SCHILLACE: Yeah, you can totally see this coming. I also like to talk about one of our favorite subjects, too. I think this is going to happen right now with AI. I think this is, like – I have the same sense,

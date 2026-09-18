@@ -1,0 +1,16 @@
+EP-08_ Behind_the_Tech_Kevin Scott_Podcast_with_Jason_Lanier_TRANSCRIPT.txt  but I've never experienced feeling alone with a piano.
+KEVIN SCOTT:  Which is interesting, even when you're practicing?
+
+JARON LANIER:  Yeah, pianos are a bit mysterious, because they're sort of the button box that transcends button boxness.  They have some kind of a life in them that they shouldn't have.  I think that's one of the reasons that they're so provocative to computer scientists.  Of course, the piano led to the computer pretty directly, because around Mozart's time somebody made a non-deterministic player piano, which is what inspired the jacquard loom, which inspired the Babbage generalized calculator, which inspired Turing, et cetera.  So you can blame the piano for all this if you want to.
+
+KEVIN SCOTT:  So what has been your favorite performing experience over all of the years?
+
+JARON LANIER:  Performing?  I've had the good fortune to perform with a lot of interesting people, although -- and I was living as a professional musician for a while in the '90s.  But I've never been like a major one.  I've never been a major star or anything.  But, as a side man I've had incredible performance experiences.  I think my favorite one was when I toured with Yoko Ono and her Plastic Band and Yoko and I would do these duets that were -- a number of people said they were the strangest thing ever on stage.  And I think we got there.  I think we did a -- John Perry Barlow called it the heavyweight championship of weirdness.  And I think we got -- yeah, that was good.
+
+And I played with Ornette Coleman, this wonderful -- the father of free jazz.  And I've done a lot with Philip Glass, including just recently.  In theory we're doing a new record together.  We did one in the '90s.
+
+KEVIN SCOTT:  That's so awesome.
+
+JARON LANIER:  I just did a show with Philip where I brought the pedal steel guitar in to the minimalist music aesthetic for the first time and it worked great.  It was so fun.  And I just did a thing with T-Bone Burnett a while ago for a Sara Bareilles record that was really, really cool.  And I've done -- I've played with all kinds of people.  I've played with George Clinton and P Funk.  I've done more than you'd imagine, but always kind of in the background as a performer.  I've done some solo stuff, too.  But, as a performer I can only do so much.
+
+I've had this career in computer science and another one as a writer at a certain point you can't really do everything always and then have a family.  So unfortunately, I haven't been doing as much lately, but

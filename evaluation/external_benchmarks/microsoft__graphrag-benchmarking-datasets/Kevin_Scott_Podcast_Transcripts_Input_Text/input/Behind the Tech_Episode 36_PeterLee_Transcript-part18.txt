@@ -1,0 +1,17 @@
+Behind the Tech_Episode 36_PeterLee_Transcript.txt  on projects in pandemic response. 
+
+And I looked around and I realized that it wasn’t just pandemic response, we had researchers working full time looking at the security of voting machines. We had researchers doing predictive analytics to understand where to put firefighting resources for major wildfires in Australia and California. We had researchers working on machine learning to accelerate new diagnostics for COVID-19. None of these were in anyone’s job description in Microsoft Research. And yet it would be wrong to say, you should stop doing those things and get back to your normal research. 
+
+And it also made us realize there’s something going on here. There’s a form of scientific research that we now call crisis response science that actually is legitimately a part of some people’s jobs in Microsoft Research. 
+
+And so, with that whole thought process, we wanted to allow some of our researchers to actually have as their full-time jobs doing crisis response science. And so we formed the new group called the Societal Resilience Group. It’s led by Chris White under Johannes Gehrke, Redmond, Research at Redmond organization at Microsoft Research. And one of the first tasks, besides creating those job descriptions, is to define this new field of scientific research.
+
+And it reminds me a lot back in the 1980s, when the field of bioethics emerged. You know, we were mapping the human genome and it became important to understand what the ethical considerations are in the future of genetic engineering, and the whole new research discipline called bioethics, which is now really vibrant and important. In fact, I went and gave a keynote at one of the recent bioethics conferences just to understand this better. 
+
+I think we’re starting to see today the emergence of a new field in the same way that we saw the emergence of bioethics in the 1980s. Somehow, there’s something about crisis response science or the scientific research that helps make societies and communities and people more resilient to future crises, I think is emerging as a new discipline. 
+
+And, you know, it’s something that we really are taking very seriously, how do we build our capacity to anticipate, absorb, and adapt to disruptions that might threaten people, communities, or societies? And I think it’s something that leads to some surprising structures. 
+
+For example, community empowerment, grassroots community leaders end up being really important. It just helps establish trust. But there’s knowledge and insight there. And so, having elite researchers shoulder to shoulder with grassroots community leaders working on research problems together, it’s a new form of collaboration that wasn’t that common a few years ago, but is becoming sort of an everyday thing in this Societal Resilience Group.
+
+KEVIN SCOTT:  Yeah. I’m really happy that you’ve found the way to structure all of this energy that – and enthusiasm and intellect that people want to be able to focus on these problems, because I fully agree with you, that we

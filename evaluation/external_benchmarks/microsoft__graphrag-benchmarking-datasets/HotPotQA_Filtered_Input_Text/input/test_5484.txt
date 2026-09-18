@@ -1,0 +1,40 @@
+HP-UX (from "Hewlett Packard Unix") is Hewlett Packard Enterprise's proprietary implementation of the Unix operating system, based on UNIX System V (initially System III) and first released in 1984.
+ Recent versions support the HP 9000 series of computer systems, based on the PA-RISC instruction set architecture, and HP Integrity systems, based on Intel's Itanium architecture.
+CTERA Networks is a privately held enterprise software company headquartered in New York and Israel.
+ The company has regional offices in the UK, Italy, France, Spain, Germany, and Australia.
+ CTERA has partnered with companies including Amazon Web Services, Hewlett Packard Enterprise, IBM, and clients include Deutsche Telekom, Banco Santander, AXA and the United States Department of Defense.
+ In October 2016 IBM became a CTERA reseller.
+ IBM's Cloud Object Storage, integrated with the CTERA Enterprise File Services Platform, can be deployed on-premises, in the SoftLayer cloud or in a hybrid on-premises/cloud setup.
+ CTERA was mentioned in Gartner's 2016 Magic Quadrant for Data Center Backup and Recovery Software.
+HP Discover was Hewlett-Packard's showcase technology event for business and government customers.
+ In 2011, HP Enterprise Business, along with participating independent user groups, combined its annual HP Software Universe, HP Technology Forum and HP Technology@Work into a single event, HP Discover.
+ There we two HP Discover events annually, one for the Americas and one for Europe, Middle East and Africa (EMEA).
+ Since the split of Hewlett-Packard into HP Inc and Hewlett Packard Enterprise, HP Discover was replaced with HPE Discover focusing on the enterprise company's products and services.
+Hewlett-Packard, commonly referred to as HP, was an information technology corporation based in Palo Alto, California, which was split into two companies: Hewlett Packard Enterprise and HP Inc.
+ The company was founded by Bill Hewlett and Dave Packard in a small garage on January 1, 1939.
+ As of 2012, HP is the largest technology company in the world in terms of revenue, ranking 10th in the Fortune Global 500.
+HP IT Management Software is a family of Enterprise software products sold by the HP Software Division of information technology company Hewlett Packard Enterprise.
+ IT management software is a family of technology that helps companies manage their IT infrastructures, the people and the processes required to reap the greatest amount of responsiveness and effectiveness from today's multi-layered and highly complex data centers.
+ Beginning in September 2005, HP purchased several software companies as part of a publicized, deliberate strategy to augment its catalog of IT management software offerings for large business customers.
+ According to ZDNet and IDC, HP is the world's sixth largest software company.
+Compaq Presario V6000 is a series of widescreen 15.4<nowiki>"</nowiki> laptop computers, manufactured by Hewlett Packard.
+ It includes the V6000z series based on AMD processors such as the mobile Sempron and the dual core Turion X2, and V6000t based on Intel processors.
+ There have been repeated reliability issues with the AMD based v6000z laptops.
+ The fan algorithm in the BIOS was misconfigured causing overheating and damage to the wireless cards and the motherboard.
+ In late 2007 HP extended the limited warranty to cover these defects.
+ However that date is limited to 2 years from the purchase of the product.
+ If the computer shows no faults until after that 2-year period Hewlett Packard will not repair it, despite the fault being of their own cause.
+ In Australia this resulted in action by the Queensland Office of Fair Trading against Hewlett Packard for misrepresenting customers' rights, resulting in an agreed AU$3 million settlement.
+Aruba, a Hewlett Packard Enterprise Company, is a vendor of data networking solutions for enterprises and businesses worldwide.
+ Aruba Networks was founded in 2002 and is focused on bringing Wi-Fi wireless LAN mobility solutions to enterprise networks.
+ With its acquisition by Hewlett-Packard (now Hewlett Packard Enterprise) in 2015, Aruba Networks has become the entity of Hewlett Packard Enterprise bringing to market all campus and small business data networking offerings of HPE.
+ Its core products are wireless Access Points (APs), wired switches, mobility controllers, and network management software.
+ The company has over 1,800 employees and is headquartered in Santa Clara, California.
+Bernardo Huberman is a Senior Fellow and Senior Vice President at Hewlett Packard Enterprise Company, and Director of the Mechanisms and Design Lab at Hewlett Packard Labs.
+ He received his Ph.D. in Physics from the University of Pennsylvania, and is currently a Consulting Professor in the Department of Applied Physics and the Symbolic System Program at Stanford University.
+Hewlett Packard Enterprise Company (commonly referred to as Hewlett Packard Enterprise or HPE) is an American multinational enterprise information technology company based in Palo Alto, California, founded on 1 November 2015 as part of splitting of the Hewlett-Packard company.
+ HPE is a business-focused organization with four divisions: Enterprise Group, which works in servers, storage, networking, consulting and support; Services; Software; and Financial Services.
+Tandem Computers, Inc. was the dominant manufacturer of fault-tolerant computer systems for ATM networks, banks, stock exchanges, telephone switching centers, and other similar commercial transaction processing applications requiring maximum uptime and zero data loss.
+ The company was founded in 1974 in Cupertino, California.
+ It remained independent until 1997, when it became a server division within Compaq.
+ It is now a server division within Hewlett Packard Enterprise, following Hewlett Packard's acquisition of Compaq and the split of Hewlett Packard into HP Inc. and Hewlett Packard Enterprise.

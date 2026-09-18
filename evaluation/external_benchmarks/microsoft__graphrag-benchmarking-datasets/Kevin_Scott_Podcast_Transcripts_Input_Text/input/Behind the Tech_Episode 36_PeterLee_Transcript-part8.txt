@@ -1,0 +1,19 @@
+Behind the Tech_Episode 36_PeterLee_Transcript.txt  time, I think Microsoft Research has a special obligation to put its brainpower into the real world. You know, we – you know, that real world might be far in the future. Like, you know, I know, Kevin, you’re thinking so hard about the inevitability that general artificial intelligence will become real. And maybe that’s a few years into the future, but it’s inevitably going to happen. And so that’s situating research in the real world because it’s a world we know is going to become real. 
+
+And so in that sense, we’re different than Isaac Newton or Galileo. But that doesn’t mean we’re still not obligated to have a firm grip, you know, on these enduring values of research. 
+
+KEVIN SCOTT:  Yeah, I could not agree more. 
+
+I mean, and, like, one of the other things along those lines that you and I spend a bunch of time talking about is how to create the right incentives and culture for people taking the right types of intellectual risk. I think, you know, trying to solve a hard problem and failing, in general, I will go ahead and make this bold assertion, is like more valuable than spending a bunch of time trying to make incremental progress on something that’s already reasonably well developed.
+
+And that is a hard, hard thing to get people to do. And like, I want to ground it like, you have a particular example that I’m familiar with from your days as a Carnegie Mellon professor. 
+
+So you had a PhD student, George Necula, who, like, wrote what I think is one of the most beautiful PhD dissertations ever, and it, like, really affected me as a graduate student. It was this idea called Proof Carrying Code. And, like, that is a risky idea to let a PhD student go pursue because he could have failed. And you know, like you have to have a dissertation at the end of your graduate studies to get that Ph.D. So talk to me about how that happened and – and, like, what can we learn from good examples like that. 
+
+Or Mendel Rosenblum is another example. Like, his work resulted in, you know, a ton of the virtualization stuff that we have now and like VMware and whatnot. So there are positive examples, but there also is a lot of energy that gets thrown into incrementalism. 
+
+PETER LEE:  It’s true. And I think what happens also is it’s a real test as a mentor or a manager or advisor. You know, I think part of the struggle for you and me is sort of the tension between, you know, like you and I are opinionated, we have our own clear ideas. And it is not the case that the people that work for us across Microsoft Research share our points of view. 
+
+KEVIN SCOTT:  Correct. 
+
+PETER LEE: 

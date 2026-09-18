@@ -1,0 +1,18 @@
+EP-43_ Behind_the_Tech_Kevin_Scott_Podcast_with_Alexis_Ohanian.txt  I must have been, ah, let’s see – 8, 9, 10, someone can fact check how old I was, but like – you know, as a kid, you’re sitting in front of this screen that your parents have no idea what to do with – I mean, neither of my parents ever used it. They were confused by it, but you know, credit, they had the foresight, but you just I don’t know I couldn’t help but feel like a little superhero.
+
+KEVIN SCOTT: Yeah.
+
+ALEXIS OHANIAN: Because I was like, oh, man, I can do things my parents don’t understand, like this is kind of bad and fun and cool, and like who knows what I could do with this thing.
+
+And, and then before long, I started playing videogames. I remember Scorched Earth was one of the ones that was preloaded on there, and I’m playing this game as a little, you know, a few-pixel-sized tank, you know, launching nukes and all these other bombs, MIRVs. I remember I was – okay, and I’m watching this all happen, and I’m like, this is so cool, like, so this is a videogame, like this is fun, and it wasn’t long thereafter that I’m like, okay, well, wait – there’s code that makes this work, and you know, because it was such a pain in the ass – and now I’m really getting into trouble here on the Microsoft podcast. 
+
+It was such a pain in the ass to deal with things like drivers –
+
+KEVIN SCOTT: Yeah, yeah –
+
+ALEXIS OHANIAN: – and everything else that you really had to earn it, just to get your games to work, often. And because of that, I really started to think about, well, okay, well what makes these things work? And then it’s like, okay, it’s programming. You get a couple of books out of the library, and the only programming class my high school had—shout out Howard High School—was Pascal –
+KEVIN SCOTT: Yeah.
+
+ALEXIS OHANIAN: And so, I took it every year, because it was the only class, and the teacher was like, "Alexis, you’re still in this Pascal class, like why?” And I’m like, "Well, because I want 45 minutes every day to be on the computer, and I’m just going to – this is all I can get here, so this is all I’m going to try to take."
+
+And it was through this concept of, "Hey, I can create stuff," and I think, probably like a lot of kids my age, I wanted to be a game developer because of that, but thankfully – thankfully, at least for my career trajectory, I got a book on HTML and was

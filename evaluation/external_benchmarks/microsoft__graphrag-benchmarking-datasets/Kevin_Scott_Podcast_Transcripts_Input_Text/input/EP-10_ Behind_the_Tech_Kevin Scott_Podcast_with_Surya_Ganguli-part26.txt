@@ -1,0 +1,15 @@
+EP-10_ Behind_the_Tech_Kevin Scott_Podcast_with_Surya_Ganguli.txt :  Yeah.  You value different things at different stages.  Yeah.  
+KEVIN SCOTT:  All right.  Well, thank you so much for being with us today. This was an awesome conversation.
+SURYA GANGULI:  Thanks.  It's my pleasure.  Thanks for having me.  
+
+[MUSIC]
+
+CHRISTINA WARREN:  Well, thanks for joining us for Behind the Tech.  That was Kevin Scott speaking with Surya Ganguli.
+KEVIN SCOTT:  Surya is this -- yeah, as everyone just heard, like this really, really brilliant polymath.
+CHRISTINA WARREN:  Yeah. Well, one of the things, you know, that you two were talking about towards the end of your conversation that I found really interesting is, you know, we're getting all these really intelligent models.  We're starting to train these things in really interesting ways.  We're able to do a lot of really great things. But with that comes obvious ethical questions.
+KEVIN SCOTT:  Yes.
+CHRISTINA WARREN:  So, how do we ensure that what we're building is going to be used in a way that doesn't turn into that dystopic, you know, vision of, you know, the sci-fi novels that have defined, you know, our entertainment or even worse, had like a negative impact, you know, on our -- on our lives?
+KEVIN SCOTT:  Yeah, I think one of the most important things that we can do is to try to make some of the complexity of the field more accessible.  So, it can't be the case that a small number of people -- I won't even call them elite, because like in a way like being clever and, you know, sort of having the willingness to sort of commit yourself over a long period of time to accumulate a bunch of expertise is like admirable, but like it's also like not this unattainable sort of thing.
+And so, but like what we have to do a much better job of than we've been doing throughout the history of AI as a defined discipline, is making sure that we are able to convey some of the complexity of the field to other folks, so like we have a big swath of people participating in the conversation about AI in a rational, reasonable way.  
+You can't just expect like a bunch of scientists and engineers to universally be able to make a set of good decisions on behalf of the rest of society.  Like everybody needs to have a voice in this thing.
+CHRISTINA WARREN:  Yeah, you're definitely right, we need to have more voices.  And we need to be more transparent with how these things are being built, too, right, because, I mean, I think that that's one way that you do both A) improve the models that are being built, but B) and

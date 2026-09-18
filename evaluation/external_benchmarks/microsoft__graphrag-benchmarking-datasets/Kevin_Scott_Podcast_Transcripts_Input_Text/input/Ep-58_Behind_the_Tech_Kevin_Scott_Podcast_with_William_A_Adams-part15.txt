@@ -1,0 +1,15 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt . (Laughter.) There’s so much history in there that it’s like, yeah, we did that, too. And we did that, and we did that.
+
+Little known fact, I was granted a – after doing this XML stuff and some other stuff, my then-GM at the time, Dave Reid, said, “Hey, come up with something.” (Laughter.) So, he gave me free license. He said, “Pick your top six people, and go do something interesting.” And he had gotten some commandment from Bill Gates or whoever at the top, do something that helps us fight against Java at that time. 
+
+And so, we went to do something that was really like, that would be hard for Java to do quickly, right? So, we ultimately came up with this thing, which is now called System.Linq. And I know you had Anders Hejlsberg on in the very beginning, and he talked about this. So, we worked with Anders and some other people, and came up with this way of changing your programming, such that your data types had nullable types. And we had things like lambda expressions, and there was – it was pretty easy to do database stuff, and XML integration, and blah, blah, blah. And that was something that Java couldn’t do easily. 
+
+So, that was birthed out of this same set of people that were doing this XML work. They then prototyped the System.Linq stuff.
+
+KEVIN SCOTT: It’s awesome, super cool. So, we’ll fast forward through a whole bunch of stuff. So, you and I first met when I came to Microsoft and was appointed CTO, and I was recruiting the first people into the office of the CTO. And I borrowed this concept that Bill Gates originated a long while back, which when he was running the company, he always had a technical adviser. And his technical adviser was basically, like, an avatar that he would send off into this org to go dive deep on things, and to come back and, like, help him make sure that he understood technically what’s going on, and that he had an independent point of view about the technical goings on inside of Microsoft, aside from what he’s being told by the teams that are working on stuff.
+
+And, you know, at the point that I was CTO, like, the company was, or when I was appointed CTO, the company was, like, really big. And so, I was, like, all right, I not only need a technical advisor, I need lots of them. 
+
+WILLIAM ADAMS: Yeah. (Laughter.) 
+
+KEVIN SCOTT: And you were one of my very first technical advisors. And, you know, I want to talk a little bit about what you did and what was appealing to you about that role. But I also want to focus on this amazing thing that you

@@ -1,0 +1,21 @@
+EP-27_ Behind_the_Tech_2020-Year-In-Review.txt  future. It was going to be a trilogy, but unfortunately the third book in the trilogy has been persistently derailed by political developments in the real world. 
+
+I mean, I just can't write it. I've had about two or three different plots for it both destroyed, the most recent one was killed by COVID-19, because I do not want to write a book about a viral pandemic at this point. 
+
+KEVIN SCOTT: Yeah. 
+
+CHARLIE STROSS: Those books were “Halting State” and “Rule 34.” And the idea of “Halting State,” I got in 2005, when I was at a science fiction convention at a panel discussion discussing massively multiplayer online role-playing games like World of Warcraft, at that point. 
+
+And a member of the panel who were on the top table at that point came up with a couple of points. The first was MMOs were the first commercial successful virtual reality environment, one in which you have lots of people with avatars meeting each other. Forget the lack of headsets or tactile feedback or head position and so on, there's still a window into a virtual world. 
+
+The second thing he came up with was, there's economics involved. He gave, as an example, an anecdote of an incident that happened in London a couple of years earlier. And a guy walked into a police station to report a crime. Somebody he met on the internet had sold him a magic sword, and it wasn't magic. 
+
+KEVIN SCOTT: (Laughter.) That's great. 
+
+CHARLIE STROSS: It turned out to be fraud. You know, he bought a weapon inside a game via an eBay auction, and it wasn't as described. It did actually get written up as a fraud. And I suddenly realized at this point, hang on, I need to do some digging here. 
+
+And I did some digging and discovered some exotic studies, including one paper that confirmed if you take in-game currencies and convert them to real-world currencies using whatever players are running as an exchange rate, by about 1999, there was one game which had an economy with about the same value as the GDP of Austria. Well no, you can't really do a real-world conversion like that because it's just fatuous. You'd crash the in-game economy if you tried anyway. 
+
+But there was something going on here. And you know, economics is the study of how human beings allocate resources under conditions of scarcity. I began to ask myself, what's the world going to look like in ten years' time if we really do get artificial augmented reality goggles and self-driving cars and computer games everywhere and MMOs and live-action role play combined with high-bandwidth, always-on stuff. 
+
+So, I started designing what I thought the world of 2017 would look like. And I got this book written and had a bit of a hard time

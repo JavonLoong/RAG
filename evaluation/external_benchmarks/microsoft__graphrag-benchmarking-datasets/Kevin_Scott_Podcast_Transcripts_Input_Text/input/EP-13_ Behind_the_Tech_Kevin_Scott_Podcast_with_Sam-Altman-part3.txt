@@ -1,0 +1,16 @@
+EP-13_ Behind_the_Tech_Kevin_Scott_Podcast_with_Sam-Altman.txt  So next up, we'll meet with Sam Altman.  Sam is an entrepreneurial prodigy.  I believe he started his first company when he was 19 years old, and, like, that was where you and I first met.  Since then, you have gone on become an enormously successful investor, President of Y Combinator through one of its most interesting runs in its history.  
+And most recently, you've become CEO of OpenAI, which, you know, like obviously we just did a partnership with you all, but, like, that partnership notwithstanding, like, OpenAI is unquestionably doing some of the most interesting things in contemporary artificial intelligence.  So, welcome to the show.
+SAM ALTMAN:  Thanks very much.
+KEVIN SCOTT: So, I think we met the first time when you were -- when you were at Loopt.  
+SAM ALTMAN:  Yeah.
+KEVIN SCOTT:  Like, I was actually doing -- like, I was Head of Engineering at another mobile startup at the same time.  And that was sort of an interesting, like, crazy time.  Like, one of those things where you sort of -- I guess both of us, in, like, in our own way, were like experiencing the explosion of a brand new platform and ecosystem.  And so, you did that for eight years.  And then, you took this year off. 
+SAM ALTMAN:  Yeah.
+KEVIN SCOTT:  And then…
+SAM ALTMAN:  And then, I took over YC.  
+KEVIN SCOTT:  Yeah.  So, you -- you went to Stanford.  
+SAM ALTMAN:  Yeah. 
+KEVIN SCOTT:  And what did you choose to major in there?
+SAM ALTMAN:  Computer science.  I actually took mostly non-computer science classes, which at the time sort of felt indulgent.  And looking backwards, that was all the super valuable stuff.  So the time that I spent, like, taking writing classes, or studying history, or particularly studying science, like hard science, didn't have a big impact sort of for the next 10 years, but after that, those were all the most valuable classes.  I was going to learn to program no matter what, and I was going to be good at it no matter what.
+KEVIN SCOTT:  And you were -- how good a programmer were you by the time you got to Stanford?  Like, were the programming assignments were easy, hard?
+SAM ALTMAN:  Easy.  The first -- freshmen year was easy, and then it got hard.
+KEVIN SCOTT:  Okay.  You know as you're thinking about how we educate our kids, like, that's a great luxury to, like, have.  By the time you get to college, you've already got

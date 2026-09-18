@@ -1,0 +1,19 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt .  When you asked this question of Danielle Feinberg she shared that it was her love of combining computers and arts and that actually started when she was just eight years old.  And that eventually led to her getting a BA in computer science from Harvard.  
+
+[MUSIC]
+
+KEVIN SCOTT: So, when did you decide that computer graphics was the thing? 
+
+DANIELLE FEINBERG: Well, you know, it's that same thing of, like, I'm looking at these engineering classes. I don't know, looking at the computer classes and I go, (gasps) "Look at that computer graphics class." "That sounds awesome." "I want to take that." "How soon can I take that?" "Oh, well, it's got this prerequisite here." And then, "Oh, I can't take it till junior year." 
+
+And so, I'm such a nerd. Sophomore year, I emailed the professor, and I was, like, "Hey, I'm so excited to take your class, is there anything I could do to get ahead? Is there anything I could just play with now?" And I got the most confused email back from him. You know, I don't think most Harvard students are like emailing professors for future classes and asking how they can do work for it. (Laughter) 
+
+He was, like, "I guess you could go buy the textbook." But it must have made an impression. We're still friends to this day. And he clearly knew my enthusiasm going into the class. And so, I go in, and it was really a class about programming -- all the underpinnings of the programming to get to the 3-D world. But there was a day where he turned off the lights and he started playing these films. And it was the Pixar short films from the late '80s and early '90s. And this is, I think, '94. 
+
+And I, still completely clearly etched in my mind, just watched those with my mouth hanging open. Was like, "That is what I have to do with my life." Because it was all this math, science, and code I'd been learning, but it created world and stories and characters in this way, that to me, was just the most perfect combination of everything that I loved. 
+
+[MUSIC]
+
+KEVIN SCOTT:  Before we close, we'd love to revisit some moments when we ask our guests what they do when they're not innovating, inventing and, you know, otherwise being amazing and brilliant.  Here were some of our favorite responses, first from Danny Hillis, when I asked him what he did outside of work.  
+
+DANNY HILLIS:  Well, let's see.  I mean, really, I have to say that there is kind of a blend of fun and work for me.  But I

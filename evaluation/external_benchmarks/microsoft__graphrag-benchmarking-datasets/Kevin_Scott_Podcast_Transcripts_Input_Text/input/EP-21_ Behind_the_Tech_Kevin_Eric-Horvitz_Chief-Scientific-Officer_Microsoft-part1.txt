@@ -1,0 +1,25 @@
+EP-21_ Behind_the_Tech_Kevin_Eric-Horvitz_Chief-Scientific-Officer_Microsoft.txt ../ERIC HORVITZ: I think that we know so little even today and there’s so much possible, that I think our grandkids will live in a very different world where biology will have played a major role in almost everything that’s being touched, including the materials that we build systems from. And so, I’m very excited about the possibilities. 
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC]
+
+CHRISTINA WARREN:  Hello, and welcome to Behind the Tech. I'm Christina Warren, Senior Cloud Advocate at Microsoft.
+
+KEVIN SCOTT:  And I'm Kevin Scott.
+
+CHRISTINA WARREN:  It is great to see you, Kevin, well, you know, virtually anyway. So, are you getting into the rhythm working from home yet?
+
+KEVIN SCOTT:  I think it has finally gotten a little bit easier. The big challenge for us in the early days of the COVID shelter-in-place was having both of our kids home. So, I've got a nine-year-old and 11-year-old who, like, have the great fortune of being able to do some of their schoolwork remotely. But it also meant having them at home, that my wife and I all of a sudden were teaching assistants once again, and also doing our own IT support for our kids, which was not really what we had signed up for. (Laughter.)
+
+CHRISTINA WARREN:  Right, right.
+
+KEVIN SCOTT:  So how has your work changed? I know you traveled a lot. So like, that's obviously not happening anymore. So, how's your team working?
+
+CHRISTINA WARREN:  Yeah, obviously I am not traveling anymore, right? (Laughter.) That's for sure. Yeah, you know, it's been interesting. Our team was mostly remote first anyway, but this is a different sort of remote experience. So, it's been, I think, good in the sense that we already had experience working together from different places. But it's still different, and we're all I still think, adjusting. 
+
+But one of the interesting things, you know, with Microsoft is we're focusing on trying to see how we can do advocacy and events, and the things that I use to travel for online and potentially reach even more people. So, that's pretty cool. 
+
+And as our listeners may know, Microsoft Research is actually playing a significant role in bringing our

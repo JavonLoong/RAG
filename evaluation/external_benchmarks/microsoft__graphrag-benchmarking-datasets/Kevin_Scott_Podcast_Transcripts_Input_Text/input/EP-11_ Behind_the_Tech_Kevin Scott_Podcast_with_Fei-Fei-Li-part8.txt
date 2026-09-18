@@ -1,0 +1,18 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt   Yeah.  
+FEI-FEI LI:  So, I started my AI research in enabling computers to see and understand everyday objects.  
+KEVIN SCOTT:  But that's a big leap.  I mean, we sort of take for granted that image classifiers are reasonably good now, but -- 
+FEI-FEI LI:  Yeah.  
+KEVIN SCOTT:  -- like, when you're doing this back in 2000 to like have the idea that I want to go from this, like, relatively sort of simplistic and not to, like, denigrate in any way all the computer vision research, because like some of the best people I know -- like the smartest people I know were doing that work.  But it's a big leap from that to like I want to do like whole object recognition inside of images. 
+FEI-FEI LI:  It was a leap.  I mean, I didn't single-handedly do it.  Like I said, there were a few incredibly forward-thinking scientists, Jitendra Malik, David Lowe, Pietro Perona, they're starting to thinking that way. 
+But we've as a field made mistakes and had detours, right, at that time.  We were thinking about how to mathematically construct those handmade models to describe objects, and that took years and years to do.  And it didn't deliver the results we want. 
+KEVIN SCOTT:  Yeah. 
+FEI-FEI LI:  And one of the projects, it's really ironic, but also fun to reflect back is that data was so scarce at that time that my very first object recognition project is called One-Shot Learning is to work on a setting that we only have one or two picture to train the algorithm. 
+KEVIN SCOTT:  Right. 
+FEI-FEI LI:  And today, think about the big data age.  And what I did for ImageNet, it was almost the polar opposite. 
+KEVIN SCOTT:  Right.  
+FEI-FEI LI:  But it's a capability humans have. 
+KEVIN SCOTT:  Yeah. 
+FEI-FEI LI:  And we try to replicate that.  
+KEVIN SCOTT:  Yeah, and I want to come back to that in a minute, but like you brought up ImageNet, so like this is one of the things you're most well known for.   
+And, you know, as I, listen to you talking about your PhD work, it sort of seems like a natural extension to an extent of what you're doing.  So, like, for the audience, like, why don't you describe what ImageNet is? 
+FEI-FEI LI:  Okay.  So, ImageNet was a project we started in 2007 and more or less completed in 2009.  The end result is at that

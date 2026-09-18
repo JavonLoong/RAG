@@ -1,0 +1,40 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt . 
+
+So, how does she get her prescription medicines?  How does she get her groceries and just sort of the staple things that she needs to exist?  
+
+And one of the things that I think could be really incredibly beneficial with these self-driving technologies is the possibility that you’ll be able to have autonomous deliveries for people like my grandmother. 
+
+
+CHRISTINA WARREN:  I think you’re absolutely right.  I think the potential for this stuff is really fantastic.  Let’s hear more about some of the potential for this technology from Chris Urmson.  
+
+[MUSIC]
+
+KEVIN SCOTT:  Our guest today is Chris Urmson.  Chris is the cofounder and CEO of Aurora, a company that builds self-driving vehicle technology.   Before founding Aurora, he was CTO of Google’s self-driving car program.  Prior to that, Chris was a faculty member of the Robotics Institute at Carnegie Mellon University, where he was the technical director of the DARPA Urban and Grand Challenge teams.  I’m excited to hear what he’s up to these days.  Hey, Chris, welcome to the show. 
+
+CHRIS URMSON:  Thanks for having me.  
+
+KEVIN SCOTT:  So, I’d love to start by learning how you got interested in technology in the first place as a kid. Were you taking engineering classes or programming classes when you were in high school?  Or you just discovered that in college?  
+
+CHRIS URMSON:  No, back when I was in high school, there wasn’t really computer science at high school.  And so, I bought some kind of Tandy x86 clone or whatever back when I was in probably 9th or 10th grade from money from my paper route.  
+
+And, you know, tried to learn to program at first, where you go -- I don’t know if you recall this, but you go to the bookstore and you’d buy this paperback book that was program whatever it was, and it was just the source code listing.  
+
+KEVIN SCOTT:  Yes, and this is before CDROMs even.  
+
+CHRIS URMSON:  Yeah.  (Laughter.) 
+
+KEVIN SCOTT:  Which people probably don’t even remember now. 
+
+CHRIS URMSON:  That’s right.  We -- before that, actually, we bought a Commodore 64.  And of course that was exciting because it didn’t have a tape drive.  Right?  
+
+KEVIN SCOTT:  Right.  
+
+CHRIS URMSON:  Right?  Or -- 
+
+KEVIN SCOTT:  It didn’t have a floppy disk drive.  
+
+CHRIS URMSON:  Didn’t have a floppy, yeah.  
+
+KEVIN SCOTT:  And, like it -- 
+
+CHRIS URMSON:  It had 5.25-inch disks, that’s what

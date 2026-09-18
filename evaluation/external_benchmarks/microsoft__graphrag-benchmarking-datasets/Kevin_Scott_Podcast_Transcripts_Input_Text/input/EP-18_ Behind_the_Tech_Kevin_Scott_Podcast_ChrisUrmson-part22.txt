@@ -1,0 +1,33 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt  there’s on top of that there’s also an electronic control. 
+
+KEVIN SCOTT:  Okay.  
+
+CHRIS URMSON:  And that’s actually one of the challenges -- 
+
+KEVIN SCOTT:  And so you had the mechanical linkage for safety? 
+
+CHRIS URMSON:  So today, yes.  And this is actually one of the areas where there’s still steps that have to be made before we’ll see broad distribution of this technology. 
+
+KEVIN SCOTT:  So, this is fascinating.  Like, this is some of the minutia I think we like sort of skate over sometimes when we’re thinking about these technologies.  
+
+But, like, one of the things that the auto industry does incredibly well is like they understand manufacturing for safety perhaps better than any other industry maybe other than aerospace in the world. 
+
+CHRIS URMSON:  Pretty much, yeah.  
+
+KEVIN SCOTT:  And, like, there’s -- they have thought about this problem so deeply and for so long. 
+
+CHRIS URMSON:  Oh, yeah, and that’s why it’s so great to work with them on these kinds of problems.  So, when you -- and let’s take one very specific example.  So, let’s talk about the brake system on a car. 
+
+So the way that works today is when you press the brake pedal, you’re actually pressing -- you’ve got a metal arm that’s going in and compressing a cylinder that’s the master cylinder that’s then creating pressure -- hydraulic pressure in your brake system.  
+
+And that brake system is actually split into two circuits that are generally diagonally linked across the vehicle so that if one of them fails, you’ve still got two brakes and it turns out that the torques applied by the brakes and the wheels don’t spin the car when you apply the brakes.  You don’t have as much authority, but you still have brake power.  Now -- 
+
+KEVIN SCOTT:  And that’s a mechanically, like, brilliant design.  
+
+CHRIS URMSON:  Awesome.  And then what’s happened is with the introduction of more advanced features, like first electronic stability control and now adaptive cruise control, there needs to be a way for a computer to actuate some part of the brake system.  
+
+And with electronic stability control, you’re actually modulating whether that pressure that’s being applied by the master cylinder is effectively on or off around that.  And with adaptive cruise control, you’re actually wanting to generate pressure itself.  
+ 
+Now, in both of these systems, the redundancy -- so if the electronic system fails, you’re still able to apply pressure through that master cylinder system and so you know, the force of actuating the brakes is coming from your legs.  
+
+If you have a robot driving, if it’s a self-driving car, then there’s nothing applying that force.

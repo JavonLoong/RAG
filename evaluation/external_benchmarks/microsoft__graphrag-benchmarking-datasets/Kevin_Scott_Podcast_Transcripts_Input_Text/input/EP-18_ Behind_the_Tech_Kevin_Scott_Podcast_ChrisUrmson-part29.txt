@@ -1,0 +1,30 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt  is that you actually get to measure velocity instantaneously.  So, using Doppler.  So when you hear a siren go by and how it changes pitch, that’s the Doppler shift in that audio signal. 
+
+So with this, is we’re measuring vehicles at distance.  With each one of those measurements that come back through that pulse or through that wave, we’re actually -- 
+
+KEVIN SCOTT:  So you can tell whether you’re accelerating or decelerating relative to that other object. 
+
+CHRIS URMSON:  And not just whether we are, exactly what the delta in speed is.  And so this -- the reason why Aurora -- why we bought this company, and why we brough this technology in house is it’s magical.  Right?  Because if you’re trying to use a normal LIDAR to measure the world out, let’s say we want to see whether there’s something 200 meters out in front of us on the road.  
+
+And we want to know, is that a truck or is that a pedestrian or is that a bicycle?  Or something else?  We need to get enough points on that -- little dots back from it -- that allow us to see the shape of it.  And then we need to run a classifier on it.  So you need to get a whole lot of points on it because if you only have -- you know, if I have two dots back from something, you know, that’s a line.  
+
+I can’t tell whether that’s a person or a dump truck or a Bugatti or whatever.  And so that’s a lot of points.  It turns into a really hard problem. 
+In contrast, if I hit that thing with an FMCW LIDAR and can measure the speed of it, well, if it moves at 60 miles per hour -- 
+
+KEVIN SCOTT:  It’s not a human. 
+
+CHRIS URMSON:  Right.  It may not be -- I don’t know if it’s a Bugatti or a dump truck, but I know it’s a vehicle.  And so I can classify it much sooner so I can respond to it much more quickly.  
+
+KEVIN SCOTT:  Super interesting.  
+
+CHRIS URMSON:  Yeah, it’s really cool stuff.  
+
+KEVIN SCOTT:  Yeah, and like that -- I mean, the safety applications of that must be interesting, so like you can pay really close attention -- 
+
+CHRIS URMSON:  It’s profound.  
+
+KEVIN SCOTT:  -- to stationary things. 
+
+CHRIS URMSON:  Yeah, low-speed things.  You know, you can -- you understand -- you have this whole additional signal that we can incorporate into the classification and, thus, make us more robust and make us react more quickly. 
+
+KEVIN SCOTT:  Fascinating

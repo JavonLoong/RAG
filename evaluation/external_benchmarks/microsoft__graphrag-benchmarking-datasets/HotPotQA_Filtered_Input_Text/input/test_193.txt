@@ -1,0 +1,35 @@
+Compilers: Principles, Techniques, and Tools is a computer science textbook by Alfred V. Aho, Monica S. Lam, Ravi Sethi, and Jeffrey D. Ullman about compiler construction.
+ First published in 1986, it is widely regarded as the classic definitive compiler technology text.
+David Harold Bailey (born 1948) is a mathematician and computer scientist.
+ He received his B.S. in mathematics from Brigham Young University in 1972 and his Ph.D. in mathematics from Stanford University in 1976.
+ He worked for 14 years as a computer scientist at NASA Ames Research Center, but since 1998 has been at the Lawrence Berkeley National Laboratory.
+ He is now officially retired, but continues as an active researcher.
+ He is also a Research Associate at the University of California, Davis, Department of Computer Science.
+Nuria Oliver is a computer scientist.
+ She is Director of Data Science Research at Vodafone and Chief Data Scientist at DataPop Alliance.
+ Previously, she was Scientific Director at Telefónica and a researcher at Microsoft Research.
+ She holds a PhD from the Media Lab at MIT, and is an IEEE Fellow.
+ She is one of the most cited female computer scientist in Spain, with her research having been cited by more than 11800 publications.
+ She is well known for her work in computational models of human behavior, human computer-interaction, mobile computing and big data for social good.
+Franz Josef Och (November 2, 1971) is a German computer scientist.
+ He is currently working at Grail (an Illumina company) as Head of Data Science.
+ Prior to this he was Chief Data Scientist at Human Longevity Inc., and earlier worked for Google as a Distinguished Research Scientist and head of machine translation based at Google's Mountain View, California, headquarters south of San Francisco.
+In computer science, the Sethi–Ullman algorithm is an algorithm named after Ravi Sethi and Jeffrey D. Ullman, its inventors, for translating abstract syntax trees into machine code that uses as few registers as possible.
+The University of Berat is a private institution, independent and secular Higher Education, which operates the state fee.
+ Licensed by the Council of Ministers, no. 697 dated 18.06.2009, he opened the doors in the academic year 2009- 2010, offering programs in two faculties: Faculty of Social Sciences Programs in Science Teaching Legal, Political Science and Psychology General Administration and the Faculty of Economics with Learning programs in Banking and Finance-Business Administration.
+ During the first academic year, about 1,000 students attended studies.
+ A year later, this new institution offering undergraduate degrees in study programs: Preschool Teacher Education, Primary Education Teacher, English Language, Nursing, Engineering Computer and Information Technology, thus finalizing the 2010-2011 academic year with the opening of two new faculties: Faculty of Medical Sciences and the Faculty of Architecture and Inxhinierive.
+ Academic Year 2010-2011 finds the University Berat with about 2600 students in the first cycle of study.
+ Since the first year of its inception, the institution pointed at the center of academic life, the promotion of intellectual product and melting learning and research.
+ Through presentations, research and exchange, the University directs and encourages the identification and development of projects that will once again consolidate its primary purpose, scientific development, and research toward better quality.
+Ravi Sethi (born 1947) is an Indian computer scientist retired from Bell Labs and president of Avaya Labs Research.
+ He also serves as a member of the National Science Foundation's Computer and Information Science and Engineering (CISE) Advisory Committee.
+ He is best known as one of three authors of the classic computer science textbook "", also known as the "Dragon Book".
+Nokia Bell Labs (formerly named AT&T Bell Laboratories, Bell Telephone Laboratories and Bell Labs) is an American research and scientific development company, owned by Finnish company Nokia.
+ Its headquarters are located in Murray Hill, New Jersey, in addition to other laboratories around the rest of the United States and in other countries.
+Annie J. Easley (April 23, 1933 – June 25, 2011) was an African-American computer scientist, mathematician, and rocket scientist.
+ She worked for the Lewis Research Center (now Glenn Research Center) of the National Aeronautics and Space Administration (NASA) and its predecessor, the National Advisory Committee for Aeronautics (NACA).
+ She was a leading member of the team which developed software for the Centaur rocket stage and one of the first African-Americans to work as a computer scientist at NASA.
+Pharma Medica Research Inc. is an American research and development company that works with pharmaceutical companies and performs clinical trials in the pharmaceutical and biotechnology industry.
+ The company is based in Toronto, Canada with headquarters in Mississauga, Ontario.
+ Pharma Medica has locations in Scarborough, Ontario and St. Charles, Missouri.

@@ -1,0 +1,14 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt , in the early years, we just starved. I mean, quite – we had four employees, and I quite literally, for at least a year or two in there, we had Chip-A-Roo cookies and popcorn for lunch. That’s all we could afford. You’d walk down to the store – Chip-A-Roo cookies, a bag was like a dollar-fifty. Popcorn was maybe a dollar. And I would ride my bike home at night, literally looking in the gutter for a dollar so I could buy a doughnut to have for dinner, right?
+
+It’s like, we’re going – we’re going to do this this thing, that we’re dedicated, right? That’s how it was for a few years, but over time, we actually succeeded. We became big dogs in a little – or big fish in a small pond of NeXT Computers, and then we went on from there, but it was just a natural flow. It’s like, "I’m learning stuff. I know how to program. I’ve got friends who can program. The world is our oyster, let’s go get it," right?
+
+KEVIN SCOTT: Let’s talk a little bit about why NeXT, versus – so again, this is another interesting thing for the young folks. The number of platforms and types of computers and different types of microprocessor instruction set architectures that were out there when you were doing all of this was way more diverse than it is now. 
+
+WILLIAM ADAMS: Yeah. 
+
+KEVIN SCOTT: And so, you could have chosen to do a lot of things. You could have done PC software, you could have done MAC software, you could have done like UNIX stuff on a bunch of different UNIX systems that were becoming popular then, but you chose to work on NeXT –
+
+WILLIAM ADAMS: This niche market, NeXT – and that comes from – while I was at UC-Berkeley, I managed the computer store there. And so I was familiar with Apple. So I knew all those people. And you know, I wouldn’t say I was a Steve Jobs fanboy, but I knew Steve Jobs. And then when he went off to do NeXT, you know, he was kind of pushed out of Apple, we thought – we literally said, "We don’t know what you’re gonna do next, you might be selling, you know, bat guano to Eskimos. I know, it’s going to be exciting, we’re going with you," right?
+
+So as he did NeXT Computers – and of course, Steve Jobs, for anyone who knows, was quite the showman, you know, not in a fluffy way there’s like, there’s no – there’s no steak with that sizzle. It’s like he knew what he was talking about. And he knew what people really wanted. He had a sense of style, right? 
+

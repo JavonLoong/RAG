@@ -1,0 +1,49 @@
+The geometric algebra (GA) of a vector space is an algebraic structure, noted for its multiplication operation called the geometric product on a space of elements called multivectors, which is a superset of both the scalars formula_1 and the vector space formula_2.
+ Mathematically, a geometric algebra may be defined as the Clifford algebra of a vector space with a quadratic form.
+ Clifford's contribution was to define a new product, the geometric product, that united the Grassmann and Hamilton algebras into a single structure.
+ Adding the dual of the Grassmann exterior product (the "meet") allows the use of the Grassmann–Cayley algebra (known as 3D projective space or 4D homogeneous space and isomorphic to projective geometry) and a conformal version of the latter together with a conformal Clifford algebra yields a conformal geometric algebra (CGA) providing a framework for classical geometries.
+ In practice, these and several derived operations allow a correspondence of elements, subspaces and operations of the algebra with geometric interpretations.
+Litema (pronounced: /ditʼɪːma/; also spelled "Ditema"; Singular: Tema, Sesotho for "field") is a form of Sotho mural art composed of decorative geometric patterns, commonly associated with the South Sotho tradition today practised in Lesotho and neighbouring areas of South Africa.
+ Basotho women generate litema on the outer walls of homesteads by means of engraving, painting, relief mouldings and mosaic.
+ Typically the geometric patterns are scratched with a forefinger or hair comb into the wet top layer of fresh clay and dung plaster, and are then painted with natural dyes or, in contemporary times, manufactured paint.
+ Patterns resemble objects from the natural world and most often mimic ploughed fields or depict plant and animal life, sometimes associated with clan totems.
+ Litema are not a permanent facade design, but decay in the sun or may be washed away by a heavy rain.
+ It is common for women of an entire village to apply litema on special occasions such as a wedding or a religious ceremony.
+Monir Shahroudy Farmanfarmaian (Persian: منیر شاهرودی فرمانفرمائیان‎ ‎ ; born 1924) is an Iranian artist who lives in Tehran and collects traditional folk art.
+ She has been noted as one of the most prominent Iranian artists of the contemporary period, and she is the first artist to achieve an artistic practice that weds the geometric patterns and cut-glass mosaic techniques of her Iranian heritage with the rhythms of modern Western geometric abstraction.
+The Hollywood Theater is a historic theater building in Minneapolis, Minnesota, United States, which is listed on the U.S. National Register of Historic Places.
+ The Art Deco theater building opened on October 26, 1935, and the marquee proclaimed it the "Incomparable Showcase of the Northwest".
+ The theater, designed by architects Jack Liebenberg and Seeman Kaplan, had a generous budget that allowed for elaborate decoration in the Streamline Deco style of design; its facade and structure made a "powerful statement of geometric mass punctuated by the entrance, exits, and three small windows that served the projection booth."
+ Liebenberg and Kaplan went on to design the Riverview Theatre in Minneapolis and the Terrace Theatre in Robbinsdale.
+ The building featured a tall vertical sign, a patterned terrazzo floor, gilded pillars, and acoustical tiles in geometric patterns.
+ It had a seating capacity of just under 1000.
+ Much of the interior features are influenced by the Zig-Zag Moderne and Streamline Moderne styles.
+ The exterior is built of smooth Kasota limestone with vertical lines that transition to horizontal.
+A barcode is an optical, machine-readable, representation of data; the data usually describes something about the object that carries the barcode.
+ Originally barcodes systematically represented data by varying the widths and spacings of parallel lines, and may be referred to as linear or one-dimensional (1D).
+ Later two-dimensional (2D) codes were developed, using rectangles, dots, hexagons and other geometric patterns in two dimensions, usually called barcodes although they do not use bars as such.
+ Barcodes were initially scanned by special optical scanners called barcode readers. Later application software became available for devices that could read images, such as smartphones with cameras.
+In Indian mathematics, a Vedic square is a variation on a typical 9 × 9 multiplication table where the entry in each cell is the digital root of the product of the column and row headings i.e. the remainder when the product of the row and column headings is divided by 9 (with remainder 0 represented by 9).
+ Numerous geometric patterns and symmetries can be observed in a Vedic square some of which can be found in traditional Islamic art.
+A rose engine lathe is a specialized kind of geometric lathe.
+ The headstock rocks back and forth with a rocking motion or along the spindle axis in a pumping motion, controlled by a rubber moving against a rosette or cam-like pattern mounted on the spindle, while the lathe spindle rotates.
+ Rose engine work can make flower patterns, as well as convoluted, symmetrical, multi-lobed geometric patterns.
+ The patterns it produces are similar to that of a Spirograph, in metal.
+ No other ornamental lathe can produce these "rose" patterns.
+ The decoration produced by a rose engine lathe is called guilloche.
+ It sometimes confused with "jewel finishes" or engine turning, a much cheaper process of making swirly marks in metal by a rotating abrasive peg or pad, which is repeatedly applied to the surface to make a pattern of overlapping circles.
+ Jewel finishes used to be common on stereo faceplates and automobile interiors.
+In probability theory and statistics, the geometric standard deviation describes how spread out are a set of numbers whose preferred average is the geometric mean.
+ For such data, it may be preferred to the more usual standard deviation.
+ Note that unlike the usual "arithmetic" standard deviation, the "geometric" standard deviation is a multiplicative factor, and thus is dimensionless, rather than having the same dimension as the input values.
+ Thus, the geometric standard deviation may be more appropriately called geometric SD factor [1, 2].
+ When using geometric SD factor in conjunction with geometric mean, it should be described as "the range from (the geometric mean divided by the geometric SD factor) to (the geometric mean multiplied by the geometric SD factor", and one cannot add/subtract "geometric SD factor" to/from geometric mean [3].
+Morten Andersen (born 1976 in Aalborg, Denmark) is a contemporary artist with his own style developed through graffiti to "geometric expressionism" with reflections from cubism and futurism.
+ Morten Andersen is a representative of the new "Urban art" and paints complicated geometric patterns entirely his own expression with lines stretched, colored, and angled with urban energies.
+ Morten Andersen has educated himself through travels to Vietnam, China, France, Spain, Egypt and USA.
+ He has exhibited throughout Europe, in USA and Abu Dhabi.
+ In 2011 French "Graffiti Art Magazine" called him a prominent member of the one hundred contemporary artists to look out for.
+Pochampally Saree or Pochampalli Ikat is a saree made in Bhoodan Pochampally, Yadadri Bhuvanagiri district, Telangana State, India.
+ They have traditional geometric patterns in Ikat style of dyeing.
+ The intricate geometric designs find their way into sarees and dress materials.
+ The Indian government's official air carrier, Air India, has its cabin crew wear specially designed pochampally silk sarees.

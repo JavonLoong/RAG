@@ -1,0 +1,23 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt  when we were going to be able to bridge.  
+
+And so you were doing all of this work where we were still in that, you know, universe of confusion about, like, will we ever be able to get the perception to be as good as a human? 
+
+CHRIS URMSON:  Oh, yeah, and again, it’s been fun to watch what we can actually bring into scope and start to solve.  So back then, you know, this robot was designed to drive around in the Arctic.  It turns out, one of the benefits of being in the Arctic is there’s nothing there that moves.  Right?  There’s just rocks.  
+
+And so we were using stereo vision systems to reconstruct 3D geometry and then estimating the load-bearing surface from this and, thus, figuring out which were the flat bits we could drive on.  
+
+You know, we were not particularly adventurous in the terrain we would drive over.  And then, you know, the next step from that was looking at -- there’s this great program that I wasn’t part of at Carnegie Mellon called Crusher, and this was this six-wheeled, multi-ton thing that could move at -- you know, I don’t know, 30 miles per hour, but it was like a little tank. 
+
+And so there, they were figuring out the load-bearing surface, but they were also figuring out like what’s the stuff you can just drive through?  Because if you’re -- you know, if you’re driving a tank, turns out, the grass doesn’t get in your way, right?  The small trees don’t get in your way. 
+
+And so, you know, that was the next level of figuring out what was vegetation, what was a load-bearing surface, what’s the slope I can really drive on?   
+
+And then a lot of the stuff that I’ve been associated with over the last decade has been the actual underlying geometry of the world is pretty simple, right?  You drive on a road, it’s flat.  But now you have all these actors moving through it, whether it’s vehicles or bicyclists or motorcycles or pedestrians or, you know, ducks or wheelchairs.  Right? 
+
+And so now you have to separate the stuff that moves from the background and be able to track that and then understand that is a car or that is a pedestrian because that -- your model of how they’re going to behave in the future is somewhat a function of what you think it is, right?  
+
+KEVIN SCOTT:  Right.  
+
+CHRIS URMSON:  A pedestrian is very unlikely to move at 60 miles an hour.  You know, whereas a car, you know, that can happen.  And so you -- the way you interact with these vehicles and actors changes.  
+
+KEVIN SCOTT:  Interesting.  And so while you were at Carnegie Mellon, like,

@@ -1,0 +1,19 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt , because the machines are going to be able to take the tests with super-human performance very soon, I would guess. 
+
+You know, which means that – you know, I’m sure you’re glad that you went to Harvard and you had, like, a pretty diverse training, like, you were interested in cognitive science and mathematics and got a liberal education. And I think liberal education becomes more and more important as we get expert machines in these narrow domains.  
+
+Like, what are some of the other things that you all are thinking about – because this is part of the AI2’s mission, right, is to think about AI’s impact on the world, like, how are you thinking about these things? 
+
+OREN ETZIONI: Well, I think the topic of education in the modern world is near and dear to my heart. You know, I have three kids and a ten-year-old. And I worry both about the fact that they’re not really getting nearly as much computer literacy as I would like, and literacy with statistics and the ability to analyze data, right, which we have more and more of. 
+
+That impacts even their ability to be a good citizen, right? So many of the issues – let’s take climate change, right, that we face, you know, come to statistics or the issues of what is going to be the role of computers and algorithms in society. 
+
+So, I really think that we do need to have the basics, right? You don’t want people who, you know, can’t read, because the computer will read to me or can’t do arithmetic, right? So, you want to have the basics, but you want to go way beyond that. And you want to develop the skills of working together with the machine. The machine will do its part and the kid will learn to use it in important ways.  
+
+At AI2, we think about a number of issues not so much having to do with kids and education, but certainly having to do with bias. How do we prevent machines from amplifying the bias that’s in their input data, right? Because these models that we talk about, right, they take typically data from the past, they crunch it in the present, and then they make predictions or even decisions in the future.  
+
+So, if our past has racism and sexism and other ‘-isms’ that are very unfortunate, or more than unfortunate, they can be horrific, the last thing we want to do is carry them forward to the future. 
+
+And, again, that’s a very hot area of research, both at AI2 and more broadly we had a paper a few years ago won the best paper award called Men Also Like Shopping, that looked at the bias that’s actually in images, right? 
+
+You type in shopping, you’ll see more images of women than men. How does that affect our computer vision systems? Et cetera, et ceter

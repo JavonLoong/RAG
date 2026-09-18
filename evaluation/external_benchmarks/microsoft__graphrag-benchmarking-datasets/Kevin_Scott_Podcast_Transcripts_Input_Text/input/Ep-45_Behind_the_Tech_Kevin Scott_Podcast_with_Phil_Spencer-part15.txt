@@ -1,0 +1,15 @@
+Ep-45_Behind_the_Tech_Kevin Scott_Podcast_with_Phil_Spencer.txt  internship. And what are we now, like 200,000 or some kind of crazy number like that? 
+
+KEVIN SCOTT: Yeah.
+
+PHIL SPENCER: It – I will say the similarities are mostly in name today, like, comparing what it was like back then to what it is today. But I will say it’s still kind of an engineering-led, product led company. Back then, the transparency – everything, like I had the full Windows install base, codebase on my machine. Like, I was doing compiles of the full system. I was working on GDI and some other things with some of the team.
+
+And the transparency inside the company, it was kind of everybody, all hands, to get whatever we needed to get done. If you were a dev and you could write code, most people were definitely willing to kind of invite you into the codebase. And there’s good and bad in that, as you can imagine in terms of quality and kind of practice and even supportability of the code that’s written when so many different people are coming in. 
+
+Hours were – we were doing 80, 90 hours a week, 100 hours a week. But I was learning. I had amazing peers and mentors around me to review, not always the easiest when you’re getting your code reviewed in those scenarios. But, you know, I excelled at a rate faster and I couldn’t imagine any other environment with the concentration and peer feedback that I have. 
+
+I was a little bit outside, and you could say I still am here in gaming at Microsoft. I was doing consumer CD-ROM, Encarta, Windows Bookshelf, these kind of thing, DOS Bookshelf. So, I wasn’t in kind of core DOS land or what was – this was pre-Windows 3.0 or any of the precursors to Office. 
+
+So, we were a little bit of the ragtag group out on the sidelines, which meant some of the things that you read in, like, Microserfs and exposed to a lot of the core Microsoft were a little bit different than my experience, but it was awesome just to see this company take feedback real time, look at opportunity real time and move. And we didn’t get all the decisions right, clearly, but that eyes wide open, led from an engineering perspective, thinking about our products and our customers, it’s something that still sticks with me today. 
+
+KEVIN SCOTT: What you just described is what… what I think folks are very lucky when they get to be a part of, like, particularly being in this intense environment where you’re working with really smart people. You are, you know, like, trying to push some technical frontiers forward. And, like, you all, hopefully, you’re sort of, you know, civil and compassionate or whatnot, but, like, you’re also just sort of moving at a rate

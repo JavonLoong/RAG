@@ -1,0 +1,34 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt  was really for artificial intelligence.  It was kind of a sidetrack.  So, it was very clear that the brain worked much faster than computers did.  And it was very clear that if computers were going to be fast enough, they'd have to have an architecture that was more like the brain.
+
+But in those days, the doctrine of computer science was that if you use more than one processor on a problem, it gets less and less efficient as you get more of them.  It was called Amdahl's Law.
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  If you remember that.
+
+KEVIN SCOTT:  Oh yeah.
+
+DANNY HILLIS:  And so, the idea was, well, maybe you can use four or five, but you can't use 50 or 60 or 100.  And I knew that that sort of had to be wrong for artificial intelligence because our circuit switch in milliseconds, they were much slower than transistors, and yet, we could recognize a face in a second, or --
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  So, I knew that the brain had a parallel architecture.  So, I didn't know then what was wrong with Amdahl's Law, but I decided that to do AI, we needed to build parallel computers, very parallel computers, massively parallel computers.  And that was when LSI Technology was coming out and you could make these circuits, they were NMOS circuits in those days, but later became CMOS circuits.
+
+And so, I made, I think, probably the first chips that had multiple processors on a single chip.
+
+KEVIN SCOTT:  Yep.
+
+DANNY HILLIS:  And sort of had the basic sort of multi-core idea and that was considered very radical, because how could you use multiple processors on a chip --
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  -- because then I know that was every time I would present this, somebody would raise their hand and say, "Excuse me, haven't you ever heard of Amdahl's Law?"
+
+
+KEVIN SCOTT:  Right.  But, like, what you doing was, like, let's forget about the fact that you were a graduate student when you were doing, which is, like, one level of incredible.  But, like, what you were doing was just sort of provocatively different.  Like, the fastest computers in the world at the time were probably the machines that Cray was building.
+
+KEVIN SCOTT:  And so, they were deeply pipelined, you know, liquid cooled.
+
+DANNY HILLIS:  Super-fast switches, yeah.
+
+KEVIN SCOTT:  Super-fast switching, you know, they were liquid cold, because they clocked them as fast as you could possibly

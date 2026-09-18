@@ -1,0 +1,30 @@
+Behind-the-Tech_EP39_2021_Year-in-Review_Transcript.txt ’m embarrassed to say I’ve forgotten, what was it, F9 to compile and run, or was it F5?
+
+ANDERS HEJLSBERG: You know, I don’t even remember what it was. I think it was F5, yeah, but- 
+
+KEVIN SCOTT: It was, like, miraculous.
+
+ANDERS HEJLSBERG: Or maybe it was F3, but yeah, no, it was great. There were all sorts of tricks in there, like the runtime library was the first 12K of the system. And then when producing code, I’d just copy the first 12K into the (XE?) we were producing. There’s your runtime library, right? (Laughter.) Then generate code from there on out, and you could compile the memory and we’d put the code in memory and run it, right, or the original implementation, compile to tape, to floppy tape. (Laughter.) And then you could – sorry, to tape recorder interface, right? Then you could load that machine code up because, I mean, there was only 64K of memory. I mean, it was crazy.
+
+KEVIN SCOTT: Yeah. So, I bought a copy of Turbo Pascal 5.5 out of a catalog called Programmers Paradise. This is just sort of how you used to buy software. And so, I forked over my $200, or whatever it was. 
+
+ANDERS HEJLSBERG: Oh no, it wasn’t even that. It was $49, like $49.95.
+
+KEVIN SCOTT: Yeah, it was affordable because I was poor. So thank you for making cheap software. (Laughter.)
+
+[MUSIC]
+
+
+CHRISTINA WARREN: That was an excerpt from Kevin’s conversation with Anders Hejlsberg, computer scientist and tech fellow at Microsoft. That was Episode 1 of Behind the Tech from 2018. Gosh, that seems like a lifetime ago doesn’t it?
+
+KEVIN SCOTT: It does indeed. And on that note, let’s jump to one of this year’s guests, Dr. David Baker. David is a biochemist and computational biologist who has pioneered methods to predict and design three-dimensional structures of proteins.
+
+CHRISTINA WARREN: That’s right. Dr. Baker is the director of the Institute for Protein Design and professor of biochemistry at the University of Washington. And we spoke with him in the spring of 2021, and since then, his lab has partnered with the U.S. Agency for International Development on a $125M project to detect emerging viruses.
+
+KEVIN SCOTT: Here’s an excerpt from my conversation with David about the work at the Institute for Protein Design at the University of Washington.
+
+[MUSIC]
+
+KEVIN SCOTT: So, you know, maybe in terms of SARS coronavirus-2, like, can you describe– 
+
+DAVID B

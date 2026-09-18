@@ -1,0 +1,25 @@
+Ep-57_Behind_the_Tech_Kevin_Scott_Podcast_with_Kevin_Roose.txt  stay up late at night. I don’t have to go to sleep, and I can just be playing Space Invaders all night. 
+ 
+KEVIN SCOTT: That’s awesome.  
+ 
+So let’s talk about your tech chops. So what were your tools of choice when you were building these websites? 
+ 
+KEVIN ROOSE: I started doing it sounds like I’m flexing or bragging. I started doing it by hand in a text editor in HTML. I then went to some, you know, tools. Like I remember using Dreamweaver for a while, these sort of like early WYSIWYG, you know, HTML, CSS editors. I did a little bit of Flash, a little bit of Java, but mostly, you know, HTML and CSS. 
+ 
+KEVIN SCOTT: Nice. And what was your favorite text editor? This is a very important thing for programmers. 
+ 
+KEVIN ROOSE: Gosh, what did I even use? I mean, it might have just been like the default Windows one, because I probably thought that was very cool.  
+ 
+KEVIN SCOTT: Yeah, dude, Notepad is legit. Like, we have a lot of people who really, really, really love – 
+ 
+KEVIN ROOSE: Some great software has been built in Notepad. 
+ 
+KEVIN SCOTT: Yeah, for sure. So I want to talk about like you had this experience with computers when you were young, and it sounds like you didn’t get inspired to, like, invest your life in journalism until you were in college. Like, how did you get interested in that? 
+ 
+KEVIN ROOSE: Well, I was interested in journalism. I mean, I loved to read as a kid. That was my other big hobby is I just read all the time. And I really loved these kind of like, magazine style, reported pieces that were, you know, creative and interesting, what they now call, like New Journalism, although even though it’s like, you know, 70 years old at this point. 
+ 
+But it was, you know, I love Tom Wolfe and Gay Talese and Joan Didion, and these writers who just would go out and report, but also just had so much personality, and that really shone through. 
+ 
+And so during my freshman year of college, I decided that I wanted to get a writing internship, just to see what I could learn and if that was something. So I applied to like 20 magazines in New York, hoping that one of them would take me on and all of them rejected me, and because I was 18, and what did I know about writing, and what skills did I have to offer?  
+ 
+And then I sort of took a flyer. I wrote a fan letter, essentially, to this writer named A.J. Jacobs, who I really admired

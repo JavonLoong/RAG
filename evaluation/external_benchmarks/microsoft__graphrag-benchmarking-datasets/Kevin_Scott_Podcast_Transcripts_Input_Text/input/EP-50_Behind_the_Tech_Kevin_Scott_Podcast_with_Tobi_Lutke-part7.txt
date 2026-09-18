@@ -1,0 +1,17 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt  I sometimes talk to, you know, junior engineers who describe themselves as, "I’m a React front-end developer," and like, "Wow, you just put two little bits into your identity, but you really don’t need to, because – like I think you’re actually much more than that because you can solve problems extremely well."
+
+The rallying cry is like, people who were able to make the things that they really want with what they’ve got, like that’s sort of at the core of it, and I love that.
+
+KEVIN SCOTT: I think that’s a beautiful definition, and more to your point, like I think some craftspeople really do associate themselves more with their tools than with the process, and it’s okay, but it’s like a narrowing thing. Like it actually happens in woodworking right now. 
+
+TOBI LÜTKE: Does it?
+
+KEVIN SCOTT: Yeah, like I’m a woodworker, and so – like there’s some woodworkers who are like, "Oh, it’s not really woodworking unless you are doing it all with hand tools," and you know, there are some woodworkers who are like, "Oh, no, no, it’s only woodworking if you do it with power tools, but CNC is completely unacceptable."
+
+And, it’s all the same craft, like you’re just wielding your tools in different ways and the tools evolve, and so it’s very interesting, that mindset, I think.
+
+TOBI LÜTKE: It’s funny because – I mean, there’s – there’s clearly some common ground somewhere, but no one ought to be a hammer carpenter, like that’s too fine grained, so everyone agrees, but you shouldn’t narrow the focus too much, but like the degree by which people agree is something to be debated.
+
+KEVIN SCOTT: Yeah, and one of the things that I’ve seen in some of the most creative and successful craftspeople across any of these disciplines is the agility that they have to adapt to new tools, to sort of say, "Oh, this is new and interesting. I’m going to incorporate this into my craft because it helps me do the thing that I care about, better."
+
+TOBI LÜTKE: Yeah, I think this one skill, like how quickly you can get value out of new tools and how quickly do you spot better and better tools would make a substantial improvement to things that you that are worth improving on. It’s like the unacknowledged meta skill of all the most successful people on planet Earth. And I think it’s – it’s really that. Like it’s so – it, it just – once you look for it, it’s really stunning. Like it’s – it’s, you really do not hear stories of extremely successful people who are absolutely set in their ways, and it’s – it’s, it’s – it’s a fascinating – At least, okay,

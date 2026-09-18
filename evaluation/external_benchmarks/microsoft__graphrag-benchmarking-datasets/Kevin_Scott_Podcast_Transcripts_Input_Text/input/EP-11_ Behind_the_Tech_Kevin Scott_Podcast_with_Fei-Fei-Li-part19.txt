@@ -1,0 +1,18 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt  -- and like I think this has sort of been true for like, the past decade or so. 
+The things that have been making the fastest progress in AI are things that have some sort of connection to one or more things that are growing exponentially fast.
+FEI-FEI LI:  Chips. 
+KEVIN SCOTT:  So, like compute -- 
+FEI-FEI LI:  Data.  
+KEVIN SCOTT: Compute and data have been the two big things that are, you know, that are driving not -- they're not the sole things -- they're not driving progress at all, actually, they're facilitating, very rapid progress.  And so, like, I'm always looking for that connection when -- 
+FEI-FEI LI:  Yeah, on the other hand, the human brain operates on less than 20 watts. 
+KEVIN SCOTT:  Yeah, I know.  It's a brilliantly efficient thing. 
+FEI-FEI LI:  And, exactly.  It doesn't take that many neurons to get the first, you know, impression of the world when you open your eyes.  
+KEVIN SCOTT:  Yeah. 
+FEI-FEI LI:  So, there are some really interesting contrasts in biological intelligence and machine intelligence. 
+KEVIN SCOTT:  Yeah, I was -- I'm probably getting the details on this wrong, but I remember like even a couple of years ago reading a, like, a little short note in Science or Nature about how someone had used FMRI to map out the primate neural network –like, biological neural network that does face recognition. And it was like tiny, like, little -- little bitty network -- 
+FEI-FEI LI:  It's called -- yeah, the central area is called FFA, in fact, that was -- in 1990s, late 1990s, the MIT researcher Nancy Kanwisher and many of her colleagues were at the forefront of that study and really give rise to a lot of neural correlate belief that there are areas of brain with those kind of expertise.  
+KEVIN SCOTT:  Yeah. 
+FEI-FEI LI:  And they're not that huge.  
+KEVIN SCOTT:  Yeah, and so before we get onto the social stuff, which I'm super interested in, like, tell me a little bit more about this work that you're doing that sort of blends vision and language together, because that seems really quite exciting.  
+FEI-FEI LI:  Yeah.  So, it actually is a continuation or step forward from ImageNet.  If you look at what ImageNet is, for every picture, we give one label of an object.  
+Fine, that's cool.  You have 15 million of them, it becomes a large data set to drive object recognition.  But it's such an impoverished representation of the visual world.

@@ -1,0 +1,25 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  it would be this eureka moment when you found, “Ah-hah, that’s how I can do it.”  And then you have to code it up.  So I think that competition really got me to value this type of rigor and attention to detail, but also the creative aspect of computing, because you have to come up with new types of solutions. 
+
+KEVIN SCOTT:  That’s awesome.  What was the most interesting problem you had to solve in one of these competitions? 
+
+PERCY LIANG:  That’s a really good question. It’s been a while, so I don’t remember all the problems.  But one I think -- one memorable maybe class of problems is around the idea of dynamic programming -- this idea that you can write a program -- if you do it smartly, you can make something that would otherwise run in years or millennia in a matter of seconds.  
+
+I remember having to -- it was always these problems, and you had to really figure out what was the recurrence relation to make it all work?  And a lot of problems were kind of centered around --  
+
+KEVIN SCOTT:  Yeah, one of the amazing things about the dynamic programming technique is it really does teach you -- and it might be one of those foundational things when you’re getting your head wrapped around how to think algorithmically about problem decomposition.  Because it’s one of those magical things where if you break the problem down in just the right way, all of a sudden a solution to the problem becomes possible when it was intractable before. 
+
+PERCY LIANG:  Yeah.  I think I liked it because it wasn’t that you had to memorize a bunch of things or you learned -- if you learn these 10 algorithms, then you would be set.  But it was kind of much more open-ended way to think about problem solving. 
+
+KEVIN SCOTT:  Yes, that’s awesome. And so you go to MIT as an undergraduate student? How soon did you know exactly the thing inside of computer science that you wanted to do?  
+
+PERCY LIANG:  That, I think, took a little bit of evolution.  Coming out of high school, I was much more interested in these algorithmic questions and got interested in computer science theory because that was kind of a natural segue. And I started doing research in this area.  It wasn’t until toward the end of my undergrad where I started transitioning into machine learning or AI. 
+
+KEVIN SCOTT:  And when was this?  What year? 
+
+PERCY LIANG:  This was around 2004, yeah.  
+
+KEVIN SCOTT:  Still, machine learning was -- 
+
+PERCY LIANG:  Yeah, people didn’t use the word “AI” back then. 
+
+KEVIN SCOTT:  Yeah, I mean, I remember like right around that time was when I joined Google and I

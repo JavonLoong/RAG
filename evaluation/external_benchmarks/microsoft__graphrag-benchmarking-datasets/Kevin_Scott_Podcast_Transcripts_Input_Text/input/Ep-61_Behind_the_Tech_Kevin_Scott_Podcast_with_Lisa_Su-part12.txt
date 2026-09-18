@@ -1,0 +1,19 @@
+Ep-61_Behind_the_Tech_Kevin_Scott_Podcast_with_Lisa_Su.txt  around at the low levels, because that doesn’t go away at all.
+
+LISA SU: Yeah, actually, Kevin, I think you’re totally right. I think as we think about, you know, how do you have the best sort of engineers, or you know, sort of the brightest people, you want them to have that breadth of experience. I mean, it’s really important. I mean, you can still specialize, but the breadth of knowing, really, how computers work, and what do you need to do to enable that is, I think, super-important.
+
+You know, one of the things that happens for a lot of the folks that I talk to is, how do we get enough people interested in hardware? Because you know, software is the sexy place, so – and I try to say, "Look …" Everyone is different in their interests, but there is so much that can still be done around optimization of hardware and driving that, so –
+
+KEVIN SCOTT: More now than in the past 20 years. Like, I think this is the most exciting time in hardware that we’ve seen in a few decades.
+
+LISA SU: I completely agree, completely agree.
+
+KEVIN SCOTT: So I go into work every day, and I’m just completely surprised at the things that I’m working on. So you know, when I was in college and grad school, I did – you know, an internship at the National Center for Supercomputing Applications, and wrote a whole bunch of stuff for the Thinking Machines, CM5 supercomputer. I – you know, I had an internship at Silicon Graphics, right after they bought Cray Research, and like working on the Origin 2000, like this big cash-coherent pneumo-machine that they built that was super innovative.
+
+And then I left grad school, and like, precisely none of that mattered for 20 years! And now all of it, like, matters again, like you really do have to think about some of these, like old high-performance computing principles to write some of the software that we’re building today, and computer architecture matters again. Like, it’s awesome.
+
+LISA SU: Yes, it is. It is. And I mean, certainly for some of the stuff that – you know, that you’re doing, and Microsoft’s doing, it’s – you are absolutely pushing the envelope on everything that we think about as it relates to hardware and systems.
+
+KEVIN SCOTT: So let’s go back to your career progression. So you were at IBM, and then at some point – like, was the next step joining AMD? Like, you’ve been there for a while now.
+
+LISA SU: Yeah, yso I was at IBM for 12 – 13 years, you know, did a lot of stuff around our semiconductor R&D, and sort of the next generation processor technologies. And then, you know, I’m

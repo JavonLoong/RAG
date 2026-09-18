@@ -1,0 +1,17 @@
+EP-21_ Behind_the_Tech_Kevin_Eric-Horvitz_Chief-Scientific-Officer_Microsoft.txt You know something, I need to -- I don’t think neurobio is going to have the right mix for me in my pursuit of my core curiosities about what the freak was going on with minds, with human brains, and brains of vertebrates and other animals on the planet.”  
+
+And the fastest path to insights would be through computer science. And I remember one of the moments I was thinking about what I’d been doing in  my laboratory work that I became very good doing unit recordings, looking at small circuits, listening to the ticks on a speaker in a darkened room, looking at the oscilloscope on interesting questions about how particular subsystems worked, the thermoregulation subsystem in a rat, for example. 
+
+And thinking that what I was doing all those years was sticking a thin wire into a chip trying to infer an operating system and the application code, and even the hardware by listening into the Morse Code of a single gate. 
+
+And I felt like that would be a waste of good time on the planet. And I remember thinking it was a major shift to say, “I’m going to give up the pursuit of a neurobiology, neuroscience PhD.” And I’m going to move over now to go all—in on what was—I came to know as artificial intelligence research, history, depth -- you know, all the methods-- I wanted to really master it. 
+
+KEVIN SCOTT: And, you know, it’s sort of an interesting time in the ‘80s for AI. So, you know, one of the things we’ve chatted about on the podcast before is the fact that AI has had this distinct cycle of booms and busts over the years that, you know, the Dartmouth workshop in 1955, the program that McCarthy and these luminaries put together was way more ambitious than they -- you know, in reality were going to be able to accomplish. 
+
+And, you know, that we have had several of these cycles where the enthusiasm and the expectation for what we were going to be able to accomplish has sort of far exceeded our ability, which leads to these AI winters where you’ve got a bust and, you know, like people sort of go sour on the whole discipline. 
+
+And like as I remember it, like the ‘80s, I forget what time in the ‘80s, but like by the time I got to grad school we were -- we were on the, like, well into an AI winter, where it was no longer like this fashionable thing in graduate programs. 
+
+So, you -- when you got into AI, was it right before the AI winter that we had or, you know, was Stanford in some way like a unique island where the enthusiasm for the field was undiminished over time? 
+
+ERIC HORVITZ: Well, first of all, I want to make a comment on that 1955 proposal. I’ve often said that that proposal is written

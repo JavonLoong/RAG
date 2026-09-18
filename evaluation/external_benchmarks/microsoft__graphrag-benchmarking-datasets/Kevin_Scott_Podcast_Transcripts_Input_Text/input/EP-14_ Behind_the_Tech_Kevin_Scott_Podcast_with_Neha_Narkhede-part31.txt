@@ -1,0 +1,13 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt  tools are open sourced, but then when it goes to the next level and you are able to see companies built off of that technology and are able to make real businesses for themselves,  that's kind of the goal, right, because the -- for many years that was sort of the unspoken rule about open source is, oh, there's not -- there's not a way to make money, and you had a few examples, you know, the Red Hats of the world would kind of prove that wrong, but it was less common.
+And now we're seeing I think in this -- this kind of I guess maybe third wave of open source that I would kind of include, you know, like the Kafkas of the world, the Reacts of the world, things like that, Node certainly where you can start to see these real businesses form around the technology.
+KEVIN SCOTT:  Yeah, and I think it's really -- it's really exciting.  Because sometimes open source is hard, sometimes it -- you can have a really, really great idea, and you can even have a really involved community, and you still need a little bit more than that to like help tip everything over into like more widespread adoption.
+CHRISTINA WARREN:  Yeah.
+KEVIN SCOTT:  And so like these companies are fulfilling a very, very important role in getting more technology in the hands of more people, which in my opinion, and I'm biased, is like a really good thing.
+CHRISTINA WARREN:  I'm biased, too.  I -- that's one of the things I advocate for in my day job.  So, I'm glad to see more of this.
+All right, well, we are at the end of our show today.  Thanks to Neha. And last show, we asked you to let us know what technologies you think are inspiring kids in the next generation.
+KEVIN SCOTT:  And survey says?
+CHRISTINA WARREN:  Well, we got some really interesting responses.  The most prevalent one centered around augmented reality, which is kind of not a surprise, and that is due to all the gaming with Fortnite and Minecraft.
+KEVIN SCOTT:  Awesome.  We shall see.
+CHRISTINA WARREN:  I sure -- I certainly hope so. And as always, we would love to hear from you about ideas for future guests or anything on your mind.  So, you can e-mail us at BehindtheTech@Microsoft.com.  And be sure to tell all of your friends and colleagues and fellow Beyoncé fans about Behind the Tech so that you can geek out together.  Thank you for listening.
+KEVIN SCOTT:  Indeed, thanks, and see you next time.
+[MUSIC]

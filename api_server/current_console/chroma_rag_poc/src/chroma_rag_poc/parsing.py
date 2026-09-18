@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import csv
+import re
 from collections import OrderedDict
 from io import BytesIO, StringIO
 from pathlib import Path
@@ -25,6 +26,15 @@ SUPPORTED_SOURCE_EXTENSIONS: dict[str, str] = {
     ".ipynb": "JSON",
     ".pdf": "PDF",
     ".docx": "DOCX",
+    ".pptx": "PPTX",
+    ".xlsx": "Spreadsheet",
+    ".xls": "Spreadsheet",
+    ".png": "Image",
+    ".jpg": "Image",
+    ".jpeg": "Image",
+    ".tif": "Image",
+    ".tiff": "Image",
+    ".bmp": "Image",
     ".txt": "Text",
     ".md": "Markdown",
     ".markdown": "Markdown",
@@ -83,7 +93,28 @@ SUPPORTED_SOURCE_EXTENSIONS: dict[str, str] = {
 
 STRUCTURED_JSON_EXTENSIONS = {".json", ".ipynb"}
 TABULAR_SOURCE_EXTENSIONS = {".csv", ".tsv"}
+EXTERNAL_PARSER_EXTENSIONS = {
+    ".pptx",
+    ".xlsx",
+    ".xls",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".tif",
+    ".tiff",
+    ".bmp",
+}
 TEXT_PAYLOAD_EXTENSIONS = set(SUPPORTED_SOURCE_EXTENSIONS) - STRUCTURED_JSON_EXTENSIONS - TABULAR_SOURCE_EXTENSIONS - {".pdf", ".docx"}
+
+PASSAGE_BLOCK_RE = re.compile(
+    r"(?ms)^PASSAGE_ID:\s*(?P<passage_id>[^\n]+)\n"
+    r"TITLE:\s*(?P<title>[^\n]*)\n"
+    r"TEXT:\s*(?P<text>.*?)(?=^PASSAGE_ID:\s*|\Z)"
+)
+SENTENCE_BLOCK_RE = re.compile(
+    r"(?ms)^SENTENCE_ID:\s*(?P<sentence_id>[^\n]+)\n"
+    r"(?P<text>.*?)(?=^SENTENCE_ID:\s*|\Z)"
+)
 
 TITLE_KEYS = (
     "title",
@@ -108,6 +139,8 @@ PREFERRED_TEXT_KEYS = (
     "caption",
 )
 DOCUMENT_COLLECTION_KEYS = {
+    "chunks",
+    "contacts",
     "data",
     "documents",
     "docs",
@@ -162,6 +195,8 @@ def load_source_payload(raw_bytes: bytes, source_name: str) -> list[SourceRecord
         return _load_pdf_payload(raw_bytes, source_name=source_name)
     if suffix == ".docx":
         return _load_docx_payload(raw_bytes, source_name=source_name)
+    if suffix in EXTERNAL_PARSER_EXTENSIONS:
+        raise ValueError(f"{suffix} requires an external parser; route it through document_intake with Docling")
     if suffix in TEXT_PAYLOAD_EXTENSIONS:
         return _load_text_payload(raw_bytes, source_name=source_name)
     if suffix in TABULAR_SOURCE_EXTENSIONS:
@@ -440,7 +475,7 @@ def _record_from_generic_node(
         page_num=page_num,
         text=text,
         blocks=blocks,
-        metadata={"source_kind": "JSON"},
+        metadata={"source_kind": "JSON", **_extract_scalar_metadata(node)},
     )
 
 
@@ -582,6 +617,20 @@ def _extract_page_num(node: Any) -> int | None:
     return None
 
 
+def _extract_scalar_metadata(node: Any) -> dict[str, str | int | float | bool]:
+    if not isinstance(node, dict):
+        return {}
+    excluded = {"text", "content", "body", "attachments", "messages", "chunks"}
+    metadata: dict[str, str | int | float | bool] = {}
+    for key, value in node.items():
+        key_str = str(key).strip()
+        if not key_str or key_str in excluded:
+            continue
+        if isinstance(value, (str, int, float, bool)):
+            metadata[key_str] = value
+    return metadata
+
+
 # ============================================================
 # 文档文件解析
 # ============================================================
@@ -667,6 +716,12 @@ def _load_docx_payload(raw_bytes: bytes, source_name: str) -> list[SourceRecord]
 
 def _load_text_payload(raw_bytes: bytes, source_name: str) -> list[SourceRecord]:
     text = _decode_text_bytes(raw_bytes)
+    passage_records = _load_passage_delimited_text(text, source_name)
+    if passage_records:
+        return passage_records
+    sentence_records = _load_sentence_delimited_text(text, source_name)
+    if sentence_records:
+        return sentence_records
     blocks = _paragraph_blocks(text)
     if not blocks:
         raise ValueError("文本文件为空或未提取到可用内容")
@@ -681,6 +736,93 @@ def _load_text_payload(raw_bytes: bytes, source_name: str) -> list[SourceRecord]
             metadata={"source_kind": get_source_kind(source_name)},
         )
     ]
+
+
+def _load_passage_delimited_text(text: str, source_name: str) -> list[SourceRecord]:
+    records: list[SourceRecord] = []
+    for index, match in enumerate(PASSAGE_BLOCK_RE.finditer(text), start=1):
+        passage_id = normalize_text(match.group("passage_id"))
+        body = normalize_text(match.group("text"))
+        if not passage_id or not body:
+            continue
+        title = normalize_text(match.group("title"))
+        section_id, section_path = _section_from_passage_id(passage_id)
+        blocks = [
+            TextBlock(text=f"PASSAGE_ID: {passage_id}", block_type="Title", order=0),
+        ]
+        if title:
+            blocks.append(TextBlock(text=f"TITLE: {title}", block_type="Title", order=len(blocks)))
+        blocks.append(TextBlock(text=body, block_type="Para", order=len(blocks)))
+        records.append(
+            SourceRecord(
+                source_file=source_name,
+                record_id=f"{source_name}::passage-{passage_id}",
+                filename=source_name,
+                page_num=None,
+                text=_build_structured_text(blocks),
+                blocks=blocks,
+                metadata={
+                    "source_kind": get_source_kind(source_name),
+                    "boundary_type": "passage",
+                    "passage_id": passage_id,
+                    "passage_title": title,
+                    "section_id": section_id,
+                    "section_path": section_path,
+                    "passage_ordinal": index,
+                },
+            )
+        )
+    return records
+
+
+def _load_sentence_delimited_text(text: str, source_name: str) -> list[SourceRecord]:
+    if "SENTENCE_ID:" not in text:
+        return []
+    ragbench_id = _first_header_value(text, "RAGBENCH_ID")
+    records: list[SourceRecord] = []
+    for index, match in enumerate(SENTENCE_BLOCK_RE.finditer(text), start=1):
+        sentence_id = normalize_text(match.group("sentence_id"))
+        sentence_text = normalize_text(match.group("text"))
+        if not sentence_id or not sentence_text:
+            continue
+        blocks = [
+            TextBlock(text=f"SENTENCE_ID: {sentence_id}", block_type="Title", order=0),
+            TextBlock(text=sentence_text, block_type="Para", order=1),
+        ]
+        document_id = sentence_id.split("a", 1)[0] if sentence_id[:1].isdigit() else sentence_id.split(".", 1)[0]
+        records.append(
+            SourceRecord(
+                source_file=source_name,
+                record_id=f"{source_name}::sentence-{sentence_id}",
+                filename=source_name,
+                page_num=None,
+                text=_build_structured_text(blocks),
+                blocks=blocks,
+                metadata={
+                    "source_kind": get_source_kind(source_name),
+                    "boundary_type": "sentence",
+                    "sentence_id": sentence_id,
+                    "document_id": document_id,
+                    "ragbench_id": ragbench_id,
+                    "sentence_ordinal": index,
+                },
+            )
+        )
+    return records
+
+
+def _first_header_value(text: str, header: str) -> str:
+    match = re.search(rf"(?m)^{re.escape(header)}:\s*(.+)$", text)
+    return normalize_text(match.group(1)) if match else ""
+
+
+def _section_from_passage_id(passage_id: str) -> tuple[str, str]:
+    parts = [part for part in re.split(r"[-/]+", passage_id) if part]
+    if len(parts) <= 1:
+        return passage_id, passage_id
+    section_id = "-".join(parts[:-1])
+    section_path = " > ".join(parts)
+    return section_id, section_path
 
 
 def _load_tabular_payload(raw_bytes: bytes, source_name: str, delimiter: str) -> list[SourceRecord]:

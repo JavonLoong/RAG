@@ -1,0 +1,15 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt AMS: Yeah, all I can do is say, please like and subscribe, right? (Laughter.) Right? 
+
+KEVIN SCOTT: Yep. (Laughter.) Awesome. All right, thank you.
+
+WILLIAM ADAMS: Okay, you’re welcome. 
+
+[MUSIC]
+
+CHRISTINA WARREN: All right, okay. That was a fantastic conversation with William Adams. I love William. I think that he’s amazing. I would love to have coffee with him some time. I could listen to the two of you talk about tech and about D&I stuff, and about, you know, your war stories from your time in tech for a really long time. So I loved that conversation. I wanted to kind of go back to some of the stuff that you were talking about towards the – the end of your conversation.
+
+When we were talking a little bit earlier Kevin, you mentioned how much you liked that William is really dedicated to giving back, and that really became evident in the conversation that you had. From your perspective, when you first learned about the Leap program, what about that stood out to you? Because I have to say, hearing him describe it, and even knowing as someone who used to work at Microsoft proper, knowing what that was, I didn’t know the origin story. It clicked for me in a way that I was like, wow, this is brilliant. Why haven’t more people done this? But I wanted to know, from your perspective, what did you think of the program? And what were some of the results that you saw – you know, once it was implemented?
+
+KEVIN SCOTT: Yeah. So it was really funny when he was interviewing with me for this TA job inside of the Office of the CTO, like he had this thing that he wanted to bring with him. And I mean, it’s funny actually hearing him talk about it, that he was like worried that I was going to say no, and rarely did I say no to things that William wanted to do. But this one in particular, we had, at LinkedIn, which was where I was before I came to Microsoft had some experience running a similar program. And it was exactly the same idea that if you wanted to find great engineers and great product people who were underrepresented in the places that you normally are recruiting from, like, you’ve just got to figure out what you’re going to change about your process. And like this idea of doing an apprenticeship program, like I think, is great. It has been extremely successful for both LinkedIn and Microsoft. And I don’t understand why more people don’t do it. 
+
+Like in the worst case, what happens is you have an opportunity to work with amazing people who come in and get 16 weeks, or whatever the duration of the program is, of like real experience, and anybody who’s ever done an internship or – you know, has gone from like one context

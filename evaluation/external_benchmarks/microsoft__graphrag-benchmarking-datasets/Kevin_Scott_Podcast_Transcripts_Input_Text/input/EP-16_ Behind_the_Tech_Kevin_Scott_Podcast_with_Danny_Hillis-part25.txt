@@ -1,0 +1,33 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt  now?
+
+DANNY HILLIS:  So, I think intelligence is a many splendored thing. There's lots of components to it.  There's lots of aspects to it.  And I think it's happened before that we find some aspect of it that's a building block of it, and it's important and useful, and that becomes AI, because we suddenly make progress in it.
+
+So, right now, it is machine learning, pattern recognition, and it's an incredibly powerful building block, and there's still lots of great things to be done with it, and, you know, we use it in everything.  So, I'm a big fan of that.
+
+But there's still lots of things that a human mind does that don't fit into that paradigm.  So, what happens in the past is that when you make up the explosion, everybody starts talking about AI as taking over the world and this happened with machine vision, it happened with speech recognition, it happened when they, AI is, you know, planning where you can play AIs would beat humans at chess.
+
+And then, what happens is people say, okay, well, that thing, now we understand what that thing is, but that's not AI.  And so, you just start using that thing as a tool.  And so, I suspect that's what will happen with this current thing is people will realize there's more to general artificial intelligence than these multilayer neural networks.
+
+And, of course, you know, there are many people who do realize that.  And so, we'll, you know, run into the next set of hard problems while people still continue to apply these multi-level neural networks to very important problems.  I mean, I don't --
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  -- want to trivialize how much good they're going to do.
+
+KEVIN SCOTT:  Yeah.  But in a certain sense, like, the AI boom bust cycle is just like any other boom bust cycle where the both extreme ends of the cycle are not helpful.
+
+DANNY HILLIS:  Right.
+
+KEVIN SCOTT:  Like the overhype, like where you get reckless with investment and you, like, have a whole bunch of people who, like, really misunderstand what's going on and are sort of, you know, making these, you know, leaps of faith basically about what is coming next, yeah.
+
+DANNY HILLIS:  But both positive and negative.
+
+KEVIN SCOTT:  Correct. But both positive and negative.
+
+DANNY HILLIS:  Yep.
+
+KEVIN SCOTT:  Which is, like, I think really important.
+
+DANNY HILLIS:  Yeah.
+
+KEVIN SCOTT:  Like, oh, you know, like, AI is going to be this apocalyptically bad

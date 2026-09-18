@@ -1,0 +1,15 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt  up with is water quality. 
+KEVIN SCOTT:  Yes. 
+FEI-FEI LI:  Really matters to her community.  And so, she started to use machine learning techniques to look at water quality through water samples. 
+And that's just such a beautiful example.  I just love her story to show that when we democratize this technology to the communities, the diverse communities, especially these communities that technology hasn't reached enough in, the young people, the leaders and the citizens of this community will come up with such an innovative and relevant ideas and solutions to help those communities.  
+KEVIN SCOTT:  Yeah.  And I think that getting this technology democratized is sort of a one-two punch. 
+So, like, there's the tactical things that you have to do.  So, and open source and, like, making sure that the research is open and freely available and being able to run these things on cloud platforms, you know, and like all of that's super important. It's actually amazing, like, how -- 
+FEI-FEI LI:  Cloud and Edge.  
+KEVIN SCOTT:  Yes, cloud and Edge for sure.  And you know, it's really amazing like how much is possible now.  Like, I know you probably have this all the time, it's like you're sitting in 2019 and you know, seeing what your students can do. And you sort of compare that to what you could do in 2000 it's, like, you know?  
+And, like, that's because you have bright students, but it's also because, like, the tools that they're using are, like, incredibly sophisticated now.  
+But that's only half of the story.  Like, the other half, and like I'm so glad that that you're doing this nonprofit work because if we really want the benefits of this technology to be, you know, sort of equitably and widely distributed, you have to have people who have a connection to the communities and the human beings that the technology needs to serve. 
+FEI-FEI LI:  Absolutely.  Absolutely. 
+KEVIN SCOTT:  Because -- and it's not that anybody's bad, it's just like if you don't have that context and that empathy, like, you just don't really know what to do or maybe even how to do it. 
+FEI-FEI LI:  Absolutely.  We had an alum who one of the grandparents unfortunately passed away due to a delay of ambulance service.  Now, she's working on machine learning and optimizing ambulance dispatch. 
+KEVIN SCOTT:  Yeah. 
+FEI-FEI LI:  I think that's why we need all walks of life is they because they bring the understanding and empathy you said and also the experience to innovate and create in ways that just one slice of people couldn't possibly cover.

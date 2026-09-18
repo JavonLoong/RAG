@@ -164,7 +164,8 @@ def _build_prompt(schema: dict[str, Any], chunk: ChunkRecord) -> str:
     return (
         "Extract evidence-bound knowledge graph triples from the chunk.\n"
         "Use only relation types from this schema. Return strict JSON: "
-        '{"triples":[{"subject":"","relation":"","object":"","evidence":"","source":"","page":""}]}.\n\n'
+        '{"triples":[{"subject":"","relation":"","object":"","evidence":"","source":"","page":"","valid_time":""}]}.\n'
+        'Note: "valid_time" is optional. If the text mentions a specific year, date, or time period for this fact, include it. Otherwise leave it empty.\n\n'
         f"Schema:\n{json.dumps(schema, ensure_ascii=False, indent=2)}\n\n"
         f"Chunk id: {chunk.id}\nSource: {chunk.source}\nPage: {chunk.page}\nText:\n{chunk.text}"
     )
@@ -191,7 +192,7 @@ def _parse_triples(raw_response: str) -> list[dict[str, Any]]:
 
 
 def _normalize_triple(triple: dict[str, Any], chunk: ChunkRecord) -> dict[str, Any]:
-    return {
+    normalized = {
         "subject": _coerce_text(triple.get("subject")),
         "relation": _coerce_text(triple.get("relation") or triple.get("predicate")),
         "object": _coerce_text(triple.get("object") or triple.get("target")),
@@ -200,6 +201,10 @@ def _normalize_triple(triple: dict[str, Any], chunk: ChunkRecord) -> dict[str, A
         "page": triple.get("page") or chunk.page,
         "chunk_id": chunk.id,
     }
+    valid_time = _coerce_text(triple.get("valid_time") or triple.get("timestamp"))
+    if valid_time:
+        normalized["valid_time"] = valid_time
+    return normalized
 
 
 def _validate_triple(triple: dict[str, Any], relation_types: set[str]) -> list[str]:

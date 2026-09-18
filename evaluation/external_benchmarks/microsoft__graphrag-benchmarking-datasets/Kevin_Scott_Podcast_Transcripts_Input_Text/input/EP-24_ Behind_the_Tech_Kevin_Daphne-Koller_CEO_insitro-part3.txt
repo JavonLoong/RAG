@@ -1,0 +1,17 @@
+EP-24_ Behind_the_Tech_Kevin_Daphne-Koller_CEO_insitro.txt  in computing at that point. And that I think led to basically my college choices and so on. And ultimately, I think combining the two in the work that I do now, but that’s many years later.  
+
+KEVIN SCOTT: So, on those TRS-80s, it sounds like your experience is very similar to mine, actually. Like, I — in high school, I did a bunch of coding on TRS-80s. So, was your language of choice there the BASIC interpreter, or were you using something else? 
+
+DAPHNE KOLLER: No, at that point, it was BASIC. This was the only language that was available when I was here in high school, but I very quickly migrated beyond that to Pascal and then C.  
+
+KEVIN SCOTT: Yeah, that’s really — that is almost exactly the same language — although, there was some assembly language in there because I wanted to code games and you had to supplement the BASIC with a little bit of assembly language if you wanted to make things move around on the screen. 
+
+So, you know, this thing that you said about being attracted to programming as a kid because the computer would listen to you, like, I think is very interesting. It is one of those things that I think can give kids agency. And, you know, I know that you — you know, both as an educator at Stanford and as one of the co-founders of Coursera, you’ve thought a lot about how to educate both kids and adults. Like, how important do you think that sense of agency is in getting kids interested in computing? 
+
+DAPHNE KOLLER: I think it’s very important. Kids, I think it’s difficult for us to appreciate as adults just how powerless most kids feel. Certainly, the ones from less-advantaged backgrounds, but even the others. And I think giving them an avenue where they can really dictate, if you will, what happens is super exciting for them. 
+
+And I think we are not giving them enough of that in how we currently teach technology because we’ve moved far away from the programming in how one teaches computers in most schools. And if you actually came back to that and say, “Hey, look what you can build,” and it actually works. I think it’s an incredible feeling of empowerment for kids. 
+
+KEVIN SCOTT: Yeah, one of the things that I’ve struggled with, with my own kids, is trying to get them interested in programming. So, I’m not trying to force them to learn anything that they don’t want to. Like, we try to expose them to a bunch of things. And it took a while to figure out how to find an entry point into coding that was interesting for them. 
+
+And the thing for my son was Roblox. So, which is this game that he plays on his tablet obsessively. And as soon as he

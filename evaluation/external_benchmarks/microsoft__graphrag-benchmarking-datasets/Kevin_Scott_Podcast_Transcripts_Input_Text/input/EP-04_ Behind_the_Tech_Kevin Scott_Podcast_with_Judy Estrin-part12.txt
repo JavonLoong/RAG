@@ -1,0 +1,16 @@
+EP-04_ Behind_the_Tech_Kevin Scott_Podcast_with_Judy Estrin.txt  conscious of those trade-offs. 
+And then there are a lot of people who can throw stones at all of this, but if you're not in the middle of it, and you don't understand, look, I understand some, but I've been out of the sphere for enough time to know I don't know, at a visceral level, the details of everything. And so, again, not just saying this because it's your podcast, but the role you play, and being in a position to actually understand, make a difference, and having that conscious is just -- it's heartwarming. 
+KEVIN SCOTT: I appreciate you saying that. And I know that there are a bunch of other very thoughtful folks pushing against the problem as well at a bunch of companies. So, I'm hopeful. 
+JUDY ESTRIN: We're in your hands, so, please be. (laugh) 
+KEVIN SCOTT: Yeah. We all need to look at this with the gravity that it deserves. 
+JUDY ESTRIN: Right. 
+KEVIN SCOTT: It's just too important to be cavalier with. 
+JUDY ESTRIN: Yeah. 
+KEVIN SCOTT: So, you're at Zilog doing microprocessors, software code design. And then you become an entrepreneur. 
+JUDY ESTRIN: Well, I was at Zilog doing the microprocessor stuff. I was the project manager on something called Z-Net, which was the first commercial local area network. So, while at Zilog, I had the opportunity to be involved in the development and introduction of this local area network. 
+KEVIN SCOTT: And when is this? 
+JUDY ESTRIN: I think in '79 or '80. 
+KEVIN SCOTT: So, this is super early. Like the state of the art for high-performance computing then are like these big vector machines. 
+JUDY ESTRIN: Yeah. So, we built a system -- part of the reason -- this was a semiconductor company, a microprocessor company, why were we building a local area network? Zilog decided to go into the systems business around their microprocessors.
+And so what we did was develop a local area network to interconnect these systems. And our computing system was called an MCZ system, which was an early PC, but it wasn't a PC. And we had an operating system that was called RIO -- Real I/O, which was a predecessor to the operating systems of PCs. But Zilog was a microprocessor company, not a systems company. 
+And so one of the things I learned was up until then, I was an engineering elitist. I thought marketing people weren't important. (laugh) But I learned a really important lesson, which is:  If you don't look at the needs of the market and match the technology,

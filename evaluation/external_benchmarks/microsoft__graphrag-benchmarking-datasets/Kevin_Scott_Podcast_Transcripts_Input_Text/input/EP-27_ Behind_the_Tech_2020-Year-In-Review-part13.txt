@@ -1,0 +1,19 @@
+EP-27_ Behind_the_Tech_2020-Year-In-Review.txt  I do want to say, off the top of my head, here are three things that the current technology doesn’t yet touch. The first one is the current technology – maybe this is a good phrase – is kind of profligate in its use of compute and data. Yeah, I need millions of examples at least for pre-training and then thousands for tuning. Yeah, I need this massive amount of computation, millions of dollars of computation to build my model. 
+
+Whereas of course human intelligence, which is the standard, sits in this little box, right, that’s on top of my neck and is powered by the occasional salad and a cup of coffee, right? We know, right, you know, kids, they’ll see one example and they’ll go to the races. So, I think we can build far more frugal machines in terms of data and compute, that’s one. 
+
+And then the second thing, and this goes right back to the discussions we were having at CMU in the early ‘90s is, “What is the cognitive architecture?” In other words, okay, you can take a narrow question like, “Is this email spam or not,” or “Did I just say “B” or “P?” Speech - phoneme recognition. And you can train models that’ll do – they have super-human performance at that. 
+
+But the key thing in artificial general intelligence – in AGI – is the “G.” So, how do we build what was called, then, a unified cognitive architecture? How do we build something that can really move fluidly from one task to another, when you form a goal, automatically go and say, “Okay, here’s a subgoal, here’s something I need to do or learn in order to achieve my goal.” There’s just so much more to general intelligence than these savant-like tasks that AI is performing today. 
+
+The third topic in AI that I think we ought to be paying more attention to is the notion of a unified cognitive architecture. So, this is something we studied at CMU back in the day. And it’s the notion of not just being a savant, not just taking one narrow problem, but going from one problem to the next and being able to fluidly manage living, where right now we’re talking. Soon, I will be crossing the street, then I’ll be reading something. 
+
+Putting all those pieces together and doing it in a reasonable way is something that’s way beyond the capabilities of AI today. 
+
+KEVIN SCOTT: Yeah, and we’ve got a little bit of that starting – 
+
+OREN ETZIONI: I know, I – 
+
+KEVIN SCOTT: In transfer learning, like, but just beginning. 
+
+OREN ETZIONI: Right, but the thing about the transfer learning is that it’s still from one narrow task to another. Maybe it’s from one genre of text to another genre

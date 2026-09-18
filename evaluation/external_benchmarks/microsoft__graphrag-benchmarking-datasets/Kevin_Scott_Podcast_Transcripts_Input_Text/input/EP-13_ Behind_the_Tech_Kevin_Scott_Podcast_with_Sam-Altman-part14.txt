@@ -1,0 +1,14 @@
+EP-13_ Behind_the_Tech_Kevin_Scott_Podcast_with_Sam-Altman.txt :  Stuff where the risk is science risk more than it is market or engineering risk.
+KEVIN SCOTT:  And -- and capital intensive.
+SAM ALTMAN:  And capital intensive.  By the way, I think there is a magic moment for it because, although this stuff is very capital intensive, so much money has fled into venture in the last 10 years that -- and I think software startups were unusual in the returns that they offered, but so much money.  It was like, "Wow, these are incredible returns," that there's now this huge overhang of capital desperate to find good opportunities and willing to accept lower returns, which to be perfect honest, the hard tech startups sometimes are, at least higher risk.
+And so, there is this magic moment that I don't know how long it's going to last, but right now, not only do I think it's possible to start a hard tech startup, I think it's actually easier to start a hard startup than it is to star an easy startup.  People are, like, quite tired of enterprise software startup number 1,422.  
+And, if you're doing something that sort of makes people's eyes glass over, it is hard to hire.  It is hard to, like, get the press to care.  It is hard to, like -- it's hard to do anything except get capital.  It's hard to concentrate talent.  And if it's a startup that, like, really matters that people want to help on organically, there's this incredible tailwind for those companies.
+KEVIN SCOTT:  Yeah.
+SAM ALTMAN:  Certainly feel that at OpenAI.
+KEVIN SCOTT:  Yeah.  So why don't we see more of these things?  I mean, because -- I think you're right.  
+SAM ALTMAN:  Because most -- yeah.
+KEVIN SCOTT:  There's OpenAI.  There's --
+SAM ALTMAN:  There's like a --
+KEVIN SCOTT:  SpaceX.  There's Tesla.  Like, there…
+SAM ALTMAN:  Why we don't see more, I'm very interested in this question because I spent a lot of time trying to convince people to start these companies.  There is a feeling -- like, my -- my general belief about the hierarchy that people go through in terms of career motivations is it starts with money.  Then, it starts with, like, power in the weak sense, which is like, "I want to manage people and be able to control them and do whatever."  
+And then, it goes to status, like, "I don't care what people think about me."  And then, it goes to impact, like, "I want to do this company that's really going to matter."  And then, finally, either people end up, like, really going after self

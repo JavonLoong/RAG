@@ -1,0 +1,17 @@
+EP-22_ Behind_the_Tech_Kevin_Drew-Endy_Bioengineering-pioneer.txt  how useful they could be. So I'm, like, doing a ton of stuff with Bayesian analysis and some of it's new in the past five years, like the really good tools for doing probabilistic programming with Monte Carlo, Markov Chain Monte Carlo simulation techniques. Like, the tools are new and, like, what you can do with them is different. 
+
+But like, the baseline approach was -- been around, like, I could have chosen to take all of these courses when I was in graduate school and I just didn't, and it's because I didn't understand what they might be useful for then. Like, I understand acutely how they might be useful now. And so, I'm like on this intense learning curve on that.
+
+And so, like, I think, you know, the same holds true for a bunch of kids. Like, I see it with my nine-year-old and my eleven-year-old. If you can tell them why learning something is important and it helps them do something that they're interested in, like, they will go and make the time and learn it. If you are telling them, you know, you need to learn this because I told you so, good luck. (Laughter.)
+
+CHRISTINA WARREN: No, I mean, I think you're right, and I think that's the case for a lot of people. And we need to find a way to make something interesting or at least spark that sense of curiosity into why it might be useful. 
+
+Also, like your kids, I love Roblox. (Laughter.) So, I hope they continue to experiment and play with those and that might unlock their enjoyment of programming because that's a great entry point too.
+
+KEVIN SCOTT:  Yeah, I think at this point, it's going to be very difficult to get my son disengaged in any way from Roblox. And, you know, funny enough, like, I will say I was a little bit worried about how much time he spent on Roblox, but Roblox and the sort of companion chat that he can do with his friends -- so, like, he has, I think because of this virtual experience, been able to navigate the shelter-in-place better than he otherwise would. Like, if anything, he's got more connection with his friends now than he did before because they're all hanging out in this virtual environment together, doing stuff.
+
+CHRISTINA WARREN:  Which is really important, right? And you can build relationships that way that are just as crucial as anything else. And so, I'm glad your son has had that opportunity, A, to be able to still stay connected with people through all of this, and B, to you know, maybe had his mind opened up to some new things by using play.
+
+KEVIN SCOTT:  Yeah, for sure. 
+
+CHRISTINA WARREN:  All right. Well, thanks

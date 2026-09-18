@@ -1,0 +1,23 @@
+Behind the Tech_Episode 30_Collier_Bloomberg_Transcript.txt  just something about this very, like, very complex that – you know, and it just feels deeply human and, like, I don’t want a machine trying to replicate that. You know, but if a machine could come in and, like, help a human, like, produce more of that, like great.
+
+JACOB COLLIER:  And sometimes it can be helpful to – to bounce off an – to bounce an idea off against something that’s neutral as well. You know, if I’m working on something and I share it with a friend of mine or someone in my family or whatever, then I kind of risk their judgment filtering into my own view of the song and then my mind being changed or whatever, you know. 
+
+And that doesn’t change, doesn’t matter how old you are, you always have that slight fear when you show someone something that they might just say, oh, this is whatever. 
+
+But I can imagine a world where there’s some kind of creative feedback from human to AI where the human gets a cool idea based off something that the human could never have imagined, if it generates ideas or makes space, then – then humans will fill it and that’s cool. That’s exciting.
+
+KEVIN SCOTT:  Yeah, you know, this is the other thing, too, about – about AI, like imagining an AI that was trying to compose a thing or deliver a performance the same way that you do. 
+
+Like you – you know, one of the things that I think is very interesting about what you do is you don’t always give people what they’re expecting in a song, like, you will – you’ll be sort of trucking along and it’s like, okay, like, you know, here’s the – here’s what we expect. And then you will, like, do this harmonic thing that’s like, “Oh, crap, like, why is there dissonance here now?” 
+
+And, you know, and if you, like, the things that are really good at is sort of, like, reading, you know, reading someone’s response to a thing and like giving them more of what they want. 
+
+And like, the special thing that you do is, like, you are, like, challenging us to think more about the music by occasionally and strategically giving us something that we’re not expecting. And like, I just don’t know how you like build the projective function of the feedback loop for that. 
+
+BEN BLOOMBERG:  Or like even literally making up new notes. 
+
+KEVIN SCOTT:  And like I just don’t know how you build the objective function of the feedback loop with that.
+
+BEN BLOOMBERG:  That’s totally the challenge.
+
+JACOB COLLIER:  It’s a really individual dance, isn’t it. Like everyone has to do their – you know, my idea of what

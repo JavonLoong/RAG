@@ -1,0 +1,17 @@
+EP-40_Behind_the_Tech_DanielaRus_Transcript (1).txt  Everyone takes pride in imagining the impossible and then finding ways to make it possible. 
+
+And so, it’s really an extraordinary privilege to be part of this tradition and to have a chance to develop programs and opportunities to support the dreams of our researchers.
+
+KEVIN SCOTT: Yeah, so I’d love to hear what you think some of those big moonshots are. I know one of the things that I’m fascinated by that you’re working on is soft robotics. So, if you could tell us a little bit about that and, like, any other big, interesting things that you all are working on, we’d love to hear about.
+
+DANIELA RUS: Well, let me say that there are things I work on as a researcher, and then there are things that – that CSAIL, as a community, works on together. So, CSAIL is a very large community. There are 125 faculty here and 1,300 members. And so there’s just a lot of a lot of activity.
+
+Now, one of my passions is to bring machines, materials and people closer together. I want to have more intelligent materials, and at the same time, I want to have more flexible, safer, more dexterous machines. And one way to think about this is to consider what robots were like when they were introduced in 1961, or 60 years ago. The first industrial robot was Unimate. It was introduced in 1961 and it was invented to do industrial pick and place operations. 
+
+Now, since then, the number of industrial robots in production reached tens of millions. And these industrial robots are true masterpieces of engineering that can do so much more than people do. And yet, these robots remain isolated from people on the factory floor because they’re large, and heavy and dangerous to be around. So, we’d like to have machines that are safer to be around, and that can be teammates for people. 
+
+Now, if we compare industrial robots with organisms in nature, organisms in nature are soft, and safe, and compliant, and more dexterous and more intelligent. How can we get to the point where we have robots that are like that? 
+
+And so, as I think about our interaction with machines and the natural world, I actually feel inspired to rethink what a robot is, because while the past 60 years have defined the field of industrial robots and empowered hard bodied robots to execute complex assembly tasks in industrial settings, I really wish for the next 60 years to be ushering in robots for human-centric environments and robots that can help people with cognitive and physical tasks. 
+
+Now, as we think about what these robots might look like, I’d like to ask us to look back at what our current robots looked like. So, when you think about a robot today, the images that come to mind are like an industrial manipulator, a humanoid or a box on wheels, right? These

@@ -1,0 +1,21 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt  down to the point of like these are the electrostatic interactions of atoms that comprise this system. You have to look at the phenomenology of the system. It’s why statistics is going to be such a really important skill for everyone. It’s why understanding the scientific method and having an experimental mindset I think is important. 
+
+I think this is such a good point about not deceiving ourselves that an incomprehensibly complex answer to a question of like “Why did this thing do what it did?” even if it’s couched in terms of language that we might otherwise understand, that’s not real understanding. 
+
+OREN ETZIONI: Exactly. And I’m not suggesting that the solution is, hey, just trust us, you know, we’re – we’re all (inaudible, crosstalk) 
+
+KEVIN SCOTT: Yeah, yeah, yeah, for sure – 
+
+OREN ETZIONI: – going to work. But, again, going back to the auditing idea, rather than an explanation, if we want – you know, one of the most jarring ones are uses of AI in the criminal justice system, right? 
+
+KEVIN SCOTT: Yes. 
+
+OREN ETZIONI: To help make parole decisions and things like that. Well, we should audit these systems, test them for bias, right? The press should be doing that, the ACLU should be doing that, regulatory agencies should be doing that. But the solution is not to get some strange explanation for the machine. The solution is to be able to audit its behavior statistically and test it, hey, are you exhibiting some kind of demographic bias? 
+
+KEVIN SCOTT: Yeah, I mean, one of the things we do at Microsoft is we have these two bodies inside of the company, this thing called the Office for Responsible AI that sits in our legal team. And we have this thing called Aether, that’s the AI and ethics committee inside of the company.  
+ 
+What we do with both of these bodies is we try to have both the lawyers and the scientists thinking about how you inspect both the artifacts that you’re building in your AI research, but their uses. And we have a very clearly defined notion of a sensitive use. And depending on how sensitive a use a particular model is being deployed in, we have different standards of auditing and scrutiny that go along with it. 
+
+And, recommendations, like, for a criminal justice application, for instance, you may say that a model can only advise, like, we do not condone it making a final decision. You know, just so that there’s always human review in the loop. 
+
+OREN ETZIONI: I think that’s smart. And I also think that this relates to another key principle when we think about both regulatory frameworks and ethical issues. Whose responsibility is it? The responsibility and liability has to ultimately rest with a person. You can’t say

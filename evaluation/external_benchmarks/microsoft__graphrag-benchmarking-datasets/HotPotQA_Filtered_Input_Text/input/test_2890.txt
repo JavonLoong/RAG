@@ -1,0 +1,35 @@
+Google Chrome Frame was a plug-in designed for Internet Explorer based on the open-source Chromium project.
+ It went stable in September 2010, on the first birthday of the project.
+ It was discontinued in February 2014 and is no longer supported.
+Operating System/Virtual Storage 1, or OS/VS1, is a discontinued IBM mainframe computer operating system designed to be run on IBM System/370 hardware.
+ It was the successor to the Multiprogramming with a Fixed number of Tasks (MFT) option of System/360's operating system OS/360.
+ OS/VS1, in comparison to its predecessor, supported virtual memory (then called "virtual storage").
+ OS/VS1 was generally available during the 1970s and 1980s, and it is no longer supported by IBM.
+The blink element is a non-standard HTML element that indicates to a user agent (generally a web browser) that the page author intends the content of the element to blink (that is, alternate between being visible and invisible).
+ The element was introduced in Netscape Navigator but is no longer supported and often ignored by any modern Web browser; some, such as Internet Explorer, never supported the element at all.
+Te Ngahere o Woodhill (Woodhill Forest) is a commercial exotic (pine) Forest located to the North West of Auckland, in New Zealand.
+ The forest covers approx 12,500 hectares of land from Muriwai in the South to South Head in the North.
+ The forest is a popular location for a number of recreation activities, including horse riding, 4WD and trail biking, mountain biking, walking, dog walking, tree climbing adventures (confidence and team building), orienteering and filming, although all require a permit (paid), and walking or dog walking is no longer supported by the owners.
+ Woodhill Forest is a sand based pine forest, providing all weather trails and recreation.
+Two Dots is a puzzle video game for iOS, Android developed and published by Playdots, Inc..
+ The Windows 10 Mobile and Microsoft Windows versions are no longer supported.
+ It is the sequel to "Dots".
+ It was released for iOS platforms on May 29, 2014 and became available for Android on November 12, 2014.
+"Dungeons & Dragons" retro-clones are fantasy role-playing games that seek to emulate editions of "Dungeons & Dragons" ("D&D") no longer supported by Wizards of the Coast.
+ They are mostly made possible by the terms of the Open Game License and System Reference Document, which allows the use of much of the proprietary terminology of "D&D" that might otherwise collectively constitute a copyright infringement.
+ While these rules lack the name "D&D" or any of the associated trademarks, their intent is to have a playable experience similar to those older editions.
+PAUP* (Phylogenetic Analysis Using Parsimony *and other methods) is a computational phylogenetics program for inferring evolutionary trees (phylogenies), written by David L. Swofford.
+ Originally, as the name implies, PAUP only implemented parsimony, but from version 4.0 (when the program became known as PAUP*) it also supports distance matrix and likelihood methods. Version 3.0 ran on Macintosh computers and supported a rich, user-friendly graphical interface.
+ Together with the program MacClade, with which it shares the NEXUS data format, PAUP* was the phylogenetic software of choice for many phylogenetists.
+ Version 4.0 added support for Windows (graphical shell and command line) and Unix (command line only) platforms.
+ However, the graphical user interface for the Macintosh version requires Classic, which is no longer supported by Mac OS X 10.5 and later.
+ There is a command line version of PAUP* for Intel-based Macs.
+ PAUP* is also available as a plugin for Geneious.
+Canoma was a 3D-modelling application for Windows and Macintosh which is now no longer supported by its company.
+OSRIC, short for Old School Reference and Index Compilation, is a fantasy role-playing game system.
+ "OSRIC" is a recreation of the first edition of "Advanced Dungeons & Dragons", and one of the most successful retro-clones.
+ "OSRIC" describes itself as "a compilation of rules for old school-style fantasy gaming...intended to reproduce underlying rules used in the late 1970s to early 1980s".
+ OSRIC uses the Open Gaming License and the System Reference Document of "Dungeons & Dragons" 3rd edition to create a new artistic presentation of the underlying rules set.
+Android "Ice Cream Sandwich" is a codename for the Android mobile operating system developed by Google, that is no longer supported.
+ Unveiled on October 19, 2011, Android 4.0 builds upon the significant changes made by the tablet-only release Android Honeycomb, in an effort to create a unified platform for both smartphones and tablets, whilst simplifying and modernizing the overall Android experience around a new set of human interface guidelines.
+ As part of these efforts, Android 4.0 introduced a new visual appearance codenamed "Holo", which is built around a cleaner, minimalist design, and a new default typeface named Roboto.

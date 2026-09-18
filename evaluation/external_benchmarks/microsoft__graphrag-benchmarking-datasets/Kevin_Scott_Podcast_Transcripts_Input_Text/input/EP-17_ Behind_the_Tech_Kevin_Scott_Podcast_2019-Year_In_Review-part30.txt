@@ -1,0 +1,23 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt OTT:  I know that, a few years ago, I think -- so, I don't meditate, but like a bunch of these sort of Buddhist practices around sort of compassion and mindfulness are really helpful. Like, the thing that I've latched onto that's been really useful is just gratitude.
+
+SAM ALTMAN:  Totally.
+
+KEVIN SCOTT:  Like, trying to -- trying to find in as many moments in as many days as possible something to be truly grateful for.  And like, I surprise myself because I'm a -- yeah, I think engineers are sort of pessimistic, and like, a little bit cynical by nature, like but abide by the  -- you're sort of wired a little bit to sort of see all of the problems in the world because, like, that's part of what motivates you to go out and, like, change them and make them better.  But it is, like, sort of a jaundiced way of looking at the world sometimes.  But like, I've just been shocked at how many things I've -- I can find to be grateful for every day, and like, how much, like, calmer that makes me.
+
+SAM ALTMAN:  Totally.  
+
+KEVIN SCOTT:  And here's Neha Narkhede, who is one of the initial authors of Apache Kafka and cofounder and CTO of Confluent. 
+
+NEHA NARKHEDE:  My favorite activity to strike a balance with is to travel to new countries and experience new cultures and that's what me and my husband do, and our crazy hobby together is to go SCUBA diving. 
+
+KEVIN SCOTT:  Oh, wow. 
+
+NEHA NARKHEDE:  And some of the, you know, crazy locations.  Oftentimes, to see different varieties of sharks if I can't -- I can't -- I've been in one of those cages where great whites are on the outside and you're on the inside.  I can't confirm if I was scared or not.  (Laughter.)  But I would say I survived it, and it turned out to be fun in a very weird kind of way.  
+
+KEVIN SCOTT: Yeah, you might be a little braver than I am. 
+
+CHRISTINA WARREN:  And, of course, we couldn't end without hearing from Jaron Lanier, who as a musician, has collaborated with the likes of Yoko Ono, T Bone Burnett, and Philip Glass.  And Kevin is asking Jaron about his musical instrument collection, which is -- it's kind of insane, like, that's -- it -- "expansive" doesn't really -- doesn't really do it justice. 
+
+KEVIN SCOTT:  It's kind of insane in the best possible way.  
+
+CHRISTINA WARREN:  In the best possible

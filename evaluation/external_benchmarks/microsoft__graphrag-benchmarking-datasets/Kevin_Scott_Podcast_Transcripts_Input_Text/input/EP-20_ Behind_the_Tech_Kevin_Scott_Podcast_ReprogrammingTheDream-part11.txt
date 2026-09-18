@@ -1,0 +1,22 @@
+EP-20_ Behind_the_Tech_Kevin_Scott_Podcast_ReprogrammingTheDream.txt -and-a-half, two hours away from where I grew up.
+
+And this is one of the most sophisticated technology installations anywhere in the world.  Like there's an enormous amount of network bandwidth coming into this facility, and like the amount of compute power that is just in this sort of acres of datacenter infrastructure that we have there is just staggering.
+
+And we have a bunch of high-skilled technology workers who are building and operating this infrastructure, on behalf of all of Microsoft's cloud customers. And some of those people who are living in that community struggle to get access from their local telecommunication providers to the high-speed broadband that they expect. Like, they are, you know, they're information works, like they expect in their homes to like have good broadband connectivity.  
+
+For students, like it's even more critical.  Like if you don't have a good broadband connection that's available to you, somewhere, as a student, like you're never going to be able to go find these opensource tools to use these free or cheap cloud platforms to like go learn all of this like very accessible knowledge that is on YouTube.
+
+And so, sometimes, I think it's the, you know, the prosaic things that like we're making more complicated than the complicated things.   
+
+GREG SHAW:  
+Yeah, well, it was interesting, you mentioned Boydton and, you know, some of the places where Microsoft has datacenters, we had a chance to visit, and in those communities - we encountered this in Iowa, as well, when we were reporting there.
+
+You know, a lot of these high schools, have been preparing students for kind of legacy jobs.  In Wyoming, a lot of kids who can, you know, go get jobs in oil and gas. In Virginia, you know, it used to be, as you write about, tobacco and furniture and –
+
+KEVIN SCOTT:  Textiles.
+
+GREG SHAW:  Yeah, and textiles.  You know, what we discovered, and I'd love to hear your thoughts on this, is you know, the high schools needed to begin to introduce some digital skills, and then the community colleges, where many of those students would end up going for post-secondary, also needed to create a sort of ladder toward the skills needed in those datacenters.
+
+KEVIN SCOTT:  Yeah like it's absolutely true, and then I think, you know, the thing that both of us saw, and like this was sort of a really, really striking thing to me, and I don't know why I was so surprised by it because in retrospect it's really obvious.
+
+Like I think one of the things that you really, really have to have in these communities, if you want kids to choose to study these concepts, to acquire these skills, to like graduate from high school and to, you know, sort of pursue further training, either on their own, or community colleges, or

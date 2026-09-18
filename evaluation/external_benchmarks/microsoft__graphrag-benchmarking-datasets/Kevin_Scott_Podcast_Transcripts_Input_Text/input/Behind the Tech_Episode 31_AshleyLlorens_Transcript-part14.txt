@@ -1,0 +1,17 @@
+Behind the Tech_Episode 31_AshleyLlorens_Transcript.txt  two sides I’ll pick to explore there. One is absolutely the idea that AI has taken us in a bold new direction as a society. And I think it’s more important than ever that we can engage around these policy questions and really around the directions of AI [remove stumble] definitely outside of computer science and across disciplines. And so, we do need to create narratives. Even more than that, I think we need to create directions that we agree on that we want to take this technology. 
+
+A lot of times, I think people are discussing AI as something separate from human beings and human intelligence, and I think we need to be thinking of these two things as complementary. 
+
+So, what are our goals for these things, you know. Can we start to set some audacious goals around enabling as many people as possible on the planet to live a long, healthy life, creating an atmosphere of shared prosperity, and what is the role of AI in doing that? 
+
+To me, these big societal narratives should be at the top level of abstraction in terms of what we’re talking about. And then everything else is derived from that.  
+
+I think if we’re going to just let 1,000 flowers bloom and see where we land on this thing, I think we could wind up with some really unintended consequences, you know, from that. 
+
+KEVIN SCOTT:  Yeah. I really, really agree. And I think, you know, too, if you have the wrong narrative, you could have unintended consequences as well. Like, one of the things that I have been telling people over and over again over the past handful of years as just sort of a useful device about thinking about the future of AI is that AI, like especially its embodiment in machine learning, is a tool. And just like any other tool that people have invented, like it’s a human-made thing and, like, humans use it to accomplish a whole wide variety of tasks. 
+
+And, you know, the tool is going to be as good or as bad as the uses to which we put it. And, you know, it’s just very, very important I think for us to, like, have a set of hopeful things that we’re thinking about for, you know, those uses of AI as, you know, we have our anxieties. And both are important. Like, you have to – you know, it will certainly be used for bad things. 
+
+But, you know, as with any technology, like, the hope is that there will be orders of magnitude more positive things and good things that people will attempt to do with it than the bad. And part of how we get to that balance of good versus bad is the stories that we’re telling ourselves right now about what it’s capable of and, like, what to be wary about. 
+
+ASHLEY LLORENS:  I think that’s right on point. And, you know, we

@@ -1,0 +1,19 @@
+Ep-55_Behind_the_Tech_Kevin_Scott_Podcast_with_Mira_Murati.txt  smartest people in the world coming to you with very good ideas -- ideas that you think are interesting and, like, you’re a curious person and you’re like, “Oh, that’s amazing. Like, I -- I love this.” 
+
+And then you know that that idea is not on the path that you’re pursuing and it might not be the next most important thing to go work on if you’re choosing the next most important thing. And just saying no -- and like you’re also a good person and, like, you know, the people you work with are good people and like you don’t want to disappoint them and you don’t want them to be sad. 
+
+And so it’s a real art form, I think. It’s, like, having the confidence and the courage to say no, yourself, when you also have your own uncertainties, like, am I wrong? Like, am I making the right call? And then being able to, like, deliver the no where it’s not a no, it’s sort of a no, but. It’s no, you know, but, like, here’s this other thing that, you know, like, I -- I think if you do that, it will be even more interesting and, you know, create more impact. It’s hard. 
+
+MIRA MURATI: Exactly. It is extremely hard. And with that, together with that goes this, you know, building the muscle as an organization to sort of learn new things quickly or learn what’s not going to work very quickly and adopt what’s going to work very quickly and kill the old ideas quickly. It is hard to kill things that are already, you know, maybe working, but they’re not working as well as something new that you could be doing. 
+
+KEVIN SCOTT: Yeah, well, look, I think -- you know, that’s another thing that you all do really well. And it’s -- and it’s very, very, very important is choosing when to stop doing things. 
+
+So, you know, like, for instance, you all had, like, an incredibly great demo a handful of years ago of a robotic hand that could single-hand solve a Rubik’s cube. And, like, it was, you know, a demo that was, you know, trying to get a reinforcement learning system to learn a robotic, kinematic model. And so, like, it’s technically interesting work. It’s a super-cool demo, but like, you all decided, like, this isn’t on the path so, like, we’re going to stop working on this. 
+
+MIRA MURATI: Right. 
+
+KEVIN SCOTT: And, like, that’s a hard decision -- 
+
+MIRA MURATI: Yeah, exactly. 
+
+KEVIN SCOTT: -- because that was a lot of work for someone. It was, like, their

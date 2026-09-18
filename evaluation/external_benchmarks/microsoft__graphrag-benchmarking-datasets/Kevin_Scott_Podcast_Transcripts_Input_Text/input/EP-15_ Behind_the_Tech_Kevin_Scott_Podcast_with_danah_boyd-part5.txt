@@ -1,0 +1,25 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt  you know, the admin position.  
+
+And then went into my account and hacked all of my e-mails, all my correspondences, which included a ton of conversations about grappling with sexual abuse, grappling with a mess that I was doing with my family, all this stuff.  And they posted it to an anonymous server. 
+
+KEVIN SCOTT:  Dear lord.  
+
+danah boyd:  This is 1997.  
+
+KEVIN SCOTT:  And like why?  Other than they were assholes?  
+
+danah boyd:  That year, there was a whole group of us who were women and we were regularly told we didn't belong.  And it was — I mean, oh, was it hard.  And I was wrecked.  And, you know, Andy had my back.  And Andy was like, well, let's figure out who — let's investigate and prosecute. 
+
+And what I learned was that it was, again, laws were different at the time.  For every e-mail stolen was equivalent to a mail stolen, so it was 30 years.  And I was like, no matter how horrible this is, that's not the punitive result that I want from this.  
+
+And so, I spent a lot of time trying to figure out how I would position myself within computer science to be like, I'm staying.  I'm not going away.  But it was a hard slog.  And, I mean, the number of stories I can tell you of people trying to get me out, right?  Like, you know, I remember applying for a job at Silicon Graphics, SGI, and I remember this interview with this guy who was like, "Oh, I thought they managed to get you out by now."  
+
+And I was like, what?  
+
+KEVIN SCOTT:  Wow. 
+
+danah boyd:  And, like, this was an alumni of Brown.  And I remember, you know, applying for a job at Disney when I was at SIGGRAPH and walking up to this recruiter and saying, "You know what?  I want an internship."  And he's, like, "Well, we don't have internships for artists."  And I'm like, "Well, I'm a computer scientist."  And they're like, "But you're a girl."  
+
+Right?  And it was like that constant story.  You know, and I just — I dug my feet in and I became determined, so much so, to be honest, that I stopped realizing what I liked about computer science and what I didn't.  And I was just so determined to do computer science because people told me I couldn't, that I wasn't willing to look at the broader field, if you will.  
+
+I mean, I graduated Brown with very few classes that weren't computer science or math, because you can

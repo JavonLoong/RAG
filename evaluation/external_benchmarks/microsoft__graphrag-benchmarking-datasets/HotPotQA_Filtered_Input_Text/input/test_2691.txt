@@ -1,0 +1,58 @@
+Pasang is a two-player abstract strategy board game from Brunei.
+ The game is often referred to as Pasang Emas which is actually a software implementation of the traditional board game.
+ The object of this game is to acquire the most points by capturing black and white tokens on the board.
+ Black tokens are worth 1 point, and white tokens are worth 2 points.
+ The board is initially laid out with all 120 black and white tokens in one of over 30 traditional patterns.
+ Players choose a piece called a "ka" which is used to capture the tokens on the board.
+ Each player's "ka" moves around the board capturing as many tokens as possible.
+ As a note, the "kas" are the only mobile pieces in the game.
+ The other pieces are stationary, and are captured by the "kas".
+ Players must capture token(s) during their turn, or lose the game.
+ When all tokens have been captured from the board, the player with the most points is the winner.
+ However, if there are any tokens left on the board, and none can be captured on a player's turn, then that player loses the game, and the other player is the winner.
+Pirate and Traveler is a board game published by Milton Bradley in 1911.
+ Revised editions were published in 1936, 1953, 1956, 1960, and 1970.
+ Details of the game board, travel cards, spinner, pawns and box art varied between edition years.
+ The game is no longer in production and is now considered a vintage collectible board game.
+Castle Ravenloft Board Game is a 2010 board game published by Wizards of the Coast.
+ It was the first game released in the Dungeons & Dragons Adventure System board game series.
+Sonnets from the Portuguese, written ca. 1845–1846 and published first during 1850, is a collection of 44 love sonnets written by Elizabeth Barrett Browning.
+ The collection was acclaimed and popular during the poet's lifetime and it remains so.
+Alhambra (German: Der Palast von Alhambra , literally "The Palace of the Alhambra") is a 2003 tile-based German-style board game designed by Dirk Henn.
+ It was originally published in Germany by Queen Games in a language-interdependent version; an English-specific version was released in North America by the now-defunct Überplay.
+ The game is an Arabian-themed update, set during the construction of the Alhambra palace in 14th century Granada, of the 1998 stock trading board game "Stimmt So!"
+, which in turn was an update of the 1992 mafia influence board game "Al Capone"; the original version was subsequently released as "".
+Awithlaknannai Mosona is a two-player strategy board game from the Zuni Native American Indian tribe of New Mexico, United States.
+ It is unknown how old the game is.
+ The game was described by Stewart Culin in his book "Games of the North American Indians Volume 2: Games of Skill" (1907).
+ In this book, it was named Awithlaknan Mosona.
+ Awithlaknannai Mosona resembles another Zuni board game called Kolowis Awithlaknannai (Fighting Serpents) with few minor differences.
+ The former having a smaller board, and depending upon the variant, it also has less lines joining the intersection points.
+ The rules are the same.
+ Awithlaknannai Mosona belongs to the draughts and Alquerque family of games as pieces hop over one another when capturing.
+ It is actually more related to Alquerque, since the board is made up of intersection points and lines connecting them.
+ It is thought that the Spanish had brought Alquerque to the American Southwest, and Awithlaknannai Mosona may have been an evolution from Alquerque.
+ However, in Stewart Culin's 1907 book, the Zunis claim that they had adopted a hunt game from Mexico similar to Catch the Hare and the Fox games of Europe, and transformed it into Awithlaknannai Mosona.
+ In these games, one player has more pieces over the other, however, the other player's piece has more powers.
+ The Zuni's equalized the numbers of pieces and their powers, and also may have transformed the board making its length far exceed its width.
+ Diagonal lines also replaced orthogonal lines altogether.
+ However, the hunt game from Mexico may have used an Alquerque board even though the game mechanics of their new game, Awithlaknannai Mosona, were completely different.
+Sher-bakar is a two-player abstract strategy board game from Punjab, India.
+ It is a hunt game.
+ It uses an Alquerque board, and therefore, Sher-bakar is specifically a tiger hunt game (or tiger game).
+ There are two tigers attempting to elude and capture as many of the other player's pieces which in other hunt games in this part of the world is often referred to as a goat, cows, lamb, or men.
+ An interesting and uncommon feature in this game is that the goats, cows, lamb, or men are piled up on four points of the board at the beginning of the game.
+ Piling up pieces is an unusual feature in hunt games or any board game in general.
+ The only other hunt game that uses this feature is Bagh bandi, a game closely related to Sher-bakar.
+ Hereinforth, the white pieces will be referred to as goats.
+Plaid Hat Games is a United States-based board game studio.
+ Plaid Hat Games was founded in 2009.
+ Board game designer Colby Dauch formed a board game publishing company in order to release the companies first game, Summoner Wars.
+Francis Tresham is a United Kingdom-based board game designer who has been producing board games since the early 1970s.
+ Tresham founded and ran games company Hartland Trefoil (founded 1971), a company well known for its "Civilization" board game, until its sale to MicroProse in 1997.
+ His "1829" game was the first of the "18xx" board game series and some of his board games have inspired Sid Meier computer games such as "Railroad Tycoon".
+Can't Stop is a board game designed by Sid Sackson originally published by Parker Brothers in 1980, and was long out of print in the United States.
+ It was reprinted by Face 2 Face Games in 2007.
+ An iOS version was developed by Playdek and released in 2012.
+ The goal of the game is to "claim" (get to the top of) three of the columns before any of the other players can.
+ But the more that the player risks rolling the dice during a turn, the greater the risk of losing the advances made during that turn.

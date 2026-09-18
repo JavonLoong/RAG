@@ -1,0 +1,31 @@
+Behind-the-Tech_EP39_2021_Year-in-Review_Transcript.txt inda Gates and Jen-Hsun Huang Foundation and – 
+
+ KEVIN SCOTT: That’s awesome, I didn’t know Jen-Hsun was involved. That’s great. 
+
+FEI-FEI LI: Yeah. It’s Jen-Hsun & Lori Huang Foundation. And this year, we’re on 11 campuses nationwide. One of the populations we put a lot of focus on, in addition to gender, race, income, is geographic diversity and serving rural community. For example, our CMU campus is serving rural community in Pennsylvania. We also have Arizona campus. 
+
+One story actually came out of our Stanford camp is Stephanie. Stephanie is still a high school junior now, and she grew up in the backdrop of strawberry field in rural California in a trailer park with a Mexican mom. And she come from that extremely rural community, but she’s such a talented student and has this knack and interest for computer science. And she came to our AI4ALL program at Stanford two years ago. 
+
+And after learning some basics about AI, one thing she really was inspired is she realized this technology is not a cold-blooded, just bunch of code. It really can help people. So, she went back to her rural community and start thinking about what she can do using AI to help. And one of the things she came up with is water quality. 
+
+KEVIN SCOTT: Yes. 
+
+FEI-FEI LI: Really matters to her community. And so, she started to use machine learning techniques to look at water quality through water samples. 
+
+And that’s just such a beautiful example. I just love her story to show that when we democratize this technology to the communities, the diverse communities, especially these communities that technology hasn’t reached enough in, the young people, the leaders and the citizens of this community will come up with such an innovative and relevant ideas and solutions to help those communities. 
+
+KEVIN SCOTT: Yeah, and – and I think that getting this technology democratized is sort of a one-two punch. 
+
+[MUSIC]
+
+
+CHRISTINA WARREN: So in this conversation Kevin had about Fei-Fei’s earlier work on ImageNet, ImageNet consisted of 15 million images which were organized in everyday English language of 22,000 vocabularies, mostly nouns. And it was, at that time, in 2009, the largest database of natural object images in the world. And it really was, in Fei-Fei’s words, the “onset of the deep learning revolution.”
+
+Here’s Kevin’s conversation with Fei-Fei about the continuation of that work.
+
+[MUSIC]
+
+
+KEVIN SCOTT: Tell me a little bit more about this work that you’re doing that sort of blends vision and language together, because that – that seems really quite exciting. 
+
+FEI-FEI LI: Yeah. So, it actually is a continuation or step forward from ImageNet. If you look at what

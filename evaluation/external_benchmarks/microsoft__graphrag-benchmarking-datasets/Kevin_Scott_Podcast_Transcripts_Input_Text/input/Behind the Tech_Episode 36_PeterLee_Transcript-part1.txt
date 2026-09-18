@@ -1,0 +1,34 @@
+Behind the Tech_Episode 36_PeterLee_Transcript.txt ../[MUSIC] 
+
+PETER LEE: What we’re seeing today is that more and more, what we do, and even just to survive as a civilization depends on researchers and scientists being able to get drawn in and solve problems, respond to crises, help us become hopefully more resilient to the future. And that sort of crisis response science, I think, is getting to be incredibly important. And it won’t work if society doesn’t trust what we’re doing. And that trust is – is so hard to earn.
+
+[MUSIC] 
+
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech. We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today. Stick around.
+
+[MUSIC] 
+ 
+CHRISTINA WARREN:  Hello and welcome to Behind the Tech. I’m Christina Warren, senior cloud advocate at Microsoft. 
+
+KEVIN SCOTT:  And I’m Kevin Scott. 
+
+CHRISTINA WARREN:  And today, our guest is Dr. Peter Lee. Dr. Lee is a distinguished computer scientist whose research spans a range of areas including artificial intelligence, quantum computing, and biotechnology. And currently, he’s leading a team of researchers here at Microsoft, with eight labs across the globe. 
+
+KEVIN SCOTT:  Yeah, we are super lucky to have Peter on our team. I’ve known about Peter since I was a computer science graduate student in the ‘90s. So he was a professor at Carnegie Mellon University when I was a PhD student at the University of Virginia, and we were working in pretty similar academic spaces. And I was always a huge admirer of not just his work, but of the work of his PhD students. 
+
+So it’s a real honor and a privilege for me to now be able to work with Peter here at Microsoft. It’s a strange, strange journey. 
+
+CHRISTINA WARREN: I love that. I love that you’ve been aware of him for so long, and now you get to work together, which is fantastic. 
+
+KEVIN SCOTT:  Yeah, it’s – it’s super fun. 
+
+And he has a really big job here at Microsoft. So he runs all of Microsoft Research, which as an institution turns 30 this year. 
+
+CHRISTINA WARREN:  Wow.
+
+KEVIN SCOTT:  And over its lifetime, it has been one of the most important research institutions for computer science and related areas for the past three decades.
+
+You know, and again, I’m a little bit biased. Microsoft Research is in my – in my group at Microsoft, and I was

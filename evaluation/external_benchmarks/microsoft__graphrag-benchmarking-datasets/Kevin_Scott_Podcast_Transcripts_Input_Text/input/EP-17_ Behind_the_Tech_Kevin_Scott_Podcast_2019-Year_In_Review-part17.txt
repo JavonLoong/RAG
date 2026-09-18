@@ -1,0 +1,23 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt  humanity it’s actually a tool that we're going to learn to use with time like we learn to use fire.
+
+JUDY ESTRIN: If you're talking about failure that is not just inconvenient, but can be harmful, you can't just say, "Oops." Right? So, whether it is a self-driving car that hits somebody, or a social media system whose implications is threatening democracy, we're not allowed to just say, "Oops." We have to be thinking about the consequences of the technologies that we are bringing to market, because we are now in the center of everything in our lives. 
+
+JARON LANIER: I'm worried about where we are right now.  I just feel like our present Internet is destroying societies and democracies and economies.  I think it's bringing down civilization.  It's bad.  We really screwed this thing up.
+
+[MUSIC]
+
+CHRISTINA WARREN:  So, that was Danny Hillis, the pioneer of super computing, who created the company Thinking Machines, and then we heard from Judy Estrin, who's one of the original co-creators of the Internet, which is just amazing -- 
+
+KEVIN SCOTT:  Amazing.   
+
+CHRISTINA WARREN:  And, like, I mean, that's so cool.  That's -- yeah, that's unreal.  And finally, we heard from Jaron Lanier, who is basically considered by many people to be the father of virtual reality.  Like, I think he actually coined the term "virtual reality."  
+
+KEVIN SCOTT:  He did, and so looking at this list of guests, it's sort of shocking the people that we got to talk to. Like, the person who invented a big chunk of modern computing and these amazing supercomputers.  Like, one of the people in the labs creating the Internet protocols and the person who like played perhaps the biggest role in the creation of virtual reality, it's sort of crazy.  
+
+CHRISTINA WARREN:  It is.  You have really good friends, and we're all really lucky that we get to like basically leach off of your friendships for these great conversations. 
+
+KEVIN SCOTT: You know so the interesting thing about Jaron in particular is that Jaron, in addition to being an amazing computer scientist and inventor and one of the people who helped create virtual reality is also a musician and an author, and today spends a bunch of his time thinking about humanism and sustainable economics in the context of all of the technology that we're using in our day-to-day lives.  
+
+[MUSC]
+
+JARON LANIER:  I'm not sure if I coined data dignity, by the way.  I think either Glen Weyl, or maybe even Satya Nadella did.  Digital dignity was a term -- was going to be the title of Who Owns the Future, but the editor

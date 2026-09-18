@@ -1,0 +1,22 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt  period of time.  So, like, that is really good advice.  And the other thing is, like, you know, put yourself in situations where you can maximize the amount of stuff that you're learning. 
+NEHA NARKHEDE:  Yes.  
+KEVIN SCOTT:  Like, if you do those two things, like, you can accomplish a lot --  
+NEHA NARKHEDE:  A lot of things.  You can accomplish a lot of things.  And at the same time, you are uncomfortable almost most of the time, I would want to say.  (Laughter.) 
+KEVIN SCOTT:  Yeah, actually, I find the discomfort a sign that you're doing stuff right.  
+NEHA NARKHEDE:  Yes. 
+KEVIN SCOTT:  Like, a lot of people try to avoid discomfort.  
+NEHA NARKHEDE:  Discomfort.  
+KEVIN SCOTT:  And like of course there are flavors of discomfort that you should avoid. 
+NEHA NARKHEDE:  Yes.  
+KEVIN SCOTT:  But the discomfort that comes from trying something really, really hard and not actually being perfect at it is good.  
+NEHA NARKHEDE:  Yes, it is.  
+KEVIN SCOTT:  Because that is the thing that sort of drives progress and that builds skill and that like actually makes change happen. 
+NEHA NARKHEDE:  Absolutely.  I think like this comfort -- I realized that through my master's even is just there was a ton of discomfort in coming to a different country and learning about computer science from first principles, very different style of teaching.  
+And that's when I realized that I'm just going to have to be comfortable with that discomfort if I wanted to learn things, which is what I really wanted to do. 
+KEVIN SCOTT:  Yeah. 
+NEHA NARKHEDE:  And so I think that sort of training almost helps a lot in starting a company because you're just going through one obstacle after the other after the other and it just literally never ends, right?  
+KEVIN SCOTT:  Yeah.  And so, like let's talk about Confluent.  So like, I still remember the day that Jay walked into my office and -- 
+NEHA NARKHEDE:  To tell you that we're leaving?  (Laughter.)  
+KEVIN SCOTT:  -- he had this -- I think he thought he was going to get a different reaction out of me than he did.  He came in -- 
+NEHA NARKHEDE:  Pretty much. 
+KEVIN SCOTT:  -- like almost worried it's like, okay, I'm going to -- I'm delivering bad news.  And I told him, I'm like, oh, this is actually pretty cool

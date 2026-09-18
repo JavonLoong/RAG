@@ -1,0 +1,29 @@
+Ep-59_Behind_the_Tech_Kevin_Scott_Podcast_with_David_Kirtley.txt  for those big projects to have a deliverable. And I think that I still think back to those sometimes. 
+
+KEVIN SCOTT: Yeah.
+
+DAVID KIRTLEY: And when I talk about thinking about how I build teams at Helion.
+
+KEVIN SCOTT: Yeah, and some of these programs that we did, in the space race in particular, were just unfathomable in scale. Like, there was a really good YouTube video bio for this YouTuber called his channel is Smarter Every Day. 
+
+DAVID KIRTLEY: Yeah.
+
+KEVIN SCOTT: And, like, super good engineer who, like makes great STEM content and he was interviewing a NASA engineer who had worked on the Saturn V program. And you know, there’s more than 100,000 people working on that program to like build this rocket that would be able to transport a moon lander, like all the way to the moon and like get someone back safely. 
+
+And it just – crazy complexity of that thing. And like they’re building it at a time where they have a tiny fraction of the scientific and engineering resources that we have right now. So I like I’m always in awe that like a) you got 100,000 people – although, like – you know, Microsoft’s, like, bigger than that. It’s always amazing to me that you can get, you know, people to – large, large – large groups of people to do very complicated things, but it’s so impressive, some of those past projects.
+
+DAVID KIRTLEY: And I think I think about that in the scale of the project, but also the time. Like we went, you know, if you think about where we went from, you know, only a tiny, little rockets launched, blowing – essentially blowing up on – there wasn’t even a pad yet – to lots of humans, massive scale infrastructure, and then humans like actually delivering that, you know, being – landing on the moon in that short time. 
+
+And we’ve had lots of other projects to where, you know we move fast, where you start with a singular mission of "I have a time limit. And I better do this." I mean, you use the word race.
+
+KEVIN SCOTT: Yeah.
+
+DAVID KIRTLEY: I think that’s a big, important key.
+
+KEVIN SCOTT: Yeah.
+
+DAVID KIRTLEY: And I think that applies if you to fusion in some ways to in that the time pressure on fusion is here. Like we need it. The world needs it. 
+
+KEVIN SCOTT: Yeah. 
+
+DAVID KIRTLEY: And so now you actually see people getting into this with that race mentality of how do we deliver this thing fast, and you didn’t make engineering choices based off of speed, not always based off of the optimal engineering, but based off of what can deliver the mission, the product

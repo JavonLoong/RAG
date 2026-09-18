@@ -1,0 +1,29 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt  computer like they were when I was a kid. 
+
+And so, these are fun things, but I tinker a lot. I love technology. I am as addicted as – although sometimes annoyed as everyone else – to Hacker News as I ever have been. I have a home lab at home that’s now has increasingly getting GPUs, because I’m doing more machine learning. It’s – it’s all built on Nix, because that seemed interesting to learn. 
+
+And, in fact, I learned from Nix how to build deterministic, reproducible environments and the value of them. And that actually influenced the HR system we built, which is like, think about that for a moment. 
+
+I think there’s – like, I think there’s a school of thought about what creativity is, which says that creativity is predominantly the extraction of incredibly insightful ideas out of obscure fields and moving them into others where they are of just as much value, once contextualized. And I believe that. I really think that I find tons and tons of inspirations in this – like, in this tinkering. 
+
+I’m doing the advent of code right now. I’m trying to do it in a different programming language every day of this year. 
+
+KEVIN SCOTT: What’s your favorite programming language right now? 
+
+TOBI LÜTKE: I mean, I – like, Ruby fits into my brain better than anything else. And I just love – man, I could spend an hour talking about this, but, like, I wish people would give Ruby more of a chance because there’s ideas encoded in it, which are necessary in the rest of the programming world. 
+
+Like, making a programming language optimized for programmer happiness is just, like, important. Like, we are not machines, we’re humans. And we love aesthetics and these kinds of things, even though it just seems inefficient sometimes to the sort of more shape rotator types. 
+
+I really enjoy Zig right now. It just also seems like, I love everything that is a clear, novel take on problems that I recognize to be worth solving, right? Like, I – doing this comp time thing is brilliant. Struggling a little bit with Rust. 
+
+It’s just like, the learning curve, it’s hard. I know I’m going to love it once I clear the borrow checker hurdle, but, like, I keep running my head into it. And yeah, actually, TypeScript is very, very good. TypeScript, I like, too, so.
+
+KEVIN SCOTT: Awesome. Well, I –
+
+TOBI LÜTKE: What about you? What is – what’s your favorite programming language? Like, can I ask this? 
+
+KEVIN SCOTT: Yeah, yeah, yeah. 
+
+TOBI LÜTKE: This is probably politically charged for you. (Laughter.)
+
+KEVIN SCOTT: No, no, no, it’s not politically charged

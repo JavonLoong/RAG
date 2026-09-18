@@ -1,0 +1,17 @@
+EP-40_Behind_the_Tech_DanielaRus_Transcript (1).txt  design. It allows us to experiment in simulation so that the time required to create the final product is greatly reduced. This is back to our robot compiler that I mentioned earlier in our conversation. And as we think about designing these machines we have to consider the shape, we have to consider the materials, we have to consider energy requirements. So, we also need to think about the energy aspect of the machine. 
+
+In fact, every time I’m stuck in traffic, I actually dream about my car lifting up in the third dimension and buzzing above everybody, so that I don’t have to be late for my meeting. (Laughter.) And right now, that vision can be, will be achievable if we can figure out the energy solution, because honestly, thinking about a machine flying through free space is simpler from a computational point of view than a self-driving car that has to drive through congested traffic. So, I’m excited about those possibilities. 
+
+So those are technical challenges on the hardware side. We also need to consider challenges on the computational side or what I call the brain. So we need to make more capable algorithms, more capable machine learning solutions, more compact machine learning solutions, more solutions that can deliver safety-critical algorithms that are characterizable with respect to what they’re able to do. 
+
+And then we need advancements on how machines and people interact with one another, so that we can have more intuitive interactions that will allow people at large to use machines without needing to become experts in robotics.
+
+KEVIN SCOTT: So, as you look forward to the next five, 10, 20 years, what are you most excited about? 
+
+DANIELA RUS: Well, I’m really most excited about this vision of building machines that truly help people with cognitive and physical work, and doing that in the process of advancing the science and engineering of intelligence, or if that’s too ambitious, maybe it’s at least the science and engineering of autonomy. 
+
+And so I think that there are so many really exciting problems with respect to automating how we think about the hardware piece of the machine, expanding the capabilities of the machine, thinking deeply about how machines interact with each other and interact with people. This is all tremendously important.
+
+But I think that as we think about these challenges, it is also important to consider how the challenges benefit people and humanity, in general. And so we talked about positive impact in healthcare, positive impact in transportation, positive impact in so many aspects of our lives. I think that AI and computation holds so much potential to help, but we actually have to do it very carefully. 
+
+And so, for instance, in healthcare, there is tremendous potential to improve diagnosis. In fact, machines today will look at more data in a day than a doctor will see in a lifetime. And there was a fairly recent experiment where an AI-based approach and a doctor were tasked to look at scans of lymph node cells and diagnose cancer or

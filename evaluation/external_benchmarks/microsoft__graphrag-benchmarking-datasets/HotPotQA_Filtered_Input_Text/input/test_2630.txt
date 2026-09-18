@@ -1,0 +1,54 @@
+PayMate helps large Enterprises and SMEs transition from traditionally slow and costly forms of payments like cash and checks to real-time and efficient digital payments.
+ PayMate provides business customers the ability to automate and seamlessly manage vendor payments (AP), customer payments (AR), invoicing, and cash flow.
+ In addition, businesses can easily apply for working capital financing at competitive rates.
+ Multiple forms of electronic payment channels are supported including cards, net-banking, ACH, NEFT, RTGS, and IMPS.
+ All services are delivered via its proprietary cloud based, payments platform and can be accessed on any web enabled desktop or mobile device.
+ Processing of high volume transactions, payment settlement, mitigating risk, and security are core elements of the proprietary platform.
+ PayMate is a PCI-DSS compliant and adheres to the highest standards and industry best practices for compliance, security, and risk.
+ PayMate is a key player in the travel industry in India with over 13,000 registered agents and processing relationships with key airline and rental car companies.
+ It's banking partners include State Bank of India, HDFC Bank, Axis Bank, Corporation Bank, Kotak Bank, Syndicate Bank, South Indian Bank, Dena Bank, ABN Amro ABN Amro.
+USA Technologies Inc. is an American company known for its work with ePort cashless acceptance technology running on their patented ePort Connect service a PCI compliant, comprehensive suite of services designed specifically for the self serve, unattended market.
+ ePort Connect wirelessly facilitates electronic payment options to consumers (so that payment can be made with credit, debit, or NFC enabled electronic wallets like Apple Pay and Android Pay) while providing operators with both telemetry and machine-to-machine (M2M) services.
+ ePort technology is primarily found in vending machines, kiosks and point-of-sale (POS) terminals, but the ePort Online and ePort Mobile products have extended the network to accept recurring payments from a PC or retail outlets and the taxi industry through smartphone devices.
+ The company also produced other technology to address needs within the unattended industry such as the More Prepaid and Loyalty consumer engage program, ePort beacon, facilitating Bluetooth payment options, and the EnergyMiser, a device that reduces the energy consumption of vending machines.
+ACI Worldwide (NASDAQ: ACIW ) is a payment systems company headquartered in Naples, Florida.
+ ACI's products and services are designed to facilitate electronic payments and are used principally by financial institutions, retailers and electronic payment processors. ACI's portfolio of products generally addresses four primary market segments:
+The Alfa DiskFax was a communication device created by Alfa Systems of the United Kingdom.
+ It was launched in 1990.
+ The DiskFax was designed to allow the transfer of digital files over a conventional telephone line to a remote DiskFax machine.
+ In operation users would insert an PC-compatible floppy disc into the unit, at which point the data would be transmitted automatically to a receiver, which would write an image of the data on a local floppy disc.
+ There were two models, one equipped with 5¼-inch, and 3½-inch drives, and a second with an internal hard drive for storing incoming data.
+Electronic Payment Services (Chinese: 易辦事), commonly known as EPS, is an electronic payment system in Hong Kong, Macau, and with limited acceptance in Shenzhen; since it began operations in 1985.
+ The service is provided by EPS Company (Hong Kong) Limited.
+ Currently there are over 25,000 acceptance locations.
+By 2005 "USA Today" referred to Houston, Texas as "the dining-out capital of [the United States <nowiki>]</nowiki>."
+ Houstonians ate out at restaurants more often than residents of other American cities, and Houston restaurants have the second lowest average prices of restaurants of major cities.
+ Tory Gattis, who published op-eds in the "Houston Chronicle", said in 2005 that Houston has "a great restaurant scene."
+ Gattis said that one factor contributing to the status is Houston's ethnic diversity, related to Houston's role as a major city of the energy industry, Houston's role as a port city, and Houston's proximity to Latin America and the Cajun areas of Louisiana.
+ Gattis cited Houston's lack of zoning, which makes it easy for a business owner to start a restaurant as land is less expensive and there are fewer regulations and permitting rules.
+ Gattis also cited Houston's freeway network, which, according to Gattis, puts restaurants within a 15-20 minute drive within the residences of most Houstonians during non-rush hour times.
+ Gattis explained that the size of Greater Houston's population allows the city to support niche ethnic restaurants and provides a large customer base for area restaurants.
+ Also he stated that the competition in Houston's restaurant industry forces restaurants of lower quality to go out of business, leaving high quality restaurants open.
+ The journalist explained that Houston's relatively low cost of living reduces labor costs for restaurants and allows its residents more leftover income that could be spent at restaurants.
+ Jobs in Houston have relatively high salaries, Gattis explains that the wages help support Houston's restaurant market.
+"No More Woof" is an electronic device created by the Nordic Society for Invention and Discovery, to translate canine brainwaves, or "emotions", to English language.
+ The basic idea is to record electroencephalographic data from the dog's brain, and connect the electroencephalograph to a software which converts to English, to allow the dog's master to "hear" his dog.
+ From an outsider's perspective, it would seem that the dog's master hears the dog through a set of headphones "plugged" in the dog.
+Paytm is an Indian electronic payment and e-commerce brand based out of Delhi NCR, India.
+ Launched in August 2010, it is a consumer brand of parent company One97 Communications.
+ The name is an acronym for "Payment Through Mobile."
+ The company employs over 13,000 employees as of January 2017 and has 3 million offline merchants across India.
+ It also operates the Paytm payment gateway and the Paytm Wallet.
+Speedpass is a keychain RFID device introduced in 1997 by Mobil Oil Corp. (which merged with Exxon to become ExxonMobil in 1999) for electronic payment.
+ It was originally developed by Verifone.
+ As of 2004, more than seven million people possess Speedpass tags, which can be used at approximately 10,000 Exxon, Mobil and Esso gas stations worldwide.
+ At one point, Speedpass was deployed experimentally in fast-food restaurants and supermarkets in select markets.
+ McDonald's alone deployed Speedpass in over 400 Chicago area restaurants.
+ The test was deemed a failure and McDonald's removed the scanners from all their restaurants in mid-2004.
+ Additionally, the New England grocery chain Stop & Shop tested Speedpass at their Boston area stores; the units were removed in early 2005.
+ Speedpass has also been previously available through a Speedpass Car Tag and a Speedpass-enabled Timex watch.
+PAX Global Technology (informally known as PAX or PAX Technology) is a major suppliers of electronic payment terminals.
+ Headquartered in Shenzhen (China), PAX has a manufacturing and research and development facilities in China and direct offices in China, the USA and Italy.
+ The rest of the world goes to market through a wide network of channel partners and payment system integrators.
+ As of 2017 it had over 17 million terminals installed worldwide.
+ The company is listed on the Hong Kong stock exchange as PAX Global Technology Ltd and is ranked as one of the top 3 global payment terminal solution suppliers.

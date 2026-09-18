@@ -1,0 +1,27 @@
+Ep-41-Behind_The_Tech-Neal_Stephenson-FINAL_2.txt ../February 8, 2022: Behind the Tech with Kevin Scott
+Guest: Neal Stephenson
+
+NEAL STEPHENSON: I think I’m a little bit of a freak, even among writers. I hear other writers talking about self-discipline and writers block and the struggle. It’s not like that for me. I mean, I don’t mean to be egotistical or anything like that, but at no point in my career have I ever felt as though I were inflicting some kind of discipline on myself. It’s just what I like to do.
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.
+
+[music]
+
+CHRISTINA WARREN: Hello and welcome to Behind the Tech. I’m Christina Warren, Senior Cloud Advocate at Microsoft.
+
+KEVIN SCOTT: And I’m Kevin Scott.
+
+CHRISTINA WARREN: And our guest on the show today is Neal Stephenson. Neal is an American writer who is known for his works of speculative fiction, and in is seminal book, Snow Crash, Stephenson actually coined the term metaverse and popularized the term avatar in a computing context. He is one of my favorite authors in this genre. I’m a massive fan. 
+
+KEVIN SCOTT: Yeah, me too. I have been so profoundly influenced by Neal’s works. I’ve  read all of his books, over and over and over again, and the interesting thing to me about Neal is, I think he was especially prescient with Diamond Age and Snow Crash and Cryptonomicon, you know, which were books that he wrote 20 years ago-ish, but like his recent books are also just spot on, like he has a real knack for thinking deeply about the trends that are shaping the world and then extrapolating just a little bit forward to capture what is about to happen and it’s – I just don’t know how he does it.
+
+CHRISTINA WARREN: No. I totally agree. I mean that is what I think is really special about his work, is that it feels both prescient and futuristic. It seems like, you know, it’s not that far off, but it’s just different enough that it seems – you know, it is fantasy, but as time goes on, like you just see, like how on the pulse all of his insights really have been.
+
+KEVIN SCOTT: Yeah, really incredible.
+
+CHRISTINA WARREN: All right, well, let’s dive into your conversation with Neal.
+
+[music]
+

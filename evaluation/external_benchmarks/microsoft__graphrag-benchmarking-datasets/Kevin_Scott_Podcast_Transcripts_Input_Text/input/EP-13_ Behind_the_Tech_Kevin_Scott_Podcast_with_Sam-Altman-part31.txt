@@ -1,0 +1,13 @@
+EP-13_ Behind_the_Tech_Kevin_Scott_Podcast_with_Sam-Altman.txt  And this thing just, like so broke my conception of, like, how I thought the world worked.  Even though I believed it and understood it, like, I wanted to go through the motions.  And yeah, I do want to make videos of it.  But it was, like, one of the more mind-blowing experiences of my life to, like, know it was going to work, but still just, like, see the interference pattern, and then see it go away.
+KEVIN SCOTT:  So, that's the teaser for everyone.  So, like, go right now, look up quantum eraser experiment on the Internet.
+SAM ALTMAN:  If you really want to blow your mind, look up the delayed choice quantum eraser experiment.
+KEVIN SCOTT:  Delayed choice quantum eraser experiment, and then, wait for Sam Altman's video series on the subject.  And so, with that, thank you very, very much for coming in and chatting with us today.
+SAM ALTMAN:  Thanks for having me. 
+KEVIN SCOTT:  Awesome.
+CHRISTINA WARREN:  That was Sam Altman, the CEO of OpenAI.  
+And Kevin, that was such an interesting conversation. You guys really went over a lot of different areas.  But one of the things that kind of stuck out to me was your conversation towards the end about how you can overcome maybe some of the fears around not just AI but anytime there's a big change in how things are done.
+KEVIN SCOTT:  So these systems that we build, like whatever technology you're talking about that has sort of disruptive impact, whether it's a steam engine or, you know, a bunch of industrialization for agriculture or it's personal computers or AI, you have to remember that there are people who are building them, and like we all get to collectively decide what good purposes that they are put to.
+And so, you know, the interesting thing that I think we are facing right now with AI is like can we all sort of get this vision of what it is that this positive impact of AI is going to be, -- you know, that -- that we're sort of focusing all of the collective efforts of everyone working on it on like creating that good.
+Like OpenAI in and of itself is like structurally an interesting thing for trying to focus it on good.  Like they could have done a bunch of different things to like try to accomplish the same end effect, like they could have just created a normal for-profit company and tried to run it that way.
+But instead, like they decided like we're going to create this nonprofit, we're going to arrange things in a way where like end success the bulk of the value of this company is going to go to the public good.
+And they've also chosen to focus on safety.  Like they really, really take it very

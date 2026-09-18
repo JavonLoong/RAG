@@ -1,0 +1,21 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  And of course, I’m like, "Yeah!" So for a few months I put pictures of Commodore machines up on my mirror because, like, "It’s coming, some day." So that was the entrée to computers was the Commodore PET, way back then, early ‘70s, right?
+
+KEVIN SCOTT: And what were the first, what was it that attracted you to a personal computer? And like, what sort of programming did you start with? 
+
+WILLIAM ADAMS: Well, the attraction was availability, of course, because no one else in my neighborhood had a computer at that time, right? And this was – by that time, we had moved to the more middle-class neighborhood as opposed to the barrio that we used to live in, but still, no one had computers, because they just weren’t that common, right?
+
+KEVIN SCOTT: Yeah.
+
+WILLIAM ADAMS: But I was a really shy kid, you know, to the point where I couldn’t even tell people my name. I would spell my name out for them with my eyes downcast, rather than say my name. You know, I was just very shy, even though I was in sports and stuff like that. And the computer is just one of those things, right? It’s like you get to tell it what to do. It’s your buddy. It’s your friend. It does what you want, and you interact, and you learn, and you grow. So that’s I think why the connection was made between me and the computer.
+
+The first stuff I did was very low-level machine programming, and by machine, I mean, even before assembly language, right? It’s like you have to encode the instructions by the numbers, you know, and the first things I did were graphics-oriented, put blocks on screens. I mean, this was the time of Pong, right? 
+
+So it’s like, "Oh, let me try to do what Pong does," that sort of thing, 6502 CPU chips.
+
+KEVIN SCOTT: Yeah.
+
+WILLIAM ADAMS: And then I think after that there were these books and magazines that had like games, right? Wumpus, Hexapawn, whatever – you know, the little adventure games. So you would type those in and then run the program and make a mistake and have to type the whole thing over again, and maybe save it to cassette. 
+
+So it was games. And then eventually I started fiddling with the hardware. So like I would hook up a joystick to the computer, mess with that, fry an input chip, go to the store, buy another input chip, you know, fry it again. So that sort of thing. So it’s, earliest was just messing around and games. 
+
+KEVIN SCOTT: Yeah. I mean, I want to touch on a couple of things

@@ -1,0 +1,13 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt  and their distributed computing and cloud infrastructure, which wasn’t called cloud infrastructure at the time. 
+
+And so, I just sort of wonder what are we missing right now? Like, the good ideas that happened 10 years ago that are, you know, left by the wayside that are now feasible and like we don’t even have someone – I mean, the good thing about Geoff is he was stubborn, like, he was convinced that it was a good idea and he kept pushing on it, you know, for a very long time until the conditions were right for it to be successful. 
+
+And I just sort of wonder, like, you know, what conditions are going to change in the future that are going to make you know some of the things that are infeasible now actually possible? It’s one of the reasons why I’m like really excited about all of this large-scale compute infrastructure that we’re building right now, because like it’s just – it may not get us to AGI, which is a thing I do want to talk to you about in a minute, but it certainly gets us something, and I’m really interested to see what that something is. 
+
+OREN ETZIONI: Me too. I think it’s a really interesting time to be a computer scientist, to be a computer professional. I do want to say, off the top of my head, here are three things that the current technology doesn’t yet touch. The first one is the current technology – maybe this is a good phrase – is kind of profligate in its use of compute and data. Yeah, I need millions of examples at least for pre-training and then thousands for tuning. Yeah, I need this massive amount of computation, millions of dollars of computation to build my model. 
+
+Whereas of course human intelligence, which is the standard, sits in this little box, right, that’s on top of my neck and is powered by the occasional salad and a cup of coffee, right? We know, right, you know, kids, they’ll see one example and they’ll go to the races. So, I think we can build far more frugal machines in terms of data and compute, that’s one. 
+
+And then the second thing, and this goes right back to the discussions we were having at CMU in the early ‘90s is, “What is the cognitive architecture?” In other words, okay, you can take a narrow question like, “Is this email spam or not,” or “Did I just say “B” or “P?” Speech - phoneme recognition. And you can train models that’ll do – they have super-human performance at that. 
+
+But the key thing in artificial general intelligence – in AGI – is the “G.” So, how do we build what was called, then, a unified cognitive architecture? How do we build something that can really move fluidly from one task to another, when you

@@ -1,0 +1,13 @@
+Ep-46_Behind_the_Tech_Kevin_Scott_Podcast_with_Simone-Giertz.txt  so you’re telling me if I learn how to program just, like, basic JavaScript and CSS, then I can make a website where there’s head – like, hair growing out of the screen. And I can turn my cursor into a razor blade and I can shave that fake hair off, you know? So, it was just, for me, it was like – it was very much once I realized, like, all the stupid, silly stuff I could do with it, yeah… 
+
+But since then, I mean, I haven’t written a line of code in years. I’ll, like, still write some, like, basic motor program, but that was a couple of years ago. I did code a lot and I was – I started getting into electronics and programming mostly Arduinos, but now, I’m just, like, very hardcore into woodworking and welding and have been enjoying that part of making a lot more.
+
+KEVIN SCOTT: Well, I – I’ve watched some of your… actually, I’ve seen all of your videos. Like, you have no idea how excited I was to be able to get to chat with you. So, I – and this must be a weird thing, too. You’re putting so much of your life there, and you’ve got a complete stranger like me who comes along and, like, wants to ask about how Scraps is doing. And, you know, is that C&C machine still working for you in LA, I mean, like, it’s weird, right?
+
+SIMONE GIERTZ: I think, in part, I’ve gotten used to it, but it’s also like… I don’t know how to say this without sounding cheesy, but I do think that who I am on the Internet is a pretty good representation of who I am in real life. So, it’s never like, oh, they don’t know the real me. Like, they – like, people who watch my videos do know a side of me. 
+
+So, I don’t know. It’s mostly just hard because I’m like, oh, but I feel guilty because I’m like, I should know things about you, too. It almost feels like when you’re like, hanging out with somebody and they remember so many things you said, and you’re like, I can’t even remember where you live.
+
+KEVIN SCOTT: Yeah. Well, so I want to really get into the hardcore makery stuff, but I did want to say, like, one of the things that I love so much about how you make your videos is you just allow yourself to be vulnerable on camera. Like, you show the whole process. Like, you get excited about a project, like, stuff doesn’t work. You get really upset about it not working. Then you, like, stick with it and, like, make it work. 
+
+Like, I was, just this past week

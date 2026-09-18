@@ -1,0 +1,31 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt And one of them had a copy of Allen Holub’s compiler book, sitting on their desk, and I saw that, and I was like, "This is the most mysterious thing that I’ve ever seen in my life, and I must understand how these programming tools work that I’m using and loving."
+
+WILLIAM ADAMS: Yeah.
+
+KEVIN SCOTT: And like, and that became – like, I was 17 years old, and that became the next 13 years of my life was studying compilers and programming languages. 
+
+WILLIAM ADAMS: Yeah. And when you’re young, you don’t know how hard it is.
+
+KEVIN SCOTT: Yeah.
+
+WILLIAM ADAMS: Like here I am, a 12-year-old kid, and I’m writing – I’m translating machine code. I don’t know if that’s hard or not. I just know how to do it because I read the book and it says, "Do the following," and it’s like, "Oh, okay," right? So it’s like, it’s great to have a plastic mind when you’re young, but that plastic mind needs to be fed with stuff to spark it towards, you know, interesting directions, right? 
+
+KEVIN SCOTT: Yeah. 
+
+WILLIAM ADAMS: So yeah. 
+
+KEVIN SCOTT: Well, so let’s talk about college. And what did you study? And I know like part of your journey is like, not only were you becoming a better and better programmer over time, but like you were thinking about – you know, "How do I become an entrepreneur? Like, how do I make money at this stuff? How do I start businesses? Like what are the useful and interesting things that I can do with this thing that I love?"
+
+WILLIAM ADAMS: Yeah, I have a prop that I wanted to show you that I’m sure you can appreciate. I went to college with this Commodore 64.
+
+KEVIN SCOTT: Nice. 
+
+WILLIAM ADAMS: Now, this isn’t the actual one, but I got it off eBay because it’s nostalgic. It’s like, "I’ve got to get one of those again."
+
+KEVIN SCOTT: Yeah.
+
+WILLIAM ADAMS: So I went off to college and Electrical Engineering, Computer Science. And it was interesting at that time, UC-Berkeley, because I remember my math teacher in high school, Dr. Jim Jenkins. He was a guy who had worked on the Manhattan Project, drove to school in a Rolls Royce every day, you know, because he was just giving back to the system, as you said.
+
+KEVIN SCOTT: Yeah.
+
+WILLIAM ADAMS: It was public school. He went to UC-Berkeley. So I was inspired. And I went to Berkeley, and he said, "Computer Science? There’s no such

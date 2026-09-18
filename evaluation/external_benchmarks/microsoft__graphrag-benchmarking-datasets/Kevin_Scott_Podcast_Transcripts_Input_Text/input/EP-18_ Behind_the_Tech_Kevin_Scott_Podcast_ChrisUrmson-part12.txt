@@ -1,0 +1,27 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt  your entire career?  
+
+CHRIS URMSON:  When I -- yeah, that was kind of the mission.  So, when I was an undergraduate student, was -- I want to go to graduate school.  And then when I was a graduate student, I was pretty convinced I wanted to be a faculty member at Carnegie Mellon, because it seemed like a great place.   Yeah, and ultimately, got the opportunity to be that, so -- that was exciting. 
+
+KEVIN SCOTT:  Sort of an extraordinary thing.  And so you know, in my mind, like, as someone who also thought they were going to be a computer science professor a while, like getting the faculty gig at Carnegie Mellon is, like, pretty much the top of the mountain. 
+
+CHRIS URMSON:  It was pretty good, yeah.  
+
+KEVIN SCOTT:  So why do something different?  
+
+CHRIS URMSON:  Yeah, so in -- you know, we had this chance to work on these challenges for a couple of years and that was exciting.  And then I spent a couple of years on the faculty and worked with Caterpillar and we were automating these dump trucks that were the size of houses.  Like, 400-ton thing moving at 45 miles an hour. 
+
+KEVIN SCOTT:  They’re shockingly big. 
+
+CHRIS URMSON:  It’s amazing.  Just incredibly cool and a great team with Caterpillar, great team at the university. And I’d been talking with Sebastian Thrun, who was at Google at the time.  
+
+And we were thinking we should do something around self-driving cars.  Again, we still didn’t -- we called them “car robots” or something, I don’t know what we called them, but we hadn’t invented that term for them yet.  
+
+And you know, he’s at Google.  And I got a phone call saying, you know, effectively, like, we’d actually like to do self-driving cars at Google.  
+
+And this is 2008.  So, Google had quietly just very recently acquired Android.  And that was, you know, that was a search engine.  I was like -- why -- this doesn’t make any sense.  And we talked about it and I came to realize that they -- you know, Larry and Sergey thought they had this incredible engineering resource and wanted to go solve cool, interesting problems.  And they were asking me to come out and lead the team.  
+
+I thought, well, you know, and initially it was a two-year gig, the idea was we’d come out, see what we could do for two years, and you know, it’s kind of like the Dread Pirate Roberts you know, a good day today, I’ll probably kill you in the morning, right?  
+
+KEVIN SCOTT:  Yeah. 
+
+CHRIS URMSON

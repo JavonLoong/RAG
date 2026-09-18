@@ -1,0 +1,15 @@
+EP-22_ Behind_the_Tech_Kevin_Drew-Endy_Bioengineering-pioneer.txt  living matter is billions of years old. And so, it's like it's magic, and we're lifting the lid on that magic box and coming to understand it. 
+
+We don't understand it, which is an important point to land. If the fundamental unit of life is a cell, right, this system that's capable of taking in stuff and reproducing, there's not a single cell on Earth that we understand operationally to 100 percent, right? So, we're still encountering mystery or magic, if you will, which by the way, when we go to apply biology as a technology, we're still encountering tinker and test, Edisonian tinkering and testing, not as sort of engineers' operational mastery. We haven't gotten to that.
+
+KEVIN SCOTT:  Yeah, I think that was one of the quotes or things that I took away from our first meeting, the fact that we don't completely understand a single cell of the human body, which, you know --
+
+DREW ENDY:  Or any cell, or any cell at all, like, even the simplest microbe. There's not a single microorganism on Earth we understand completely.
+
+KEVIN SCOTT:  Yeah, and we're sort of tangibly wrestling with this right now. You've got this SARS coronavirus 2, this little, you know, 50, 100 nanometer particle that is, like, really doing a number on civilization right now. And, you know, like, I'm sort of glad that it's happening now versus 30 years ago, because we have, as a matter of fact, come a very long way in our understanding of these biological systems over the past several decades. 
+
+But still, you know, I think we're, in many ways, completely flummoxed by the mechanism of this virus and, you know, why it does one thing to one person and another thing another. And like, even when you get down to the, you know, we sort of got lucky, you know, as you mentioned in that first meeting that we had a solved structure for the spike glycoprotein pretty quickly in the outbreak. 
+
+And I know a bunch of work that people have done to simulate in computers the interaction of that spike protein with these Ace2 receptors in the human body, which is, like, one of the -- is the mechanism that the virus used to invade a cell. But, like, even those computer simulations are relatively low resolution compared to what the actual in vivo interactions are of that virus spike protein in the cell. So, like, we do have a long way to go, still.
+
+DREW ENDY:  Yeah. And honestly, we're playing. We're not serious about biology yet. We're not treating biology like a strategic domain. When an enveloped RNA virus can take out a carrier task force, something that no number of Chinese submarines can do, apparently

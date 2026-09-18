@@ -1,0 +1,21 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt  to take the kinetic energy out of the system and bring it to a safe state.  
+
+In aviation, you know, you’ll ultimate take the kinetic energy out, but it’s going to be a very bad day.  So it’s a slightly different problem, and so you probably don’t need the full kind of -- the full degree of redundancy, but you need something where you’re kind of meeting your safety targets. 
+
+KEVIN SCOTT:  And so how do you think about sort of interpretability of these models that are -- I mean, like one of the things that I learned about over the past couple of years is in airplanes, you have this thing called MCAS or the Midair Collision Avoidance System.  And so, every modern airplane has MCAS. 
+
+And like MCAS’s job is to sort of look at all of the air traffic.  And if you get close -- too close to another plane, the planes communicate with one another and like one will go up and the other one will go down in order to avoid the collision from happening.  
+
+And there’s a document -- so there’s two versions of this MCAS.  So there’s the old version MCAS that is described in a document that has a bunch of pseudo code and it’s like hundreds of pages long.  
+
+And there’s a new version of MCAS which is sort of almost like a dynamic programming-based thing.  So it’s not full machine learning, but like all of its decision points are like codified in a table.  And the argument is that like even though it’s not this human readable pseudo code, that this new system has better provability properties that it’s going to do what it’s going to do.  Although, like from a human perspective, it’s probably less easily decipherable.  
+
+CHRIS URMSON:  Understandable, yeah.  
+
+KEVIN SCOTT:  And like if you look at the pseudo code, like the pseudo code is sort of a wreckage. Like,  it’s full of inconsistencies and no one really understands 100 percent of like what the thing says that these systems should do.  
+
+And so like one step further along this level of sort of human inscrutability are these, like, machine-learned models that we’re building right now, where they are very large and like how they -- you can’t easily learn how they behave by just inspecting the weights of the parameters that are sort of in the interior of the model.  
+
+So like how do you think about this?  Because, like, you’re working on one of the most important safety critical systems in software engineering.  
+
+CHRIS URMSON:  Yeah, no, it’s a great question.  And the way you talked about it actually is a really great way to frame it because as we started to bring machine learning into these systems, people began to really worry about this, like, can we

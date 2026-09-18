@@ -1,0 +1,47 @@
+The princess cut is the second most popular cut shape for diamonds, next to a round brilliant.
+ The face-up shape of the princess cut is square or rectangular and the profile or side-on shape is similar to that of an inverted pyramid with four beveled sides.
+ The princess cut is a relatively new diamond cut, having been created in the 1960s.
+ It has gained in popularity in recent years as a more distinctive alternative to the more popular round brilliant cut, in which the top of diamond, called the crown, is cut with a round face-up shape and the bottom, called the pavilion, is shaped similar to a cone.
+ A princess cut with the same width as the diameter of a round brilliant will weigh more as it has four corners which would otherwise have been cut off and rounded to form a round brilliant.
+ The princess cut is sometimes referred to as a square modified brilliant.
+ However, while displaying a good degree of brilliance, its faceting style is unique and completely different from that of a round brilliant.
+ The Princess cut had its origins in the early "French" cut, having a step-modified "Double-French" or "Cross" cut crown and a series of unique, chevron-shaped facets in the pavilion which combine to give a distinct cross-shaped reflection when the stone is viewed directly through the table.
+ The Barion shaped cut has now been renamed the "Princess cut".
+Avery Biomedical Devices is a biomedical engineering and device company that invented and distributes the Mark IV Breathing Pacemaker, a Phrenic Nerve Pacing device used for patients in the United States.
+ The device received full pre-market approval from the FDA in 1987, and is the only such device with this approval.
+ A similar device developed in Finland is approved for use in Europe.
+ The device is placed as an alternative to the traditional ventilator in patients with quadriplegia, central sleep apnea, diaphragm paralysis, and other respiration maladies, so long as the patient's respiratory system still has some residual function.
+The beauty micrometer, also known as the beauty calibrator, was a device designed in the early 1930s to help in the identification of the areas of a person's face which need to have their appearance reduced or enhanced by make-up.
+ The inventors include famed beautician Max Factor Sr. A 2013 "Wired" article described the device as "a "Clockwork Orange" style device" that combines "phrenology, cosmetics and a withering pseudo-scientific analysis".
+ A photograph of Factor, using the device on actress Marjorie Reynolds featured in a 1935 article in science magazine "Modern Mechanix" and, when republished by "The Guardian" in 2013, the caption described it as being "a contraption that looks like an instrument of torture".
+The Pyreliophorus was a device similar to a burning glass, created by the Portuguese priest Manuel António Gomes, also known as "padre Himalaya", whose objective was to melt many different types of materials using solar energy.
+ The device used several reflecting mirrors to concentrate the sunlight into a common point.
+ With this device, it was possible to reach a temperature of around 3500 °C, enough to melt many types of metals and rocks.
+ Unlike a common burning glass the Pyreliophorus uses a concentric parabolic array of mirrors to concentrate the sun light into a common point, instead of a lens.
+ The device uses a clock system that makes the mirror array concentric axis to rotate along the sun alignment.
+A textalyzer is a proposed device that would act as a breathalyzer for text messaging.
+ The device has been promoted as a means of reducing distracted driving.
+ The device would be used by police officers who suspect that a driver has been texting while driving using similar procedures currently in place for drivers suspected of driving under the influence.
+ The device would be connected to the driver's mobile phone and would scan the phone for calls, e-mails, or text messages sent when the driver would have been operating the vehicle.
+Princess Max is a device similar to a Tamagotchi.
+ It contains a diary, address book, and friends list.
+ The Princess Max has 20 possible activities: 5 games, 5 learning games, 5 tools like calculator, agenda and more, and 5 "girl activities".
+A sacral nerve stimulator is a small device implanted in the buttocks of people who have problems with bladder and/or bowel control.
+ This device is implanted in the buttock and connected to the sacral nerve by a wire.
+ The device stops urges to defecate and urinate by sending signals to the sacral nerve.
+ The patient is able to control their bladder and/or bowel via an external device similar to a remote control.
+The laser voltage probe (LVP) is a laser-based voltage and timing waveform acquisition system which is used to perform failure analysis on flip-chip integrated circuits.
+ The device to be analyzed is de-encapsulated in order to expose the silicon surface.
+ The silicon substrate is thinned mechanically using a back side mechanical thinning tool.
+ The thinned device is then mounted on a movable stage and connected to an electrical stimulus source.
+ Signal measurements are performed through the back side of the device after substrate thinning has been performed.
+ The device being probed must be electrically stimulated using a repeating test pattern, with a trigger pulse provided to the LVP as reference.
+ The operation of the LVP is similar to that of a sampling oscilloscope.
+A pointing device is an input interface (specifically a human interface device) that allows a user to input spatial (i.e., continuous and multi-dimensional) data to a computer.
+ CAD systems and graphical user interfaces (GUI) allow the user to control and provide data to the computer using physical gestures by moving a hand-held mouse or similar device across the surface of the physical desktop and activating switches on the mouse.
+ Movements of the pointing device are echoed on the screen by movements of the pointer (or cursor) and other visual changes.
+ Common gestures are point and click and drag and drop.
+In-target probe, or ITP is a device used in computer hardware and microprocessor design, to control a target microprocessor or similar ASIC at the register level.
+ It generally allows full control of the target device and allows the computer engineer access to individual processor registers, program counter, and instructions within the device.
+ It allows the processor to be single-stepped or for breakpoints to be set.
+ Unlike an in-circuit emulator (ICE), an In-Target Probe uses the target device to execute, rather than substituting for the target device.

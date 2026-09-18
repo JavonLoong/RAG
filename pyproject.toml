@@ -24,7 +24,10 @@ dependencies = [
     "networkx>=3.0",
     "numpy>=2.3.4",
     "orjson>=3.11.8",
+    "pillow>=12.2.0",
     "pydantic>=2.13.0",
+    "PyJWT[crypto]>=2.10.1",
+    "pymupdf>=1.27.2.3",
     "pypdf>=6.10.1",
     "PyYAML>=6.0,<7",
     "python-docx>=1.2.0",
@@ -39,6 +42,34 @@ dependencies = [
     "uvicorn>=0.44.0",
     "pymupdf>=1.26.4,<2",
     "rapidocr-onnxruntime>=1.4.4,<2",
+]
+
+[project.optional-dependencies]
+external-docs = [
+    "docling",
+    "opencv-python",
+    "unstructured[docx,pdf]",
+]
+external-retrieval = [
+    "haystack-ai",
+    "llama-index",
+]
+external-graphrag = [
+    "lightrag-hku",
+]
+external-eval = [
+    "ragas",
+    "deepeval",
+]
+external-all = [
+    "docling",
+    "opencv-python",
+    "unstructured[docx,pdf]",
+    "haystack-ai",
+    "llama-index",
+    "lightrag-hku",
+    "ragas",
+    "deepeval",
 ]
 
 [project.urls]

@@ -1,0 +1,43 @@
+Andrea Lewis was Microsoft's first technical writer, joining in 1977, and among the group of eleven early employees who posed for an iconic staff portrait taken in Albuquerque in 1978.
+ She had previously edited the monthly newsletter, "Computer Notes", for Microsoft's first customer Micro Instrumentation and Telemetry Systems (MITS).
+ She left the company in 1983.
+ She is now a freelance writer and she helped build a literary center, Richard Hugo House, named after poet Richard Hugo.
+Henry Edward "Ed" Roberts (September 13, 1941 – April 1, 2010) was an American engineer, entrepreneur and medical doctor who invented the first commercially successful personal computer in 1975.
+ He is most often known as "the father of the personal computer".
+ He founded Micro Instrumentation and Telemetry Systems (MITS) in 1970 to sell electronics kits to model rocketry hobbyists, but the first successful product was an electronic calculator kit that was featured on the cover of the November 1971 issue of "Popular Electronics".
+ The calculators were very successful and sales topped one million dollars in 1973.
+Advanced Automatic Collision Notification (AACN) is the successor to Automatic Collision Notification (ACN).
+ To develop procedures that will help emergency medical responders better and more quickly determine if a motorist needs care at a trauma center after a vehicle crash, Center for Disease Control and the CDC Foundation recently partnered with OnStar and the GM Foundation.
+ Through this partnership, CDC conducted a vehicle telematics initiative to develop evidence-based protocols for the emergency medical community to effectively use automotive telemetry data.
+ By enabling responders to more quickly identify, diagnose, and treat injuries, these data will help to reduce death and injuries among vehicle crash victims.
+ As part of this initiative, CDC convened a panel of emergency medical physicians, trauma surgeons, public safety, and vehicle safety experts.
+ The panel considered how real-time crash data from the advanced automatic crash notification (AACN) vehicle telematics system and similar systems can be used to determine whether injured patients need care at a trauma center.
+ By using a collection of sensors, vehicle telemetry systems like AACN send crash data to an advisor if a vehicle is involved in a moderate or severe front, rear, or side-impact crash.
+ Depending on the type of system, the data include information about crash severity, the direction of impact, air bag deployment, multiple impacts, and rollovers (if equipped with appropriate sensors).
+ Advisors can relay this information to emergency dispatchers, helping them to quickly determine the appropriate combination of emergency personnel, equipment, and medical facilities.
+Kosmos 213 (Russian: Космос 213 meaning "Cosmos 213") was one of a series of Soviet Soyuz programme test spacecraft whose purpose was to further test and develop the passenger version.
+ Scientific data and measurements were relayed to earth by multichannel telemetry systems equipped with space-borne memory units.
+ Kosmos 212 and Kosmos 213 automatically docked in orbit on April 15, 1968.
+ Both spacecraft landed on Soviet territory.
+Advanced Avionics Module or AAM was a module launched on board PSLV-C8 along with Italian satellite AGILE.
+ It was designed by ISRO to test advanced launch vehicle avionics systems like mission computers, navigation and telemetry systems.
+ At lift-off, it weighed 185 kg.
+Soyuz-2, GRAU index 14A14, is the collective designation for the new version of the Russian Soyuz rocket.
+ In its basic form, it is a three-stage carrier rocket for placing payloads into low Earth orbit.
+ The first-stage boosters and two core stages feature uprated engines with improved injection systems, compared to the previous versions of the Soyuz.
+ Digital flight control and telemetry systems allow the rocket to be launched from a fixed launch platform, whereas the launch platforms for earlier Soyuz rockets had to be rotated as the rocket could not perform a roll to change its heading in flight.
+Bus monitoring is a term used in flight testing when capturing data from avionics buses and networks in data acquisition telemetry systems.
+ Commonly monitored avionics buses include
+Forrest M. Mims III is an American amateur scientist, magazine columnist, and author of the popular "Getting Started in Electronics" and "Engineer's Mini-Notebook" series of instructional books that was originally sold in Radio Shack electronics stores.
+ Mims graduated from Texas A&M University in 1966 with a major in government and minors in English and history.
+ He became a commissioned officer in the United States Air Force.
+One to One was a fee-based service for private training at Apple Inc. retail stores.
+ A US$99 one year membership with purchase of a new Mac which allows the user to receive a year's worth of Mac, iPhone, iPod, and iPad instruction.
+ The only restriction is that users can only book one each of the three types of sessions that are included with the One to One program at a time.
+ The three session types are a 30 or 60-minute Personal Training session, where the individual is taught by an Apple employee, a 90-minute Group Training where an Apple employee leads a group of people on a particular topic, and a 90-minute Open Training session where the customer is able to work on their own project in a group and ask for assistance as needed.
+ The sessions offer instruction in the following topics: Getting Started on Your Mac, Getting Started on Your iPad, Getting Started on Your iPhone, iCloud, Mail Contacts & Calendars, iPhoto, GarageBand, iMovie, iTunes, Pages, Keynote, Numbers, Aperture, Final Cut Pro, Motion, and Logic Pro.
+Micro Instrumentation and Telemetry Systems (MITS) was an American electronics company founded in Albuquerque, New Mexico that began manufacturing electronic calculators in 1971 and personal computers in 1975.
+ Ed Roberts and Forrest Mims founded MITS in December 1969 to produce miniaturized telemetry modules for model rockets such as a roll rate sensor.
+ In 1971, Roberts redirected the company into the electronic calculator market and the MITS 816 desktop calculator kit was featured on the November 1971 cover of "Popular Electronics".
+ The calculators were very successful and sales topped one million dollars in 1973.
+ A brutal calculator price war left the company deeply in debt by 1974.

@@ -1,0 +1,35 @@
+Ep-12.txt HRAN: The other thing that's been interesting with the insatiable appetite for 
+computing, and it worries me a little bit, I still believe that universities are the best training 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+10
+ground for people doing computer science work. You know, maybe not everybody should take 
+the time to go get a PhD, but I think having a rigorous program with lots of mathematics and 
+theory and so forth and not just -- it's more than just programming, but I think one of the 
+challenges with the rise this time of machine learning is I think the universities are at a 
+disadvantage. 
+KEVIN SCOTT: Yes. 
+BILL COUGHRAN: Because, you know, the big platform companies which of course would 
+include Microsoft, Facebook, Google, Amazon, and others, are the best place to get your hands 
+on lots of data and lots of computing resources. I think it's very hard for MIT or Caltech or you 
+know Stanford to compete with those capabilities. 
+And so, I think it does call into question what's the right partnership between universities and 
+these large companies? Because I think otherwise we're going to have a lot of people who are 
+deficient in their training as they enter the workforce and try to do novel things. 
+KEVIN SCOTT: I completely agree. And it's become especially obvious I think over the past 
+year where some of this stuff on like the very frontier of AI, like the computations have become 
+so large and it's so expensive that we even sort of have to think carefully about it inside of like 
+these big tech companies. Like, you just can't have 5,000 people all like doing each a $10-
+million computation to train their model. Like, you have to sort of think about like how you 
+want to focus these efforts in ways where you can, you know, where you can get leverage out of 
+your compute infrastructure. 
+And I think it's especially hard for these universities. I've joined the advisory board of the 
+Stanford Human-Centered AI Institute. And thinking in general about like how we can form 
+these partnerships where we can make resources available. 
+I think it's beyond just training, though. You also really need you know sort of dispassionate 
+third parties, you know pushing in interesting new directions. Like, one of the things I really 
+worry about with the state that we're in in machine learning right now is that we have made a 
+bunch of subjective decisions about how these computations should be performed by virtue of 
+the frameworks that we've built. 
+And so like it's sort of like MapReduce, right, back in the day. So, as soon as you have 
+MapReduce, it's like such a powerful abstraction mechanism that it solves like a ton

@@ -1,0 +1,23 @@
+EP-05_ Behind_the_Tech_Kevin Scott_Podcast_with_Danielle Feinberg.txt ../[MUSIC] 
+DANIELLE FEINBERG: You know, on WALL-E it's towards the end and we're racing to beat the clock to get it done in time. And all of a sudden, the director says, "I'm so sorry, but I've realized that if I make this critical change in the story, that it's going to make it a better film. And I know it means you guys are going to have to throw some of this out and start over. And we're already down to the wire, but I think it's going to make a better movie." 
+
+[MUSIC]
+ 
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I'm your host, Kevin Scott Chief Technology Officer for Microsoft. In this podcast, we're going to get behind the tech. We'll talk with some of the people who have made our modern tech world possible, and understand what motivated them to create what they did. 
+So, join me to maybe learn a little bit about the history of computing, and get a few behind-the- scenes insights into what's happening today. Stick around. 
+
+[MUSIC] 
+
+KEVIN SCOTT: Today, I'm here with my colleague, Christina Warren. Christina is a senior cloud developer advocate at Microsoft. 
+CHRISTINA WARREN: Hey, Kevin. I'm so excited about your conversation today. 
+KEVIN SCOTT: Yeah, today we're going to chat with Danielle Feinberg. I've been really excited to get her on the show. 
+CHRISTINA WARREN: Yeah, I think this will be really interesting to a lot of engineers because not only does she work at one of the coolest tech companies on the planet -- Pixar. But they're also one of the most creative companies on the planet. So, she gets to mix these two worlds where she's literally programming movies. 
+KEVIN SCOTT: Yeah, and she's so incredibly inspirational in addition to being a brilliant technologist and a brilliant storyteller, she also is doing this really incredible work to inspire the next generation of computer scientists to come into the field. She has a really great platform for doing that in that her work is literally so visual and captivating. 
+CHRISTINA WARREN: And she's working on some of the most iconic films and projects. Things that all of us kind of look at. 
+KEVIN SCOTT: Yeah, absolutely. She goes and puts in all of this crazy work on these film projects. And then the thing that comes out is, by and large, adored by many, many, many millions of people. 
+CHRISTINA WARREN: Well, I can't wait to hear what you two talk about. 
+KEVIN SCOTT: Yeah, so, we will chat later.
+
+[MUSIC] 
+
+KEVIN SCOTT: Coming up next, Danielle Feinberg. Danielle is Director of Photography for Lighting

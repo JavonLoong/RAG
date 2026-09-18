@@ -1,0 +1,45 @@
+id Tech 5 is a proprietary game engine released by id Software.
+ It follows its predecessors, id Tech 1, 2, 3 and 4, all of which have subsequently been published under the GNU General Public License.
+ It was seen as a major advancement over id Tech 4.
+ The engine was first demonstrated at the WWDC 2007 by John D. Carmack on an eight-core computer; however, the demo used only a single core with single-threaded OpenGL implementation running on a 512 MB 7000 class Quadro video card.
+<ref name="http://www.Gaminggroove.com posting"> </ref> id Tech 5 was first used in the video game "Rage", followed by "", "The Evil Within" and "".
+Amen: The Awakening was a narrative driven first-person shooter/role-playing video game with some stealth elements by Cavedog Entertainment.
+ It was to be the first FPS by Cavedog.
+ 60% completed, it was canceled in 2000 for a variety of reasons, one of which being that its overall scope and proprietary game engine was far too ambitious, given computer hardware of the time.
+The Rockstar Advanced Game Engine (RAGE) is a proprietary game engine developed by the RAGE Technology Group at Rockstar San Diego, with contributions by other Rockstar Games subsidiaries.
+ The engine has been used on several different platforms such as Microsoft Windows, PlayStation 3, PlayStation 4, Wii, Xbox 360 and Xbox One.
+ The Angel Game Engine was originally developed by Angel Studios for "Midtown Madness" and later the sixth generation console era versions of the "Midnight Club" series and other Angel Studios games.
+Tom Clancy's The Division is an online-only action role-playing video game developed by Massive Entertainment and published by Ubisoft, with assistance from Red Storm Entertainment, for Microsoft Windows, PlayStation 4 and Xbox One.
+ It was announced during Ubisoft's E3 2013 press conference, and was released worldwide on 8 March 2016.
+ It is set in a near future New York City in the aftermath of a smallpox pandemic; the player, who is an agent of the eponymous Strategic Homeland Division, commonly referred to as simply "The Division", is tasked with helping the group rebuild its operations in Manhattan, investigate the nature of the outbreak, and combating criminal activity in its wake.
+ "The Division" is structured with elements of role-playing games, as well as collaborative and player versus player online multiplayer.
+Project I.G.I.: I'm Going In (released in Europe as simply Project I.G.I.) is a tactical first-person shooter video game developed by Innerloop Studios and released on December 15, 2000 by Eidos Interactive.
+ Upon release the game received mixed reviews due to a number of shortcomings, including poorly programmed A.I., lack of a mid-game save option, and the lack of multiplayer features.
+ However it was praised for its superb sound design and graphics, thanks in part to its use of a proprietary game engine that was previously used in Innerloop's "Joint Strike Fighter".
+Snowdrop is a proprietary game engine created by Ubisoft for use on Microsoft Windows, Nintendo Switch, PlayStation 4, and Xbox One.
+ It was first revealed at E3 2013 with "Tom Clancy's The Division", the first game using the engine.
+ParaEngine Corporation is a technology and product company focusing on 3D virtual world technologies.
+ It is usually referred to as P.E. for short.
+ ParaEngine Co. is founded by LiXizhi in Shenzhen in the People's Republic of China.
+ In 2009.10, it launched its first public product called Haqi Town, a creative social MMO for kids.
+ In Haqi Town, each user has its own avatar, virtual land, and can build up their dream world easily.
+ ParaEngine Corporation (P.E.) also focuses on the research and development of a distributed computer game engine called ParaEngine.
+ Based on its proprietary game engine technologies, they are building various applications and are also working with licensed clients who use ParaEngine in their projects.
+ They believe that game technology is the driving force to a new 3D Internet or Web3D.
+Zero is a proprietary game engine created by Pandemic Studios.
+ It was used first in the game "" and later used in several "Star Wars" games including the popular "Battlefront" series.
+ "Battlezone II: Combat Commander" and "Dark Reign 2" both feature an in-engine editor accessible via commands.
+ The engine was revamped for "" to accommodate consoles and third person gameplay.
+ The engine was again retooled for "" and the level editor was made a separate entity from the game engine.
+ A set of modding tools including ZeroEdit, the new level creation tool, were released for use with "Star Wars: Battlefront" on December 23, 2004.
+ An updated version of the tools were released on February 2, 2006 for "".
+ Pandemic used Zero as their primary engine for several of their games developed in their Los Angeles, California studio.
+ A modified version of the Zero engine was also used in Pandemic's "Mercenaries 2: World in Flames".
+Call of Duty 4: Modern Warfare is a first-person shooter video game developed by Infinity Ward and published by Activision.
+ The fourth installment in the "Call of Duty" series, it was released in 2007 for the PlayStation 3, Xbox 360, and Microsoft Windows.
+ The game breaks away from the World War II setting of previous entries in the series and is instead set in modern times.
+ Developed for over two years, the game uses a proprietary game engine.
+Charlie Murder is an action role-playing beat 'em up video game developed by Ska Studios and published by Microsoft Game Studios for the Xbox 360 and Ska Studios for PC.
+ First revealed in January 2010 as an Xbox Live Indie Games title, the studio announced in May 2010 that the game would undergo a "complete overhaul" and be published in 2012 through Xbox Live Arcade for the Xbox 360.
+ "Charlie Murder" was eventually released on 14 August 2013 to positive reviews, with critics praising the game's soundtrack and hand-illustrated visuals.
+ Versions for Microsoft Windows, Linux and macOS were released on May 12, 2017 via Steam.

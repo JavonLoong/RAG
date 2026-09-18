@@ -1,0 +1,18 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt  today spends a bunch of his time thinking about humanism and sustainable economics in the context of all of the technology that we're using in our day-to-day lives.  
+
+[MUSC]
+
+JARON LANIER:  I'm not sure if I coined data dignity, by the way.  I think either Glen Weyl, or maybe even Satya Nadella did.  Digital dignity was a term -- was going to be the title of Who Owns the Future, but the editor didn't like it, so I turned it to Who Owns the Future.
+
+At any rate, so this is a whole long tale, as well.  In the '80s and '90s there were a couple of really vociferous, intense movements within hacker culture, within technical culture, about what networking should be like whenever it really comes about.
+
+One of them was this idea that everything should be open and free, and that was started from a number of sources.  One of them was a guy who is a friend of mine, Richard Stallman, back in Boston.  And there were a few other source points for that, as well.  And then another was this kind of intense Libertarian philosophy that governments shouldn't be involved, we should leave everything to entrepreneurs.
+
+And in the last '80s and early '90s I ended up spending time with somebody named Al Gore, who is at that time a Senator from Tennessee.  He eventually became a Vice President.  And he was really interested in these things and he came up with this idea of throwing some government money at people with nascent packet switch networks to bribe them to become
+interoperable.  And that was the Internet.  So that was funded by the Gore Bill.
+
+And so, we used to debate what this thing should be and because of the extremely intense, those two dogmas,  there was this feeling, well, it will be minimalist, it won't have accounts, for instance.  It won't represent people.  That will be left to private industry.  There won't be any persistent data on it.  That will be left to private industry.  There won't be any transactions on it.  That will be left to private industry and on and on and on.  There won't be any memory on it.  There won't be any contextualization on it.  That will be left to private industry.
+
+And I remember saying to him we're creating this gift of many hundreds of billions of dollars to persons unknown, because there will be natural network monopolies that form to fill these obviously needed functions, but whatever.  That was -- there was just this feeling that that was the better way to do things. And since the experiment wasn't run the other way, we don't know.
+
+But then the other, the "everything should be free" I think sent us down a terrible path, because it feels all socialist at the first

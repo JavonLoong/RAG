@@ -1,0 +1,25 @@
+Ep-57_Behind_the_Tech_Kevin_Scott_Podcast_with_Kevin_Roose.txt  entry of getting on the internet. And so, you know, if you passed that barrier, like you were able to sort out all of the complexity to get on.  
+ 
+Once you got there, there were just a whole bunch of people like you. And so, it honestly didn’t matter that you were 11, you were clever enough to find your way into these forums, and that was the entry price, right? 
+ 
+KEVIN ROOSE: Yeah. And here was something cool about that. It felt like being let into a secret club or, you know, having a type of skill that meant that you could do things that your friends couldn’t do at school.  
+ 
+But yeah, it was – I mean, it was just so much fun, and I just, I would have lived there all the time, if I could have. If I didn’t have to, like, you know, put on pants and go to school, I probably would have just sat there on the internet all day. 
+ 
+KEVIN SCOTT: And were your parents technical at all? 
+ 
+KEVIN ROOSE: Not so much. My dad was a lawyer, my mom was a college administrator, but my dad was really the sort of most tech person in the family. You know, he was the guy who would like, you know, go out and buy the Kaypro, you know, when it was new, and he was just a hobbyist, but he was into tech.  
+ 
+And so, you know, we always had sort of not the newest computer, like it was never like the fanciest or newest one, but, you know, we had broadband internet before a lot of people I knew. You know, we always sort of had a computer that was no more than a few years old. So I was lucky in that respect that I got to play around with that.  
+ 
+And then the best, you know, moment of my childhood, maybe not the best moment, but one of the formative moments was when I got to actually move the  old family computer when we got a new one, the new one came into my room.  
+ 
+KEVIN SCOTT: Nice. 
+ 
+KEVIN ROOSE: And so, that was like, okay, now my screen time has gone from like four or five hours a day to like, way more than that, because now I can stay up late at night. I don’t have to go to sleep, and I can just be playing Space Invaders all night. 
+ 
+KEVIN SCOTT: That’s awesome.  
+ 
+So let’s talk about your tech chops. So what were your tools of choice when you were building these websites? 
+ 
+KEVIN ROOSE: I started doing it sounds like I’m flexing or bragging. I started doing it by hand in a text editor in HTML. I then

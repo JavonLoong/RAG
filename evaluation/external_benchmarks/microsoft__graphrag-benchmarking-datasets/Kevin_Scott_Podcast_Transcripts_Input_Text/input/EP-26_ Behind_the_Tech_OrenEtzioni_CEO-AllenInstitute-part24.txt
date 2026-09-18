@@ -1,0 +1,15 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt , for instance, you may say that a model can only advise, like, we do not condone it making a final decision. You know, just so that there’s always human review in the loop. 
+
+OREN ETZIONI: I think that’s smart. And I also think that this relates to another key principle when we think about both regulatory frameworks and ethical issues. Whose responsibility is it? The responsibility and liability has to ultimately rest with a person. You can’t say, “Hey, you know, look, my car ran you over, it’s an AI car, I don’t know what it did, it’s not my fault, right?” You as the driver or maybe it’s the manufacturer if there’s some malfunction, but people have to be responsible for the behavior of the machines.  
+
+The same way that, look, I’ve got – the car’s already a complex machine with 150 CPUs and so on, I can’t say, “Oh, well, the car ran you over, I had very little to do with it.” The same is true when I have an AI system. I have to be the one who’s responsible for an ethical decision. So, very much agree with you there. 
+
+KEVIN SCOTT: Yeah, so we are just about out of time, but before we go, I wanted to ask you, what do you do for fun outside of work? 
+
+OREN ETZIONI: Well, I would say that spending time with people, you know, my family. Like everybody in the Northwest, you know, getting outdoors and hiking is fun. I also – I love team sports. My knees no longer tolerate it, but for many years, I played soccer and basketball.  
+
+So, you know, do a variety of those things. But most recently, particularly under COVID, I have to admit that I’ve developed a vice. And that is playing Bug House online. So, Bug House is team chess, right, where you have two players facing off two other players. And you have – used to be five minutes, now online three minutes is popular. 
+
+So, you have a three-minute game. And in that game, you have to defeat your opponent, working together with your partners. That is, if your partner is the white player and you’re the black player, she might hand you a black piece, right, because she takes her opponent’s black piece, she hands it to you. This is all mediated by the computer. And you place it on your board instead of making a move. So, it’s a crazy, crazy game, which is what the phrase Bug House alludes to. And it has communication, it has adrenaline, it has stopwatch, you know, split-second timing, and it’s a wonderful distraction from worrying about when we’re going to have a vaccine.  
+
+KEVIN SCOTT: That sounds like a lot of fun. 

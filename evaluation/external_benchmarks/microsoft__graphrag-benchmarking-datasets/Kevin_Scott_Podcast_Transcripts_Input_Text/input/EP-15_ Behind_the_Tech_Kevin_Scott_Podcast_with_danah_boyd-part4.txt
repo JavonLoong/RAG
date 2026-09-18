@@ -1,0 +1,27 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt  And that fire and that fight has done me well, but it's also — you know, it's also costly.  And I think that tension, to me, is where things get difficult. 
+
+I mean, my freshman year of college, I went to college — 
+
+KEVIN SCOTT:  Where did you go?  
+
+danah boyd:  Brown University, which I knew nothing about except that they didn't have grades, which is kind of startling to think about at this point in my life.  And I was assigned on the first day a supervisor, you know, somebody to mentor me. 
+
+And I got this piece of paper and it said, Andy van Dam, and it gave his office.  I was, like, "All right, I don't know who you are."  
+
+KEVIN SCOTT:  And you had no idea who Andy van Dam was.  
+
+danah boyd:  Oh, I had no idea who he was.  And so, I marched into his office, the door was open, so I just walked in.  And he looked up from his desk and he goes, "Who the hell are you?"  And I'm like, "It says I'm your student.  And I need advice."  And he's like, "Why are you in my office?"  I was, like, "Uh, hello?"  (Laughter.) 
+
+And from that point on, I mean, Andy took me under the wing.  And Andy was such a key mentor.  And in that way where — obviously, it was a different era.  My way of speaking was very much street language, was very much working-class street language.  
+
+And so there was a period of time where he decided he was going to teach me to speak like an adult.  And he would just hit me upside the head every time I said something wholly inappropriate.  I was, like, "Hmmfft."  (Laughter.) 
+
+And, again, looks a little different saying it now, but it was such love and such care.  And my freshman year in college, a group of people, I assumed to be a group, accessed a computer.  And that computer, it was a Unix machine, and /dev/kmem came in, which is basically the period — piece which told you which user was world-writable.  And so, somebody sat and turned it into, you know, the admin position.  
+
+And then went into my account and hacked all of my e-mails, all my correspondences, which included a ton of conversations about grappling with sexual abuse, grappling with a mess that I was doing with my family, all this stuff.  And they posted it to an anonymous server. 
+
+KEVIN SCOTT:  Dear lord.  
+
+danah boyd:  This is 1997.  
+
+KEVIN SCOTT:  And like why? 

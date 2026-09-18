@@ -1,0 +1,15 @@
+Ep-55_Behind_the_Tech_Kevin_Scott_Podcast_with_Mira_Murati.txt  time that we saw people interact with these large language models and the technology that we were building and that for so many years we’d just been building in the lab without, you know, this real-world contact and feedback from people out there. 
+
+So, that was the first time. It was sort of this leap of faith that it was going to teach us something, we were going to learn something from it. And, hopefully, we could feed it back into the technology. We could bring back that knowledge, that feedback, and figure out how to use it to make the technology better, more reliable, more aligned, safer, more robust when it eventually gets deployed in the real world. 
+
+And, you know, I always believe that you can’t just build this powerful technology in the lab with no contact with reality and hope that somehow it’s going to go well and that it’s going to be safe and beneficial for all. And, somehow, you do need to figure out how to bring society along both in gathering that feedback and insight, but also in adjusting society to this change. 
+
+And the best way to do that is for people to actually interact with the technology and see for themselves, instead of, you know, telling them or just sharing scientific papers. So that was very important. And it took us, then, a couple of years to get to the point where we were not just releasing improvements to the model through the API, but in fact, the first interface that was more consumer facing that we played around with was DALL-E. DALL-E Labs, where people could just input a prompt in natural language and then you’d see these beautiful, original, amazing images come up. 
+
+And then, you know, really for research reasons, we were experimenting with this interface of dialogue where you go back and forth with the model and ChatGPT and dialogue is such a powerful tool, you know, the idea of Socratic dialogue and how -- how people learn, you can sort of correct one another and/or ask questions, get really to deeper truth. 
+
+And so, we thought, you know, if we put this out there, even with the existing models, we will learn a lot. We will get a lot of feedback and we can use this feedback to actually make our upcoming model that at the time was GPT-4 safer and more aligned. 
+
+So, that was kind of the motivation. And, of course, as we saw, you know, in just a few days, it became super popular and people just loved interacting with this AI system. 
+
+KEVIN SCOTT: One of the reasons why just me personally, I’ve been excited about the work that you all are doing is like this notion that you want to really allow a lot of people -- a lot of non-expert people to be able to play around with the technology and to imagine how they can use it for things that they think are important is super important to

@@ -1,0 +1,17 @@
+EP-27_ Behind_the_Tech_2020-Year-In-Review.txt VIN SCOTT: Yes. 
+
+OREN ETZIONI: To help make parole decisions and things like that. Well, we should audit these systems, test them for bias, right? The press should be doing that, the ACLU should be doing that, regulatory agencies should be doing that. But the solution is not to get some strange explanation for the machine. The solution is to be able to audit its behavior statistically and test it, hey, are you exhibiting some kind of demographic bias? 
+
+KEVIN SCOTT: Yeah, I mean, one of the things we do at Microsoft is we have these two bodies inside of the company, this thing called the Office for Responsible AI that sits in our legal team. And we have this thing called AITHER, that’s the AI and ethics committee inside of the company.  
+ 
+What we do with both of these bodies is we try to have both the lawyers and the scientists thinking about how you inspect both the artifacts that you’re building in your AI research, but their uses. And we have a very clearly defined notion of a sensitive use. And depending on how sensitive a use a particular model is being deployed in, we have different standards of auditing and scrutiny that go along with it. 
+
+And, recommendations, like, for a criminal justice application, for instance, you may say that a model can only advise, we do not condone it making a final decision. You know, just so that there’s always human review in the loop. 
+
+OREN ETZIONI: I think that’s smart. And I also think that this relates to another key principle when we think about both regulatory frameworks and ethical issues. Whose responsibility is it? The responsibility and liability has to ultimately rest with a person. You can’t say, “Hey, you know, look, my car ran you over, it’s an AI car, I don’t know what it did, it’s not my fault, right?” You as the driver or maybe it’s the manufacturer if there’s some malfunction, but people have to be responsible for the behavior of the machines.  
+
+The same way that, look, I’ve got – the car’s already a complex machine with 150 CPUs and so on, I can’t say, “Oh, well, the car ran you over, I had very little to do with it.” The same is true when I have an AI system. I have to be the one who’s responsible for an ethical decision. So, very much agree with you there. 
+
+[MUSIC]
+
+CHRISTINA WARREN:  That was the CEO of Allen Institute for AI, Dr. Oren Etzioni. Now, here’s a part of the show that I’ve most been looking forward to because I get to ask Kevin some questions. But before that, let’s hear from this past year’s episode recorded right before the launch of Kevin’s book, Reprogramming the American Dream: From Rural America to

@@ -1,0 +1,14 @@
+EP-04_ Behind_the_Tech_Kevin Scott_Podcast_with_Judy Estrin.txt  the Internet, democracy, and humanity. So, welcome, Judy. 
+JUDY ESTRIN: It's a pleasure to be here. 
+KEVIN SCOTT: Oh, awesome, awesome. I've been so looking forward to chatting with you. So, I wanted to start with your childhood because you had this amazing career in technology, and your father is a very well-known computer scientist. So, with you, it started especially early. Right? 
+JUDY ESTRIN: Yeah. I had the advantage of being a second-generation technologist when computers didn't really exist. But it wasn't just my father. it was my father and my mother. My father worked with Von Neumann on the part of the team at the Institute for Advanced Sciences on the first computer. He and my mom were then invited to go to Israel to help lead the team that built the first computer in the Middle East, the WEIZAC. 
+They then ultimately came back and came to California and my dad started the computer science department at UCLA, and was there for years. My mother also has a PhD in electrical engineering. And when she got her PhD from Wisconsin, there was one other woman in the country who got a PhD in electrical engineering that year. 
+KEVIN SCOTT: Wow. 
+JUDY ESTRIN: At least that was the story in our family. And so -- 
+KEVIN SCOTT: And when was that? 
+JUDY ESTRIN: It was in the late '40s. An interesting story. When they came to UCLA, she could not work in the engineering department, where my dad was because of nepotism rules. And so she ended up starting a data processing lab in the Brain Research Institute at UCLA. So, she was one of the first biomedical engineers and really excelled and helped build that field. So, I had two unbelievable role models. And lots of positive aspects to that. 
+KEVIN SCOTT: And I'm guessing there's some intimidation, too, as well. 
+JUDY ESTRIN: Some intimidation. I can still remember in high school when my dad brought home some video tapes to learn Fortran. And my dad ended up leaving me notes in Fortran. So, he would leave me "if, then, else" statements of what I was supposed to do that day. (laugh) And so it was my way to bond with my father that I ended up probably going into computer science. 
+KEVIN SCOTT: Well, let's talk about your mother a little bit more. So, your dad is Gerald Estrin. 
+JUDY ESTRIN: Right. 
+KEVIN SCOTT: And I think I know less about your mother, but it sounds like her career path, in many ways, might be the most extraordinary one. Did she share any stories with you about what it was like to get that PhD

@@ -1,0 +1,55 @@
+Organic matter, organic material, or natural organic matter (NOM) refers to the large pool of carbon-based compounds found within natural and engineered, terrestrial and aquatic environments.
+ It is matter composed of organic compounds that has come from the remains of organisms such as plants and animals and their waste products in the environment.
+ Organic molecules can also be made by chemical reactions that don't involve life.
+ Basic structures are created from cellulose, tannin, cutin, and lignin, along with other various proteins, lipids, and carbohydrates.
+ Organic matter is very important in the movement of nutrients in the environment and plays a role in water retention on the surface of the planet.
+Hydraulic action is the erosion that occurs when the motion of water against a rock surface produces mechanical weathering.
+ Most generally, it is the ability of moving water (flowing or waves) to dislodge and transport rock particles.
+ Within this rubric are a number of specific erosional processes, including abrasion, attrition, corrasion, saltation, and scouring (downcutting).
+ Hydraulic action is distinguished from other types of water facilitated erosion, such as "static erosion" where water leaches salts and floats off organic material from unconsolidated sediments, and from "chemical erosion" more often called chemical weathering.
+A trace fossil, also called an ichnofossil ( ; Greek: ιχνος "ikhnos" "trace, track"), is a geological record of biological activity.
+ Trace fossils may consist of impressions made on the substrate by an organism: for example, burrows, borings (bioerosion), urolites (erosion caused by evacuation of liquid wastes), footprints and feeding marks, and root cavities.
+ The term in its broadest sense also includes the remains of other organic material produced by an organism — for example coprolites (fossilized droppings) or chemical markers — or sedimentological structures produced by biological means - for example, stromatolites.
+ Trace fossils contrast with body fossils, which are the fossilized remains of parts of organisms' bodies, usually altered by later chemical activity or mineralization.
+In archaeology, a postpipe (or post pipe) is the remains of an upright timber placed in a posthole.
+ Given the right conditions, timbers may survive over long periods of time and a recovered postpipe can simply be of solid wood.
+ Under less preservative conditions however, only a dark circular stain of organic material may be left in the fill of the posthole observable in plan and section.
+ This differs in consistency from the less organic backfill of the posthole and can be identified simply through this change in make-up.
+ The size and depth and of the postpipe can provide information as to any reuse of the posthole especially if several different postpipes can be identified.
+ They can also indicate the species of wood used and help suggest the nature of the structure that the timber once supported.
+ The term was first used by Maud Cunnington when she excavated the site of Woodhenge in the English county of Wiltshire during the 1920s and found numerous examples of decomposed timber posts.
+Campigliaite is a copper and manganese sulfate mineral with a chemical formula of CuMn(SO)(OH)·4HO.
+ It has a chemical formula and also a crystal structure similar to niedermayrite, with Cd(II) cation replacing by Mn(II).
+ The formation of campigliaite is related to the oxidation of sulfide minerals to form sulfate solutions with ilvaite associated with the presence of manganese.
+ Campigliaite is a rare secondary mineral formed when metallic sulfide skarn deposits are oxidized.
+ While there are several related associations, there is no abundant source for this mineral due to its rare process of formation.
+ Based on its crystallographic data and chemical formula, campigliaite is placed in the devillite group and considered the manganese analogue of devillite.
+ Campigliaite belongs to the copper oxysalt minerals as well followed by the subgroup M=M-T sheets.
+ The infinite sheet structures that campigliaite has are characterized by strongly bonded polyhedral sheets, which are linked in the third dimension by weaker hydrogen bonds.
+Petrified wood (from the Greek root "petro" meaning "rock" or "stone"; literally "wood turned into stone") is the name given to a special type of fossilized remains of terrestrial vegetation.
+ It is the result of a tree or tree-like plants having completely transitioned to stone by the process of permineralization.
+ All the organic materials have been replaced with minerals (mostly a silicate, such as quartz), while retaining the original structure of the stem tissue.
+ Unlike other types of fossils which are typically impressions or compressions, petrified wood is a three-dimensional representation of the original organic material.
+ The petrifaction process occurs underground, when wood becomes buried under sediment or volcanic ash and is initially preserved due to a lack of oxygen which inhibits aerobic decomposition.
+ Mineral-laden water flowing through the covering material deposits minerals in the plant's cells; as the plant's lignin and cellulose decay, a stone mold forms in its place.
+ The organic matter needs to become petrified before it decomposes completely.
+ A forest where such material has petrified becomes known as a petrified forest.
+The structural formula of a chemical compound is a graphic representation of the molecular structure, showing how the atoms are arranged.
+ The chemical bonding within the molecule is also shown, either explicitly or implicitly.
+ Unlike chemical formulas, which have a limited number of symbols and are capable of only limited descriptive power, structural formulas provide a complete geometric representation of the molecular structure.
+ For example, many chemical compounds exist in different isomeric forms, which have different enantiomeric structures but the same chemical formula.
+ A structural formula is able to indicate arrangements of atoms in three dimensional space in a way that a chemical formula may not be able to do.
+Dissolved organic carbon (DOC), sometimes known as dissolved organic material (DOM), is a broad classification for organic molecules of varied origin and composition within aquatic systems.
+ The "dissolved" fraction of organic carbon is an operational classification.
+ Many researchers use the term "dissolved" for compounds below 0.45 micrometers, but 0.22 micrometers is also common, saving colloidal for higher concentrations.
+ A practical definition of dissolved typically used in marine chemistry is all substances that pass through a GF/F filter.
+ The recommended measure technique is the HTCO technique after filtration on precombusted glass fiber filters, typically GF/F filters.
+In biology, detritus ( ) is dead particulate organic material (as opposed to dissolved organic material).
+ It typically includes the bodies or fragments of dead organisms as well as fecal material.
+ Detritus is typically colonized by communities of microorganisms which act to decompose (or remineralize) the material.
+ In terrestrial ecosystems, it is encountered as leaf litter and other organic matter intermixed with soil, which is referred to as humus.
+ Detritus of aquatic ecosystems is organic material suspended in water and piling up on seabed floors, which is referred to as marine snow.
+A biointerface is the region of contact between a biomolecule, cell, biological tissue or living organism or organic material considered living with another biomaterial or inorganic/organic material.
+ The motivation for biointerface science stems from the urgent need to increase the understanding of interactions between biomolecules and surfaces.
+ The behavior of complex macromolecular systems at materials interfaces are important in the fields of biology, biotechnology, diagnostics, and medicine.
+ Biointerface science is a multidisciplinary field in which (bio)chemists who synthesize novel classes of biomolecules (PNA, peptidomimetics, aptamers, ribozymes, and engineered proteins) cooperate with scientists who have developed the tools to position biomolecules with molecular precision (proximal probe methods, nano-and micro contact methods, e-beam and X-ray lithography, and bottom up self-assembly methods), scientists who have developed new spectroscopic techniques to interrogate these molecules at the solid-liquid interface, and people who integrate these into functional devices (applied physicists, analytical chemists and bioengineers).

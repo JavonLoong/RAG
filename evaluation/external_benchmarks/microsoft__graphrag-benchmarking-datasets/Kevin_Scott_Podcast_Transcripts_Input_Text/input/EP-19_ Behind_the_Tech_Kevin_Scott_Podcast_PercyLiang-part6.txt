@@ -1,0 +1,29 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  think was still a little bit up in the air.  I was having a lot of fun with the semantic parsing problem.  Then I spent a year in Google actually working on a semantic parser for them that powers a lot of back then was Google Now.
+
+KEVIN SCOTT:  So, they have a semantic parser with the funniest name in existence, this thing called “Parsey McParseace.”  That wasn’t your thing, was it? 
+
+PERCY LIANG:  That was later, yeah.  
+
+KEVIN SCOTT:  Yeah.  (Laughter.)  
+
+PERCY LIANG:  That was -- 
+
+KEVIN SCOTT:  Which is a very silly name for a parser. 
+
+PERCY LIANG:  It’s very memorable, yeah.  (Laughter.) 
+
+KEVIN SCOTT:  But you can well imagine how this technology might be super important in search where the whole search problem is asking questions of a search engine and the search engine needs to understand something about the question so that it can get reasonable answers. 
+
+PERCY LIANG:  Yeah.  Search, assistance, and all these cases where there is a human with some information need or some action that needs to be taken, the most natural way is to use, well, natural language and how to get computers to understand that to the extent of being useful delivering something useful to the user is the central question. 
+
+KEVIN SCOTT:  So, you got your PhD at Berkeley and then what happened next? 
+
+PERCY LIANG:  I applied to jobs.  I got a position at Stanford, which I was very happy about.  Then I took a year off -- I mean, in quotes, a year off to do something different.  And I knew I was going to be a professor and write papers, so I wanted to have -- see how I could take this technology and actually make it kind of real in some sense. 
+
+So, I did a post-doc at Google.  And was trying to figure out how to use semantic parsing for something.  And at that time, so this was 2011, I think Siri had just come out for the first time.  I think there was a sense that inside Google that -- well, we should do something big about this.  
+
+And so other people and I formed a team and we built the semantic parser that then powered relatively simple commands, but then increasingly, over time, got to powering questions and all sorts of other things. So that was really exciting to see how the tech transfer happens from academic research to actual products.  
+
+KEVIN SCOTT:  Explain to folks like how it’s different.  Like, building a product where it just sort of has to work all the time for all of the users is sometimes different from building a thing that’s good enough to write a paper about. 
+
+PERCY LIANG:  Yeah, definitely. 

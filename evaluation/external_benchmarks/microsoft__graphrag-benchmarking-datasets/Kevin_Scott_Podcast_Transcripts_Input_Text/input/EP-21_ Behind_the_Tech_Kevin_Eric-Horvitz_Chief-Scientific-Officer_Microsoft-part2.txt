@@ -1,0 +1,23 @@
+EP-21_ Behind_the_Tech_Kevin_Eric-Horvitz_Chief-Scientific-Officer_Microsoft.txt  sense that we already had experience working together from different places. But it's still different, and we're all I still think, adjusting. 
+
+But one of the interesting things, you know, with Microsoft is we're focusing on trying to see how we can do advocacy and events, and the things that I use to travel for online and potentially reach even more people. So, that's pretty cool. 
+
+And as our listeners may know, Microsoft Research is actually playing a significant role in bringing our technical resources to the table. And so, today we're going to hear from a Microsoft colleague who is leading the charge.
+
+KEVIN SCOTT:  Yeah, we're really excited to have Dr. Eric Horvitz on the show today. Eric's one of the most highly regarded AI researchers in the field with contributions that span machine learning, perception, natural language understanding and decision making. His efforts to understand the influences of AI on people in society, including ethics, law and safety, really are paving the way for responsible AI practices.
+
+CHRISTINA WARREN:  It's such important work. So, let's hear what Eric’s been up to.
+
+[MUSIC]
+
+KEVIN SCOTT: Our guest today is Dr. Eric Horvitz. Eric is a Microsoft technical fellow and the company’s first chief scientific officer. As Microsoft’s chief scientist, Eric provides leadership and expertise on a broad range of scientific and technical areas from AI to biology and medicine to a whole host of issues that lie at the intersection of technology, people, and society. 
+
+Eric earned a PhD in AI from Stanford and is one of the field’s leading innovators and luminaries. Eric also has the rare distinction of having earned his MD -- also from Stanford -- which gives him a unique view and understanding of the many connections between AI, biology, and biomedicine. I’m thrilled to have Eric with us today. Welcome, Eric!
+
+ERIC HORVITZ: Thanks, Kevin, it’s great to be here. 
+
+KEVIN SCOTT: Yeah, so I’d love to start, as we always do, by understanding how it is you first got interested in science and technology. Presumably, that was when you were a kid. So can you tell us a little bit about that? 
+
+ERIC HORVITZ: Yeah, it’s -- I just know that I’ve always been sort of inspired to understand things. And I didn’t distinguish between human creations, artifacts, and stuff I would see in the world. So I was confused and intrigued and interested in living things, in space and time. I remember being very, very young asking my first-grade teacher if I could know more about time. She ended up bringing me to the library at Birch Elementary School and showing me a book about clocks. 
+
+And I said, “No, I don’t really mean clocks. I mean time.”  And I’m also intrigued by light. I had this really beautiful phosphores

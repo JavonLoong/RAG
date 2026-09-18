@@ -1,0 +1,49 @@
+A pelletron is a type of electrostatic particle accelerator similar to a Van de Graaff generator.
+ Pelletrons have been built in many sizes, from small units producing voltages up to 500 kilovolts (kV) and beam energies up to 1 megaelectronvolt (MeV) of kinetic energy, to the largest system, which has reached a DC voltage of over 25 megavolts and produced ion beams with energies over 900 MeV.
+ Generating electric charge is done by a mechanical transportation system made of a chain of pellets (short conductive tubes connected by links made of insulating material), that is used to build up high voltages on the Pelletron terminal.
+ The system is enclosed by a pressure vessel filled with insulating gas, such as SF (sulfur hexafluoride), and an evacuated beamline.
+ The potential difference between the terminal and ground is used to accelerate several kinds of particles, such as positrons, electrons and negative and positive ions.
+Frederik Robbert "Freek" van de Graaff (20 February 1944 – 24 June 2009) was a Dutch rower who won a bronze medal in the coxed fours at the 1964 Summer Olympics.
+ His team mates were Marius Klumperbeek (cox), Lex Mullink, Bobbie van de Graaf and Jan van de Graaff.
+ The three "van de Graaf(f)s" were all born in 1944.
+Jan van de Graaff (born 24 September 1944) is a retired Dutch rower.
+ He won the world title in the coxed pair at the 1966 World Rowing Championships and a bronze medal in the coxed fours at the 1964 Summer Olympics.
+ At the 1964 Olympics his team mates were Marius Klumperbeek (cox), Lex Mullink, Bobbie van de Graaf and Freek van de Graaff.
+ The three "van de Graaf(f)s" were all born in 1944.
+Teleforce was a proposed defensive weapon by Nikola Tesla that accelerated pellets or slugs of material to a high velocity inside a vacuum chamber via electrostatic repulsion and then fired them out of aimed nozzles at intended targets.
+ Tesla claimed to have conceived of it after studying the Van de Graaff generator.
+ Tesla described the weapon as being able to be used against ground-based infantry or for anti-aircraft purposes.
+The Hollywood Blues Tour was a concert tour through the United States and Canada, undertaken by American rock band ZZ Top.
+ Named after a warm-up show at the House of Blues in West Hollywood, California, the tour was their second of which to be staged without a supporting album.
+ As a result, they did not perform any newer material.
+ Although this was a criticism for the tour, it was generally well-received—a critic from "The Florida Times-Union" regarded the band as "one of rock's most reliable acts; you just know they're going to put on a good show".
+ In contrast to ZZ Top's elaborately-staged productions from previous tours, the Hollywood Blues Tour utilized an austere stage setup.
+ To embrace the group's renowned concept of visual imagery, the stage featured an LED drape for a backdrop video screen that showed visual effects, video clips and flashing text phrases, along with amplifiers stacks and a Van de Graaff generator.
+Electrostatic induction, also known as "electrostatic influence" or simply "influence" in Europe and Latin America, is a redistribution of electrical charge in an object, caused by the influence of nearby charges.
+ In the presence of a charged body, an insulated conductor develops a positive charge on one end and a negative charge on the other end.
+ Induction was discovered by British scientist John Canton in 1753 and Swedish professor Johan Carl Wilcke in 1762.
+ Electrostatic generators, such as the Wimshurst machine, the Van de Graaff generator and the electrophorus, use this principle.
+ Due to induction, the electrostatic potential (voltage) is constant at any point throughout a conductor.
+ Electrostatic Induction is also responsible for the attraction of light nonconductive objects, such as balloons, paper or styrofoam scraps, to static electric charges.
+ Electrostatic induction laws apply in dynamic situations as far as the quasistatic approximation is valid.
+ Electrostatic induction should not be confused with Electromagnetic induction.
+William Travis "Bully" Van de Graaff (October 25, 1895 – April 26, 1977) was an American football player, coach, and college athletics administrator.
+ He attended Tuscaloosa High School.
+ He played college football at the University of Alabama, where he was selected as an All-American in 1915, Alabama's first.
+ He was 6'1" 187 pounds.
+ "Bully" was placed on an "Associated Press" Southeast Area All-Time football team 1869-1919 era.
+ Van de Graaff served as the head football coach at Colorado College from 1926 to 1939, compiling a record of 49–47–6.
+ He coached hall of famer Dutch Clark.
+ He died in Colorado Springs, Colorado on April 26, 1977 at the age of 81.
+ He was the older brother of physicist Robert J. Van de Graaff, the designer of the Van de Graaff generator which produces high voltages. Bully's two older brothers, Hargrove and Adrian, were also Alabama football players.
+Westinghouse Atom Smasher was a 5 MeV Van de Graaff electrostatic nuclear accelerator operated by the Westinghouse Electric company at their research center in Forest Hills, Pennsylvania.
+ It was instrumental in the development in practical applications of nuclear science for energy production.
+ It was the first industrial Van de Graaff generator in the world, and marked the beginning of nuclear research for civilian applications.
+ Built in 1937, it was a 65 ft tall pear-shaped tower.
+ It went dormant in 1958.
+Robert "Bobbie" van de Graaf (born 17 March 1944) is a retired Dutch rower who won a bronze medal in the coxed fours at the 1964 Summer Olympics.
+ His team mates were Marius Klumperbeek (cox), Lex Mullink, Freek van de Graaff and Jan van de Graaff.
+ The latter two were also born in 1944 and are unrelated to Bobbie.
+A Van de Graaff generator is an electrostatic generator which uses a moving belt to accumulate electric charge on a hollow metal globe on the top of an insulated column, creating very high electric potentials.
+ It produces very high voltage direct current (DC) electricity at low current levels.
+ It was invented by American physicist Robert J. Van de Graaff during 1929.

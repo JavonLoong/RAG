@@ -22,16 +22,21 @@ Label Studio JSON → 解析 → 清洗 → 分块 → BGE-m3 向量化 → Chro
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
 
+import os
 import sys
-import io
 
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 import orjson
 from pathlib import Path
 from dataclasses import dataclass, field
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_EMBEDDING_MODEL = os.environ.get("RAG_EMBEDDING_MODEL", "Qwen/Qwen3-Embedding-0.6B")
 DEFAULT_SAMPLE_PATHS = (
     REPO_ROOT
     / "apps"
@@ -293,12 +298,12 @@ def vectorize_and_store(
     collection_name: str = "equipment_manuals",
     chroma_path: str = "./local_chroma_db",
 ):
-    """BGE-m3 向量化 → Chroma 持久化存储。"""
+    """Semantic embedding → Chroma persistent storage."""
     from sentence_transformers import SentenceTransformer
     import chromadb
 
-    print("加载 BGE-m3 模型...")
-    model = SentenceTransformer("BAAI/bge-m3")
+    print(f"加载语义向量模型: {DEFAULT_EMBEDDING_MODEL}...")
+    model = SentenceTransformer(DEFAULT_EMBEDDING_MODEL)
 
     texts = [c.text for c in chunks]
     print(f"向量化 {len(texts)} 个文本块...")
@@ -606,7 +611,7 @@ def main():
     # Step 3+4: 向量化 + 混合检索
     if args.vectorize:
         print("\n" + "=" * 60)
-        print("Step 3: BGE-m3 向量化 + Chroma 存储")
+        print(f"Step 3: {DEFAULT_EMBEDDING_MODEL} 向量化 + Chroma 存储")
         print("=" * 60)
         collection, model = vectorize_and_store(all_chunks)
 

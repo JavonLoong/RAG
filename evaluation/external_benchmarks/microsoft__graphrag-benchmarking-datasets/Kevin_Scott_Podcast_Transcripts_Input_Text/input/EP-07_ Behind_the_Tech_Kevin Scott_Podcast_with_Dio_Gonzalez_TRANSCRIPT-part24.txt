@@ -1,0 +1,31 @@
+EP-07_ Behind_the_Tech_Kevin Scott_Podcast_with_Dio_Gonzalez_TRANSCRIPT.txt   Yeah, and I -- you know, I even find that when you're doing something like cycling or hiking or CrossFit, or like any number of things that looks like I've never done them in my life, (laughter) but like when you -- when you do them, like, and doing them intensely, like, you can get into -- for me at least, what is very similar to the same sort of flow state you can get in when you're programming. 
+
+DIO GONZALEZ:  Correct. 
+
+KEVIN SCOTT:  Like, really, really intensely.  
+
+DIO GONZALEZ:  Correct. 
+
+KEVIN SCOTT:  Like, where everything just sort of vanishes away and like the only thing that you're focused on is like the immediate thing at hand and like you're almost like you're on automatic.  
+
+DIO GONZALEZ:  Exactly.  Exactly.  And so in those sports are, again, if you -- if you like the tinkering and, you know, and geeking out and all, as cyclists, for example, you get in that moment because you're focusing your breathing.  Then your heart rate, because of course we have a -- a million -- a million devices, right?  So, seeing my heart rate, seeing my power, so make sure that my heart rate and my power are correct and then my breathing. 
+
+KEVIN SCOTT:  Yeah.
+
+DIO GONZALEZ:  And then am I on the correct gear for this climb, you know?  For the percentage of the climb.  So, it's just -- and like you said, you become in this flow that is just amazing.  
+
+KEVIN SCOTT:  Yeah, awesome.  
+
+DIO GONZALEZ:  It's really awesome.  
+
+KEVIN SCOTT:  Well, thank you so much for spending time with us today.  Like, you've had such an interesting journey and you -- you're working on technology that's sort of right at the frontier of what we as human beings are creating right now.  So, it's sort of a super fun space to work in.  I'm so happy we could chat about this stuff today.  
+
+DIO GONZALEZ:  Thank you.  Thank you very much.  Thank you for the invitation. 
+
+KEVIN SCOTT:  Awesome.  All right.  
+[MUSIC]
+
+
+CHRISTINA WARREN:  Well, thanks for joining us for Behind the Tech.  You just heard Microsoft CTO Kevin Scott speaking with Dio Gonzalez.  And I love how excited she is about everything with tech.  It makes me excited. 
+
+She's working on tools that let people build games or whole new worlds, you know, and when it comes to mixed reality, and she talked about how the

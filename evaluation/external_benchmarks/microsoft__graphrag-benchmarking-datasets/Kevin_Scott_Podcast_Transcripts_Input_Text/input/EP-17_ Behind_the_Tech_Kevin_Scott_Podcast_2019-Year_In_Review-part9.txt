@@ -1,0 +1,39 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt  And for the book, I went back to where I grew up in rural central Virginia in, like, this, you know, very, small town.  
+
+And I visited the nursing home where three of my grandparents spent the last chunk of their life. And I was just chatting with some of the people there.  And I asked them, you know, the nurses and the managers in this place, like, you know, what -- do you think AI -- and like, when I say AI, like, the vision that conjures is, like, oh, there's going to be some human equivalent android coming in.  And they'd be like, no, the residents would be terrified -- by this thing. Whereas like they've got a bunch of thing -- like, dispensing medicine, for instance. 
+
+FEI-FEI LI:  Exactly.   
+
+KEVIN SCOTT:  Like, you know, when you're elderly, like, you're taking this, like, complicated cocktail of medicines and, like, getting it dispensed in the right amounts at the right time through the day, making sure that you actually take the medicine.  
+
+Like, that's a problem that we could solve with AI-like technologies, like, you know, combination of robotics and computer vision.  But it wouldn't be like this talking, walking, you know, robot.  It would be, like, a set of things that sort of disappear into the background and just sort of become part of the operation of the place.  
+
+FEI-FEI LI:  Absolutely.  
+
+KEVIN SCOTT:  And, like, that I think we should have more ambition for that sort of thing rather than this – 
+
+FEI-FEI LI:  Absolutely.  
+
+KEVIN SCOTT:  You know?  
+
+FEI-FEI LI:  That's why Stanford HAI wants to encourage that.  The best technology is you don't notice the technology. 
+
+KEVIN SCOTT:  Yes. 
+
+FEI-FEI LI:  But your life is better.  
+
+KEVIN SCOTT:  Yes. 
+
+FEI-FEI LI:  That's the best technology. 
+
+KEVIN SCOTT:  I could not agree more.  
+
+[MUSIC]
+
+KEVIN SCOTT:  That conversation with Fei-Fei was amazing, and it makes me really happy that we have people as technically brilliant as her who also are like thinking in a deeply conscientious way about how AI technology and technology in general are developing.  
+
+CHRISTINA WARREN:  Now, I couldn't agree more.  I think it's really imperative that we don't just have, as you said, the technical minds, but people who are thoughtful and are thinking about the implications and how to, as we said kind of at the top, do these things the right way.  
+
+KEVIN SCOTT:  Yeah.  
+
+CHRISTINA WARREN:

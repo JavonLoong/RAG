@@ -1,0 +1,17 @@
+Ep-46_Behind_the_Tech_Kevin_Scott_Podcast_with_Simone-Giertz.txt .) Well, so let’s talk a little bit, if you are okay with it, about the process of making the everyday calendar. So, you get the idea for this thing. Like, then, what do you go do, because… Did you start with the intention that you were going to make a thing to be manufactured and sold to other people?
+
+SIMONE GIERTZ: Not at all. And I think that’s what I want to retain as well. Like, I’m always, and for YouTube as well, I’m making things for an audience of one. (Laughter.) Like, I’m making something because I really want it. And then if other people find it interesting, then great. 
+
+So, I made it. I made this version of it that had a bunch of toggle switches, so it was 365 toggle switches. And I just did it as – as a video. It was untested, so it was on the YouTube channel. And then it, like, actually worked really well for me and I started wanting to think of, like, if it could be a product. 
+
+The problem with any product where you have 365 of a component is, like, cost just immediately starts taking off, and there was no way for us to have mechanical buttons or toggle switches or anything in a calendar. And I remember us wanting – I kind of wanted it to almost look like an elevator button grid, but, like, smaller. But it would have been like a $1,000 product, which I didn’t want. 
+
+So, we ended up using capacitive touch because it’s – it can just be in software. You just need some special chips to monitor the capacitive touch, and actually ended up using circuit board as the front plate. So, it’s this, like, designed, very embellished looking circuit board, but if you’re looking close, closer at it, you can see all the traces. 
+
+So, that was really fun. It was a fun design challenge to take these materials that are not really meant to be consumer facing and try to make them look really pretty and beautiful enough for you to want to hang it on a wall.
+
+KEVIN SCOTT: And just the  process of creating and who you’re collaborating with, had you ever laid a circuit board out before? Had you, like – 
+
+SIMONE GIERTZ: I had done some PCB design before, but very minimal. So, I started working with an electrical engineer, and a mechanical engineer and just some other people. Like, we were really just a small team of friends and trying to put it together. We did a Kickstarter campaign, raised some money, shipped those out a couple of months late after a lot of headache. But, like, we managed to get them out. 
+
+And – and yeah. And now, we’re finally like the pandemic unfortunately came in between there with all the chip shortages and stuff

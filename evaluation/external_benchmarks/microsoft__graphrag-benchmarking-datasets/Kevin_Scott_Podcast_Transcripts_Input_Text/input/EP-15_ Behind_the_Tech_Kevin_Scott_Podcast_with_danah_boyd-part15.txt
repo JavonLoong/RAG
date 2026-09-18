@@ -1,0 +1,25 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt  renders in the proper way. 
+
+And we've had, what, 30 years, 20 good solid years of figuring out what that bag of tricks is for making those things robust.  I sort of feel like we're in the early days of like figuring out what our bag of tricks are for making the sort of data interactions, like data handling stuff as robust as it needs to be. 
+
+danah boyd:  Well, I think "robust" is the right language because so much of what I hear, especially in Washington, D.C., tech needs to fix it.  It's like there isn't a fix.  There is resilience.  There is process that can allow us to respond and iterate and evolve, and that's why I often use things like security as a framework, because security doesn't assume anything is ever secure. 
+
+KEVIN SCOTT:  Right.  
+
+danah boyd:  It's like the parallel, you know, I grew up and there was this weird notion of safe sex, and it was always like what are you talking about?  There is safer sex, but there is no safe sex.  And so we have to move away from this like we can fix it, we can make it so that nothing bad will happen into a moment of saying, no, we need to take as much steps as possible to limit the possibility of harm, and then we need to grapple with what happens as it unfolds.  
+
+And I worry because in a culture of move fast and break things, we don't allow for the possibility that the breaking sometimes is so destructive that we need to step back.  
+
+KEVIN SCOTT:  Correct. 
+
+danah boyd:  And, you know, there's a lot in the move fast, where it's like actually sometimes slow is better.  Slow food is better, right?  There's a moment where you're, like, come on, let's make things that are healthier.  Let's make things that are richer, that people have more enjoyable experiences with.   
+
+KEVIN SCOTT:  Yeah.   
+
+danah boyd:  And so I don't want just the fast system because it's — you know, it's what somebody built yesterday that they thought was cool if it's going to tear down democracy.  
+
+KEVIN SCOTT:  Yeah. 
+
+danah boyd:  And that's what I worry about is, like, you know, how do we get those processes of resilience into every stage?  And you know, I think about those days of CD-ROMs, right?  Your next possible round was the next rev of it, you know?  Anything that went wrong, the worst — the best you could do was recall.  
+
+We're no longer in that stage, so that means that the responsibility to be responsive is so much greater.  And I will say, as an industry,

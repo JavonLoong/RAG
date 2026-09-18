@@ -1,0 +1,17 @@
+EP-21_ Behind_the_Tech_Kevin_Eric-Horvitz_Chief-Scientific-Officer_Microsoft.txt , but interesting as Isaac Asimov’s Laws of Robotics, which folks have read about in his robot series, and actually codify them in a system with modern AI techniques so that the system could be proven to be reliable and responsibility to human beings and to society. 
+
+And we had a great breakout session on that topic. And we looked at ethics and legal issues. So, that whole experience and working with the community on these topics, which resonated deeply with me, per my interest in seeing these technologies do well in real hard decision problems and recommendations, further pulled me into thinking more deeply about the role that we would have as researchers, as scientists, as professionals, and as companies in thinking through not just the technology itself, which was growing in its power and its usage in commerce as well as in areas like defense and healthcare. 
+
+But to really consider deeply what we might do as a growing field, including technical issues, social issues, looking at the human dimension, you know, if you people are using these systems, how do you design them in a way not just to -- where they might explain their reasoning, if people want to know what’s going on, but how do you understand how to apply the technology in a way that will complement expertise that’s already available from human beings? 
+
+How do you think through longer-term futures where the technology begins to shape the nature of work and the nature of the tasks people do in particularly named jobs, like I’m a doctor, I’m a lawyer, I repair automobiles. To understand what it all would mean so that we would know how the role of humans would be co-evolving with the role of machines. 
+
+And then, it’s just been so rewarding to see the rise of a whole field, studying problems that are also rising in issues, for example, around the bias of systems that are trained on data that comes from cultures and society that have all sorts of nuanced histories that lead to sampling issues and data that represents the societies from which it came and systems that you can build from that data that will amplify existing inequities in society. 
+
+So, to see, there’s actually a rising field now of people that are pointing out these examples and coming up with ways to better visualize and understand and address them. 
+
+KEVIN SCOTT: So, the thing that I want to chat about now is sort of the future. Like, the things that it seems very likely to me that we’re going to want to apply our most powerful technology platforms, including modern machine learning to over the course of the next several decades. 
+
+And I think, you know, perhaps the most interesting area or sort of intersection is what’s happening right now in biology and how that intersects with the work that’s going on with AI and high-performance computing. 
+
+And, you know, it was sort of an interesting intersection and has been growing increasingly interesting over the past handful of years, and now it’s just sort of acutely

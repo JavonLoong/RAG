@@ -1,0 +1,12 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt  watching her develop as an engineer and as an engineering leader, and she's absolutely spectacular.  So, I'm just really excited to chat with her today and to have her share with everyone else like this really amazing and in some ways like an archetypical Silicon Valley tech industry story with everyone.  She's awesome.
+CHRISTINA WARREN:  All right, let's hear from Neha. 
+KEVIN SCOTT:  Awesome.
+[MUSIC]
+KEVIN SCOTT:  So, today, we'll chat with Neha Narkhede.  Neha is one of the initial authors of Apache Kafka, an open source software system that lets organizations process data in real time.  Neha helped develop Kafka at LinkedIn where she was the lead of the streams infrastructure team.  Neha is cofounder and CTO of Confluent, a company whose mission is to help other companies use Kafka and adopt modern streaming infrastructure. So welcome, Neha, thank you so much for being here today.  
+NEHA NARKHEDE:  Thank you for having me, Kevin.  
+KEVIN SCOTT:  Awesome.  So, I want to start with your journey through computing.  So, how did you get interested in computers and programming in the first place?  
+NEHA NARKHEDE:  You know, Kevin, I was a very curious sort of self-learner (inaudible) as a child.  And so when I was about eight, my parents bought me my first like personal computer.  And it was sort of unique, you know, in those times back in India to have a computer.  
+And so somewhere deep down I was very appreciative, and then it sort of became like the tool that fueled my curiosity.  So early days was just playing Prince all day and I was big into art, and so I just drew on it with MS Paint or something.  And pretty basic.  And then it taught me, you know, computering, programming and so that was sort of the start of the journey. 
+My dad used to tell me a lot about technology and how it's going to have a huge impact on basically everything we do.  And so that would be a good career bet for someone who wanted to learn so much and create new things.  And so that sort of planted that seed in my head is -- (Crosstalk.) 
+KEVIN SCOTT:  And was your dad an engineer?  
+NEHA NARKHEDE:  He was a mechanical engineer.  And in our family, there were a lot of emerging technologists who moved to the U.S.  And one of my uncles started Cirrus Logic and that went public.  And sort of, you know, started from nothing, right? And so, I sort of saw that journey and thought, "Wow, you know, sitting here, I could actually dream about being

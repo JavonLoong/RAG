@@ -1,0 +1,27 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt  of that must be interesting, so like you can pay really close attention -- 
+
+CHRIS URMSON:  It’s profound.  
+
+KEVIN SCOTT:  -- to stationary things. 
+
+CHRIS URMSON:  Yeah, low-speed things.  You know, you can -- you understand -- you have this whole additional signal that we can incorporate into the classification and, thus, make us more robust and make us react more quickly. 
+
+KEVIN SCOTT:  Fascinating.  So a couple more questions before we go.  So one is like looking forward, like, what’s the thing that you’re most excited about in the autonomous vehicle space?  
+
+CHRIS URMSON:  Aurora, obviously.  (Laughter.) 
+
+KEVIN SCOTT:  Obviously.  But, like, like at Aurora, like, what’s the interesting thing that’s going to happen over the next handful of years? 
+
+CHRIS URMSON:  Yeah, so over the next handful of years, you know, we’re going to get to the point where we have vehicles on the road that we can trust.  And that they’ll be doing -- they’ll almost certainly be in fleet applications and they’ll be driving around.  Big clap here. And I think that’s going to be really exciting. 
+
+Over the next year, there’s a couple things we’re really excited about.  One is we talked earlier about Aurora building a driver, and it’s this platform -- well, because we now have this special LIDAR capability, we’re now confident that we can build vehicles that can drive on the freeway. 
+
+So Aurora spent a lot of time building passenger vehicles -- or passenger vehicle technology.  We’re now going to be moving into logistics and trucking.  And so that’ll be a big thing for us over this next year.  
+
+We’re also going to be putting an awful lot of effort into codifying our safety process.  And kind of convincing ourselves, getting along the road to convincing ourselves that this vehicle really is sufficiently safe that we can trust it out in the world.  And those are two, you know, really big kind of chunks for us over this next year. 
+
+And then, of course, we are going to continue on the core driving technology and moving that -- you know, moving that from, you know, the capabilities we have today to more and more confident driving. 
+
+KEVIN SCOTT:  That’s super awesome.  So, last question. I do all sorts of things that are somewhat orthogonal to software engineering and technology to -- it’s almost like meditation. 
+
+So, like, I -- like, my latest thing is, like, I have access to a machine shop, and I’m, like, doing a bunch of -- bunch of CNC machining, which is incredibly fun and like exactly what I need to get my brain detached long enough from the things that I

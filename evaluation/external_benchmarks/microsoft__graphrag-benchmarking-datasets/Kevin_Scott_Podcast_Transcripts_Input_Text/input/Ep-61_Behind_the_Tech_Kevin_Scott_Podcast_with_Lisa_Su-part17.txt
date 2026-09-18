@@ -1,0 +1,15 @@
+Ep-61_Behind_the_Tech_Kevin_Scott_Podcast_with_Lisa_Su.txt  bets on technology because it does take so long for it to, you know, really play out.
+
+You know, so the fact that Moore’s Law has slowed down has meant that there are different ways to put together chips. Like one of the – probably the most important decisions that we’ve made at AMD, and this was back in the 2014 – 2015 timeframe, was we decided that if Moore’s Law is slowing down, then the better way to put together chips is to really break them up in these things called chiplets, and that was like a really important decision. 
+
+Like, I remember when we made that decision, and I was like, it was almost a bet the company decision, frankly, because you know, we were trying to get a very, very competitive roadmap out there, but the thought process is: this is the future. 
+
+This is the future of how do you put chips together. We have to figure out how to make them smaller because they yield better, they’re much more cost efficient, but the interconnect between them is so important, and so how do you make that happen, and how do you ensure that, from a programming standpoint, you know, it doesn’t affect software too much.
+
+And now, we’ve seen that idea now, on steroids, right? We just, you know, launched our newest AI chip, and by the way, Kevin, thank you so much for being with us at that. You know, it’s like chiplets on steroids, right? It’s like you know, 12 chips stacked on top – you know, sideways, up and down, and all that stuff. 
+
+If you had asked me, 20 years ago, as a semiconductor student, or as a semiconductor engineer, I’m like, this stuff is never going to work, I mean, never going to work. Like, it’s too complicated. It requires too much precision for it to work, at a level of like 150 billion transistors, but that’s the beauty of our industry.
+
+It’s like, you know what? We found a way to make it work. Now, I think, as we look forward, that’s what we have to be looking for, is that there are inflection points in technology which enable you to take the next big step, and making those decisions at the right time are the things that I think about, because you know, you do have these fundamental limitations that are there, in terms of physics, but boy, we have incredibly smart people. You give them a problem, and they figure out, oh, there’s a way to get around that problem. It’s just you have to kind of invest in it.
+
+KEVIN SCOTT: Yeah, well, and so for folks who aren’t chip people, like let me see if I can try to explain what you just described, and you can correct me where I get it wrong. So for

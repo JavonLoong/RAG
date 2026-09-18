@@ -1,0 +1,23 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt , I think everybody -- like, most everyone who grew up reading sci-fi like wanted to make AI.  Like, this is kind of -- it just feels like we're all in this inevitable path, and that's where it's going.  And it's like the most interesting thing to work on, but it just didn't feel like there was an attack factor.
+
+And then in 2012, it started to work.  And then, in 2015, which was when we started talking about creating OpenAI -- we started in early '16 -- it felt like not only was it going to work, but might work much better and much faster than we thought because there had been this one trend of just scale things up that kept working.  And again, this has been, like -- I mention it's been, like, the central learning of my career.  The asterisks to that, though, is that humans have not apparently evolved well to guess how exponential curves are going to play out.
+
+KEVIN SCOTT:  Yeah.
+
+SAM ALTMAN:  And so, when you scale these things up, if they're getting -- like, you know, doubling every year, in the case of AI, maybe 8 X in every year.  We don't have good intuition for that.  And so, people are never bullish enough if the curve is going to continue.    
+ 
+KEVIN SCOTT:  Yeah.
+
+SAM ALTMAN:  And so, it was like, huh, maybe this is really going to work.
+
+KEVIN SCOTT:  But AI is -- AI is like a tricky -- a tricky thing, you know, in the sense that we -- the term artificial intelligence, like, wasn't really coined until the Dartmouth workshop in, what, '55, '56?
+
+SAM ALTMAN:  Something like that, and they thought they were going to get it done that summer.
+
+KEVIN SCOTT:  Oh yeah, they were completely convinced.  Like, if you read those documents, like, they had this list of things and they were just sort of convinced that the progress was going to be much faster than it actually was.  And like, we have had a couple of booms and busts now, you know, where you can actually go to Wikipedia and look up AI Winter, and like, the bust has a name. 
+
+SAM ALTMAN:  Yup.  
+
+KEVIN SCOTT:  So yeah, one of the things -- and I'm just, for what it's worth, like, I am a -- I'm in the optimist column here.
+
+SAM ALTMAN:  Booms and busts are the way of the world.  Like, you know, we talked earlier about startups.  Like, we've got a lot of booms and busts there, but the curve, though it squiggles, if you zoom out enough

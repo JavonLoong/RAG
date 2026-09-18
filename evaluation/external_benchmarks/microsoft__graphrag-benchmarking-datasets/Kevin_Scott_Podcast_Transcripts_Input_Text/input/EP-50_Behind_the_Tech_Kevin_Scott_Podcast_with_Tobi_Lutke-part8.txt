@@ -1,0 +1,13 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt  improving on. It’s like the unacknowledged meta skill of all the most successful people on planet Earth. And I think it’s – it’s really that. Like it’s so – it, it just – once you look for it, it’s really stunning. Like it’s – it’s, you really do not hear stories of extremely successful people who are absolutely set in their ways, and it’s – it’s, it’s – it’s a fascinating – At least, okay, you can probably find some people in some areas, but like, very unlikely to find this in – in anywhere close to where you make things.
+
+KEVIN SCOTT: Yeah, so I want to go back to this thing that you mentioned a few minutes ago, which is this idea of apprenticeship, which I think is very, very powerful, and so my experience with this, as a programmer, was I always did my academic work and my programming work side by side, but they were relatively separate from one another.
+
+So like, I would have a side job where I was, you know, writing firmware for industrial controllers, or I was helping someone build an internet site. Like this is all back in the early ‘90s, and then I would go study computer science at school. And like it was always confusing to me that they were as separate as they were. 
+
+And I even remember, when I left my PhD studies to go join Google, I probably got more benefit, in terms of developing my craft as a programmer, that first six months at Google than anything else I did the rest of my programming life, and I, it really was an apprenticeship. So like it was the special thing about the culture at the time is that your peer engineers valued spending their time in code reviews, and like writing good documentation for the things that they were producing for building things in a way, like a first-order bit of their job was making a thing that someone else could reuse.
+
+Like they were all, like teaching me how to be a better engineer, and I wonder how you think about that at Shopify, because – like you, you sort of run your company as someone with programmer mindset, which I find very fascinating.
+
+TOBI LÜTKE: Yeah, I mean, the concept of – I have tried to reproduce the concept of apprenticeship because I love it as well, although it requires sort of a double opt in, which is hard to manufacture, I’ve found. We had limited success with this, but we did have some, but it – there is a bit of a cultural norm.
+
+I mean, the first thing about – vocational system in Germany, that’s really hard to replace. It’s just that it’s extremely parent compatible, right? Like parents are like, you know, "Godspeed. Go, go, go into the crafts, make – do your honest work," and after apprenticeship also, you can go back to university

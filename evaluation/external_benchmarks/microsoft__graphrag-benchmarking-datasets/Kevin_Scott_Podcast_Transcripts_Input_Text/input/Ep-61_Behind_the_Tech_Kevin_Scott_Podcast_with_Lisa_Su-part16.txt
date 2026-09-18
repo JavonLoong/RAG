@@ -1,0 +1,15 @@
+Ep-61_Behind_the_Tech_Kevin_Scott_Podcast_with_Lisa_Su.txt ’t say that," and I’m like, "Yes, you can." You know, "Yes, you can." You can absolutely do incredible things and people will be glad to help you along the way.
+
+Of course you have to be good, of course you have to work hard. All those things are true, but I think it’s just good to encourage people that, yeah, you can do some – some amazing things. 
+
+KEVIN SCOTT: Yeah, I could not agree more with that advice, like telling people that you have permission to be ambitious, and you should advocate for your ambitions, is so, so important. It’s crazy to me how many people don’t do that, or like don’t have a clear sense in their head of what their ambition actually is. 
+
+So you have, just in your time at AMD, like seen a pretty incredible, like set of developments in the semiconductor industry, so like, you know, we continue to make just amazing improvements in process technology, you know, like I know, since I’ve been, like a professional computer scientist, which is, a very long time now. People have been talking about the end of Moore’s Law, and yet we – you know, we continue to – I mean, like Dennard Scaling is done, right, but we have been able to figure out how to, like economically get more and more compute, over time, and we have, you know, figured out how to put that compute to use for crazy things, like the whole mobile ecosystem, like what you can do today with PCs, like what you can do with high-performance computing for scientific workloads, and like now all this AI stuff.
+
+So you know, I wonder, you know, over your 12 years, like what you think are the most interesting trends.
+
+LISA SU: Yeah, you’re absolutely right. You know, Moore’s Law, I mean, we’ve been talking about Moore’s Law either slowing down or ending for the longest time. It really hasn’t. It has slowed down, but it has – also, you know, allowed us to kind of think differently about how we put chips together.
+
+By the way, Bob Dennard was like, you know, one of my heroes, as a young engineer, and I think what we’ve learned through this process is – you know, I often say, to my teams and others, that it’s so important to make the right bets on technology because it does take so long for it to, you know, really play out.
+
+You know, so the fact that Moore’s Law has slowed down has meant that there are different ways to put together chips. Like one of the – probably the most important decisions that we’ve made at AMD, and this was back in the 2014 – 2015 timeframe, was we decided that if Moore’s Law is slowing down, then the better way to put together chips is to really

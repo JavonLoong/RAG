@@ -1,0 +1,37 @@
+EP-07_ Behind_the_Tech_Kevin Scott_Podcast_with_Dio_Gonzalez_TRANSCRIPT.txt  the mixed reality research group at Unity.  
+
+KEVIN SCOTT:  I -- (Laughter.) 
+
+DIO GONZALEZ:  So we just created it.  And then came here.  
+
+KEVIN SCOTT:  And so what sparked that excitement for you?  Like, why do you think mixed reality is interesting? 
+
+DIO GONZALEZ:  I believe that mixed reality is the one that has the potential to really affect our daily lives, our day-to-day lives.  Because it's going to be integrated into everything that we do. 
+
+KEVIN SCOTT:  What -- what's an example? 
+
+DIO GONZALEZ:  So, I have several examples.  And what I always think is the best ones are the ones that are useful for us.  So, I was saying, "Oh, yes," yesterday, in talking with one of the researchers here, I was -- I was telling him that one of my dream uses of mixed reality is for, you know, it happens a lot -- in computer graphics, and I many fields that people are very visual. 
+
+And they see things in their head, but it's hard to explain, right?  Many of us that are visual, it's like, "Oh, I can see it, but it's hard to explain." 
+
+So, one of my dream scenarios for mixed reality is that is being able to just immediately translate your thoughts into -- and just to like swipe from your brain to in front the person that you're talking to, and then your visualization immediately comes in front of them. 
+
+So that is something that is useful, you see what I mean?  
+
+KEVIN SCOTT:  Right.  
+
+DIO GONZALEZ:  So, that's -- the other education of course -- because I went through that.  You know when we're like math in college?  
+
+KEVIN SCOTT:  Uh-huh.  (Affirmative.) 
+
+DIO GONZALEZ:  So that when we learn parametric surfaces, you know, and volumes, those are really hard, right? 
+
+KEVIN SCOTT:  Yeah. 
+
+DIO GONZALEZ:  And explaining that in a whiteboard was always tough.  Like I remember my professor with like different colors of markers and trying.  That's a perfect scenario for mixed reality. 
+
+KEVIN SCOTT:  Yeah. 
+
+DIO GONZALEZ:  Right?  The professor actually creating it and then everybody -- all of the students seeing the volume, the surfaces in front of them. 
+
+KEVIN SCOTT:  Yeah.  One of the things that surprised me about mixed reality after I came to Microsoft and started seeing how our customers were using the HoloLens and mixed reality software was that there were these whole audiences of people who, in their work

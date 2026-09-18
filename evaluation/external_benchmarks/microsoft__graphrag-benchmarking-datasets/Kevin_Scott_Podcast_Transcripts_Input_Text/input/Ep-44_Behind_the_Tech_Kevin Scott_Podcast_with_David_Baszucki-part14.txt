@@ -1,0 +1,15 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt  that really long pull thing, which is going to be really hard, but break it down into small steps where you can actually build it, you know, in a hundred small pieces rather than drop shipping something two years out. And so, when those are possible, that makes things a lot more fun because at least you can see the progress to the big thing. 
+
+KEVIN SCOTT: Yeah. Well, I mean, another interesting thing that you all must feel is we live, at least in Silicon Valley, in an eco – and increasingly, I think this is like everywhere, we live in an ecosystem where if you’re really entrepreneurial and like really determined to get something done and you’re working for a company that won’t let you do the interesting, hard things, you just sort of quit, go raise some money, and build the thing yourself. And – but those are exactly the people that you want helping you find the next version of your company. And so, building an environment for them where they can do that hard, ambitious work, you know, for Roblox or for Microsoft or you know, for whomever their employer is, is like just so important. 
+
+DAVID BASZUCKI: Yeah. A really optimistic way of looking at it might be by doing the work to focus on innovation because we believe it’s so important, hopefully it actually makes it a more retentive place for extremely creative, innovative people. 
+
+KEVIN SCOTT: Right. And how do you get people to focus? Because, I mean, one of the things with innovation, you’ve sort of seen this in the crucible of being a startup, is not every hard thing that you can do is a useful, hard thing.
+
+DAVID BASZUCKI: That’s right.
+
+KEVIN SCOTT: And so there has to be some editing process or something in the ecosystem that helps you sort of say, okay, well, I’m – I’m getting signal here like, you know, this thing is good and this thing, not so much. 
+
+DAVID BASZUCKI: I think one thing to look for here is really hard things, when looked at from afar, even as a design document, I think tend to have some kind of a closed loop feedback system where you look at all the components of the really hard thing, and it’s not just hard for the sake of being hard. You can see like, if these hard things work together and we make sure we have all the pieces, we’re going to get a feedback loop. There’s either going to be more user-generated content or we’re going to see an economy that’s self-sustaining or the platforms are going to get safer, like and can see how that’s going to feed upon itself. 
+
+There’s other things I sometimes see that are very hard, but they’re almost like they go off and they don’t close the loop. It’s just like

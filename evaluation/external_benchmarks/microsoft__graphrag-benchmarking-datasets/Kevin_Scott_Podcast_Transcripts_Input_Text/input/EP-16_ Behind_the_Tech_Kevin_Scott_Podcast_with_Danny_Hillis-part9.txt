@@ -1,0 +1,45 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt  he's trying to make it into a personal computer like Alan Kay was doing off in (inaudible).
+
+So, I go down to the basement, and he only comes in at night to do this.  So, I go down in the basement and sure enough, you know, there's Marvin surrounded by a bunch of his graduate students, and they have big wire wrapped boards, and they're working on this thing.  But I'm so awed by Marvin Minsky that I don't really feel like I can just go up and introduce myself.  
+
+So, I sort of hang out and watch the action, and there were some circuit diagrams sitting on the table, and I start looking at these, and I find a mistake in one, and I'm, like, oh, this is my entrée.  So, I go up to Marvin, and I say, "Look, you know, there's a mistake in this diagram."
+
+KEVIN SCOTT:  Do you remember what the mistake was?
+
+DANNY HILLIS:  It was an inversion of a signal.
+
+KEVIN SCOTT:  Okay.
+
+DANNY HILLIS:  It was clocking in a leading edge instead of falling edge.
+
+KEVIN SCOTT:  Yep.
+
+DANNY HILLIS:  So, it was an inversion of a clock signal.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  But --
+
+KEVIN SCOTT:  A good mistake for an 18-year-old to be able to catch, right?
+
+DANNY HILLIS:  Yeah.  Probably 17.
+
+KEVIN SCOTT:  Seventeen, yeah.
+
+DANNY HILLIS:  Yeah, because it was when I first arrived, right.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  And, so I go and he says, "Okay, well, fix it."  And I'm, like, well, what can I do that, and he's like, "No, no, fix it on the machine, you know, fix it in the diagram and fix it in the machine."  So, I did that, and then, so I found another mistake, and I go to him, and he says, "No, no, just fix them when you find them, you know."
+
+And so, after a while, Marvin Minsky just assumed I worked for him, and so that was the start of a very long relationship with Marvin Minsky.
+
+KEVIN SCOTT:  That's great. And so, Marvin was your PhD advisor, right?
+
+DANNY HILLIS:  He was, yes.
+
+KEVIN SCOTT:  Wow.
+
+DANNY HILLIS:  Well, I had a couple of PhD advisors. I had a team of Marvin Minsky, Claude Shannon, and Gerry Sussman. 
+
+KE

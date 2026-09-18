@@ -1,0 +1,12 @@
+EP-05_ Behind_the_Tech_Kevin Scott_Podcast_with_Danielle Feinberg.txt G: Right. Right. Totally. 
+KEVIN SCOTT: Yeah. I think that's one of the big challenges in general with VR. The technology is actually really at an incredible point right now. There are a bunch of really compelling industrial applications, but the consumer applications right now are -- we've got some thoughts about what it could look like. But that's the hard problem I think. 
+DANIELLE FEINBERG: Yeah. The thing that's most exciting about VR, to me, is what you could do in education. And, like, how excited you could get kids immediately and engaged and feed them all the things they need to be learning, but in a way where they were totally engaged. That, to me, is the thing. I can't wait to see more of that stuff coming out. 
+KEVIN SCOTT: So, Danielle, I know one of the things that you are really passionate about is mentoring and helping the younger generation of computer scientists get into the field and to prosper. So, tell us a little bit more about that. 
+DANIELLE FEINBERG: years ago, I spoke at this girls' math and science camp. And I talked to them about how we made the films at Pixar and all the math, science, and code behind it. And it was amazing to see their eyes light up when I told them about it. It was kind of like when I was sitting in that college class. And so it's turned into my passion thing. I spend almost all of my free time running around giving talks, talking about the STEM behind our movies and trying to get kids excited about that stuff. 
+KEVIN SCOTT: Yeah. And I think that's how I first became aware of you. I was watching one of these documentary films. And I'm, like, "Oh, who is this enthusiastic person?" (laughter) And then we met at Grace Hopper, where you sat for a portrait session for Behind the Tech. 
+Yeah, I've been an enormous fan ever since. You are quite a role model to many young computer scientists. And do you have particular things that you're actively pushing on in education, other than VR, that you think would be super beneficial? Because, you know, in a sense, you almost got an ideal path through our educational system. 
+DANIELLE FEINBERG: Yeah. Yeah. 
+KEVIN SCOTT: And, like, my god, what if we could give that to every child who had interest and potential? 
+DANIELLE FEINBERG: That would be amazing. 
+KEVIN SCOTT: Yeah. 
+DANIELLE FEINBERG: Well, I do have an agenda. I want them to see how exciting computer science is. And how exciting math and science are. So that, you know, when I was in my classes in college, I was

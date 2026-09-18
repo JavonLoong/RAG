@@ -1,0 +1,19 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt  I'm a firm believer in augmentation.  So, take for example the parallel of what's happening in the medical industry.  Medical research is advancing far faster than any doctor could possibly read, especially if they're actually a practitioner. 
+
+So how do we give them the tools to be able to consume all of that information, augment their knowledge, search effectively, et cetera?  That's a power of technology.  So you want two things there:  You want the ability for the networks of doctors to be able to riff with each other, bounce off of each other, understand differences, and you want their augmentation. 
+
+And so, I'm living this — I'm on the board of an organization called Crisis Text Line.  And Crisis Text Line is a service that allows people to text in via their phones when they're in a crisis and they need support. 
+
+And they communicate with trained counselors who are mostly volunteer who help them through right and get them support in different ways.  You know, when we're dealing with an act of suicide, make certain that they are safe. 
+
+And what's powerful about this work is because it's all in text, it's left traces.  And so, we're having this crazy conversation because what mental health institution has a million conversations?  What single, you know, psychologist has had a million conversations that they can draw on to make decisions? 
+
+So, we're trying to figure out how do we augment all those counselors?  First, we have them coordinated within an environment where they can talk so they can say, “I'm seeing this, this is the conversation I'm having, does anybody have any ideas of how to move forward?”  
+
+And they're able to pull on the corpus of data to try to pull out information.  What could be a next move?  And, again, it's not about decision-making, it's not about automating interventions.  It's about empowering human decision-makers, human interactants, who can actually go out there and be, like, I am going to help you with as many tools in my pocket as I can possibly pull on right now to make a difference. 
+
+KEVIN SCOTT:  But, you know, again, I think that's a really good illustration of this quandary we've got with data, where like I can imagine all sorts of things where you use the data in the right way and you're literally going to save lives and like have this huge positive impact in people's lives. 
+
+If it gets used the wrong way, like you — you know, if it gets disclosed, like it compromises the trust in the system, and then people stop using the system like if it — you know, you don't want people making employment decisions based on this or like insurance — access to insurance decisions.  
+
+And so I think it's one of those places where the burden is just incredibly high right now on getting everything

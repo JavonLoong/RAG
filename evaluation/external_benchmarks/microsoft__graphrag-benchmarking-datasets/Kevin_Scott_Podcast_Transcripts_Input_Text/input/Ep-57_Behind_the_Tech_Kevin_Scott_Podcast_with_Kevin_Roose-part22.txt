@@ -1,0 +1,21 @@
+Ep-57_Behind_the_Tech_Kevin_Scott_Podcast_with_Kevin_Roose.txt  So good job there, Kevin Roose.  
+ 
+But, you know, there was, I think, a lot of concern from some people in the technology community, when that article went out, that this might have like a dampening effect on this generative AI boom that we’ve been seeing. That obviously didn’t happen. 
+ 
+But I wanted to get your perspective. Why were you so open to having a conversation about what this was, being transparent about this is, you know, what happens when the token limit is exceeded and what can happen? Why was that important for you to have that conversation publicly and so soon as it happened, when, I’m going to be honest with you, being a former journalist and working with a lot of PR people, that’s usually not the common PR response to something like this? 
+ 
+KEVIN SCOTT: (Laughter) Well, so there was an interesting technical thing that was going on, that I think was important for people to understand. You know, so the way that these systems work is they basically are just very complicated engines for predicting the next word. And so, when they get to a point where the thing that is being predicted next has a whole bunch of equiprobable outcomes, it just picks one. And if all of those probabilities are very low, so like any sort of next thing that’s coming is like relatively unlikely, like that is how you get these quote/unquote “hallucinations” that people are talking about. 
+ 
+CHRISTINA WARREN: Right. 
+ 
+KEVIN SCOTT: And so, if you have a very long and very unusual conversation with one of these systems, like, it’s not that hard at all to get it to hallucinate, and, you know, say, you know, pretty outrageous things.  
+ 
+And so – 
+ 
+CHRISTINA WARREN: Right. 
+ 
+KEVIN SCOTT: it was learning for us and like, you know, learning that was not a bad thing to have in public that, okay, we never intended for people to have super long, like, super unusual conversations with Bing Chat.  
+ 
+And now we know that they are, like, we’re going to go engineer the system where it won’t produce some of these outrageous things. So that’s one thing.  
+ 
+And then the second thing is, I do think that, you know, as provocative as that conversation was, it had a whole bunch of stuff in it, where, you know, if the nature of the conversation was like, hey, you know, Bing Chat, I would like you to write me a science fiction story, or like a piece of fiction, like, if it was hallucinating inside of that context, it would be completely acceptable. But if someone were sitting in this chat agent, like having a sincere conversation with the system, where they thought all of this was real, you

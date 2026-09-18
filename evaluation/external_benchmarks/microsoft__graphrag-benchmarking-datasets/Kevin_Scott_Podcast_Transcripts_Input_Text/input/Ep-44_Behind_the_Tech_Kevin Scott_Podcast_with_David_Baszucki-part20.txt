@@ -1,0 +1,24 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt  So super fun stuff there. 
+
+I think we’re really getting into how do we do voice in a safe and civilized way because it’s ultimately a big part of what we’re going to do. Syncing facial animation, either automatically with the camera, with lip synching, is going to bring a next level of life to these platforms, as long as it’s once again done in a safe and secure way. So that’s, super interested about that. 
+
+Interested in ROS scale. Interested in our internal version of Lua, which is Typed. We’ve open source that. And so we’re interested in efforts to have people use that in education, and nudge, nudge, of course, help our developers be very productive in the creation of that, which is something you guys are really good at. So just a lot of fun stuff.
+
+Because we built such a high quality Lua engine, I mean, the feature I want to see is cloud compilation of our Lua. So, you know, behind the scenes you have both the flexibility of an interpreted language, but once that thing starts running in the cloud, it’s running even ten times faster. So that’ll be very powerful. So just a lot of fun stuff. 
+
+KEVIN SCOTT: Yeah. I mean, it does sound like you have a pretty special environment where you get to work on interesting problems across the full gamut of computer science, which is just a ton of fun.
+
+DAVID BASZUCKI: Totally. Totally. 
+KEVIN SCOTT: So we are almost out of time. And the last question that I like to ask everyone, you know, you’re the CEO of a public company. Like you’ve got thousands of employees, you know, tens of millions of daily active users. So you’re a pretty, pretty busy guy. 
+
+But I like to ask everyone what they do in their spare time. Like, so when you’re not doing Roblox, like, what do you do that is interesting to you? 
+
+DAVID BASZUCKI: Yeah, it’s, it might sound actually really boring because the things I do when I’m not at Roblox involve family, friend connections, social balance, personal health, fitness, decompression. And I’d say, whereas I try to keep Roblox as the hobby I would want to do, so, you know, I try to – it’s almost like I try to keep the rest of my life organized enough and happy enough and keep my head on straight enough so that I can then make Roblox kind of my hobby and my work at the same time. 
+
+KEVIN SCOTT: That is a really great way of looking at life. 
+
+Well, so thank you so much for taking the time to chat with us today. This has been a really awesome conversation, David.
+
+DAVID BASZUCKI: Thank you. Kevin. Thank you for having me. 
+
+[ANIM

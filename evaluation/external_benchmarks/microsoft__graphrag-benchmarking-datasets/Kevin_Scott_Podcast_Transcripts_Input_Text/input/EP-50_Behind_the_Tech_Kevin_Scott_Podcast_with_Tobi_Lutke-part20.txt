@@ -1,0 +1,15 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt  like, some multi–terabytes of synaptic bandwidth. 
+
+So, if you encounter a problem that can be solved by a single person, the speed of communication internally to the brain to, like, having – to even just one other person is just, like, magnitudes different. This is why you have ultra–efficient people, if people have a range to solve all aspects of a problem. Now, of course, this is sort of… you know, sometimes it’s getting rarer, that that happens, although hopefully, we’ll stage a comeback. 
+
+Now if you add people just because, hey, we need at least three people so that, you know, if anyone goes on vacation kind of thing, then… and the problem could have been solved by one person, now there’s two people who are there to slow down one person, really, instead of, like, being an individual doing something really remarkable, the best they’ve got, again. And it’s just kind of not – no one benefits from this other than, like, I don’t know, like, it looks good in a spreadsheet, I guess. So, I think those are real conversations. 
+
+I cut my teeth – like, so after – after learning programming, working at this apprenticeship, one of the coolest things about growing up in Germany and – and in the 90s was this – what was previously referred to as the demo scene, which is really the, this was really pre–Internet. It was super expensive to go on Internet, so we really – we had mailboxes that we downloaded, BBSs. So, but we would have a lot of these LAN parties where, like, on a weekend, 1,000, 500 people would bring their computers. And then it was almost a festival where code was celebrated like a craft. 
+
+So, there was competitions you could enter at, like, four kilobytes, 64 kilobyte and two megabytes, and you just were making art, right? Like, we’re making something that was launched, shown and rated by everyone.
+
+And this is where I learned to really program and, you know, we did all this in Assembler. And we were engaged in a four kilobyte category, which is like the .exe header, the PE header is too large. 
+
+Like, you were making comm files. And you’re like, you’re are not importing anything there. So, it was absolutely incredible, like, just procedurally generating textures, and landscapes and so on, like, programming for the art of it. 
+
+And so, you know, like, I mean, we’re recording this in 20… right at the end of 2022, very different world than it was 12 months ago. I sort of talked about the 2021 energy as sort of the tail end of the boom times. And now, there’s like a 202

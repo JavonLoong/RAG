@@ -1,0 +1,15 @@
+EP-42_Behind_the_Tech_Irma Olguin_Transcript.txt  we’ve had a bunch of candidates come in with really different backgrounds. And I’m glad that I’m not the person who has to go through that, that kind of first, you know, assessment of who gets to the interview stage. And we’ve had so many good people, but they do have these really varied backgrounds. 
+
+And I can’t help but think about the fact that, even a couple of years ago, there are some of these candidates who are amazing and are more than qualified who we might not even let in the door, because they didn’t fit some sort of, you know, resume ideal that we had. What do you think we can do to not let that continue to be such a, I think, artificial barrier when it comes to technology and the tech industry, as a whole, I guess?
+
+KEVIN SCOTT: Yeah, I think it’s a super-good question. And we do I believe, in our assessments, get confused by things. So, like, there’s this potential bit, which I do think is about a whole lot of things that Irma exhibits, and it sounds like what they’re looking for in people who come to work at Bitwise, which is, you know, how do you cope with hard problems. Like, do you give up or do you persevere? Like, what’s in your arsenal of tools for, like, learning new stuff? Do you really have that determination and stick-to-itiveness that it’s just sort of the hallmark of, like, anyone who gets to be expert at anything? And I think that’s more important than actually being an expert at the start of a journey. 
+
+And look, there are, she sort of said, you know, she wouldn’t hire a lawyer who didn’t have a JD. There are things in computer science, and software engineering and tech where, you know, they’re just complicated. And, you know, if you come in without the background, you will struggle longer than you should, you know, or where the struggle ought to, you know, happen someplace else, like graduate school, for instance. 
+
+You know, there are things like trying to correctly implement Paxos, which is like a distributed consensus algorithm, like, that’s really hard crap. Like, you probably don’t want to, you know, get into a system where you’re being asked to implement Paxos for a billion-transactions-per-second-data store, you know, from scratch. But we have to acknowledge that jobs in tech, like coding jobs in tech, are incredibly varied – 
+
+CHRISTINA WARREN: Yes.
+
+KEVIN SCOTT: And some of them need a lot of expertise, and some of them, like, need just skill and potential that you can learn pretty quickly.
+
+CHRISTINA WARREN: No, absolutely. And I would even posit that when it does come to those jobs that need that high level expertise, a lot of

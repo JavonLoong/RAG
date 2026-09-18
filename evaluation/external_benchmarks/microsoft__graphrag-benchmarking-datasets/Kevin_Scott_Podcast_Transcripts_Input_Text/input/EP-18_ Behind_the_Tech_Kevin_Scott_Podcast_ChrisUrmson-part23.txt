@@ -1,0 +1,21 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt  master cylinder is effectively on or off around that.  And with adaptive cruise control, you’re actually wanting to generate pressure itself.  
+ 
+Now, in both of these systems, the redundancy -- so if the electronic system fails, you’re still able to apply pressure through that master cylinder system and so you know, the force of actuating the brakes is coming from your legs.  
+
+If you have a robot driving, if it’s a self-driving car, then there’s nothing applying that force.  And so we need to design new brake systems where there’s you know a parallel system to actuate the force.  
+
+And so this is one of the parts that will become standard on vehicles as we move to automate them.  And similarly around the steering shaft, right, the steering column.  
+
+So the backup in -- if the power steering system breaks, is your arm muscles.  But if you are a self-driving vehicle with nobody grabbing the steering wheel, then we have to come up with an alternative system for backup.  And so it’s, you know, interesting things like dual (inaudible)  motors or second motors.  
+
+KEVIN SCOTT:  And so in addition to like reengineering the cars themselves to have new forms of mechanical redundancy, like you also have to think about how you make the software redundant.  Like, this is one of the things that wasn’t obvious at all to me when I first started learning about self-driving vehicles is I think people have in their imagination that the software is this one monolithic, machine-learned thing that is doing all of the perceiving of the environment and all of the you know sort of driving and reacting to the environmental conditions and like that is not the way the systems are engineered.  
+
+CHRIS URMSON:  Yeah, so you don’t necessarily need to make it redundant, but you need to have a certain level of resiliency in it.  And redundancy is one way that you could implement that level of resiliency.  
+
+And so you could imagine having two teams working kind of in closed rooms and coming up with solutions, or you can do more thoughtful things about how you -- the more thoughtful approach is where you think about how the system can fail and mitigate those to a point where you’ve reduced the risk to the point where it’s no longer unreasonable
+
+One of the benefits we have over aviation is that we’re on the ground.  And so we just need to take the kinetic energy out of the system and bring it to a safe state.  
+
+In aviation, you know, you’ll ultimate take the kinetic energy out, but it’s going to be a very bad day.  So it’s a slightly different problem, and so you probably don’t need the full kind of -- the full degree of redundancy, but you need something where you’re kind of meeting your safety targets. 
+
+KEVIN SCOTT:  And so how do you think about sort

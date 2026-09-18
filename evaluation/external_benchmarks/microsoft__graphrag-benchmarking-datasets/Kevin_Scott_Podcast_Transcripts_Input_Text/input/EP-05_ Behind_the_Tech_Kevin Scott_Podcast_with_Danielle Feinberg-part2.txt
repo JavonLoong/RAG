@@ -1,0 +1,17 @@
+EP-05_ Behind_the_Tech_Kevin Scott_Podcast_with_Danielle Feinberg.txt  goes and puts in all of this crazy work on these film projects. And then the thing that comes out is, by and large, adored by many, many, many millions of people. 
+CHRISTINA WARREN: Well, I can't wait to hear what you two talk about. 
+KEVIN SCOTT: Yeah, so, we will chat later.
+
+[MUSIC] 
+
+KEVIN SCOTT: Coming up next, Danielle Feinberg. Danielle is Director of Photography for Lighting at Pixar Studios. Her love of combining computers and art began when she was eight years old. This eventually led her to a BA in computer science from Harvard. Today, besides making films for Pixar, she mentors teenage girls, encouraging them to pursue code, math, and science. Welcome, Danielle. 
+DANIELLE FEINBERG: Thank you. 
+KEVIN SCOTT: I'm so, so, so excited. (laughter) In some ways, I think you have the best job in the world. Because you get to code, and it's non-trivial, very mathematical coding. And at the same time, you get to indulge your creative side. So, let's talk for a second about lighting. Do you think you could do a little two- or three-minute explanation of what the lighting problem is? 
+DANIELLE FEINBERG: Sure. Because the software is mimicking real life in many ways, if we don't put any lights in, it actually comes out black. Because it looks around the room. Where are the lights? And what color am I going to make these pixels? If we don't put lights in, it comes out black. 
+KEVIN SCOTT: And in some ways, it's really similar to cinema. If you go onto a movie set, you've got these lights. 
+DANIELLE FEINBERG: Absolutely. 
+KEVIN SCOTT: And they know where the shadows are going to fall. 
+DANIELLE FEINBERG: Yes. And it's mimicking all that, but ultimately, we want control. And so we want to kind of harness the power of what are the physics of real-world stuff? But then let me tweak that because I'm making a movie; I'm making art. Our biggest job in lighting is actually to help tell the story. We have a humongous impact on the mood. 
+Now, if you can imagine your favorite film, lit as if it all took place at the DMV. With that horrible overhead, boring, fluorescent light. (Kevin laughs) That's a really different movie than if you put Coco all in DMV lighting, the feel of that movie is completely different. 
+KEVIN SCOTT: Yes. And Coco is a really good example for a great many reasons that would just be impossible to do with classic lighting. 
+DANIELLE FEINBERG: Yeah.

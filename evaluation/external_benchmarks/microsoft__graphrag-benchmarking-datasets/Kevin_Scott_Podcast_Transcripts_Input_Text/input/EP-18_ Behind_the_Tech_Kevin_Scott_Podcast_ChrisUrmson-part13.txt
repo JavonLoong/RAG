@@ -1,0 +1,25 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt , interesting problems.  And they were asking me to come out and lead the team.  
+
+I thought, well, you know, and initially it was a two-year gig, the idea was we’d come out, see what we could do for two years, and you know, it’s kind of like the Dread Pirate Roberts you know, a good day today, I’ll probably kill you in the morning, right?  
+
+KEVIN SCOTT:  Yeah. 
+
+CHRIS URMSON:  Like, well, you’re going to be gone in two years.  
+
+KEVIN SCOTT:  Yeah, and I want to like -- I want to draw a line under this, because I think now people probably almost take for granted that Google having Waymo and like all of the self-driving car stuff was just sort of an inevitable consequence of how things were going.  But I was at Google from ’03 to ’07, so I left before you got there.  
+
+You started close enough after my last day that, like, the company -- it was a search and ads company.  And like, the idea that -- I mean you had two things.  You had this company that, like, it wasn’t obvious I think to anyone that they should be building self-drivingcars.  And, like, I’m not saying that in a pejorative way, it’s just, you know -- 
+
+CHRIS URMSON:  It’s not what they did.  
+
+KEVIN SCOTT:  Yeah, it’s not what they did.  And the state of the technology was also nascent enough where it just wasn’t obvious that commercially, like, you could make a profit on any of this stuff -- on any sort of reasonable time horizon. 
+
+And so, them having the idea to do that and you sort of saying this would be a cool enough thing to do to take -- 
+
+CHRIS URMSON:  A sabbatical, yeah.  
+
+KEVIN SCOTT:  -- take a sabbatical from my tenure-track job at the number-one computer science program in the -- I mean, that required a lot of courage all the way around. 
+
+CHRIS URMSON:  Yeah, no, and it was -- yeah.  And it was a big decision because, like, this was the thing that I had aspired to for the last seven years.  And it wasn’t obvious that it was a good idea.  But it seemed like, you know, it -- my wife and I, we just had our first son, and our second. 
+
+And we were thinking, well, I’ve got this opportunity here, but you know, we could go try California for a couple years.  You know, it’s where the crazy people with the Birkenstocks are.  So, you know, if we’re going to go, we may as well go give it a shot now and

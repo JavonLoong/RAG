@@ -1,0 +1,16 @@
+EP-10_ Behind_the_Tech_Kevin Scott_Podcast_with_Surya_Ganguli.txt aton Zummer?
+KEVIN SCOTT:  Yeah.  (Laughter.)
+SURYA GANGULI:  Yeah, I was in classes with him.  Yeah, a super fun guy.
+KEVIN SCOTT:  (Laughter.)  And, like, he did absolutely nothing with string theory at Google.  But he was, like one of the more interesting and brilliant people I've had the --
+SURYA GANGULI:  It's great training.  And to be honest with you, if I had to do everything over again, I would still do a PhD in string theory as well.
+KEVIN SCOTT:  That's interesting.  And string theory's like a little bit out of, out of vogue right now, or is that a controversial thing to assert?
+SURYA GANGULI:  It's evolving, actually.  I mean, I still talk to the Stanford string theorists, to some extent, and there's very interesting ideas about holography and tensor mathematics.  And now, applying string theory quantum condensed matter systems in ways that, like you can take table top quantum condensed matter physics experiments and describe them using a dual viewpoint using general relativity.   And that, that idea came out of string theory.
+KEVIN SCOTT:  That's super interesting.
+SURYA GANGULI:  Yeah.
+KEVIN SCOTT:  So, so PhD in string theory.  Then what?
+SURYA GANGULI:  Yeah, so you know, I kind of had a battle in my soul between do I want to become a pure mathematician or a scientist, right?  If I stayed in string theory, I worked on the more mathematical topics in string theory.  
+
+But part of me always wanted to connect to nature.  Everything was driven by understanding, you know, nature, right? And I didn't feel like I could really connect to nature in string theory.
+So, I took my first course in computational neuroscience at the end of my PhD.  It was a fascinating course taught by great professors at Berkeley, Yang Dan and Frederick Tunison,  Bruno Olshausen, who discovered sparse coding, which is, you know, foundational in machine learning now.  
+And it was an amazing course.  It was all about reverse engineering the brain, trying to understand it, and so on.  And I just completely fell in love.  And that was what my freshman kind of soul was yearning for.  And I only discovered it at the end of the PhD and then, I couldn't even look back.  That's what I did all my post-docs in.
+KEVIN SCOTT:  It’s sort of interesting.  I mean, I was watching the talk that you gave at the launch of the Human-Centered AI Institute at Stanford.  And you said this thing that I think is really one of the impediments

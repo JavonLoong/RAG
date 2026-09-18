@@ -1,0 +1,17 @@
+Ep-52_Behind_the_Tech_Kevin_Scott_Podcast_with_Bill_Gates-qc.txt , the reasoning is a sort of linear chain of descent through the levels. And if simplification needs run ten times, it probably won’t. 
+
+So math is a very abstract type of reasoning, and right now, I’d say that’s the greatest weakness. Weirdly, it can solve lots of math problems, and there are some math problems where if you ask it to explain it in an abstract form, make essentially an equation or a program that matches the math problem, it does that perfectly, and you could pass that off to a normal solver. Whereas if you tell it to do the numeric work itself, it often makes mistakes. 
+
+And it’s very funny because sometimes it’s very confident that, hey – or it’ll say, oh, I mistyped. Well, in fact there’s not a typewriter anywhere in this scene. So the notion of mistyping is really very weird. 
+
+And so, whether these current areas of weakness, it’s six months, a year or two years before those largely get fixed, so we have a serious mode where it’s not just making up URLs, and then we have a more fanciful mode, there’s some of that already being done largely through prompts and eventually through training. And training it for math, there may be some special training that needs to be done. 
+
+But these problems I don’t think are fundamental. And there are people who think, oh, it’s statistical, therefore it can never do X. That is nonsense. Every example they give of a specific thing it doesn’t do, wait a few months and it’s very good. 
+
+So characterizing how good it is, the people who say it’s crummy are really wrong, and the people who think this is AGI, they’re wrong. And those of us in the middle are just trying to make sure it gets applied in the right way.
+
+There’s a lot of activities like helping somebody with their college application, what’s my next step, what haven’t I done, I have the following symptoms, that are, in fact, far within the boundary of things that it can do quite effectively. 
+
+KEVIN SCOTT: Yeah, well, I want to talk a little bit about this notion of it being able to use tools to assist it in reasoning. And I’ll give you an example from this weekend with my daughter. So my daughter had this assignment where she had this list of 115 vocabulary words, and she had written a 1,000 word essay. And her objective was to use as many of these vocabulary words as she reasonably could in this 1,000 word essay, which is sort of a ridiculous assignment on the surface, right? 
+
+But she had written this essay and she was going through this list trying to manually figure out like what her tally was on this vocabulary list, and it was boring. And she was like, all right, like, I want the shortcut here. Like,

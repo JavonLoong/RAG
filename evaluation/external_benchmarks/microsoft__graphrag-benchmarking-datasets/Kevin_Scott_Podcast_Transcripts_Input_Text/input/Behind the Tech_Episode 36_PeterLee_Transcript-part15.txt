@@ -1,0 +1,33 @@
+Behind the Tech_Episode 36_PeterLee_Transcript.txt :  Yeah. And a bunch of these computations, like the way that you express some of them looks very functional and like there, a bunch of like functional language compilation ideas that are useful now as well. 
+
+PETER LEE:  Yeah.
+
+KEVIN SCOTT:  It’s really interesting. 
+
+PETER LEE:  It is. Well, in fact, it is functional. I mean – 
+
+KEVIN SCOTT:  It is.
+
+PETER LEE:  – you’re operating over some – some large network. And you know, each one of these stages is referentially transparent. You can, you know, remove one stage and replace it with another one, and there’s a modularity there, which is purely functional. 
+
+KEVIN SCOTT:  Yeah, and look, it may be the most effective demonstration of the power and the promise of functional programing that anyone has ever had. Because the beautiful thing about these machine learning training programs that you express in something like PyTorch is they’re short, they’re functional, and they are brief and concise, and you understand exactly what they’re saying. It’s not like you’re writing hundreds of thousands of lines of imperative code to build a transformer. 
+
+PETER LEE:  Right.
+
+KEVIN SCOTT:  It’s like usually a few hundred or a very small thousands of lines of code that you’re writing. 
+
+PETER LEE:  I find it really interesting for people who are working in the cutting edge of machine learning and AI, they have to be multilingual today in terms of programing languages. They have to have a facility to work back and forth between the mathematics and the algorithms and the system’s kind of architecture, kind of all at the same time. And then increasingly, they have to be sensitive to fairness and –
+
+KEVIN SCOTT:  Yes.
+
+PETER LEE:  – you know, ethical issues. 
+
+And you know, if you just think about the, you know, the growth that a human being has to go through to be able to kind of think through that span of things, it’s no surprise that those people are rare today. Hopefully, they’ll become much less rare five years from now, but you know, they’re kind of hard to find. 
+
+And it’s also no surprise that more and more of the most brilliant minds on the planet are drawn to this field. 
+
+KEVIN SCOTT:  Yeah.
+
+PETER LEE:  It’s not just the goal of artificial intelligence, but it’s the fact that it kind of covers all of these different things to think about in such a wide span. It just attracts a certain type of brilliant mind.
+
+KEVIN SCOTT:  Well, and I think it also points to how important it is to have a computer science education for either undergraduates or graduates where you really are getting people exposed to a very wide range of ideas

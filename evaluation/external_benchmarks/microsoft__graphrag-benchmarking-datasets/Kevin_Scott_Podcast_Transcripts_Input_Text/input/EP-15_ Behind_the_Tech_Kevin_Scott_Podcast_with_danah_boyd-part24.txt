@@ -1,0 +1,19 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt  about it, and how to implement, which is, like, everything from business to policy, et cetera.  
+
+You need people around you saying, "And what if this goes wrong?"  You need to be doing this in networks, in communities, and you need to be thinking with all of the different, affected communities, or the people that you're trying to really engage and create possibilities, because they need part of that conversation. 
+
+And I think, you know, one of the weirdest things right now, as I'm, you know, trying to do this exercise in coordination around differential privacy, it's like the technology will get there, hopefully as fast as we need it to. But it will get there.  
+
+But we need that buy-in process. We need people understanding it.  We need people really embracing and figuring out how to make it work, or we're going to end up in a weird moment where we have this beautiful object sitting on a shelf that we're going to look back, you know, 15 years, and go, "We had it.  Why didn't we put it out there?"  
+
+And so, that's where it's like, as you're thinking about the goodness, think not just about, like, the goodness, you know, of that, but like, how to actually build your teams and your communities in ways that actually can make this really be part of it.
+
+And I'll say, one of the most powerful things that I learned from an old mentor is that there is nothing more successful than getting a community to think it's their own idea, right?  And so, this is one of those moments where, as an industry, we've gotten into a bad habit of telling people what the future should be, rather than inviting them to co-construct it with us.
+
+KEVIN SCOTT:  Correct.  Right.
+
+danah boyd:  And that co-construction, I think, is what we need to make all of those beautiful things that we can imagine in our minds become truly real.
+
+KEVIN SCOTT:  Yeah.  Totally, totally agree.  So before we run out of time, so for all of the little danah boyds running around right now, thinking about what they're going to be when they grow up, and like, for the moms and dads of those kids who are thinking about their future, what advice would you give to them?
+
+danah boyd:  Yeah, I mean, so one of the things I always struggle with is this weird pragmatism and idealism, right, which is that, you know, we often talk about going and learning technology because it's pragmatic, because it's, like, the way of getting a job, and that actually doesn't get us there.  Part of it, for me, it's like switching, like, what is the idealism?  What's the

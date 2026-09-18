@@ -1,0 +1,25 @@
+EP-08_ Behind_the_Tech_Kevin Scott_Podcast_with_Jason_Lanier_TRANSCRIPT.txt  he's been a session musician. 
+
+And, like, this is on top of him being, like, one of the best computer scientists in the world.  Like, one of the best writers in the world, one of the best, like, philosophical thinkers about our, you know, sort of digital modernity. 
+
+You know, and, and, and, like, I'm not even covering everything.  So, it's sort of unbelievable.  Like, I'm totally jealous.  (Laughter.) 
+
+CHRISTINA WARREN:  I am, too.  I am, too.  Okay, so, without further delay, let's meet our next guest.  
+[MUSIC]
+
+KEVIN SCOTT:  I'm delighted to introduce our guest, Jaron Lanier.  Jaron is a scientist, musician and author best known for his work in virtual reality and his advocacy of humanism and sustainable economics in a digital context.  His 1980 startup, VPL Research, created the first commercial VR products and introduced avatars, multi-person virtual world experiences and prototypes of major VR applications such as surgical simulation.  Some say his mind is as boundless as the Internet. Welcome, Jaron.
+
+JARON LANIER:  Oh, hey, I am so happy to be here.  Thank you for having me here.
+
+KEVIN SCOTT:  So let's talk a little bit about your history.  You are, I say this to many of my guests because I have interesting guests, but you have one of the most interesting careers and like set of life experiences of anyone I've ever met.  So like let's start with you as a kid.  Tell us a little bit about how you grew up.
+
+JARON LANIER:  Oh, my.  Okay, well, my parents were both refugees from antisemitic violence.  My mother was a Holocaust survivor.  My dad's family was mostly wiped out in pogroms in Ukraine.
+
+KEVIN SCOTT:  And your mother like was in a concentration camp.
+
+JARON LANIER:  Yeah.  Yeah.  She was taken at 13.  Well, we can talk about the stories, but they're truly just horrible, beyond understanding.  And my parents met in the Bohemian New York of the 1950s and I was born in '60 in Harlem Hospital.  And they immediately fled.  And I think the idea, although I never really got a clear answer from them, is that they wanted to be as far from civilization as possible but not so far that they weren't next to a good university.
+
+So they ended up in Southern New Mexico. 
+
+JARON LANIER:  And I would catch a bus across the border every day because there were better schools in Mexico. 
+KEVIN SCOTT:  And what was the strength of the schools back then,

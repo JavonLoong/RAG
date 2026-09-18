@@ -1,0 +1,33 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  a couple, but, like, you know, the folks that I’m – that I work closely with. So, we had Hoop [Somuah], who was Satya’s TA when I became CTO.
+
+WILLIAM ADAMS: Yeah, right.
+
+KEVIN SCOTT: Hoop was from Nigeria?
+
+WILLIAM ADAMS: He’s from Ghana.
+
+KEVIN SCOTT: Ghana.
+
+WILLIAM ADAMS: But yeah, close enough. (Laughter.) 
+
+KEVIN SCOTT: And then, you know, one of our technical fellows, like, the highest individual contributor rank in the entire company is – 
+
+WILLIAM ADAMS: Abolade. 
+
+KEVIN SCOTT: Abolade Gbadegesin. 
+
+WILLIAM ADAMS: Yeah.
+
+KEVIN SCOTT: And so, like, it was really interesting that, like, we had these very senior, like, extraordinarily accomplished engineers from Africa, and, like, you know, like you said, no presence on the continent or, like, engineers there, building things for us.
+
+WILLIAM ADAMS: Right, and they’ve been trying for – that group, Hoop, Abolade, there’s another guy who’s named Bambo, there’s a few others. So, they’ve been trying, literally for 10 years, to convince Microsoft to do engineering in Africa, open up a dev center, something like that. And I kind of got involved with them. And I was, like, “Oh, well, the problem is you’re doing it wrong.” (Laughter.) They would have meetings all the way up and down the executive chain, but they weren’t in a position to actually just go and hire some people, right? 
+
+So, I got involved. And I said, “Okay, let’s go take a trip.” And we went to Nigeria and Kenya in one week, and had all these conversations, talked to a lot of people, and said, “Okay.” I came – I said, “Okay, we’re going to do this.” 
+
+I came back, and I actually went to you and said, “Look, Kevin, I want to do this stuff in Africa. I’m not asking for anything from you. I just don’t want you to say no.” Do you remember that? 
+
+KEVIN SCOTT: Yeah, I do.
+
+WILLIAM ADAMS: And you said, “I’m not going to say no,” right? (Laughter.) And so, I then went on to hire people in Kenya to start, and we actually did it through LEAP. That’s where I got the money from, actually. And then – and this wasn’t the only thing happening at that time. There are other things, but this kind of pushed it. 
+
+The Windows group was already kind of leaning in towards it. And then this – Mike Fort

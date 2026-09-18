@@ -1,0 +1,23 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt  not quite. 
+
+KEVIN SCOTT: Well, and you know, I think yeah, you pointing out that they are in these artificial domains is an interesting thing for all of us to recognize about the state that AI is in right now, and where it is likely to be in the near future. So, I think some of the things that we may think are insulated from encroachment by AI, like a bunch of white collar work, for instance, is actually far more likely to have AI impact it than things like manual labor, for instance. Where, because we haven’t solved these problems where the AI has to interface with the physical world, it just – like, we haven’t even figured out the basic experimentation loop for solving that problem. 
+
+So, like, we can’t iterate there nearly as fast as we can in these artificial domains, where progress is still pretty good. I don’t know whether you would agree with that or not. 
+
+OREN ETZIONI: I think it’s a very rich topic, but I definitely agree with what you’re saying, that the speed of experimentation and iteration makes a huge difference. So if you’re dealing with a robot, say, right? And every experiment that goes awry, you can break a robot arm, or god forbid, hurt somebody, obviously, that slows things down so people work in simulation. Then, the simulation doesn’t necessarily map to the real world. 
+
+Whereas in games, right, with self-play, the computer can play each other and very quickly gather millions of training examples. 
+
+You know, the way I think about this topic is if something is very rote, you do the same thing every time – like collecting tolls or operating elevators, those things are not great jobs, right? I mean, is that really – you know, hopefully we can find people better jobs than those. And those are easy for the machine to do. 
+
+Then, the next level is making binary distinctions, right, or categorizing things. For example, take email, is it spam or is it not spam? When you have a huge number of emails – literally billions – you can train up a really good model that says yes or no. 
+
+But when it’s much more complicated, like how do I design a good podcast? How do I be the CTO of a major company? I think, Kevin, you’ve got job security. We’re not going to be replacing you with a program anytime soon. 
+
+KEVIN SCOTT: I don’t know, maybe that would be nice. (Laughter.) 
+
+OREN ETZIONI: Well, what would be nice is to have a program that helps you, right? 
+
+KEVIN SCOTT: Yeah. 
+
+OREN ETZIONI: So, a lot of the work that we do and a lot of the work elsewhere really can think of AI as “augmented intelligence.” Would you

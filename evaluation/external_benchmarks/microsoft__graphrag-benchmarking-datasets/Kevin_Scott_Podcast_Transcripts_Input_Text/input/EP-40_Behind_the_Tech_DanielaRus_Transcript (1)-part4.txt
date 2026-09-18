@@ -1,0 +1,17 @@
+EP-40_Behind_the_Tech_DanielaRus_Transcript (1).txt  the machine in the process of generating autonomous behavior. And I started working on algorithms for computing that interacts with the physical world. I did not have much of a chance to – to think about different types of robot bodies, but I was thinking about what a different kind of robot could, in principle, do. 
+
+So, I worked on in-hand manipulation, so essentially moving things with your hands. I learned on pushing objects, on rotating objects, on moving furniture. I developed a lot of algorithms that connected computation with the actual movement of the object. And so, even though I could not solve the coffee challenge – (laughter) – I was able to work on various aspects of fine manipulation, planning for dexterous manipulation and multi-robot manipulation. 
+
+And it really turned out that the theory was hard and the experiments were even harder. And in fact, the robots couldn’t really implement the theory. We had these results in theory, but we had no robots that could implement them. 
+
+And – and so, after that, I became very interested in the connection between body and brain as a way of solving the kind of computation for interacting with the physical world problems that are so prevalent in the field of robotics. 
+
+So I want to tell you one more thing about that. So, get this. So, some years later, maybe about two decades later, let’s just say  the robots became more dexterous and their computation and the set of algorithms became richer. And then it was my turn to give my students the coffee challenge. 
+
+And so, when I said, “Hey, can you make me a robot that would bring me coffee?” they said, “Sure thing.” And it only took a little bit of time to tackle the sort of version of the coffee challenge. They didn’t really solve the whole thing, but they certainly solved way more than I could when I was a student. And so, interestingly, it took over 20 years for the hardware and computation to be able to deliver on the kind of operations required by dexterous manipulation. And we are not even fully there yet. 
+
+And I would say that the biggest problems, the biggest technical challenges require this kind of time horizon, require this long ramp to go from science fiction to science and then to reality. 
+
+KEVIN SCOTT: Yeah, it’s so interesting. I think what you have been working on over the years is one of the things that still fascinates me, because if I think about how I might go, solve the – or try to solve the coffee challenge, if I were a graduate student now, I would probably strap one of these commodity six axis robotic arms. I would 3D print a custom end effector for it. I’d put it on some sort of mobile cart. 
+
+And it feels to me a little bit like that’s sort of cheating, right? That’s still not the dexterous manipulation of objects that

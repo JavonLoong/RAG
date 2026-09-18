@@ -1,0 +1,12 @@
+EP-13_ Behind_the_Tech_Kevin_Scott_Podcast_with_Sam-Altman.txt  -- YC is a, at this point, extremely powerful force in the ecosystem, probably the most powerful force in the startup ecosystem.  And so, the ability to change norms or sort of the Overton window of the kinds of companies you can invest in, or help a lot of people at once, was cool.  And the network is so powerful.
+Like, the central learning of my career so far has been you should almost always scale things up more, and all -- there are all these weird, emergent properties of scale.  Like, this, in AI, it's something we talk about all the time.  But you see this everywhere. 
+And so, I had this theory that -- it was PG's theory, and so I should say that PG had a theory that I believed in, which is that if you scale YC because it is fundamentally a network-effect business, not only is that required because advice and capital are both going to get commoditized, and the only thing left will be the network and the brand.  
+So, you have to scale it for that reason because -- but, but like, if you scale it, there will be all of these difficult to predict, emergent effects from a very large network of all the best startups.  
+KEVIN SCOTT:  So, what's an example of one of these?  
+SAM ALTMAN:  The classic one that sort of investors just can't believe they missed -- other investors -- is that, like, at this point, people feel like a lot of affinity towards YC, founders do.  And so, they will try to buy other YC founders' products.  And so, at this point, if you own an enterprise company, you can get to, like, serious B scale with only other YC companies as your customers.
+KEVIN SCOTT:  Yup.
+SAM ALTMAN:  That's an amazing thing.
+KEVIN SCOTT:  And that's because of breadth, and because, like, you've got this head of companies that are actually really quite big now, right?  
+SAM ALTMAN:  Yeah, and they -- and they feel a lot of allegiance to each other.  And so, they will preferentially work with any other YC company.  Another example is that, like, sort of investors can't mistreat YC companies.  And like, a lot of companies get killed because investors mistreat them.  But people know that, like, the network talks.  And in fact, on this point, you have, like, special software just to -- like, you can look up how their investors have treated YC companies.  And that makes investors treat companies well.
+KEVIN SCOTT:  So, when did you -- when did you start thinking about AI?
+SAM ALTMAN:  Well, as an undergrad.  When I was 18, I made

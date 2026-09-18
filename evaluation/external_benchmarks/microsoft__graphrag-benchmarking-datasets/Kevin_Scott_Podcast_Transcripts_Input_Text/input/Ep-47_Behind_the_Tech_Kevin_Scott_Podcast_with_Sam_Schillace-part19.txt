@@ -1,0 +1,21 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt  miserable, embarrassing failure.” 
+
+SAM SCHILLACE: Right. That’s my least favorite excuse. (Laughter.)
+
+KEVIN SCOTT: Oh, God, it’s the worst.
+
+SAM SCHILLACE: I’m just like, just because you couldn’t do it doesn’t mean I can’t do it, right?
+
+KEVIN SCOTT: Yeah. And so, the interesting thing, we did a whole bunch of things that I think are innovative and, like, some of them are now, you know, multi-$10 billion public companies that spun out of even what LinkedIn was doing. But, like, you know, the core of what we were doing, like, wasn’t rocket science. Like, I had sort of done it a couple of other times in different contexts, and it was just a matter of will and determination, and, like, enough patience to get it all the way over the finish line. 
+
+And I remember going into a meeting with a bunch of people and told them what the plan is. And the plan was uncomfortable because it meant you had to – we literally burned – we went over this bridge from old build and deployment infrastructure to new and burned the bridge behind us. We literally tore the old system down where there was this three- or four-week period in December of 2011, right after we’d gone public, where we did not have the capability to deploy new software.
+
+SAM SCHILLACE: (Laughter.) Yeah, that’s pretty terrifying.
+
+KEVIN SCOTT: Yeah. And so like, you know, I was telling people, you know, what this plan was and, like, why it was important to go do it and what we would get on the other side. And I had, you know, like, a senior person look at me and it’s like, well, you better – you know, you better hope you’re right. Like, it was this personal thing that I was doing. I was like, “No, no, no, I’m not doing this for me. I’m doing this for all of us. Like, we all need to hope that this is right.” (Laughter.)
+
+KEVIN SCOTT: Yeah. The proper response is, “You better, too, right?” (Laughter.) We all better hope we’re right. No, for sure.
+
+KEVIN SCOTT: But yeah, it is my least favorite thing, is, like, somebody telling you that a thing is impossible. 
+
+SAM SCHILLACE: I mean, one of the lessons, the real lesson for me from the early days of Writely which was super valuable was this exact lesson of, like, don’t listen to the naysayers very much, right? Like, and you get this, like, particularly really disruptive things. You know, when you – when you have a product idea and you get it to people, mostly what you get is, like

@@ -1,0 +1,15 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  one of the challenges has just been to how to accommodate all these -- this diverse population.
+
+KEVIN SCOTT:  And how do you do that?  
+
+PERCY LIANG:  It's, it's challenging, there are certain things that, you know, that we try to do, trying to have materials which are presented from kind of slightly different perspectives, and have, you know, review sessions on certain types of topics.  But, honestly, I don't have a, you know, great solution.  We have a lot of TAs who can, you know, help, but it's, I think scaling education is one of these very hard problems.
+
+KEVIN SCOTT:  Yes, like when I was teaching computer science, when I was working on my PhD, the thing that was always super challenging, for me, like I was -- I taught CS201, I think a couple of times, which was -- like at the University of Virginia, it was the first serious software engineering course that you took, or programming course.
+
+And like we had such a broad range of students taking the class that it was, and you would have people who came in who were -- like had years and years of experience, like by the time they got their programming. Like they learned to code when they were 12, and you sort of risk every other thing you were doing, boring these poor kids to death. 
+
+And then you had folks who were like coming in because they were interested in computer science, and like they had almost no background, whatsoever, they never programmed, and like they might not even have the -- you know, sort of the analytical, you know, background that is helpful when you're learning to code. And like that was always a huge challenge for me, and like I don't know whether I was ever any good at it, or not--
+
+PERCY LIANG:  Yeah, I think that if I had much more time, I would kind of sit down and really think about how to best structure this.  I mean, I think the -- I think the way to do it is trying to break things down into modules and making sure that people understand basic things before they move on to more advanced things.  I think when you have these kind of banner courses like AI, people take it, but they don't really --they land somewhere in the middle, and they're trying to figure out things, and it's a much more of a kind of a treading water kind of a situation as opposed to like really kind of building up, you know, building blocks.
+
+KEVIN SCOTT:  So, one of the interesting things that I think has really happened over my career doing machine learning things, is -- in 2003, when you're doing machine learning stuff, like you're more or less starting from scratch, whenever you're trying to build a system, and like now, if you want to do

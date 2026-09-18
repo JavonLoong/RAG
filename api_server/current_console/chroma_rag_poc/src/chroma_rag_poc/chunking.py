@@ -15,6 +15,23 @@ from .text_utils import estimate_token_count, normalize_text, stable_hash
 
 # 项目2 的多级断点标记（优先级从高到低）
 BREAK_MARKERS = ("\n\n", "\n", "。", "！", "？", "；", ";", "，", ",", " ")
+BOUNDARY_METADATA_KEYS = (
+    "passage_id",
+    "passage_title",
+    "section_id",
+    "section_path",
+    "sentence_id",
+    "document_id",
+    "ragbench_id",
+)
+
+
+def _scalar_metadata(metadata: dict) -> dict[str, str | int | float | bool]:
+    return {
+        str(key): value
+        for key, value in metadata.items()
+        if isinstance(value, (str, int, float, bool))
+    }
 
 
 def chunk_records(
@@ -83,9 +100,11 @@ def _chunk_with_title_trigger(
     current_text = ""
     current_pages: set[int] = set()
     current_labels: dict[str, int] = {}
+    active_section_title = str(record.metadata.get("passage_title") or "")
+    record_boundary_type = str(record.metadata.get("boundary_type") or "record")
     chunk_index = 0
 
-    def _flush():
+    def _flush(*, keep_tail: bool = True):
         nonlocal current_text, current_pages, current_labels, chunk_index
         text = normalize_text(current_text)
         if not text:
@@ -94,53 +113,67 @@ def _chunk_with_title_trigger(
         # 如果文本仍然过长，使用多级断点进一步切分
         sub_texts = split_text_with_overlap(text, chunk_size=chunk_size, overlap=overlap)
         for sub_text in sub_texts:
-            text_hash = stable_hash(sub_text)
-            chunk_id = stable_hash(f"{record.record_id}:{chunk_index}:{text_hash}")
             page_nums = sorted(current_pages) if current_pages else [-1]
+            base_metadata = _build_chunk_metadata(
+                record=record,
+                text=sub_text,
+                chunk_index=chunk_index,
+                page_nums=page_nums,
+                block_count=len(blocks),
+                labels=current_labels,
+                source_ext=source_ext,
+                source_kind=source_kind,
+                section_title=active_section_title,
+            )
+            stored_text = _attach_boundary_prefix(sub_text, base_metadata)
+            text_hash = stable_hash(stored_text)
+            chunk_id = stable_hash(f"{record.record_id}:{chunk_index}:{text_hash}")
+            base_metadata["chunk_id"] = chunk_id
+            base_metadata["citation_anchor"] = _citation_anchor(base_metadata)
 
             chunks.append(
                 ChunkRecord(
                     chunk_id=chunk_id,
-                    text=sub_text,
-                    metadata={
-                        "source_file": record.source_file,
-                        "record_id": record.record_id,
-                        "filename": record.filename,
-                        "doc_id": record.doc_id if record.doc_id != -1 else -1,
-                        "page_nums": str(page_nums),
-                        "chunk_index": chunk_index,
-                        "block_count": len(blocks),
-                        "char_count": len(sub_text),
-                        "estimated_tokens": estimate_token_count(sub_text),
-                        "labels": str(dict(current_labels)),
-                        "source_ext": source_ext or "unknown",
-                        "source_kind": source_kind,
-                    },
+                    text=stored_text,
+                    metadata=base_metadata,
                 )
             )
             chunk_index += 1
 
         # 保留 overlap
-        tail = current_text[-overlap:] if len(current_text) > overlap else ""
+        tail = current_text[-overlap:] if keep_tail and len(current_text) > overlap else ""
+        retained_pages = set(current_pages) if tail else set()
         current_text = tail
-        current_pages = set()
-        current_labels = {}
+        current_pages = retained_pages
+        current_labels = dict(current_labels) if tail else {}
 
     for block in blocks:
         # 项目1 核心逻辑：Title 触发新 chunk
-        if block.block_type == "Title" and current_text.strip():
-            _flush()
+        if block.block_type == "Title" and current_text.strip() and record_boundary_type not in {"passage", "sentence"}:
+            _flush(keep_tail=False)
+        if block.block_type == "Title":
+            active_section_title = block.text
 
         # 累积超限时也触发
-        if len(current_text) + len(block.text) + 1 > chunk_size and current_text.strip():
-            _flush()
+        metadata_only_boundary_prefix = (
+            record_boundary_type in {"passage", "sentence"}
+            and current_labels
+            and set(current_labels).issubset({"Title"})
+            and block.block_type != "Title"
+        )
+        if (
+            len(current_text) + len(block.text) + 1 > chunk_size
+            and current_text.strip()
+            and not metadata_only_boundary_prefix
+        ):
+            _flush(keep_tail=True)
 
         current_text += (("\n" if current_text else "") + block.text)
         if block.page_num >= 0:
             current_pages.add(block.page_num)
         current_labels[block.block_type] = current_labels.get(block.block_type, 0) + 1
 
-    _flush()
+    _flush(keep_tail=False)
     return chunks
 
 
@@ -156,31 +189,124 @@ def _chunk_plain_text(
     sub_texts = split_text_with_overlap(record.text, chunk_size=chunk_size, overlap=overlap)
 
     for chunk_index, text in enumerate(sub_texts):
-        text_hash = stable_hash(text)
-        chunk_id = stable_hash(f"{record.record_id}:{chunk_index}:{text_hash}")
         page_num = record.page_num if record.page_num is not None else -1
+        base_metadata = _build_chunk_metadata(
+            record=record,
+            text=text,
+            chunk_index=chunk_index,
+            page_nums=[page_num],
+            block_count=len(record.blocks),
+            labels={},
+            source_ext=source_ext,
+            source_kind=source_kind,
+            section_title=str(record.metadata.get("passage_title") or ""),
+        )
+        stored_text = _attach_boundary_prefix(text, base_metadata)
+        text_hash = stable_hash(stored_text)
+        chunk_id = stable_hash(f"{record.record_id}:{chunk_index}:{text_hash}")
+        base_metadata["chunk_id"] = chunk_id
+        base_metadata["citation_anchor"] = _citation_anchor(base_metadata)
 
         chunks.append(
             ChunkRecord(
                 chunk_id=chunk_id,
-                text=text,
-                metadata={
-                    "source_file": record.source_file,
-                    "record_id": record.record_id,
-                    "filename": record.filename,
-                    "doc_id": record.doc_id if record.doc_id != -1 else -1,
-                    "page_nums": str([page_num]),
-                    "chunk_index": chunk_index,
-                    "block_count": len(record.blocks),
-                    "char_count": len(text),
-                    "estimated_tokens": estimate_token_count(text),
-                    "source_ext": source_ext or "unknown",
-                    "source_kind": source_kind,
-                },
+                text=stored_text,
+                metadata=base_metadata,
             )
         )
 
     return chunks
+
+
+def _build_chunk_metadata(
+    *,
+    record: SourceRecord,
+    text: str,
+    chunk_index: int,
+    page_nums: list[int],
+    block_count: int,
+    labels: dict[str, int],
+    source_ext: str,
+    source_kind: str,
+    section_title: str = "",
+) -> dict[str, str | int | float | bool]:
+    boundary_type = str(record.metadata.get("boundary_type") or "record")
+    passage_id = str(record.metadata.get("passage_id") or "")
+    sentence_id = str(record.metadata.get("sentence_id") or "")
+    boundary_id = passage_id or sentence_id or record.record_id
+    metadata: dict[str, str | int | float | bool] = {
+        **_scalar_metadata(record.metadata),
+        "source_file": record.source_file,
+        "record_id": record.record_id,
+        "filename": record.filename,
+        "doc_id": record.doc_id if record.doc_id != -1 else -1,
+        "page_nums": str(page_nums),
+        "chunk_index": chunk_index,
+        "boundary_type": boundary_type,
+        "boundary_id": boundary_id,
+        "boundary_chunk_index": chunk_index,
+        "section_title": section_title,
+        "block_count": block_count,
+        "char_count": len(text),
+        "estimated_tokens": estimate_token_count(text),
+        "labels": str(dict(labels)) if labels else "{}",
+        "source_ext": source_ext or "unknown",
+        "source_kind": source_kind,
+    }
+    for key in BOUNDARY_METADATA_KEYS:
+        value = record.metadata.get(key)
+        if value is not None and value != "":
+            metadata[key] = value
+    return metadata
+
+
+def _attach_boundary_prefix(text: str, metadata: dict[str, str | int | float | bool]) -> str:
+    prefix = _boundary_prefix(metadata)
+    cleaned = normalize_text(text)
+    if not prefix:
+        return cleaned
+    cleaned = _strip_leading_boundary_headers(cleaned)
+    if cleaned.startswith(prefix):
+        return cleaned
+    return f"{prefix}\n{cleaned}"
+
+
+def _strip_leading_boundary_headers(text: str) -> str:
+    lines = text.splitlines()
+    header_prefixes = ("PASSAGE_ID:", "TITLE:", "SECTION_PATH:", "SENTENCE_ID:")
+    while lines and lines[0].strip().startswith(header_prefixes):
+        lines.pop(0)
+    return "\n".join(lines).strip()
+
+
+def _boundary_prefix(metadata: dict[str, str | int | float | bool]) -> str:
+    lines: list[str] = []
+    passage_id = str(metadata.get("passage_id") or "").strip()
+    if passage_id:
+        lines.append(f"PASSAGE_ID: {passage_id}")
+    passage_title = str(metadata.get("passage_title") or "").strip()
+    if passage_title:
+        lines.append(f"TITLE: {passage_title}")
+    section_path = str(metadata.get("section_path") or "").strip()
+    if section_path:
+        lines.append(f"SECTION_PATH: {section_path}")
+    sentence_id = str(metadata.get("sentence_id") or "").strip()
+    if sentence_id:
+        lines.append(f"SENTENCE_ID: {sentence_id}")
+    return "\n".join(lines)
+
+
+def _citation_anchor(metadata: dict[str, str | int | float | bool]) -> str:
+    source = str(metadata.get("source_file") or metadata.get("filename") or "source")
+    passage_id = str(metadata.get("passage_id") or "").strip()
+    sentence_id = str(metadata.get("sentence_id") or "").strip()
+    if passage_id:
+        return f"{source}#passage={passage_id}"
+    if sentence_id:
+        return f"{source}#sentence={sentence_id}"
+    page_nums = str(metadata.get("page_nums") or "").strip()
+    chunk_index = str(metadata.get("chunk_index") or "0")
+    return f"{source}#pages={page_nums}#chunk={chunk_index}"
 
 
 # ============================================================

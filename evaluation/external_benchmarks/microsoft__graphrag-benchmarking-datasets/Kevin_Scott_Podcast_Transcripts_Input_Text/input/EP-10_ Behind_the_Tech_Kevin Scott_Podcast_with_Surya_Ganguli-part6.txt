@@ -1,0 +1,13 @@
+EP-10_ Behind_the_Tech_Kevin Scott_Podcast_with_Surya_Ganguli.txt  reading chair at home, and when I’m feeling especially energetic, I will grab one of them and, like, try to understand.  And I think, you know, that was one of the geniuses of Feynman is, like, he was so good at relating these, like, very complicated, in many cases, completely non-intuitive concepts in a way that you could understand.
+SURYA GANGULI:  Absolutely.  I love those lectures.  I lived off of those lectures when I was an undergrad.  It was super fun.
+KEVIN SCOTT:  That's awesome.  And so, like, this spark that ignited for you around quantum mechanics and physics sort of led you to pursue a graduate degree in physics, right?
+SURYA GANGULI:  Yeah, on a whim I decided to not go to graduate school in computer science.  I decided to go to graduate school in physics because I felt like it'd be fun.  And on a whim, I decided to do my PhD in string theory because, at the time, it felt like the most fundamental subject in physics.
+KEVIN SCOTT:  (Laughter.)  So, so explain to our audience what string theory is.  Explain to me what string theory is.  (Laughter.)
+SURYA GANGULI:  Yeah, so -- so basically, you know, we have these twin theories, right?  General relatively, which governs the curvature of space, of space and time on cosmic scales.  And we have quantum mechanics, which governs the temporal evolution of the NanoWorld, right, on very microscopic scales.  And there's no one theory that can really unify those together where you can get both gravity and quantum mechanics together.  
+String theory is one where each particle becomes a little string, and different modes of vibration of the string become different types of physics.  Like, one mode of vibration becomes the graviton.  Another mode of vibration becomes photons, and so on.  And so, in a quantum mechanical way, so you can really unify these two things.  And it's a mathematically self-consistent theory.  It's absolutely beautiful and very difficult to connect to experiments.
+KEVIN SCOTT:  Yeah.  One of my colleagues at Google was, had gotten his degree in string theory at Stanford.
+SURYA GANGULI:  Oh, was this Yamaton Zummer?
+KEVIN SCOTT:  Yeah.  (Laughter.)
+SURYA GANGULI:  Yeah, I was in classes with him.  Yeah, a super fun guy.
+KEVIN SCOTT:  (Laughter.)  And, like, he did absolutely nothing with string theory at Google.  But he was, like one of the more interesting and brilliant people I've had the --
+SURYA GANGULI:  It's great training. 

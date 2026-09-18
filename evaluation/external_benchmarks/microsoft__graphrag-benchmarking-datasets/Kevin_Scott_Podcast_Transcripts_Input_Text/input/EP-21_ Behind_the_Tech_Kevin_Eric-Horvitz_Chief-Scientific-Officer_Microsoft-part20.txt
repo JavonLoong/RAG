@@ -1,0 +1,17 @@
+EP-21_ Behind_the_Tech_Kevin_Eric-Horvitz_Chief-Scientific-Officer_Microsoft.txt  topic and think through what the engineering paradigm shifts we might need to design new kinds of robust and predictable functionalities in biological systems. You know, even something like the magic of something like the ribosome. We’ve all learned about the ribosome in basic biology classes. Oh, it’s this interesting coalescence of RNA and protein in a structure that takes symbols and builds effectors and structures. It’s one of these key, we’ll call it a key pivot point of what makes biology “biology.” 
+
+You know, storing up coincidences and insights in long pieces of tape called DNA, the ability to take those codes as they’ve been learned and to transform those codes into structure and function, and then to have experience reencoded through evolutionary processes back into that tape. 
+
+But this idea of a ribosome, you know, what do we understand and what can we better understand about this hinge point between information and the physics of life. I think has a lot to say about many things that we do. 
+
+KEVIN SCOTT: And, you know, the way that you just described that, like, I hope that that is one of the exciting and inspirational things that kids today will sort of see. Like, in fact, if someone had as eloquently described genetics and the mechanism of the ribosome when I was a high school student as you just did. I may have chosen to pursue a different field. 
+
+But I think we are this incredibly inspiring moment where, you know, not only will our kids, grandkids live in a much different world because of what we are able to do with our new understanding of how to leverage biology to help make people healthier and help maybe make our physical world more sustainable, but like I think they actually are going to be the ones who you know take inspiration now on what’s possible, and they’re going to go build this world. And, like, that is super exciting. 
+
+ERIC HORVITZ: Yeah, absolutely.
+
+KEVIN SCOTT: Cool. So, we are just about out of time, but I’ve got one last question that I wanted to ask you, so I’m always interested about what scientists and technologists who are, you know, themselves inherently curious about the world, like, what do you do for hobbies? Like, what’s a thing that people might not know about you? 
+
+ERIC HORVITZ: That’s interesting. Well, I try to get exercise. And people might not know that I’m a Hacker, which is – I just stopped playing, but I’ve been playing ice hockey in the Greater Seattle Hockey League for a number of years on a team called The Hackers. 
+
+It seems that most of our opponents think that we’re actually a different kind of hacker. (Laughter.)  But, so I find it’s -- one place where I turn off everything except really focusing on teamwork and where the puck is and being out of breath and how fit

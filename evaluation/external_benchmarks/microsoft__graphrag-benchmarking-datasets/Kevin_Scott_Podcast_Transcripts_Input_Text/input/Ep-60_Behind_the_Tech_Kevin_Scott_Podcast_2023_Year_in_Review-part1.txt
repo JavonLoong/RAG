@@ -1,0 +1,29 @@
+Ep-60_Behind_the_Tech_Kevin_Scott_Podcast_2023_Year_in_Review.txt ../Behind the Tech with Kevin Scott
+Episode 60 -- 2023 Year in Review
+ 
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.
+
+[MUSIC]
+
+CHRISTINA WARREN: Hello, and welcome to Behind The Tech. I’m Senior Developer Advocate at GitHub, Christina Warren. 
+
+KEVIN SCOTT: And I’m Kevin Scott. 
+
+CHRISTINA WARREN: And here we are, at the end of 2023 already, and what a huge year it’s been in our world. It’s hard to believe how much has changed this past year what with like, the widespread adoption and explosion of AI into the world.
+
+KEVIN SCOTT: Yeah, it has been a crazy and big year. I sort of feel, like, we’re, like, living AI dog years, or something – 
+
+CHRISTINA WARREN: (Laughter.) Yes.
+
+KEVIN SCOTT: Where, you know, I just can’t even believe how much has happened in the past six months, much less the whole year.
+
+So, you know, obviously, this is the you know, in the past 12 months, we’ve had ChatGPT released, we’ve had GPT-4 released. And then we’ve had this crazy explosion of generative AI activity across the board, from Microsoft and OpenAI, and a whole bunch of other companies. Like, it feels very much like, you know, what it’s felt like a couple of times earlier in my career, where, you know, with the PC revolution, or the Internet revolution, or the smartphone revolution, where, like, a big platform thing is happening, and that everybody is excited about it. 
+
+And the smartest and most ambitious people are putting all of their energy into figuring out what this all means for them, and, like, what useful things they’re going to try to go make for other people on top of things that are newly possible. So, it’s a super exciting moment. 
+
+CHRISTINA WARREN: It’s an extremely exciting moment. I’ve been describing this to people for basically a year now. It’s like, this is another iPhone moment, and that only becomes more and more true, I think, all the time. 
+
+And on the podcast this year, it’s been really exciting to hear folks talk about, as you say, what’s been happening now and the stories behind, you know, the years and years of work and research that have gotten us to this

@@ -3,23 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RAG Repository Evaluation Platform</title>
+  <title>RAG / GraphRAG 开源系统评测台</title>
+  <link rel="icon" href="data:,">
   <style>
     :root {
-      --bg: #050914;
-      --surface: rgba(15, 23, 42, 0.78);
-      --surface-2: rgba(15, 23, 42, 0.55);
-      --surface-3: rgba(2, 6, 23, 0.72);
-      --ink: #f8fbff;
-      --text: #c7d2e5;
-      --muted: #8ea0b8;
-      --line: rgba(148, 163, 184, 0.22);
-      --blue: #60a5fa;
-      --blue-strong: #1769e0;
-      --green: #34d399;
-      --cyan: #22d3ee;
-      --amber: #fbbf24;
-      --red: #fb7185;
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --ink: #101827;
+      --text: #334155;
+      --muted: #64748b;
+      --line: #dbe3ee;
+      --line-strong: #c8d3e1;
+      --teal: #0f766e;
+      --teal-2: #14b8a6;
+      --blue: #2563eb;
+      --indigo: #4f46e5;
+      --amber: #d97706;
+      --red: #dc2626;
+      --green: #15803d;
+      --shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
       --radius: 8px;
       --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
       --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
@@ -34,29 +37,14 @@
       min-height: 100vh;
       color: var(--ink);
       font-family: var(--font);
+      background:
+        linear-gradient(90deg, rgba(15, 118, 110, 0.06) 1px, transparent 1px),
+        linear-gradient(rgba(37, 99, 235, 0.045) 1px, transparent 1px),
+        var(--bg);
+      background-size: 36px 36px;
       letter-spacing: 0;
-      background:
-        radial-gradient(circle at 18% 12%, rgba(23, 105, 224, 0.26), transparent 30%),
-        radial-gradient(circle at 88% 16%, rgba(34, 211, 238, 0.18), transparent 28%),
-        radial-gradient(circle at 75% 74%, rgba(52, 211, 153, 0.12), transparent 32%),
-        linear-gradient(135deg, #050914 0%, #08111f 50%, #0e1119 100%);
-      overflow-x: hidden;
     }
 
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background:
-        linear-gradient(rgba(125, 211, 252, 0.055) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(125, 211, 252, 0.055) 1px, transparent 1px);
-      background-size: 42px 42px;
-      mask-image: linear-gradient(180deg, rgba(0,0,0,0.9), rgba(0,0,0,0.12));
-      z-index: 0;
-    }
-
-    a,
     button,
     input,
     textarea,
@@ -64,42 +52,34 @@
       font: inherit;
     }
 
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
     a {
       color: inherit;
       text-decoration: none;
     }
 
-    button {
-      border: 0;
-      color: inherit;
-      background: none;
-      cursor: pointer;
-    }
-
-    .page {
-      position: relative;
-      z-index: 1;
-      width: min(100%, 1720px);
+    .app {
+      width: min(100%, 1680px);
       margin: 0 auto;
       padding: 18px;
-      display: grid;
-      gap: 18px;
     }
 
     .topbar {
-      position: sticky;
-      top: 14px;
-      z-index: 20;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 14px;
-      padding: 10px 12px;
+      gap: 18px;
+      margin-bottom: 14px;
+      padding: 14px 16px;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: rgba(2, 6, 23, 0.82);
-      backdrop-filter: blur(18px);
-      box-shadow: 0 14px 34px rgba(0,0,0,0.26);
+      background: rgba(255,255,255,0.9);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
     }
 
     .brand {
@@ -109,55 +89,160 @@
       min-width: 0;
     }
 
-    .mark {
-      width: 34px;
-      height: 34px;
-      border-radius: 7px;
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
       display: grid;
       place-items: center;
       color: #fff;
-      background: linear-gradient(135deg, var(--blue-strong), var(--cyan));
       font-family: var(--mono);
       font-weight: 900;
-      box-shadow: 0 0 28px rgba(96,165,250,0.32);
+      background: linear-gradient(135deg, var(--teal), var(--blue));
+      box-shadow: 0 12px 24px rgba(15, 118, 110, 0.24);
     }
 
-    .brand strong {
-      display: block;
-      font-size: 15px;
-      line-height: 1.2;
+    .brand h1 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.15;
+      font-weight: 850;
     }
 
-    .brand span span {
-      display: block;
-      margin-top: 3px;
+    .brand p {
+      margin: 3px 0 0;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 13px;
+      line-height: 1.4;
     }
 
-    .nav {
+    .top-actions {
       display: flex;
+      align-items: center;
       flex-wrap: wrap;
-      justify-content: flex-end;
       gap: 8px;
     }
 
-    .nav a {
-      padding: 8px 10px;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      color: var(--text);
-      background: rgba(15, 23, 42, 0.62);
-      font-size: 12px;
-      font-weight: 700;
+    .ghost-btn,
+    .primary-btn,
+    .small-btn {
+      min-height: 36px;
+      border-radius: 7px;
+      font-weight: 750;
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
     }
 
-    .hero {
+    .primary-btn {
+      padding: 0 18px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--teal), #0d9488);
+      box-shadow: 0 10px 22px rgba(15, 118, 110, 0.2);
+    }
+
+    .ghost-btn,
+    .small-btn {
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: #fff;
+    }
+
+    .ghost-btn { padding: 0 13px; }
+
+    .small-btn {
+      min-height: 30px;
+      padding: 0 9px;
+      font-size: 12px;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.58;
+    }
+
+    button:not(:disabled):hover {
+      transform: translateY(-1px);
+      border-color: var(--line-strong);
+    }
+
+    .command {
       display: grid;
-      grid-template-columns: minmax(0, 0.88fr) minmax(520px, 1.12fr);
-      gap: 18px;
-      align-items: stretch;
-      min-height: 610px;
+      grid-template-columns: minmax(280px, 1.7fr) minmax(120px, 0.45fr) minmax(220px, 0.9fr) auto auto;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 14px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      outline: none;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    input,
+    select {
+      min-height: 38px;
+      padding: 0 11px;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--teal-2);
+      box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.14);
+    }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat {
+      min-width: 0;
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.88);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 5px;
+      font-size: 20px;
+      line-height: 1.15;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 330px minmax(0, 1fr) 390px;
+      gap: 14px;
+      align-items: start;
     }
 
     .panel {
@@ -165,792 +250,1201 @@
       border: 1px solid var(--line);
       border-radius: var(--radius);
       background: var(--surface);
-      box-shadow: 0 18px 52px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.04);
+      box-shadow: var(--shadow);
+      overflow: hidden;
     }
 
-    .hero-copy {
-      display: grid;
-      align-content: center;
-      gap: 20px;
-      padding: clamp(26px, 4vw, 54px);
-      background:
-        radial-gradient(circle at 12% 20%, rgba(96,165,250,0.12), transparent 28%),
-        rgba(15,23,42,0.76);
-    }
-
-    .system-label {
-      width: fit-content;
-      color: var(--blue);
-      font-family: var(--mono);
-      font-size: 12px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-
-    h1,
-    h2,
-    h3,
-    p {
-      margin: 0;
-      letter-spacing: 0;
-    }
-
-    h1 {
-      max-width: 780px;
-      font-size: clamp(40px, 5vw, 82px);
-      line-height: 0.98;
-      font-weight: 880;
-    }
-
-    .lead {
-      max-width: 760px;
-      color: var(--text);
-      font-size: clamp(16px, 1.25vw, 23px);
-      line-height: 1.68;
-    }
-
-    .repo-form {
-      display: grid;
-      gap: 12px;
-      padding: 14px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: rgba(2,6,23,0.45);
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 120px minmax(190px, 0.45fr);
-      gap: 10px;
-    }
-
-    .field {
-      display: grid;
-      gap: 6px;
-    }
-
-    .field label {
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .field input {
-      width: 100%;
-      min-height: 42px;
-      padding: 10px 12px;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      outline: none;
-      background: rgba(15, 23, 42, 0.74);
-      color: var(--ink);
-    }
-
-    .actions {
+    .panel-head {
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .helper-note {
-      margin: 0;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.7;
-    }
-
-    .btn {
-      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      min-height: 40px;
-      padding: 10px 14px;
-      border-radius: 6px;
-      background: var(--blue-strong);
-      color: #fff;
-      font-size: 13px;
-      font-weight: 800;
-      box-shadow: 0 14px 26px rgba(23,105,224,0.26);
-    }
-
-    .btn.secondary {
-      color: var(--text);
-      background: rgba(15,23,42,0.74);
-      border: 1px solid var(--line);
-      box-shadow: none;
-    }
-
-    .btn:disabled {
-      opacity: 0.55;
-      cursor: wait;
-    }
-
-    .platform-map {
-      position: relative;
-      min-height: 610px;
-      padding: 18px;
-      overflow: hidden;
-      background:
-        linear-gradient(rgba(125, 211, 252, 0.055) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(125, 211, 252, 0.055) 1px, transparent 1px),
-        rgba(3, 7, 18, 0.68);
-      background-size: 34px 34px;
-    }
-
-    .platform-map svg {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-    }
-
-    .base-line {
-      fill: none;
-      stroke: rgba(148, 163, 184, 0.20);
-      stroke-width: 2;
-    }
-
-    .pulse-line {
-      fill: none;
-      stroke-width: 3;
-      stroke-linecap: round;
-      stroke-dasharray: 9 14;
-      animation: flow 1s linear infinite;
-      filter: drop-shadow(0 0 9px currentColor);
-    }
-
-    .pulse-line.blue { color: var(--blue); stroke: var(--blue); }
-    .pulse-line.green { color: var(--green); stroke: var(--green); }
-    .pulse-line.amber { color: var(--amber); stroke: var(--amber); }
-    .pulse-line.cyan { color: var(--cyan); stroke: var(--cyan); }
-
-    @keyframes flow { to { stroke-dashoffset: -46; } }
-
-    .packet {
-      filter: drop-shadow(0 0 12px currentColor);
-    }
-
-    .map-node {
-      position: absolute;
-      z-index: 2;
-      width: 160px;
-      min-height: 82px;
-      padding: 12px;
-      border: 1px solid rgba(148, 163, 184, 0.28);
-      border-radius: var(--radius);
-      background: rgba(15, 23, 42, 0.86);
-      box-shadow: 0 14px 32px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.05);
-    }
-
-    .map-node::after {
-      content: "";
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: var(--green);
-      box-shadow: 0 0 0 6px rgba(52,211,153,0.10), 0 0 18px rgba(52,211,153,0.62);
-      animation: blink 1.6s ease-in-out infinite;
-    }
-
-    @keyframes blink {
-      0%, 100% { opacity: 0.6; transform: scale(0.88); }
-      50% { opacity: 1; transform: scale(1.12); }
-    }
-
-    .map-node small {
-      color: var(--blue);
-      font-family: var(--mono);
-      font-size: 10px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-
-    .map-node strong {
-      display: block;
-      margin-top: 6px;
-      color: var(--ink);
-      font-size: 16px;
-      line-height: 1.22;
-    }
-
-    .map-node span {
-      display: block;
-      margin-top: 6px;
-      color: var(--muted);
-      font-size: 11px;
-      line-height: 1.35;
-    }
-
-    .n-repo { left: 4%; top: 42%; }
-    .n-tree { left: 25%; top: 14%; }
-    .n-assets { left: 50%; top: 10%; }
-    .n-metrics { left: 50%; bottom: 13%; }
-    .n-score { right: 5%; top: 34%; }
-
-    .live-panel {
-      position: absolute;
-      z-index: 3;
-      left: 18px;
-      bottom: 18px;
-      width: min(470px, calc(100% - 36px));
-      padding: 14px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: rgba(2, 6, 23, 0.86);
-      color: #c7d2fe;
-      font-family: var(--mono);
-      font-size: 12px;
-      line-height: 1.65;
-      min-height: 110px;
-    }
-
-    .section {
-      display: grid;
-      gap: 16px;
-      padding: clamp(22px, 3vw, 34px);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: rgba(2, 6, 23, 0.58);
-      box-shadow: 0 16px 44px rgba(0,0,0,0.20);
-    }
-
-    .section-head {
-      display: flex;
-      align-items: end;
       justify-content: space-between;
-      gap: 18px;
-      min-width: 0;
+      gap: 10px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
     }
 
-    h2 {
-      font-size: clamp(28px, 3vw, 46px);
-      line-height: 1.08;
-      font-weight: 840;
-    }
-
-    .section-head p {
-      max-width: 600px;
-      min-width: 0;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.6;
-      text-align: right;
-      overflow-wrap: anywhere;
-    }
-
-    .results-grid {
-      display: grid;
-      grid-template-columns: 320px minmax(0, 1fr);
-      gap: 16px;
-      align-items: start;
-    }
-
-    .score-card {
-      position: sticky;
-      top: 92px;
-      display: grid;
-      gap: 14px;
-      padding: 20px;
-    }
-
-    .score-ring {
-      width: 220px;
-      height: 220px;
-      margin: 0 auto;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      background:
-        conic-gradient(var(--green) calc(var(--score) * 1%), rgba(148,163,184,0.16) 0),
-        radial-gradient(circle, #07111f 58%, transparent 59%);
-      box-shadow: inset 0 0 0 1px var(--line), 0 0 38px rgba(52,211,153,0.14);
-    }
-
-    .score-ring div {
-      width: 152px;
-      height: 152px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      background: rgba(2,6,23,0.92);
-      border: 1px solid var(--line);
-    }
-
-    .score-value {
-      display: block;
-      color: var(--ink);
-      font-family: var(--mono);
-      font-size: 54px;
-      font-weight: 900;
-      line-height: 1;
-    }
-
-    .score-grade {
-      display: block;
-      margin-top: 6px;
-      color: var(--muted);
-      font-size: 12px;
-      text-align: center;
-    }
-
-    .dimension-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .dimension-card,
-    .card {
-      min-width: 0;
-      padding: 16px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--surface);
-    }
-
-    .dimension-card h3,
-    .card h3 {
-      font-size: 17px;
-      margin-bottom: 10px;
-    }
-
-    .dimension-score {
-      color: var(--blue);
-      font-family: var(--mono);
-      font-size: 32px;
-      font-weight: 900;
-      line-height: 1;
-    }
-
-    .mini-bar {
-      height: 8px;
-      margin: 12px 0;
-      border-radius: 999px;
-      background: rgba(148,163,184,0.14);
-      overflow: hidden;
-    }
-
-    .mini-bar span {
-      display: block;
-      height: 100%;
-      width: var(--value);
-      border-radius: inherit;
-      background: linear-gradient(90deg, var(--blue), var(--cyan));
-    }
-
-    .dimension-card ul,
-    .card ul {
+    .panel-head h2,
+    .panel-head h3 {
       margin: 0;
-      padding-left: 18px;
-      color: var(--text);
-      font-size: 12px;
-      line-height: 1.6;
+      font-size: 15px;
+      line-height: 1.2;
+      font-weight: 850;
     }
 
-    .workflow {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .step {
-      padding: 16px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--surface-2);
-    }
-
-    .step small {
-      color: var(--blue);
-      font-family: var(--mono);
-      font-weight: 900;
-      font-size: 11px;
-    }
-
-    .step strong {
-      display: block;
-      margin: 8px 0 6px;
-      font-size: 16px;
-    }
-
-    .step span {
+    .panel-head p {
+      margin: 4px 0 0;
       color: var(--muted);
       font-size: 12px;
       line-height: 1.45;
     }
 
-    .tables {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 16px;
+    .tabs,
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
     }
 
-    .table {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-      color: var(--text);
-      font-size: 13px;
-    }
-
-    .table th,
-    .table td {
-      padding: 10px;
-      border-bottom: 1px solid var(--line);
-      text-align: left;
-      vertical-align: top;
-      overflow-wrap: anywhere;
-      word-break: break-word;
-    }
-
-    .table th {
+    .tab,
+    .filter {
+      min-height: 28px;
+      padding: 0 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
       color: var(--muted);
+      background: var(--surface-soft);
       font-size: 12px;
       font-weight: 800;
     }
 
-    .status-ok { color: var(--green); }
-    .status-warn { color: var(--amber); }
-    .status-bad { color: var(--red); }
+    .tab.active,
+    .filter.active {
+      color: #fff;
+      border-color: var(--teal);
+      background: var(--teal);
+    }
+
+    .catalog {
+      max-height: calc(100vh - 278px);
+      overflow: auto;
+      padding: 10px;
+    }
+
+    .project-card {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px 10px;
+      align-items: center;
+      margin-bottom: 8px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--text);
+      text-align: left;
+      background: #fff;
+    }
+
+    .project-card.active {
+      border-color: rgba(15, 118, 110, 0.55);
+      background: linear-gradient(90deg, rgba(20, 184, 166, 0.11), #fff 70%);
+      box-shadow: inset 3px 0 0 var(--teal);
+    }
+
+    .project-name {
+      min-width: 0;
+      display: grid;
+      gap: 4px;
+    }
+
+    .project-name strong {
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .project-name span {
+      overflow: hidden;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .score-pill {
+      min-width: 58px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      color: var(--teal);
+      background: rgba(20, 184, 166, 0.12);
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .project-meta {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 0 8px;
+      border-radius: 999px;
+      color: #0f172a;
+      background: #eef2ff;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .tag.product { background: #ccfbf1; color: #115e59; }
+    .tag.graph { background: #e0e7ff; color: #3730a3; }
+    .tag.framework { background: #fef3c7; color: #92400e; }
+    .tag.multimodal { background: #fae8ff; color: #86198f; }
+
+    .result-summary {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+      background:
+        linear-gradient(135deg, rgba(20, 184, 166, 0.1), transparent 48%),
+        #fff;
+    }
+
+    .score-badge {
+      width: 104px;
+      height: 104px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background:
+        conic-gradient(var(--score-color, var(--teal)) calc(var(--score, 0) * 1%), #e5eaf1 0),
+        #fff;
+    }
+
+    .score-badge div {
+      width: 78px;
+      height: 78px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #fff;
+      box-shadow: inset 0 0 0 1px var(--line);
+    }
+
+    .score-badge strong {
+      display: block;
+      font-family: var(--mono);
+      font-size: 25px;
+      line-height: 1;
+    }
+
+    .score-badge span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+      text-align: center;
+    }
+
+    .result-title h2 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.15;
+      font-weight: 900;
+    }
+
+    .result-title p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .source-box {
+      display: grid;
+      gap: 7px;
+      justify-items: end;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .source-mode {
+      display: inline-flex;
+      min-height: 28px;
+      align-items: center;
+      padding: 0 9px;
+      border-radius: 999px;
+      color: var(--teal);
+      background: rgba(20, 184, 166, 0.12);
+      font-weight: 850;
+    }
+
+    .dimension-list {
+      display: grid;
+      padding: 8px 0;
+    }
+
+    .dimension-row {
+      display: grid;
+      grid-template-columns: 38px minmax(170px, 0.85fr) 92px minmax(120px, 0.95fr) minmax(180px, 1.2fr);
+      gap: 12px;
+      align-items: center;
+      padding: 12px 18px;
+      border-bottom: 1px solid #eef2f7;
+    }
+
+    .dimension-row:last-child { border-bottom: 0; }
+
+    .index-num {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-weight: 850;
+    }
+
+    .dim-label {
+      min-width: 0;
+      font-weight: 850;
+      color: var(--ink);
+    }
+
+    .dim-label small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .dim-score {
+      color: var(--text);
+      font-family: var(--mono);
+      font-weight: 850;
+    }
+
+    .bar {
+      height: 8px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #e6edf5;
+    }
+
+    .bar span {
+      display: block;
+      width: var(--value, 0%);
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--teal), var(--teal-2));
+    }
+
+    .dim-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .right-stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 11px 12px;
+      border-bottom: 1px solid #edf2f7;
+      text-align: left;
+      font-size: 13px;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      background: #fbfdff;
+      font-size: 11px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    td strong { font-weight: 850; }
+
+    .rank-table tbody tr {
+      cursor: pointer;
+    }
+
+    .rank-table tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    .grade {
+      display: inline-flex;
+      min-width: 42px;
+      min-height: 24px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      color: var(--teal);
+      background: rgba(20, 184, 166, 0.12);
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .evidence {
+      max-height: 300px;
+      overflow: auto;
+      padding: 10px 14px 14px;
+    }
+
+    .evidence-item {
+      display: grid;
+      grid-template-columns: 10px minmax(0, 1fr);
+      gap: 10px;
+      padding: 8px 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      margin-top: 4px;
+      border-radius: 50%;
+      background: var(--teal-2);
+    }
+
+    .evidence-item strong {
+      display: block;
+      color: var(--ink);
+      font-size: 12px;
+    }
+
+    .report-section {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
 
     .report-box {
       width: 100%;
       min-height: 260px;
-      padding: 14px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
+      padding: 16px;
+      border: 0;
+      border-radius: 0;
       resize: vertical;
-      color: #dbeafe;
-      background: rgba(2, 6, 23, 0.88);
+      color: #1f2937;
+      background: #fbfdff;
       font-family: var(--mono);
       font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .empty {
+      padding: 20px;
+      color: var(--muted);
+      font-size: 13px;
       line-height: 1.6;
-      outline: none;
     }
 
-    .hidden {
-      display: none !important;
+    .log {
+      max-height: 220px;
+      overflow: auto;
+      padding: 12px 14px;
+      border-top: 1px solid var(--line);
+      color: #475569;
+      background: #fbfdff;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: pre-wrap;
     }
 
-    @media (max-width: 1180px) {
-      .hero,
-      .results-grid,
-      .tables {
-        grid-template-columns: 1fr;
+    .warning {
+      margin: 0 18px 14px;
+      padding: 10px 12px;
+      border: 1px solid #fed7aa;
+      border-radius: var(--radius);
+      color: #9a3412;
+      background: #fff7ed;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .compare-panel {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      padding: 14px;
+      border-top: 1px solid var(--line);
+      background: #fbfdff;
+    }
+
+    .compare-cell {
+      min-width: 0;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    .compare-cell span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .compare-cell strong {
+      display: block;
+      margin-top: 5px;
+      overflow: hidden;
+      color: var(--ink);
+      font-size: 14px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .footer-note {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    .is-hidden { display: none !important; }
+
+    @media (max-width: 1240px) {
+      .layout {
+        grid-template-columns: 300px minmax(0, 1fr);
       }
 
-      .score-card {
-        position: static;
+      .right-stack {
+        grid-column: 1 / -1;
+        grid-template-columns: 1fr 1fr;
       }
 
-      .dimension-grid,
-      .workflow {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+      .command {
+        grid-template-columns: 1fr 150px;
+      }
+
+      .command label:nth-child(3) {
+        grid-column: 1 / -1;
       }
     }
 
-    @media (max-width: 720px) {
-      .page {
-        padding: 10px;
-      }
+    @media (max-width: 860px) {
+      .app { padding: 10px; }
 
       .topbar,
-      .section-head,
-      .form-grid {
+      .command,
+      .layout,
+      .right-stack,
+      .status-strip,
+      .compare-panel {
         grid-template-columns: 1fr;
-        flex-direction: column;
-        align-items: flex-start;
       }
 
-      .section-head p {
+      .topbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .top-actions {
+        justify-content: flex-start;
+      }
+
+      .catalog {
+        max-height: none;
+      }
+
+      .result-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .source-box {
+        justify-items: start;
         text-align: left;
       }
 
-      .hero-copy {
-        padding: 24px;
+      .dimension-row {
+        grid-template-columns: 28px 1fr;
       }
 
-      .platform-map {
-        min-height: 880px;
-      }
-
-      .map-node {
-        width: min(160px, 44vw);
-      }
-
-      .n-repo { left: 5%; top: 7%; }
-      .n-tree { left: 52%; top: 7%; }
-      .n-assets { left: 5%; top: 29%; }
-      .n-metrics { left: 52%; top: 29%; bottom: auto; }
-      .n-score { left: 5%; top: 51%; right: auto; }
-
-      .live-panel {
-        bottom: 18px;
-      }
-
-      .dimension-grid,
-      .workflow {
-        grid-template-columns: 1fr;
-      }
-
-      .score-ring {
-        width: 190px;
-        height: 190px;
-      }
-
-      .score-ring div {
-        width: 132px;
-        height: 132px;
+      .dim-score,
+      .bar,
+      .dim-note {
+        grid-column: 2;
       }
     }
   </style>
 </head>
 <body>
-  <main class="page">
+  <main class="app">
     <header class="topbar">
-      <a class="brand" href="index.html">
-        <span class="mark">E</span>
-        <span><strong>RAG Evaluation Platform</strong><span>导入 GitHub 仓库 · 解析评测资产 · 自动给分</span></span>
-      </a>
-      <nav class="nav" aria-label="页面导航">
-        <a href="#run">运行评测</a>
-        <a href="#results">评分结果</a>
-        <a href="#report">报告导出</a>
-        <a href="index.html">返回控制台</a>
-      </nav>
-    </header>
-
-    <section class="hero" id="run">
-      <div class="hero-copy panel">
-        <div class="system-label">Repository Evaluator</div>
-        <h1>导入一个 RAG 仓库，系统性评测并给分。</h1>
-        <p class="lead">平台会读取公开 GitHub 仓库文件树，识别数据管线、检索引擎、评测集、baseline 报告、失败分析和 GraphRAG 子集，然后输出 100 分制成熟度评分和下一步优化建议。</p>
-
-        <div class="repo-form" aria-label="GitHub 仓库导入">
-          <div class="form-grid">
-            <div class="field">
-              <label for="repoUrl">GitHub 仓库 URL</label>
-              <input id="repoUrl" type="url" value="https://github.com/JavonLoong/RAG" placeholder="https://github.com/owner/repo">
-            </div>
-            <div class="field">
-              <label for="branchName">分支</label>
-              <input id="branchName" type="text" value="main" placeholder="main">
-            </div>
-            <div class="field">
-              <label for="githubToken">GitHub Token 可选</label>
-              <input id="githubToken" type="password" autocomplete="off" placeholder="遇到 403 限流时填写，不会保存">
-            </div>
-          </div>
-          <div class="actions">
-            <button class="btn" id="analyzeBtn" type="button">导入并开始评测</button>
-            <button class="btn secondary" id="demoBtn" type="button">加载内置示例结果</button>
-            <button class="btn secondary" id="copyBtn" type="button" disabled>复制评分报告</button>
-          </div>
-          <p class="helper-note">如果 GitHub 匿名 API 返回 403，默认 RAG 仓库会自动使用内置评测快照继续出分；评测其它仓库或强制读取线上文件树时请填写 GitHub Token。Token 只在本浏览器请求头中使用，不会保存。</p>
+      <div class="brand">
+        <div class="brand-mark">R</div>
+        <div>
+          <h1>RAG / GraphRAG 开源系统评测台</h1>
+          <p>导入 GitHub 链接即可对比头部开源 RAG 系统；GitHub API 限流时自动使用内置公开画像，不再直接失败。</p>
         </div>
       </div>
-
-      <div class="platform-map panel" aria-label="评测平台运行链路">
-        <svg viewBox="0 0 1100 610" preserveAspectRatio="none" aria-hidden="true">
-          <defs>
-            <path id="pathA" d="M120 305 C260 160 330 130 438 142 C548 154 620 122 720 122 C856 122 930 220 1000 300" />
-            <path id="pathB" d="M120 315 C260 406 365 455 510 455 C684 455 805 366 1000 310" />
-            <path id="pathC" d="M438 142 C530 246 606 248 720 122 C820 32 944 160 1000 300" />
-            <path id="pathD" d="M710 455 C780 404 870 362 1000 310" />
-          </defs>
-          <use href="#pathA" class="base-line"></use>
-          <use href="#pathB" class="base-line"></use>
-          <use href="#pathC" class="base-line"></use>
-          <use href="#pathD" class="base-line"></use>
-          <use href="#pathA" class="pulse-line blue"></use>
-          <use href="#pathB" class="pulse-line green"></use>
-          <use href="#pathC" class="pulse-line amber"></use>
-          <use href="#pathD" class="pulse-line cyan"></use>
-          <circle class="packet" r="7" fill="#60a5fa" style="color:#60a5fa"><animateMotion dur="7.6s" repeatCount="indefinite"><mpath href="#pathA"></mpath></animateMotion></circle>
-          <circle class="packet" r="6" fill="#34d399" style="color:#34d399"><animateMotion dur="7.1s" begin="0.8s" repeatCount="indefinite"><mpath href="#pathB"></mpath></animateMotion></circle>
-          <circle class="packet" r="6" fill="#fbbf24" style="color:#fbbf24"><animateMotion dur="6.7s" begin="1.4s" repeatCount="indefinite"><mpath href="#pathC"></mpath></animateMotion></circle>
-          <circle class="packet" r="6" fill="#22d3ee" style="color:#22d3ee"><animateMotion dur="5.5s" begin="1.8s" repeatCount="indefinite"><mpath href="#pathD"></mpath></animateMotion></circle>
-        </svg>
-        <div class="map-node n-repo"><small>Import</small><strong>仓库导入</strong><span>GitHub tree API / raw files</span></div>
-        <div class="map-node n-tree"><small>Scan</small><strong>结构扫描</strong><span>目录、测试、配置、服务入口</span></div>
-        <div class="map-node n-assets"><small>Assets</small><strong>评测资产</strong><span>问题集、baseline、报告、GraphRAG 子集</span></div>
-        <div class="map-node n-metrics"><small>Metrics</small><strong>指标解析</strong><span>recall@K、coverage、failure tags</span></div>
-        <div class="map-node n-score"><small>Score</small><strong>成熟度给分</strong><span>100 分制、分项解释、优化建议</span></div>
-        <div class="live-panel" id="logPanel">等待导入仓库。平台会在浏览器端完成公开仓库扫描，不上传你的代码。</div>
+      <div class="top-actions">
+        <a class="ghost-btn" href="index.html" style="display:inline-flex;align-items:center;">返回控制台</a>
+        <button class="ghost-btn" id="copyBtn" type="button">复制报告</button>
       </div>
+    </header>
+
+    <section class="command" aria-label="仓库评测输入">
+      <label>
+        GitHub 仓库 URL
+        <input id="repoUrl" type="url" value="https://github.com/infiniflow/ragflow" placeholder="https://github.com/owner/repo">
+      </label>
+      <label>
+        分支
+        <input id="branchName" type="text" value="" placeholder="auto">
+      </label>
+      <label>
+        GitHub Token 可选
+        <input id="githubToken" type="password" placeholder="只在浏览器请求头使用，不保存">
+      </label>
+      <button class="primary-btn" id="analyzeBtn" type="button">开始评测</button>
+      <button class="ghost-btn" id="powerBtn" type="button">评测本项目</button>
     </section>
 
-    <section class="section">
-      <div class="section-head">
-        <h2>完整评测流程</h2>
-        <p>GitHub Pages 不能直接启动 Python、ChromaDB 或本地后端，所以这个页面做的是浏览器端仓库级评测。真实在线检索压测可以作为下一阶段接后端 API。</p>
-      </div>
-      <div class="workflow">
-        <article class="step"><small>01</small><strong>导入仓库</strong><span>解析 GitHub URL，读取指定分支的完整文件树。</span></article>
-        <article class="step"><small>02</small><strong>识别能力模块</strong><span>扫描 data_pipeline、retrieval_engine、rag_orchestrator、kg_pipeline、evaluation、tests 等模块。</span></article>
-        <article class="step"><small>03</small><strong>解析评测资产</strong><span>读取问题集、baseline 对比、失败分析、GraphRAG 子集报告。</span></article>
-        <article class="step"><small>04</small><strong>评分与建议</strong><span>按结构、数据集、baseline、失败归因、GraphRAG、复现性给分。</span></article>
-      </div>
+    <section class="status-strip" aria-label="当前评测状态">
+      <div class="stat"><span>当前项目</span><strong id="statProject">RAGFlow</strong></div>
+      <div class="stat"><span>总分</span><strong id="statScore">--</strong></div>
+      <div class="stat"><span>来源模式</span><strong id="statMode">公开画像</strong></div>
+      <div class="stat"><span>仓库文件</span><strong id="statFiles">--</strong></div>
     </section>
 
-    <section class="section" id="results">
-      <div class="section-head">
-        <h2>评分结果</h2>
-        <p id="resultSubtitle">还没有运行评测。导入仓库后这里会显示总分、分项分、缺失项和建议。</p>
-      </div>
-      <div class="results-grid">
-        <aside class="score-card panel">
-          <div class="score-ring" id="scoreRing" style="--score:0">
+    <section class="layout">
+      <aside class="panel" aria-label="开源 RAG 项目列表">
+        <div class="panel-head">
+          <div>
+            <h2>开源系统列表</h2>
+            <p>点项目直接切换评测，不依赖 GitHub API。</p>
+          </div>
+        </div>
+        <div class="filters" style="padding:12px 12px 0;">
+          <button class="filter active" type="button" data-filter="all">全部</button>
+          <button class="filter" type="button" data-filter="product">产品型</button>
+          <button class="filter" type="button" data-filter="graph">GraphRAG</button>
+          <button class="filter" type="button" data-filter="framework">框架型</button>
+          <button class="filter" type="button" data-filter="multimodal">多模态</button>
+        </div>
+        <div class="catalog" id="catalog"></div>
+      </aside>
+
+      <section class="panel" aria-label="评分结果">
+        <div class="result-summary">
+          <div class="score-badge" id="scoreBadge" style="--score:0">
             <div>
-              <span class="score-value" id="scoreValue">--</span>
-              <span class="score-grade" id="scoreGrade">未评分</span>
+              <span>
+                <strong id="scoreValue">--</strong>
+                <span id="scoreGrade">未评分</span>
+              </span>
             </div>
           </div>
-          <div class="card">
-            <h3>仓库状态</h3>
-            <ul id="repoFacts">
-              <li>等待导入。</li>
-            </ul>
+          <div class="result-title">
+            <h2 id="resultName">等待评测</h2>
+            <p id="resultSubtitle">选择左侧项目，或者在上方输入 GitHub 仓库链接。</p>
           </div>
-        </aside>
+          <div class="source-box">
+            <span class="source-mode" id="sourceMode">未开始</span>
+            <a class="small-btn" id="githubLink" href="#" target="_blank" rel="noreferrer">打开 GitHub</a>
+          </div>
+        </div>
+        <div id="warningBox" class="warning is-hidden"></div>
+        <div class="dimension-list" id="dimensionList"></div>
+        <div class="compare-panel" id="comparePanel"></div>
+      </section>
 
-        <div class="dimension-grid" id="dimensionGrid"></div>
-      </div>
+      <aside class="right-stack">
+        <section class="panel" aria-label="排行榜">
+          <div class="panel-head">
+            <div>
+              <h3>对比排行榜</h3>
+              <p>同一套维度横向比较，不代表真实私有数据跑分。</p>
+            </div>
+          </div>
+          <table class="rank-table">
+            <thead>
+              <tr>
+                <th>排名</th>
+                <th>项目</th>
+                <th>总分</th>
+                <th>等级</th>
+              </tr>
+            </thead>
+            <tbody id="rankRows"></tbody>
+          </table>
+        </section>
+
+        <section class="panel" aria-label="证据与日志">
+          <div class="panel-head">
+            <div>
+              <h3>证据日志</h3>
+              <p>公开画像、命中文件、API 降级原因都会记录。</p>
+            </div>
+          </div>
+          <div class="evidence" id="evidenceList"></div>
+          <div class="log" id="logPanel">等待评测。</div>
+        </section>
+      </aside>
     </section>
 
-    <section class="section">
-      <div class="section-head">
-        <h2>证据表</h2>
-        <p>平台不会只给一个分数，会列出命中的文件、缺失的文件和可解析出的 baseline 指标。</p>
-      </div>
-      <div class="tables">
-        <article class="card">
-          <h3>关键文件命中</h3>
-          <table class="table">
-            <thead><tr><th>检查项</th><th>状态</th><th>证据</th></tr></thead>
-            <tbody id="evidenceRows"><tr><td colspan="3">等待运行。</td></tr></tbody>
-          </table>
-        </article>
-        <article class="card">
-          <h3>Baseline 指标</h3>
-          <table class="table">
-            <thead><tr><th>方法</th><th>Question recall@K</th><th>Coverage</th></tr></thead>
-            <tbody id="metricRows"><tr><td colspan="3">等待解析。</td></tr></tbody>
-          </table>
-        </article>
-      </div>
-    </section>
-
-    <section class="section" id="report">
-      <div class="section-head">
-        <h2>自动报告</h2>
-        <p>导入仓库后自动生成 Markdown 评分报告，可以复制到 README、课程汇报或 issue 里。</p>
+    <section class="report-section" aria-label="自动评测报告">
+      <div class="panel-head">
+        <div>
+          <h2>自动报告</h2>
+          <p>可以直接复制到 README、汇报材料或对比分析文档里。</p>
+        </div>
       </div>
       <textarea class="report-box" id="reportBox" readonly>等待运行评测。</textarea>
     </section>
+
+    <p class="footer-note">说明：本页面是前端静态评测台。已知头部项目使用内置公开画像；GitHub API 可用时会补充在线仓库文件证据。真实问答质量仍需接后端数据集和同题查询 API 复测。</p>
   </main>
 
   <script>
-    const REQUIRED = {
-      structure: [
-        ["configs/", "统一配置中心"],
-        ["core_domain/", "领域模型"],
-        ["data_pipeline/", "数据管线"],
-        ["retrieval_engine/", "检索引擎"],
-        ["rag_orchestrator/", "RAG 编排"],
-        ["kg_pipeline/", "GraphRAG / 知识图谱"],
-        ["evaluation/", "评测模块"],
-        ["tests/", "测试目录"],
-        ["api_server/", "服务入口"],
-        ["frontend_app/", "前端入口"]
-      ],
-      files: [
-        ["README.md", "项目说明"],
-        ["TECH_STACK.md", "技术栈说明"],
-        ["pyproject.toml", "Python 工程配置"],
-        [".gitlab-ci.yml", "CI 配置"]
-      ],
-      evaluation: [
-        ["evaluation/system_eval_questions.jsonl", "系统评测问题集"],
-        ["evaluation/reports/day3_retrieval_baseline_comparison", "baseline 对比报告"],
-        ["evaluation/reports/day4_failure_analysis", "失败分析报告"],
-        ["GraphRAG同题子集报告", "GraphRAG 子集报告"]
-      ]
-    };
+    const DIMENSIONS = [
+      { id: "doc", label: "文档解析与 metadata", en: "document parsing", max: 15 },
+      { id: "chunk", label: "chunk 与入库稳定性", en: "chunk / ingestion", max: 10 },
+      { id: "semantic", label: "semantic retrieval", en: "dense vectors", max: 10 },
+      { id: "keyword", label: "keyword retrieval", en: "BM25 / sparse", max: 10 },
+      { id: "hybrid", label: "hybrid retrieval / rerank", en: "fusion / reranker", max: 10 },
+      { id: "graph", label: "graph construction / quality", en: "KG build", max: 10 },
+      { id: "local", label: "GraphRAG local", en: "local graph query", max: 10 },
+      { id: "global", label: "GraphRAG global", en: "community summary", max: 10 },
+      { id: "grounding", label: "answer grounding / citations", en: "sources", max: 10 },
+      { id: "safety", label: "no-answer / hallucination safety", en: "refusal", max: 5 }
+    ];
 
-    const DEMO = {
-      repo: "local://Power Equipment RAG",
-      branch: "demo",
-      paths: [
-        "configs/__init__.py", "core_domain/__init__.py", "data_pipeline/file_ingestion.py",
-        "retrieval_engine/hybrid.py", "rag_orchestrator/global_search.py", "kg_pipeline/community_detection.py",
-        "evaluation/system_eval_questions.jsonl", "evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md",
-        "evaluation/reports/day4_failure_analysis_20260604_012258.md",
-        "tests/test_pipeline.py", "api_server/current_console/server.py", "frontend_app/current_console/index.html",
-        "README.md", "TECH_STACK.md", "pyproject.toml", ".gitlab-ci.yml",
-        "docs/project_deliverables/06_汇报材料_发群和组会/RAG课程汇报_最终交付包/13_GraphRAG同题子集报告.md"
-      ],
-      texts: {
-        "evaluation/system_eval_questions.jsonl": Array.from({ length: 60 }, (_, i) => JSON.stringify({ id: `q${i+1}`, type: i % 6 === 0 ? "kg_graph_rag" : "standard_rag_fact", expected_evidence_keywords: ["证据", "检索"] })).join("\n"),
-        "evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md": `
-| Method | Questions | Matched outputs | Question recall@K | Keyword recall@K | Avg keyword coverage | Strong | Weak | Missed | Zero-hit |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| keyword | 60 | 60 | 0.833333 | 0.540268 | 0.563056 | 25 | 25 | 10 | 0 |
-| dense_hashing | 60 | 60 | 0.583333 | 0.281879 | 0.299722 | 12 | 23 | 25 | 0 |
-| hybrid_rrf | 60 | 60 | 0.816667 | 0.500000 | 0.519722 | 24 | 25 | 11 | 0 |
-Best Day 3 baseline by average keyword coverage: keyword.
-`,
-        "evaluation/reports/day4_failure_analysis_20260604_012258.md": "hybrid_dilution\npartial_ranking_gap\nevaluation_concept_gap\nAction: reranker, source_scope, formal embedding.",
-        "docs/project_deliverables/06_汇报材料_发群和组会/RAG课程汇报_最终交付包/13_GraphRAG同题子集报告.md": "GraphRAG 子集题数：10\n当前文本 baseline 最优覆盖率均值：0.633333"
+    const PROJECTS = [
+      {
+        key: "ragflow",
+        name: "RAGFlow",
+        repo: "infiniflow/ragflow",
+        branch: "main",
+        category: "product",
+        role: "深度文档理解 + 企业级 RAG 产品",
+        summary: "强项是文档解析、表格/版面处理、数据集工作流、引用式问答。GraphRAG 不是它的核心主线。",
+        scores: { doc: 15, chunk: 9, semantic: 9, keyword: 8, hybrid: 9, graph: 4, local: 3, global: 2, grounding: 9, safety: 4 },
+        evidence: [
+          "公开定位是基于深度文档理解的开源 RAG 引擎。",
+          "适合作为文档解析、chunk 策略、引用溯源、数据集管理的主要对标。",
+          "不应把它当作完整 GraphRAG 标杆。"
+        ]
+      },
+      {
+        key: "dify",
+        name: "Dify",
+        repo: "langgenius/dify",
+        branch: "main",
+        category: "product",
+        role: "LLM 应用平台 + RAG pipeline + workflow",
+        summary: "强项是应用编排、模型管理、工作流、可观测和部署。RAG 能力完整，但不是专门的 GraphRAG 系统。",
+        scores: { doc: 10, chunk: 8, semantic: 8, keyword: 6, hybrid: 7, graph: 2, local: 2, global: 1, grounding: 7, safety: 4 },
+        evidence: [
+          "公开定位是开源 LLM 应用开发平台。",
+          "适合作为产品化、工作流、权限和运维体验对标。",
+          "GraphRAG 能力不应按头部图谱系统预期。"
+        ]
+      },
+      {
+        key: "fastgpt",
+        name: "FastGPT",
+        repo: "labring/FastGPT",
+        branch: "main",
+        category: "product",
+        role: "知识库 + 可视化工作流 + Agent 平台",
+        summary: "强项是中文生态、知识库产品化、工作流和快速部署；适合作为国内产品型 RAG 对标。",
+        scores: { doc: 8, chunk: 8, semantic: 8, keyword: 7, hybrid: 7, graph: 2, local: 2, global: 1, grounding: 7, safety: 3 },
+        evidence: [
+          "公开介绍强调数据处理、RAG 检索、模型调用和 Flow 编排。",
+          "适合作为企业知识库与可视化搭建能力对标。",
+          "不是 GraphRAG 研究型实现。"
+        ]
+      },
+      {
+        key: "qanything",
+        name: "QAnything",
+        repo: "netease-youdao/QAnything",
+        branch: "master",
+        category: "product",
+        role: "本地知识库问答系统",
+        summary: "强项是本地文件问答、快速上传提问、检索结果可视化和中文使用体验。",
+        scores: { doc: 11, chunk: 8, semantic: 8, keyword: 7, hybrid: 8, graph: 2, local: 2, global: 1, grounding: 8, safety: 4 },
+        evidence: [
+          "公开功能包含文件上传即问、只检索模式、chunk 可视化和手动编辑。",
+          "适合作为本地部署知识库问答体验对标。",
+          "GraphRAG 不是主能力。"
+        ]
+      },
+      {
+        key: "maxkb",
+        name: "MaxKB",
+        repo: "1Panel-dev/maxkb",
+        branch: "main",
+        category: "product",
+        role: "企业级智能体与知识库平台",
+        summary: "强项是企业知识库、Agent、工作流和工具调用；RAG 基础完整。",
+        scores: { doc: 8, chunk: 7, semantic: 7, keyword: 6, hybrid: 7, graph: 2, local: 2, global: 1, grounding: 6, safety: 4 },
+        evidence: [
+          "公开定位是企业级 Agent 与知识库平台。",
+          "适合对标业务落地、应用管理和 MCP 工具使用。",
+          "图谱增强不是主线。"
+        ]
+      },
+      {
+        key: "kotaemon",
+        name: "Kotaemon",
+        repo: "Cinnamon/kotaemon",
+        branch: "main",
+        category: "product",
+        role: "文档聊天 UI + 可定制 RAG 工具",
+        summary: "强项是端到端文档聊天体验、可定制 UI、面向用户和开发者的轻量实现。",
+        scores: { doc: 10, chunk: 7, semantic: 8, keyword: 6, hybrid: 8, graph: 4, local: 3, global: 2, grounding: 8, safety: 3 },
+        evidence: [
+          "公开定位是用于和文档聊天的开源 RAG UI。",
+          "适合作为前端交互、引用展示、文档问答体验对标。",
+          "GraphRAG 更多是示例能力，不是主系统。"
+        ]
+      },
+      {
+        key: "rag-anything",
+        name: "RAG-Anything",
+        repo: "HKUDS/RAG-Anything",
+        branch: "main",
+        category: "multimodal",
+        role: "多模态 All-in-One RAG",
+        summary: "强项是跨文本、图像、表格、公式等多模态内容的处理与检索。",
+        scores: { doc: 15, chunk: 8, semantic: 8, keyword: 6, hybrid: 7, graph: 6, local: 5, global: 3, grounding: 7, safety: 3 },
+        evidence: [
+          "公开定位是 all-in-one multimodal RAG。",
+          "适合作为非文本资料、图表公式、多模态检索的对标。",
+          "工程产品化程度需要和 RAGFlow/Dify 分开比较。"
+        ]
+      },
+      {
+        key: "microsoft-graphrag",
+        name: "Microsoft GraphRAG",
+        repo: "microsoft/graphrag",
+        branch: "main",
+        category: "graph",
+        role: "GraphRAG 标杆实现",
+        summary: "强项是从文本抽取知识图谱、社区发现、社区摘要、local/global 查询范式。",
+        scores: { doc: 8, chunk: 7, semantic: 7, keyword: 4, hybrid: 6, graph: 10, local: 9, global: 10, grounding: 7, safety: 3 },
+        evidence: [
+          "公开文档强调抽取知识图谱、构建社区层级和社区摘要。",
+          "适合作为 GraphRAG local/global 架构的第一对标。",
+          "不是完整知识库产品，文档解析和 UI 不是它的重点。"
+        ]
+      },
+      {
+        key: "lightrag",
+        name: "LightRAG",
+        repo: "HKUDS/LightRAG",
+        branch: "main",
+        category: "graph",
+        role: "轻量图谱 RAG 框架",
+        summary: "强项是图结构与向量检索结合、轻量化、增量更新和快速检索。",
+        scores: { doc: 6, chunk: 8, semantic: 9, keyword: 5, hybrid: 8, graph: 9, local: 9, global: 8, grounding: 6, safety: 3 },
+        evidence: [
+          "公开定位是 lightweight graph-based RAG framework。",
+          "适合作为轻量 GraphRAG、增量更新和图向量结合对标。",
+          "文档解析和企业 UI 不是它的主要卖点。"
+        ]
+      },
+      {
+        key: "nano-graphrag",
+        name: "nano-graphrag",
+        repo: "gusye1234/nano-graphrag",
+        branch: "main",
+        category: "graph",
+        role: "小而清晰的 GraphRAG 实现",
+        summary: "强项是实现更小、更容易读和改，适合学习与二次开发。",
+        scores: { doc: 4, chunk: 6, semantic: 7, keyword: 4, hybrid: 6, graph: 8, local: 8, global: 7, grounding: 5, safety: 2 },
+        evidence: [
+          "公开定位是 simple, easy-to-hack GraphRAG implementation。",
+          "适合作为代码可读性和最小实现对标。",
+          "不适合作为企业级文档解析或 UI 对标。"
+        ]
+      },
+      {
+        key: "neo4j-graphrag",
+        name: "Neo4j GraphRAG",
+        repo: "neo4j/neo4j-graphrag-python",
+        branch: "main",
+        category: "graph",
+        role: "Neo4j 官方 GraphRAG Python 包",
+        summary: "强项是 Neo4j 图数据库生态、知识图谱构建、图检索与 Python 集成。",
+        scores: { doc: 6, chunk: 6, semantic: 7, keyword: 5, hybrid: 8, graph: 10, local: 8, global: 6, grounding: 7, safety: 3 },
+        evidence: [
+          "公开定位是 Neo4j first-party GraphRAG Python package。",
+          "适合作为图数据库后端、图检索 SDK、长期维护能力对标。",
+          "完整产品体验需要结合 Neo4j 生态其它工具。"
+        ]
+      },
+      {
+        key: "graphiti",
+        name: "Graphiti",
+        repo: "getzep/graphiti",
+        branch: "main",
+        category: "graph",
+        role: "动态时序知识图谱",
+        summary: "强项是面向 Agent 的 temporal context graph，能处理事实变化、来源和时间。",
+        scores: { doc: 5, chunk: 7, semantic: 8, keyword: 4, hybrid: 7, graph: 10, local: 9, global: 7, grounding: 8, safety: 3 },
+        evidence: [
+          "公开定位是 temporal context graphs for AI agents。",
+          "适合作为动态知识、事实演化、Agent memory 对标。",
+          "不是传统静态资料库问答产品。"
+        ]
+      },
+      {
+        key: "cognee",
+        name: "Cognee",
+        repo: "topoteretes/cognee",
+        branch: "main",
+        category: "graph",
+        role: "AI Memory + Graph + Vector",
+        summary: "强项是自托管知识图谱、长期记忆、向量与图推理结合。",
+        scores: { doc: 8, chunk: 8, semantic: 8, keyword: 5, hybrid: 8, graph: 9, local: 8, global: 7, grounding: 7, safety: 3 },
+        evidence: [
+          "公开定位是 open-source AI memory platform。",
+          "适合作为 graph + vector memory 和知识演化对标。",
+          "产品化知识库体验需要和产品型 RAG 分开比。"
+        ]
+      },
+      {
+        key: "llamaindex",
+        name: "LlamaIndex",
+        repo: "run-llama/llama_index",
+        branch: "main",
+        category: "framework",
+        role: "LLM 数据框架",
+        summary: "强项是数据连接器、索引、查询引擎、属性图索引和 RAG 组合能力。",
+        scores: { doc: 10, chunk: 9, semantic: 10, keyword: 7, hybrid: 9, graph: 8, local: 7, global: 5, grounding: 8, safety: 4 },
+        evidence: [
+          "公开定位是 data framework for LLM apps。",
+          "适合作为开发框架、索引抽象、数据连接器对标。",
+          "不是开箱即用的终端知识库产品。"
+        ]
+      },
+      {
+        key: "langchain",
+        name: "LangChain",
+        repo: "langchain-ai/langchain",
+        branch: "master",
+        category: "framework",
+        role: "Agent / LLM 应用工程框架",
+        summary: "强项是组件生态、集成、工具调用、LangGraph 和复杂链路编排。",
+        scores: { doc: 8, chunk: 8, semantic: 10, keyword: 7, hybrid: 9, graph: 7, local: 7, global: 5, grounding: 7, safety: 4 },
+        evidence: [
+          "公开定位是 agent engineering platform。",
+          "适合作为 RAG 组件生态、检索器集成、复杂编排对标。",
+          "不是一个单一 RAG 产品。"
+        ]
+      },
+      {
+        key: "haystack",
+        name: "Haystack",
+        repo: "deepset-ai/haystack",
+        branch: "main",
+        category: "framework",
+        role: "生产级 LLM / RAG 管线框架",
+        summary: "强项是模块化 pipeline、检索、路由、生成、生产可控性。",
+        scores: { doc: 8, chunk: 8, semantic: 9, keyword: 8, hybrid: 9, graph: 3, local: 3, global: 1, grounding: 8, safety: 4 },
+        evidence: [
+          "公开定位是 production-ready LLM application orchestration framework。",
+          "适合作为 pipeline、检索组件、生产工程透明度对标。",
+          "GraphRAG 不是核心主线。"
+        ]
+      },
+      {
+        key: "powerrag",
+        name: "PowerRAG 本项目",
+        repo: "JavonLoong/RAG",
+        branch: "main",
+        category: "product",
+        role: "动力装备知识库课程项目",
+        summary: "当前优势是面向动力装备场景的评测、GraphRAG POC、检索失败归因；短板是产品化和企业级热更新。",
+        scores: { doc: 12, chunk: 8, semantic: 8, keyword: 8, hybrid: 8, graph: 7, local: 7, global: 6, grounding: 7, safety: 3 },
+        evidence: [
+          "已有系统评测题、baseline 对比、失败归因和 GraphRAG 子集。",
+          "适合作为课程展示和专业领域知识库原型。",
+          "距离 RAGFlow/Dify 这类完整产品仍需要产品化、权限、任务队列、在线评测闭环。"
+        ]
       }
-    };
+    ];
 
-    const state = {
-      current: null,
-      busy: false
-    };
+    const PROFILE_BY_REPO = Object.fromEntries(PROJECTS.map(project => [project.repo.toLowerCase(), project]));
+    const state = { current: null, filter: "all", logs: [] };
 
     const els = {
       repoUrl: document.getElementById("repoUrl"),
       branchName: document.getElementById("branchName"),
       githubToken: document.getElementById("githubToken"),
       analyzeBtn: document.getElementById("analyzeBtn"),
-      demoBtn: document.getElementById("demoBtn"),
+      powerBtn: document.getElementById("powerBtn"),
       copyBtn: document.getElementById("copyBtn"),
-      logPanel: document.getElementById("logPanel"),
-      scoreRing: document.getElementById("scoreRing"),
+      catalog: document.getElementById("catalog"),
+      rankRows: document.getElementById("rankRows"),
+      scoreBadge: document.getElementById("scoreBadge"),
       scoreValue: document.getElementById("scoreValue"),
       scoreGrade: document.getElementById("scoreGrade"),
-      repoFacts: document.getElementById("repoFacts"),
+      resultName: document.getElementById("resultName"),
       resultSubtitle: document.getElementById("resultSubtitle"),
-      dimensionGrid: document.getElementById("dimensionGrid"),
-      evidenceRows: document.getElementById("evidenceRows"),
-      metricRows: document.getElementById("metricRows"),
-      reportBox: document.getElementById("reportBox")
+      sourceMode: document.getElementById("sourceMode"),
+      githubLink: document.getElementById("githubLink"),
+      dimensionList: document.getElementById("dimensionList"),
+      comparePanel: document.getElementById("comparePanel"),
+      evidenceList: document.getElementById("evidenceList"),
+      logPanel: document.getElementById("logPanel"),
+      reportBox: document.getElementById("reportBox"),
+      warningBox: document.getElementById("warningBox"),
+      statProject: document.getElementById("statProject"),
+      statScore: document.getElementById("statScore"),
+      statMode: document.getElementById("statMode"),
+      statFiles: document.getElementById("statFiles")
     };
 
-    function log(message) {
-      const now = new Date().toLocaleTimeString();
-      els.logPanel.innerHTML = `[${now}] ${escapeHtml(message)}<br>` + els.logPanel.innerHTML.split("<br>").slice(0, 5).join("<br>");
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[char]));
     }
 
-    function escapeHtml(value) {
-      return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+    function totalScore(scores) {
+      return DIMENSIONS.reduce((sum, dim) => sum + Math.min(dim.max, Math.max(0, Number(scores[dim.id]) || 0)), 0);
+    }
+
+    function gradeFor(score) {
+      if (score >= 85) return "A";
+      if (score >= 75) return "B+";
+      if (score >= 65) return "B";
+      if (score >= 55) return "C+";
+      if (score >= 45) return "C";
+      return "D";
+    }
+
+    function scoreColor(score) {
+      if (score >= 75) return "var(--teal)";
+      if (score >= 60) return "var(--blue)";
+      if (score >= 45) return "var(--amber)";
+      return "var(--red)";
     }
 
     function parseRepoUrl(input) {
       const value = input.trim().replace(/\.git$/, "");
       const match = value.match(/github\.com[/:]([^/]+)\/([^/#?]+)/i);
-      if (!match) throw new Error("请输入有效 GitHub 仓库 URL，例如 https://github.com/owner/repo");
-      return { owner: match[1], repo: match[2] };
+      if (!match) throw new Error("请输入有效 GitHub 仓库 URL，例如 https://github.com/infiniflow/ragflow");
+      return { owner: match[1], repo: match[2].replace(/\.git$/i, "") };
+    }
+
+    function repoKey(owner, repo) {
+      return `${owner}/${repo}`.toLowerCase();
+    }
+
+    function profileToResult(profile, mode = "公开画像", extra = {}) {
+      const total = totalScore(profile.scores);
+      return {
+        ...profile,
+        total,
+        grade: gradeFor(total),
+        mode,
+        fileCount: extra.fileCount ?? "--",
+        branchUsed: extra.branchUsed || profile.branch || "main",
+        onlineEvidence: extra.onlineEvidence || [],
+        warning: extra.warning || "",
+        apiUrl: extra.apiUrl || ""
+      };
+    }
+
+    function log(message) {
+      const now = new Date().toLocaleTimeString("zh-CN", { hour12: false });
+      state.logs.unshift(`[${now}] ${message}`);
+      state.logs = state.logs.slice(0, 16);
+      els.logPanel.textContent = state.logs.join("\n");
+    }
+
+    function renderCatalog() {
+      const projects = PROJECTS.filter(project => state.filter === "all" || project.category === state.filter);
+      els.catalog.innerHTML = projects.map(project => {
+        const score = totalScore(project.scores);
+        const active = state.current?.key === project.key ? " active" : "";
+        return `
+          <button class="project-card${active}" type="button" data-project="${project.key}">
+            <span class="project-name">
+              <strong>${escapeHtml(project.name)}</strong>
+              <span>${escapeHtml(project.repo)}</span>
+            </span>
+            <span class="score-pill">${score}</span>
+            <span class="project-meta">
+              <span class="tag ${project.category}">${categoryLabel(project.category)}</span>
+              <span>${escapeHtml(project.role)}</span>
+            </span>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function categoryLabel(category) {
+      return {
+        product: "产品型",
+        graph: "GraphRAG",
+        framework: "框架型",
+        multimodal: "多模态"
+      }[category] || category;
+    }
+
+    function renderRanking() {
+      const rows = PROJECTS
+        .map(project => ({ project, total: totalScore(project.scores) }))
+        .sort((a, b) => b.total - a.total)
+        .map((item, index) => `
+          <tr data-project="${item.project.key}">
+            <td>${index + 1}</td>
+            <td><strong>${escapeHtml(item.project.name)}</strong><br><span style="color:var(--muted);font-family:var(--mono);font-size:11px;">${escapeHtml(item.project.repo)}</span></td>
+            <td style="font-family:var(--mono);font-weight:900;">${item.total}</td>
+            <td><span class="grade">${gradeFor(item.total)}</span></td>
+          </tr>
+        `).join("");
+      els.rankRows.innerHTML = rows;
+    }
+
+    function renderResult(result) {
+      state.current = result;
+      const total = result.total;
+      els.scoreBadge.style.setProperty("--score", total);
+      els.scoreBadge.style.setProperty("--score-color", scoreColor(total));
+      els.scoreValue.textContent = String(total);
+      els.scoreGrade.textContent = result.grade;
+      els.resultName.textContent = result.name;
+      els.resultSubtitle.textContent = `${result.repo}@${result.branchUsed} · ${result.role}`;
+      els.sourceMode.textContent = result.mode;
+      els.githubLink.href = `https://github.com/${result.repo}`;
+      els.githubLink.classList.remove("is-hidden");
+      els.statProject.textContent = result.name;
+      els.statScore.textContent = `${total}/100`;
+      els.statMode.textContent = result.mode;
+      els.statFiles.textContent = String(result.fileCount);
+      els.warningBox.classList.toggle("is-hidden", !result.warning);
+      els.warningBox.textContent = result.warning || "";
+
+      els.dimensionList.innerHTML = DIMENSIONS.map((dim, index) => {
+        const raw = Math.min(dim.max, Math.max(0, Number(result.scores[dim.id]) || 0));
+        const pct = Math.round(raw / dim.max * 100);
+        return `
+          <div class="dimension-row">
+            <div class="index-num">${String(index + 1).padStart(2, "0")}</div>
+            <div class="dim-label">${escapeHtml(dim.label)}<small>${escapeHtml(dim.en)}</small></div>
+            <div class="dim-score">${raw}/${dim.max}</div>
+            <div class="bar"><span style="--value:${pct}%"></span></div>
+            <div class="dim-note">${escapeHtml(dimensionNote(result, dim.id, raw, dim.max))}</div>
+          </div>
+        `;
+      }).join("");
+
+      const topStrengths = DIMENSIONS
+        .map(dim => ({ dim, value: Number(result.scores[dim.id]) || 0, pct: (Number(result.scores[dim.id]) || 0) / dim.max }))
+        .sort((a, b) => b.pct - a.pct)
+        .slice(0, 5);
+      els.comparePanel.innerHTML = topStrengths.map(item => `
+        <div class="compare-cell">
+          <span>${escapeHtml(item.dim.label)}</span>
+          <strong>${item.value}/${item.dim.max}</strong>
+        </div>
+      `).join("");
+
+      const evidence = [
+        ...(result.evidence || []),
+        ...(result.onlineEvidence || [])
+      ];
+      els.evidenceList.innerHTML = evidence.length ? evidence.map(item => `
+        <div class="evidence-item">
+          <span class="dot"></span>
+          <span><strong>${escapeHtml(evidenceTitle(item))}</strong>${escapeHtml(evidenceDetail(item))}</span>
+        </div>
+      `).join("") : `<div class="empty">暂无证据。</div>`;
+
+      els.reportBox.value = buildReport(result);
+      renderCatalog();
+    }
+
+    function evidenceTitle(item) {
+      if (typeof item === "string") return item;
+      return item.title || item.path || "证据";
+    }
+
+    function evidenceDetail(item) {
+      if (typeof item === "string") return "";
+      return item.detail ? `\n${item.detail}` : "";
+    }
+
+    function dimensionNote(result, id, score, max) {
+      const ratio = score / max;
+      const name = result.name;
+      if (ratio >= 0.85) return `${name} 在这一项已经是主要参考对象。`;
+      if (ratio >= 0.65) return "能力完整，可作为工程参考，但仍需真实数据复测。";
+      if (ratio >= 0.4) return "有相关能力或生态支持，但不是该项目主线。";
+      return "不是该项目核心能力，不建议用它对标这一项。";
+    }
+
+    function buildReport(result) {
+      const lines = [];
+      lines.push(`# ${result.name} RAG / GraphRAG 开源系统评测`);
+      lines.push("");
+      lines.push(`- Repository: https://github.com/${result.repo}`);
+      lines.push(`- Branch: ${result.branchUsed}`);
+      lines.push(`- Source mode: ${result.mode}`);
+      lines.push(`- Score: ${result.total}/100 (${result.grade})`);
+      lines.push(`- Type: ${categoryLabel(result.category)}`);
+      lines.push(`- Role: ${result.role}`);
+      if (result.warning) lines.push(`- Warning: ${result.warning}`);
+      lines.push("");
+      lines.push("## 一句话结论");
+      lines.push(result.summary);
+      lines.push("");
+      lines.push("## 能力分项");
+      for (const dim of DIMENSIONS) {
+        lines.push(`- ${dim.label}: ${result.scores[dim.id]}/${dim.max}`);
+      }
+      lines.push("");
+      lines.push("## 证据");
+      for (const item of [...(result.evidence || []), ...(result.onlineEvidence || [])]) {
+        lines.push(`- ${evidenceTitle(item)}${evidenceDetail(item) ? `: ${evidenceDetail(item).replace(/\n/g, " ")}` : ""}`);
+      }
+      lines.push("");
+      lines.push("## 对标建议");
+      lines.push(...recommendations(result).map(item => `- ${item}`));
+      return lines.join("\n");
+    }
+
+    function recommendations(result) {
+      const graphScore = (result.scores.graph || 0) + (result.scores.local || 0) + (result.scores.global || 0);
+      const docScore = result.scores.doc || 0;
+      const items = [];
+      if (docScore >= 13) items.push("把它作为文档解析、表格/公式/版面处理的主要对标。");
+      if (graphScore >= 24) items.push("把它作为 GraphRAG 架构、图谱构建、local/global 查询的主要对标。");
+      if (result.category === "framework") items.push("它更适合作为开发框架参考，不要和完整产品按同一预期验收。");
+      if (result.category === "product") items.push("重点学习它的产品化、数据集管理、权限部署和用户工作流。");
+      if (result.category === "multimodal") items.push("重点学习多模态资料解析和跨模态检索，不要只看文本 RAG。");
+      if (!items.length) items.push("建议只抽取局部实现思路，不要整体复制。");
+      return items;
     }
 
     async function fetchJson(url) {
-      const headers = { "Accept": "application/vnd.github+json" };
+      const headers = { Accept: "application/vnd.github+json" };
       const token = els.githubToken.value.trim();
       if (token) headers.Authorization = `Bearer ${token}`;
       const response = await fetch(url, { headers });
@@ -963,389 +1457,202 @@ Best Day 3 baseline by average keyword coverage: keyword.
       return response.json();
     }
 
-    async function fetchText(url) {
-      const response = await fetch(url);
-      if (!response.ok) {
-        const error = new Error(`${response.status} ${response.statusText}: ${url}`);
-        error.status = response.status;
-        error.url = url;
-        throw error;
-      }
-      return response.text();
-    }
-
-    function isGitHubRateLimit(error) {
-      return error?.status === 403 || /403|rate limit|API rate limit/i.test(error?.message || "");
-    }
-
-    function isDefaultRagRepo(owner, repo) {
-      return owner?.toLowerCase() === "javonloong" && repo?.toLowerCase() === "rag";
-    }
-
-    async function analyzeGitHubRepo() {
-      if (state.busy) return;
-      state.busy = true;
-      els.analyzeBtn.disabled = true;
-      els.analyzeBtn.textContent = "评测中...";
-      let owner = "";
-      let repo = "";
-      let branch = "";
+    async function scanGitHub(owner, repo, branchInput) {
+      const repoInfo = await fetchJson(`https://api.github.com/repos/${owner}/${repo}`);
+      const defaultBranch = repoInfo.default_branch || "main";
+      let branch = branchInput || defaultBranch;
+      let tree;
+      let treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`;
       try {
-        const parsed = parseRepoUrl(els.repoUrl.value);
-        owner = parsed.owner;
-        repo = parsed.repo;
-        branch = els.branchName.value.trim() || "main";
-        log(`读取 GitHub 文件树: ${owner}/${repo}@${branch}`);
-        const treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`;
-        const treeData = await fetchJson(treeUrl);
-        if (treeData.truncated) log("GitHub 返回的文件树被截断，评分可能偏低。");
-        const paths = (treeData.tree || []).filter(item => item.type === "blob").map(item => item.path);
-        const rawBase = `https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(branch)}/`;
-        const textMap = await fetchCandidateTexts(paths, rawBase);
-        const result = scoreRepository({ repo: `${owner}/${repo}`, branch, paths, texts: textMap });
-        renderResult(result);
-        log(`评测完成：${result.total}/100，等级 ${result.grade}`);
+        tree = await fetchJson(treeUrl);
       } catch (error) {
-        const hasToken = Boolean(els.githubToken.value.trim());
-        if (!hasToken && isGitHubRateLimit(error) && isDefaultRagRepo(owner, repo)) {
-          log("GitHub API 匿名访问被限流，已自动切换到本项目内置评测清单。填写 GitHub Token 可强制读取线上仓库。");
-          const result = scoreRepository({ ...DEMO, repo: `${owner}/${repo}`, branch: branch || "main" });
-          result.runtimeWarning = "GitHub API returned 403; using the built-in RAG evaluation snapshot. Add a GitHub Token to force a live repository scan.";
-          result.sourceMode = "rate-limit-fallback";
-          renderResult(result);
-          log(`评测完成：${result.total}/100，等级 ${result.grade}`);
-          return;
-        }
-        log(`评测失败：${error.message}`);
-        renderError(error);
-      } finally {
-        state.busy = false;
-        els.analyzeBtn.disabled = false;
-        els.analyzeBtn.textContent = "导入并开始评测";
-      }
-    }
-
-    async function fetchCandidateTexts(paths, rawBase) {
-      const candidates = findCandidates(paths);
-      const textMap = {};
-      for (const path of candidates) {
-        try {
-          log(`解析报告: ${path}`);
-          textMap[path] = await fetchText(rawBase + path.split("/").map(encodeURIComponent).join("/"));
-        } catch (error) {
-          textMap[path] = "";
+        if (error.status === 404 && branch !== defaultBranch) {
+          branch = defaultBranch;
+          treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`;
+          tree = await fetchJson(treeUrl);
+        } else {
+          throw error;
         }
       }
-      return textMap;
-    }
-
-    function findCandidates(paths) {
-      const wanted = [];
-      const patterns = [
-        /^evaluation\/system_eval_questions\.jsonl$/i,
-        /day3_retrieval_baseline_comparison.*\.(md|json)$/i,
-        /day4_failure_analysis.*\.(md|json)$/i,
-        /GraphRAG.*子集.*\.md$/i,
-        /10_系统评测题集\.jsonl$/i,
-        /11_Day3_baseline_comparison\.md$/i,
-        /13_GraphRAG同题子集报告\.md$/i,
-        /^README\.md$/i,
-        /^TECH_STACK\.md$/i
-      ];
-      for (const path of paths) {
-        if (patterns.some(pattern => pattern.test(path))) wanted.push(path);
-      }
-      return wanted.slice(0, 16);
-    }
-
-    function scoreRepository(repoData) {
-      const pathSet = new Set(repoData.paths);
-      const hasPathPrefix = prefix => repoData.paths.some(path => path === prefix.replace(/\/$/, "") || path.startsWith(prefix));
-      const hasPathMatch = needle => repoData.paths.some(path => path.includes(needle));
-
-      const evidence = [];
-      const addEvidence = (label, ok, detail) => evidence.push({ label, ok, detail });
-
-      const structureHits = REQUIRED.structure.filter(([prefix, label]) => {
-        const ok = hasPathPrefix(prefix);
-        addEvidence(label, ok, ok ? prefix : "缺失");
-        return ok;
-      }).length;
-      const fileHits = REQUIRED.files.filter(([file, label]) => {
-        const ok = pathSet.has(file);
-        addEvidence(label, ok, ok ? file : "缺失");
-        return ok;
-      }).length;
-
-      const datasetPath = findFirst(repoData.paths, [/evaluation\/system_eval_questions\.jsonl$/i, /10_系统评测题集\.jsonl$/i]);
-      const datasetText = getText(repoData.texts, datasetPath);
-      const questionCount = countJsonl(datasetText);
-      addEvidence("评测问题集", Boolean(datasetPath), datasetPath || "缺失");
-
-      const baselinePath = findFirst(repoData.paths, [/day3_retrieval_baseline_comparison.*\.(md|json)$/i, /11_Day3_baseline_comparison\.md$/i]);
-      const baselineText = getText(repoData.texts, baselinePath);
-      const baselineMetrics = parseBaselineMetrics(baselineText);
-      addEvidence("baseline 对比报告", Boolean(baselinePath), baselinePath || "缺失");
-
-      const failurePath = findFirst(repoData.paths, [/day4_failure_analysis.*\.(md|json)$/i]);
-      const failureText = getText(repoData.texts, failurePath);
-      const failureTags = ["hybrid_dilution", "partial_ranking_gap", "evaluation_concept_gap"].filter(tag => failureText.includes(tag));
-      addEvidence("失败分析报告", Boolean(failurePath), failurePath || "缺失");
-
-      const graphSubsetPath = findFirst(repoData.paths, [/GraphRAG.*子集.*\.md$/i, /13_GraphRAG同题子集报告\.md$/i]);
-      const graphSubsetText = getText(repoData.texts, graphSubsetPath);
-      const graphSubsetCount = parseNumberAfter(graphSubsetText, /GraphRAG\s*子集题数[：:]\s*(\d+)/) || 0;
-      addEvidence("GraphRAG 子集报告", Boolean(graphSubsetPath), graphSubsetPath || "缺失");
-
-      const testsCount = repoData.paths.filter(path => /^tests\//.test(path) && /test_.*\.py$/.test(path)).length;
-      const ci = repoData.paths.some(path => path.includes(".github/workflows/") || path === ".gitlab-ci.yml");
-      const pyproject = pathSet.has("pyproject.toml");
-
-      const dimensions = [
-        {
-          key: "structure",
-          title: "工程结构",
-          max: 20,
-          score: Math.round(((structureHits / REQUIRED.structure.length) * 14) + ((fileHits / REQUIRED.files.length) * 6)),
-          notes: [`模块命中 ${structureHits}/${REQUIRED.structure.length}`, `关键文件命中 ${fileHits}/${REQUIRED.files.length}`]
-        },
-        {
-          key: "dataset",
-          title: "评测数据集",
-          max: 20,
-          score: datasetPath ? Math.min(20, 8 + Math.round(Math.min(questionCount, 60) / 60 * 12)) : 0,
-          notes: [datasetPath ? `识别到 ${datasetPath}` : "未识别到评测问题集", `题目数估计 ${questionCount || 0}`]
-        },
-        {
-          key: "baseline",
-          title: "Baseline 对比",
-          max: 25,
-          score: scoreBaseline(baselineMetrics, Boolean(baselinePath)),
-          notes: baselineMetrics.length ? baselineMetrics.map(item => `${item.method}: recall ${formatMetric(item.recall)}`) : ["未解析到 baseline 表格"]
-        },
-        {
-          key: "failure",
-          title: "失败归因",
-          max: 15,
-          score: failurePath ? Math.min(15, 6 + failureTags.length * 3) : 0,
-          notes: failureTags.length ? failureTags : ["未识别失败分类"]
-        },
-        {
-          key: "graphrag",
-          title: "GraphRAG 覆盖",
-          max: 10,
-          score: Math.min(10, (hasPathPrefix("kg_pipeline/") ? 4 : 0) + (graphSubsetPath ? 4 : 0) + (graphSubsetCount >= 10 ? 2 : 0)),
-          notes: [hasPathPrefix("kg_pipeline/") ? "存在 kg_pipeline" : "缺少 kg_pipeline", graphSubsetPath ? `子集报告 ${graphSubsetCount || "已识别"} 题` : "缺少 GraphRAG 子集报告"]
-        },
-        {
-          key: "repro",
-          title: "复现与质量",
-          max: 10,
-          score: Math.min(10, (testsCount > 0 ? 4 : 0) + (pyproject ? 3 : 0) + (ci ? 3 : 0)),
-          notes: [`测试文件 ${testsCount}`, pyproject ? "存在 pyproject.toml" : "缺少 pyproject.toml", ci ? "存在 CI 配置" : "缺少 CI 配置"]
-        }
-      ];
-
-      const total = Math.max(0, Math.min(100, dimensions.reduce((sum, item) => sum + item.score, 0)));
-      const grade = total >= 85 ? "A" : total >= 70 ? "B" : total >= 55 ? "C" : "D";
-      const suggestions = buildSuggestions(dimensions, baselineMetrics, questionCount, graphSubsetCount);
-
+      const paths = (tree.tree || []).filter(item => item.type === "blob").map(item => item.path);
       return {
-        repo: repoData.repo,
-        branch: repoData.branch,
-        pathsCount: repoData.paths.length,
-        dimensions,
-        total,
-        grade,
-        evidence,
-        baselineMetrics,
-        questionCount,
-        graphSubsetCount,
-        suggestions
+        repoInfo,
+        branch,
+        paths,
+        truncated: Boolean(tree.truncated),
+        apiUrl: treeUrl
       };
     }
 
-    function findFirst(paths, patterns) {
-      return paths.find(path => patterns.some(pattern => pattern.test(path))) || "";
+    function liveResultFromScan(owner, repo, branch, scan) {
+      const scores = inferScoresFromPaths(scan.paths);
+      const total = totalScore(scores);
+      return {
+        key: `${owner}-${repo}`.toLowerCase(),
+        name: `${owner}/${repo}`,
+        repo: `${owner}/${repo}`,
+        branch,
+        branchUsed: scan.branch,
+        category: "framework",
+        role: "在线仓库结构推断",
+        summary: "这是根据公开 GitHub 文件树做的结构化推断，只能判断工程成熟度和能力迹象，不能替代真实问答效果。",
+        scores,
+        total,
+        grade: gradeFor(total),
+        mode: "在线仓库扫描",
+        fileCount: scan.paths.length,
+        evidence: buildScanEvidence(scan.paths),
+        onlineEvidence: scan.truncated ? [{ title: "GitHub 文件树被截断", detail: "评分可能偏低，建议填写 Token 或本地评测。" }] : [],
+        warning: "未知项目没有内置公开画像，分数来自文件名和目录结构启发式推断。",
+        apiUrl: scan.apiUrl
+      };
     }
 
-    function getText(texts, path) {
-      if (!path) return "";
-      return texts[path] || "";
+    function inferScoresFromPaths(paths) {
+      const joined = paths.join("\n").toLowerCase();
+      const has = needles => needles.some(needle => joined.includes(needle));
+      const count = needles => needles.reduce((sum, needle) => sum + (joined.includes(needle) ? 1 : 0), 0);
+      return {
+        doc: Math.min(15, 2 + count(["pdf", "docx", "ocr", "parser", "parse", "document", "reader", "mineru", "docling", "unstructured"]) * 2),
+        chunk: Math.min(10, 2 + count(["chunk", "splitter", "ingest", "loader", "dataset", "pipeline"]) * 2),
+        semantic: Math.min(10, 2 + count(["embedding", "vector", "faiss", "milvus", "qdrant", "chroma", "weaviate"]) * 2),
+        keyword: Math.min(10, count(["bm25", "keyword", "sparse", "elastic", "opensearch", "fulltext"]) * 2),
+        hybrid: Math.min(10, count(["hybrid", "rerank", "reranker", "rrf", "rank", "fusion"]) * 2),
+        graph: Math.min(10, count(["graph", "kg", "entity", "relation", "community", "neo4j", "falkor"]) * 2),
+        local: Math.min(10, count(["local_search", "local search", "entity", "graph_retriever", "subgraph"]) * 2),
+        global: Math.min(10, count(["global_search", "community", "summary", "leiden", "cluster"]) * 2),
+        grounding: Math.min(10, count(["citation", "source", "reference", "provenance", "page", "evidence"]) * 2),
+        safety: Math.min(5, has(["hallucination", "guard", "refusal", "no_answer", "evaluation", "eval"]) ? 4 : 1)
+      };
     }
 
-    function countJsonl(text) {
-      if (!text) return 0;
-      return text.split(/\r?\n/).filter(line => line.trim().startsWith("{")).length;
-    }
-
-    function parseNumberAfter(text, regex) {
-      const match = text.match(regex);
-      return match ? Number(match[1]) : 0;
-    }
-
-    function parseBaselineMetrics(text) {
-      if (!text) return [];
-      const methods = ["keyword", "dense_hashing", "hybrid_rrf"];
-      const rows = [];
-      for (const method of methods) {
-        const regex = new RegExp(`\\|\\s*${method}\\s*\\|([^\\n]+)`, "i");
-        const match = text.match(regex);
-        if (!match) continue;
-        const cells = match[1].split("|").map(cell => cell.trim());
-        rows.push({
-          method,
-          questions: Number(cells[0]) || 0,
-          matched: Number(cells[1]) || 0,
-          recall: Number(cells[2]) || 0,
-          keywordRecall: Number(cells[3]) || 0,
-          coverage: Number(cells[4]) || 0,
-          strong: Number(cells[5]) || 0,
-          weak: Number(cells[6]) || 0,
-          missed: Number(cells[7]) || 0,
-          zeroHit: Number(cells[8]) || 0
-        });
-      }
-      return rows;
-    }
-
-    function scoreBaseline(metrics, hasReport) {
-      if (!hasReport) return 0;
-      if (!metrics.length) return 8;
-      const methodScore = Math.min(8, metrics.length * 3);
-      const bestRecall = Math.max(...metrics.map(item => item.recall || 0));
-      const recallScore = Math.round(Math.min(bestRecall, 0.9) / 0.9 * 10);
-      const zeroHitPenalty = metrics.some(item => item.zeroHit > 0) ? -2 : 2;
-      const coverage = Math.max(...metrics.map(item => item.coverage || 0));
-      const coverageScore = Math.round(Math.min(coverage, 0.7) / 0.7 * 5);
-      return Math.max(0, Math.min(25, methodScore + recallScore + zeroHitPenalty + coverageScore));
-    }
-
-    function buildSuggestions(dimensions, metrics, questionCount, graphSubsetCount) {
-      const suggestions = [];
-      const byKey = Object.fromEntries(dimensions.map(item => [item.key, item]));
-      if (byKey.dataset.score < 16) suggestions.push("补齐 evaluation/system_eval_questions.jsonl，并保证题目覆盖事实、流程、OCR 风险、GraphRAG、评测方法等能力组。");
-      if (byKey.baseline.score < 18) suggestions.push("补充 keyword、dense、hybrid 三类 baseline 的同题对比报告，至少包含 question recall@K、coverage、strong/weak/missed。");
-      if (byKey.failure.score < 12) suggestions.push("增加失败归因报告，把失败案例分成 hybrid_dilution、ranking_gap、concept_gap 等可执行类别。");
-      if (byKey.graphrag.score < 8) suggestions.push("为 GraphRAG 单独建立同题子集，区分 local context 和 global community summary 的适用场景。");
-      if (metrics.length) {
-        const keyword = metrics.find(item => item.method === "keyword");
-        const hybrid = metrics.find(item => item.method === "hybrid_rrf");
-        if (keyword && hybrid && keyword.recall >= hybrid.recall) suggestions.push("当前 keyword 不弱于 hybrid，说明强术语资料需要权重路由或 reranker，不能简单融合。");
-      }
-      if (questionCount >= 60 && graphSubsetCount >= 10) suggestions.push("评测集规模和 GraphRAG 子集已具备课程阶段展示基础，下一步应接入真实检索 API 做在线复测。");
-      return suggestions.slice(0, 6);
-    }
-
-    function formatMetric(value) {
-      if (!Number.isFinite(value)) return "--";
-      return value.toFixed(3);
-    }
-
-    function renderResult(result) {
-      state.current = result;
-      els.copyBtn.disabled = false;
-      els.scoreRing.style.setProperty("--score", result.total);
-      els.scoreValue.textContent = String(result.total);
-      els.scoreGrade.textContent = `等级 ${result.grade}`;
-      const sourceNote = result.runtimeWarning ? " · GitHub API 限流，已使用内置评测快照" : "";
-      els.resultSubtitle.textContent = `${result.repo}@${result.branch} · 扫描 ${result.pathsCount} 个文件 · 评分 ${result.total}/100${sourceNote}`;
-      const facts = [
-        `仓库：${escapeHtml(result.repo)}`,
-        `分支：${escapeHtml(result.branch)}`,
-        `文件数：${result.pathsCount}`,
-        `评测题数：${result.questionCount || 0}`,
-        `GraphRAG 子集：${result.graphSubsetCount || 0}`
+    function buildScanEvidence(paths) {
+      const checks = [
+        { title: "文档解析迹象", regex: /(pdf|docx|ocr|parser|document|reader|docling|unstructured)/i },
+        { title: "检索/向量库迹象", regex: /(embedding|vector|faiss|milvus|qdrant|chroma|weaviate|bm25)/i },
+        { title: "混合检索/重排迹象", regex: /(hybrid|rerank|reranker|rrf|fusion)/i },
+        { title: "图谱 / GraphRAG 迹象", regex: /(graph|kg|entity|relation|community|neo4j|falkor)/i },
+        { title: "评测/测试迹象", regex: /(eval|benchmark|test|pytest|quality|metric)/i },
+        { title: "部署/工程迹象", regex: /(docker|compose|k8s|helm|api|server|workflow|ci)/i }
       ];
-      if (result.runtimeWarning) facts.push("来源：内置评测快照（GitHub API 403 降级）");
-      els.repoFacts.innerHTML = facts.map(item => `<li>${item}</li>`).join("");
-
-      els.dimensionGrid.innerHTML = result.dimensions.map(item => `
-        <article class="dimension-card">
-          <h3>${escapeHtml(item.title)}</h3>
-          <div class="dimension-score">${item.score}/${item.max}</div>
-          <div class="mini-bar" aria-hidden="true"><span style="--value:${Math.round(item.score / item.max * 100)}%"></span></div>
-          <ul>${item.notes.map(note => `<li>${escapeHtml(note)}</li>`).join("")}</ul>
-        </article>
-      `).join("");
-
-      els.evidenceRows.innerHTML = result.evidence.map(item => `
-        <tr>
-          <td>${escapeHtml(item.label)}</td>
-          <td class="${item.ok ? "status-ok" : "status-bad"}">${item.ok ? "命中" : "缺失"}</td>
-          <td>${escapeHtml(item.detail)}</td>
-        </tr>
-      `).join("");
-
-      els.metricRows.innerHTML = result.baselineMetrics.length ? result.baselineMetrics.map(item => `
-        <tr>
-          <td>${escapeHtml(item.method)}</td>
-          <td>${formatMetric(item.recall)}</td>
-          <td>${formatMetric(item.coverage)}</td>
-        </tr>
-      `).join("") : `<tr><td colspan="3">未解析到 baseline 指标。</td></tr>`;
-
-      const report = buildMarkdownReport(result);
-      els.reportBox.value = report;
+      return checks.map(check => {
+        const matches = paths.filter(path => check.regex.test(path)).slice(0, 3);
+        return {
+          title: check.title,
+          detail: matches.length ? matches.join(" · ") : "未从文件树识别到明显证据"
+        };
+      });
     }
 
-    function renderError(error) {
-      const limitHint = isGitHubRateLimit(error)
-        ? "GitHub API 返回 403。请填写 GitHub Token 后重试，或先加载内置示例结果。"
-        : "请确认仓库为公开仓库、分支正确，或稍后重试 GitHub API。";
-      els.resultSubtitle.textContent = `评测失败。${limitHint}`;
-      els.reportBox.value = `# RAG 仓库评测失败\n\n${error.message}\n\n${limitHint}\n`;
-    }
+    async function analyzeInput() {
+      if (els.analyzeBtn.disabled) return;
+      els.analyzeBtn.disabled = true;
+      els.analyzeBtn.textContent = "评测中...";
+      try {
+        const parsed = parseRepoUrl(els.repoUrl.value);
+        const key = repoKey(parsed.owner, parsed.repo);
+        const profile = PROFILE_BY_REPO[key];
+        const branchInput = els.branchName.value.trim();
 
-    function buildMarkdownReport(result) {
-      const lines = [];
-      lines.push(`# RAG Repository Evaluation Report`);
-      lines.push("");
-      lines.push(`- Repository: ${result.repo}`);
-      lines.push(`- Branch: ${result.branch}`);
-      lines.push(`- Files scanned: ${result.pathsCount}`);
-      lines.push(`- Score: ${result.total}/100 (${result.grade})`);
-      if (result.runtimeWarning) lines.push(`- Runtime note: ${result.runtimeWarning}`);
-      lines.push("");
-      lines.push(`## Dimension Scores`);
-      for (const item of result.dimensions) {
-        lines.push(`- ${item.title}: ${item.score}/${item.max}`);
-      }
-      lines.push("");
-      lines.push(`## Baseline Metrics`);
-      if (result.baselineMetrics.length) {
-        lines.push(`| Method | Question recall@K | Avg coverage | Strong | Weak | Missed |`);
-        lines.push(`|---|---:|---:|---:|---:|---:|`);
-        for (const item of result.baselineMetrics) {
-          lines.push(`| ${item.method} | ${formatMetric(item.recall)} | ${formatMetric(item.coverage)} | ${item.strong} | ${item.weak} | ${item.missed} |`);
+        if (profile) {
+          const immediate = profileToResult(profile, "内置公开画像", { branchUsed: branchInput || profile.branch });
+          renderResult(immediate);
+          log(`已识别头部项目 ${profile.name}，先用内置公开画像出分。`);
+          if (!els.githubToken.value.trim()) {
+            log("未填写 GitHub Token，已跳过在线扫描，避免匿名 API 403。");
+            return;
+          }
+          try {
+            const scan = await scanGitHub(parsed.owner, parsed.repo, branchInput || profile.branch);
+            const onlineEvidence = buildScanEvidence(scan.paths);
+            const result = profileToResult(profile, "公开画像 + 在线仓库证据", {
+              branchUsed: scan.branch,
+              fileCount: scan.paths.length,
+              onlineEvidence,
+              warning: scan.truncated ? "GitHub 返回的文件树被截断，在线证据可能不完整；内置画像仍然保留。" : "",
+              apiUrl: scan.apiUrl
+            });
+            renderResult(result);
+            log(`在线仓库增强完成：${scan.paths.length} 个文件。`);
+          } catch (error) {
+            const result = profileToResult(profile, "内置公开画像", {
+              branchUsed: branchInput || profile.branch,
+              warning: `GitHub 在线扫描失败，已保留内置画像评分。原因：${error.message}`
+            });
+            renderResult(result);
+            log(`在线扫描失败但评测未中断：${error.message}`);
+          }
+          return;
         }
-      } else {
-        lines.push(`No baseline metrics parsed.`);
+
+        log(`未命中内置画像，开始在线扫描 ${parsed.owner}/${parsed.repo}。`);
+        const scan = await scanGitHub(parsed.owner, parsed.repo, branchInput);
+        const result = liveResultFromScan(parsed.owner, parsed.repo, branchInput, scan);
+        renderResult(result);
+        log(`在线评测完成：${scan.paths.length} 个文件。`);
+      } catch (error) {
+        renderFailure(error);
+        log(`评测失败：${error.message}`);
+      } finally {
+        els.analyzeBtn.disabled = false;
+        els.analyzeBtn.textContent = "开始评测";
       }
-      lines.push("");
-      lines.push(`## Suggestions`);
-      for (const suggestion of result.suggestions) {
-        lines.push(`- ${suggestion}`);
-      }
-      return lines.join("\n");
     }
 
-    function loadDemo() {
-      log("加载内置示例评测结果。");
-      renderResult(scoreRepository(DEMO));
+    function renderFailure(error) {
+      const message = error.status === 403
+        ? "GitHub API 403。已知头部项目不会因此失败；未知项目需要填写 Token，或者先把项目加入内置画像库。"
+        : "在线仓库扫描失败。请检查仓库 URL、分支名，或者填写 GitHub Token 后重试。";
+      els.resultName.textContent = "评测失败";
+      els.resultSubtitle.textContent = message;
+      els.sourceMode.textContent = "失败";
+      els.warningBox.classList.remove("is-hidden");
+      els.warningBox.textContent = `${message} 原始错误：${error.message}`;
+      els.reportBox.value = `# 评测失败\n\n${message}\n\n${error.message}\n`;
+    }
+
+    function selectProject(key) {
+      const profile = PROJECTS.find(project => project.key === key);
+      if (!profile) return;
+      els.repoUrl.value = `https://github.com/${profile.repo}`;
+      els.branchName.value = "";
+      renderResult(profileToResult(profile));
+      log(`已切换到 ${profile.name}。`);
     }
 
     async function copyReport() {
-      if (!els.reportBox.value) return;
+      if (!els.reportBox.value.trim()) return;
       await navigator.clipboard.writeText(els.reportBox.value);
-      log("评分报告已复制到剪贴板。");
+      log("报告已复制到剪贴板。");
     }
 
-    els.analyzeBtn.addEventListener("click", analyzeGitHubRepo);
-    els.demoBtn.addEventListener("click", loadDemo);
+    document.querySelectorAll(".filter").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".filter").forEach(item => item.classList.remove("active"));
+        button.classList.add("active");
+        state.filter = button.dataset.filter;
+        renderCatalog();
+      });
+    });
+
+    els.catalog.addEventListener("click", event => {
+      const card = event.target.closest("[data-project]");
+      if (card) selectProject(card.dataset.project);
+    });
+
+    els.rankRows.addEventListener("click", event => {
+      const row = event.target.closest("[data-project]");
+      if (row) selectProject(row.dataset.project);
+    });
+
+    els.analyzeBtn.addEventListener("click", analyzeInput);
+    els.powerBtn.addEventListener("click", () => selectProject("powerrag"));
     els.copyBtn.addEventListener("click", copyReport);
 
-    loadDemo();
+    renderCatalog();
+    renderRanking();
+    renderResult(profileToResult(PROJECTS[0]));
+    log("评测台已加载：导入头部项目链接时会优先使用内置公开画像，GitHub API 失败不会中断。");
   </script>
 </body>
 </html>

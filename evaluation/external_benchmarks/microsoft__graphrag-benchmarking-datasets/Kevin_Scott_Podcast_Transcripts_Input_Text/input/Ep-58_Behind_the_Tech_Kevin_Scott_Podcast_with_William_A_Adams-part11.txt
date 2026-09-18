@@ -1,0 +1,41 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  should be no more than one click away from achieving some action." So he hated like, endless lists of menus, and all that sort of stuff. It was like one click, direct action is the way things should work, so you know, there were certain things about the platform Display PostScript, like you said, the networking model.
+
+They have this thing called Speaker Listener, and it was a way of passing messages back and forth, even across the network. So yeah, there was a lot of innovation. And it allowed us to create apps that would come out and take two or three months instead of a year.
+
+KEVIN SCOTT: Yeah.
+
+WILLIAM ADAMS: It was quite literally that dramatic of a difference. And we even won – our company won an award. I can’t even remember what it was. It was the DB Expo way back then. We won an award for Best In Breed because of this database app stuff that we did. And it was because of object-oriented, you know, dynamic this, that and the other thing, and the way we connect things together. 
+
+So yeah, it was – they had tons of Innovation that is now lasting, right? 
+
+KEVIN SCOTT: Yeah. 
+
+WILLIAM ADAMS: So yeah, that’s why – that’s why I did NeXT, because it’s like, "This is going to be where it’s at," you know?
+
+KEVIN SCOTT: Yeah, and you know, it – NeXT wasn’t a super-successful company in the grand scheme of things.
+
+WILLIAM ADAMS: Right.
+
+KEVIN SCOTT: But it was a super-influential company.
+
+WILLIAM ADAMS: Yeah, the DNA lived on, but they didn’t get the commercial success. 
+
+KEVIN SCOTT: Yeah. So you were pretty prescient in figuring that out.
+
+WILLIAM ADAMS: Yeah, I mean I did one more before I went off to Microsoft, which was the Be Operating System, BeOS –
+
+KEVIN SCOTT: Which was another that was –
+
+WILLIAM ADAMS: Another one of those things.
+
+KEVIN SCOTT: Jean-Louis Gassée that was his company, right?
+
+WILLIAM ADAMS: Yeah it was Jean-Louis Gassée, Steve Sakoman, I forgot, Erich [Ringewald] – I forgot Erich’s last name, but yeah –
+
+KEVIN SCOTT: That was a brilliant operating system, like I never had one, but I always wanted a Be Box, like it was such a cool computer.
+
+WILLIAM ADAMS: I still have one. I have one, down in the basement.
+
+KEVIN SCOTT: Dude.
+
+WILLIAM ADAMS: Yeah, they were innovative in quite a few things. They were one of the first people to come out with a PC that was multiprocessing. It had two CPUs in it.

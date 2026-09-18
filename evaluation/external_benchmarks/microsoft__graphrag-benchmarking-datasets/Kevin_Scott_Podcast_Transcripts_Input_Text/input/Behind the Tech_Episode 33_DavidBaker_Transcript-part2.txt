@@ -1,0 +1,19 @@
+Behind the Tech_Episode 33_DavidBaker_Transcript.txt  over 500 research papers, been granted over 100 patents, and cofounded 11 companies. Welcome to the show, David. 
+
+DAVID BAKER:  Thank you. Happy to be here. 
+
+KEVIN SCOTT:  So, for listeners who aren’t familiar with your work, can you tell us a bit about the University of Washington’s Institute for Protein Design and the work that you do there? 
+
+DAVID BAKER:  Yeah, sure. So, in nature, proteins carry out essentially all the important functions in our bodies and in all living things. And they’ve come through billions of years – millions of years of evolution. And sort of been optimized to solve the problems that were at hand during the evolution.  
+
+And what we’ve worked – figured out at the Institute for Protein Design is how to make brand-new proteins and to design them not to address problems that were relevant during evolution, but to address modern-day, current problems and that’s really what we’re focused on at the Institute. 
+
+KEVIN SCOTT:  It’s such, such cool work. And I’m interested how you got interested in the field. Were you interested in science and math when you were a little kid? Were your parents scientists or engineers? Like, what sparked the interest that has carried you to where you are today? 
+
+DAVID BAKER:  Yeah, it’s interesting. I actually was not terribly interested in science as a kid, perhaps because my parents were scientists. And when I went to college, I actually did not initially major in science. I was initially a social studies major and then wanted to be a philosophy major. And then it was literally my last year as an undergrad that I switched to biology and then I hadn’t really done research before, but I got really excited about what I learned – what I had been learning in biology, which was developmental biology and neurobiology. And so, I decided I would try out graduate school to see what it was like. And I found I liked doing research and I liked, you know, interacting with other people sort of to solve hard problems. 
+
+But as time went on as I was a graduate student then – then the next stage in my career, a post-doc, I got more and more interested in sort of more basic questions. And when I had taken my first biochemistry class when I was a senior in college, they had talked about the protein folding problem. And it seemed really interesting, but everyone said it was too hard to work on. 
+
+And so – but then when I as a post-doc, and then really when I came to the University of Washington, that I decided to focus on trying to solve that problem. 
+
+KEVIN SCOTT:  Yeah, I remember I think in 1993, I was a research intern at the NCSA at the Beckman Institute working in the computational biology group that Shankar Subramaniam was running there at

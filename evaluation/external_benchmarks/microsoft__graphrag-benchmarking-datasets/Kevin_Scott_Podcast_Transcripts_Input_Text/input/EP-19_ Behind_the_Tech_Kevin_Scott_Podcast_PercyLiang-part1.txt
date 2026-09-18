@@ -1,0 +1,21 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  received his PhD from UC Berkeley.  Hey, Percy, welcome to the show.
+
+PERCY LIANG:  Thanks for having me.  
+
+KEVIN SCOTT:  So, we always start these shows with me asking how you first got interested in technology.  Were you a little kid when you realized that you were interested in this stuff? 
+
+PERCY LIANG:  Yeah.  I think it was around maybe end of elementary school or middle school.  My dad always had a computer, so it was around, but he didn’t let me play with it -- 
+
+KEVIN SCOTT:  And what did your dad do? 
+
+PERCY LIANG:  He was a mechanical engineer.  Yeah.  And I remember maybe my first memories are in that first school -- in middle school, there was a computer lab and there was a HyperCard, which is this multimedia program for the Macintosh back then.  And I got really fascinated in building these relatively simple applications, but they had a scripting language so you could start to code a little bit.  And there is animation and all that.  So it was kind of fun to get into that.  
+
+KEVIN SCOTT:   I remember HyperCard as well.  I believe one of the first programs I wrote -- I may be a little bit older than you are, but I do remember at one point writing a HyperCard program that was a multimedia thing that animated a laser disc.  Do you remember laser disks, the big, gigantic precursors to DVDs? Yeah, it was really such a great tool. 
+
+PERCY LIANG:  Yeah. At that time, I also tried to learn C, but that was kind of a disaster -- (inaudible) pointers and all this stuff.  
+
+KEVIN SCOTT:  Yeah, C is sort of a formidable first language to attempt to learn.  One of the things, given that you are a computer science educator, I’d be curious to hear how you think about that evolution of entry into computer science.  On some levels now, it seems like it’s a lot easier to get started than when we were kids, maybe.  But in other ways, it’s actually more challenging because so much of the computing environment -- like the low-level details -- are just abstracted away and the layering is very high and it is a lot to get through. 
+
+PERCY LIANG:  Yeah.  Somehow, computer science thrives on abstraction, right?  From the low-level machine code to C and we have Python and programming languages and at some level, graphical interfaces. So picking the right entry point into that for someone is -- I think there are multiple ways you can go. 
+
+I probably wouldn’t start with C if I were teaching an intro programming class, but more at a conceptual level of here are the kinds of computations that you want to perform.  And then separately, I think a

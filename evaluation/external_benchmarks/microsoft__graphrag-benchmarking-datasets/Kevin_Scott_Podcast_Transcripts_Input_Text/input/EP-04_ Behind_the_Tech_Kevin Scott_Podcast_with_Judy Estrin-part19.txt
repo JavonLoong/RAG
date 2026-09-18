@@ -1,0 +1,14 @@
+EP-04_ Behind_the_Tech_Kevin Scott_Podcast_with_Judy Estrin.txt  And so I'm just really fortunate to be at a point where I can at least try to add my voice to the debate. 
+KEVIN SCOTT: We're so glad that this is how you're choosing to spend your time. So, thank you so much for being on the podcast today. 
+JUDY ESTRIN: It was my pleasure. Thank you for inviting me. 
+
+[MUSIC]
+
+KEVIN SCOTT: Well, thanks for joining us for Behind the Tech. What a great conversation we just had with Judy Estrin. 
+CHRISTINA WARREN: Yeah, it was really great hearing the two of you talk. And hearing about Judy's career and all the things that she's done and how she's literally been involved with the Internet from basically, its inception through the present is so interesting. 
+KEVIN SCOTT: Yeah. Now, Judy has been an incredible mentor to me. Her story is inspiring. She has so much wisdom. She's such a good technologist. I've learned a ton from her over the years. 
+CHRISTINA WARREN: I was really struck by one of the things that she said in your conversation where she was talking about growth without the expense of humanity. And how that seems easy to say, but seems in practice, actually, really difficult. 
+KEVIN SCOTT: I think there are a bunch of things that we can do. She was sort of dead on with this notion of we don't don't fix what we don't measure. And part of what I think we're learning right now with some of the things that are going on in the tech industry is how to measure some of the things where people are using the technology that we've built in these sort of unanticipated, bad ways. 
+And I think we will learn very quickly as an industry, how to get better on this stuff. But, I think it really is going to require us to start thinking about our role as computer scientists and engineers and technologists a little bit differently. And for us to start when we are educating folks to make sure that that human part of the job is just as well emphasized as the technological part. I went to a liberal arts school to get my computer science degree. And even there, at a liberal arts school, things like taking an ethics class weren't mandatory. I wound up taking a philosophy class. We've sort of developed over the many centuries this whole notion of a liberal arts education because it's important. What all of us have to like really understand, especially those of us who are in fields where we're building technology that has such a pervasive impact. 
+CHRISTINA WARREN: Do you think having that background in humanities, do you think that helped you as you became a technologist, and as you've transitioned into becoming a manager and now an executive? 
+KEVIN SCOTT: Yeah, I think it has in interesting unanticipated ways. If

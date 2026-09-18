@@ -1,0 +1,15 @@
+Ep-55_Behind_the_Tech_Kevin_Scott_Podcast_with_Mira_Murati.txt , maybe in the past 40-50 years. So, like, tell us a little bit about that. 
+
+MIRA MURATI: Tesla was an incredible place. And in some ways, actually, I find it quite similar to OpenAI now, where you have -- obviously, it was much bigger and working on something very different, but this high density of very talented smart people that are just so passionate about what they’re doing. It’s almost, you know, it’s almost like a spiritual pursuit. Everyone believed so hard in what they were doing and that being the most important thing. 
+
+And that is just so powerful when you’re working on really hard problems and in the case of Tesla, it’s transforming an entire industry versus creating many new ones as well as transforming them. 
+
+And, you know, it was incredibly hard, but also just invigorating and sort of fun and I learned so much in a short amount of time. I don’t think it’s normal, you know, to build a car from zero to one, you know, in just three or four years. It’s a very short time. These things usually have this, like, very long life cycle or timelines in terms of design and prototyping and then production and so on. 
+
+And, you know, one of the things that I learned at Tesla was that there’s always some different way, even if it seems impossible, there is always a way. There is always a different way. And, you know, in product in general, there’s kind of two ways of building product, where you have the really, really polished stuff. Then, this way of kind of hacking and iterating and, you know, getting a lot of feedback from your user base and customers, and just iterating quickly on that. 
+
+Tesla, I would say, was in between, kind of doing both.  And that was incredible. I mean, just the first time operating like that in an industry that is so established. And so I learned a lot, especially from, you know, just the power of being creative and thinking originally and just really changing everything and questioning what you know and questioning why things are done a certain way. And I also just -- that was the place where I started getting really interested into the power of AI and how it would change everything that we do. 
+
+So, in a sense, it was, you know, in my career, it was the place that really catalyzed my interest in working in AI. And then, of course, after working in VR and AR, I just thought, okay, intelligence is really the fundamental property of how the world is going to change. Then, I got more and more interested in just the application side of it, but really understanding what general intelligence meant and how we could build it and how we make things go well for the world, if we do build it. 
+
+KEVIN SCOTT: Before we

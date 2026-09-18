@@ -1,0 +1,17 @@
+EP-40_Behind_the_Tech_DanielaRus_Transcript (1).txt  biological systems that are.
+
+DANIELA RUS: Yeah, I completely agree, Kevin. I mean, just think about what a kid can do on a chocolate bar, right? (Laughter.) So, like, you give a kid a chocolate bar and then you have hours and hours of extraordinary intelligent and autonomous activity. And that’s, compared to that, if we look at what our machines need, if we look at the cost of training a model like the GPT3, it’s really extraordinary. 
+
+And honestly, as we move forward, I really believe we need to get serious about sustainable AI, and I believe we can actually have good solutions. 
+
+So, you pointed out that the machine learning models are getting bigger and bigger, and the data needed to train them is greater and greater. And this is because the more data the system sees, the better the scope or the bigger the scope of the system, but that uses a lot of energy. That process results in huge amounts of energy and huge amounts of carbon dioxide that is a result of doing those computations.
+
+For instance, the researchers at the University of Massachusetts at Amherst estimated that training a largish deep learning model produces 626,000 pounds of carbon dioxide. This is equivalent to the lifetime emissions of five cars, and that’s just one average model. 
+
+Now, it costs $4.6 million in energy costs to train GPT3. And so, if I think about it, I have fifty to a hundred models that are being trained in my lab right now, and that’s just one  researcher. If we think about all the activity that is going on in the space, it’s challenging, right? I mean, so we have to be responsible and responsive to the needs of the planet. 
+
+And so, this is an area where I think technological innovation can truly contribute and extend the scope of our tools. So, the systems are so costly because each system contains hundreds of thousands of neurons and billions of interconnections, but if you can develop simpler models, this can drastically reduce the carbon footprint of AI. 
+
+And this isn’t really a hypothetical statement. It’s an area where many MIT researchers are already making progress. They are making progress in multiple ways. We are looking at how we can take a huge machine learning model and compress it so that we throw out all the redundancies in the model. And we have shown that we can throw out up to 90 percent of the parameters and still get approximately the same performance. So, that’s already good. We are making good progress towards protecting our planet. 
+
+We also are looking at inspiration from the natural world to create more compact solutions from the beginning. And so, in particular, my group has been developing a mathematical structure we call neural circuit policies, and the structure is inspired by nature. It’s inspired by the neural systems of small creatures like worms that have been studied by biologists to the point

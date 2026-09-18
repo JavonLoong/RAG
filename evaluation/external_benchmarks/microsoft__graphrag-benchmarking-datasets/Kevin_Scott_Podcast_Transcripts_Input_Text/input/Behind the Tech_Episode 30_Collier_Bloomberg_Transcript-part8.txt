@@ -1,0 +1,15 @@
+Behind the Tech_Episode 30_Collier_Bloomberg_Transcript.txt  not fallible because it’s always the best iteration of itself.
+
+BEN BLOOMBERG:  It has to be articulated.
+
+JACOB COLLIER:  Exactly, yeah, everything has already been articulated, and the thing that’s unspoken-
+
+BEN BLOOMBERG:  Yeah. And I think, Kevin, what you said at the beginning, you know, we’re trying to have the technology get out of the way. And it’s such a narrow balance of sort of feeling – you know, getting those goosebump moments and not pulling people out of the sort of immersion. And that’s very difficult. And that’s a very hard problem to quantify. There’s a lot of unknowns and there’s a lot of constraints.
+
+On the other hand, if you can use something like AI to – you know, for example, with the looping show, we always talk about giving Jacob 12 arms so that he can play 12 instruments at the same time. That starts to get interesting. Or maybe, you know, there’s a system out there now where you feed it a photo of a room and it gives you a reverb trail for that – for that room. Those tools start to start to be fun. So I think we’re excited to explore that going forward.
+
+KEVIN SCOTT:  Well, look, I think, you know, I’m not a musician, so, like, I – maybe what I’m about to say is just sort of nonsense, but, you know, it seems to me like there’s just this distinct difference between a score and instruments and a performance. You know, like I can listen to Murray play that – you know, that – that Chopin G minor ballade, like, I can get goosebumps at the moment. Like, I can go look at the score and it’s like, okay, like, you know, like, I and I have many, many times, like, all right, you know, what is going on here that is giving me goosebumps. 
+
+And it’s not the score because like, I can, like, put the score through a MIDI player and like it can, you know, robotically play the notes and it’s like, “ All right, no goosebumps there.” You know, I can listen to a whole bunch of other performers, play it, no goosebumps there. Like, there’s just something about this very, like, very complex that – you know, and it just feels deeply human and, like, I don’t want a machine trying to replicate that. You know, but if a machine could come in and, like, help a human, like, produce more of that, like great.
+
+JACOB COLLIER:  And sometimes it can be helpful to – to bounce off an – to bounce an idea off against something that’s neutral as well. You know,

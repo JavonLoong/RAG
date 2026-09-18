@@ -1,0 +1,33 @@
+Behind the Tech_Episode 34_ChaseJarvis_Transcript.txt ../[MUSIC] 
+
+
+CHASE JARVIS: I believe that it’s our job as adults to unlearn a lot of  those constraints that school and career counselors and parents and often people who meant really well for us, you know, that they placed on us so that we can reach our true potential. 
+
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC] 
+
+CHRISTINA WARREN:  Hello, and welcome to Behind the Tech. I’m Christina Warren, senior cloud advocate at Microsoft. 
+
+KEVIN SCOTT:  And I’m Kevin Scott. 
+
+CHRISTINA WARREN:  Our guest on the show today is Chase Jarvis. Chase is an award-winning artist. He’s the founder of Creative Live and author of the new national bestseller, “Creative Calling.”
+
+Now, I know that a lot of our listeners tune into the show to hear about all things tech, but we believe that creativity is at the heart of every great tech innovation, and that parallels exist in the creative process, whether you’re a software developer, business leader, or an artist, like Chase. 
+
+KEVIN SCOTT:  Yeah. I think Chase has a really good take on this that hopefully we’ll get a chance to chat about here in a minute. But I am a very, very strong believer that all forms of creativity are similar in many, many ways. I spend a lot of my own time doing creative things like making furniture or, you know, learning how to use my machines in my machine shop.  
+
+And, like, I’m really convinced that it helps make me better at making technical decisions, writing code, and like, I’ve always believed that coding is a creative undertaking. 
+
+CHRISTINA WARREN:  Yeah, no, I totally agree. I think creativity and coding go hand in hand. But let’s go ahead and get into our conversation with Chase. 
+
+
+[MUSIC]
+
+
+KEVIN SCOTT:  Our guest today is Chase Jarvis. Chase is an award-winning artist, author, entrepreneur, and photographer. His expansive work ranges from shooting advertising campaigns for companies like Nike and Red Bull, to collaborating with icons like Lady Gaga. 
+
+He’s the founder and CEO of Creative Live, where more than 10 million students learn photography, video, design, music, and business from the world’s top creators and entrepreneurs. His new book, “Creative Calling,” launched this spring – debuted an instant national bestseller. Welcome to the

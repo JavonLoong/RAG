@@ -1,0 +1,13 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt  believe that it’s fair, that the decision maker or the decision making process, like in the case, this SAT solver that you’re using, like, has seen all of the relevant data, when it is producing the solution, the decision. So, I think it’s clever. 
+
+The one thing that I will add, though, I agree with you that headcount allocation is mostly a zero sum problem. But there are ways to, like, make it slightly non zero in that I find, oftentimes, people haven’t really asked themselves, when they want another person on their team, like, why do I want another person? Have I exploited every other possible way to, like, get the work done that I think this new person is necessary for?
+
+And, you know, sometimes, there’s, like, a bunch of shadow reasons for adding people. It’s like, oh, well, it’s a score that I’m keeping, you know, on, you know, how influential I am as a manager, or, like, I need to collect these many people tokens before I can advance to the next level. You know, and I’m – like, I’m not even making fun of it. Like, I’m sure I have done this myself in the past. 
+
+But oftentimes, when people really look at what they need to do, like, there’s other ways to accomplish the problem than adding another head. And, like, adding another head to a team, like, just bigger is always worse, honestly. So, you don’t want to be big, unless it’s absolutely necessary. 
+
+Have you built the tools that you need to do to make yourself more efficient? Like, have you, like, tried to go in and clean up a bunch of friction that you have in the system? Like, for the love of God, don’t add more people just to cover up, you know, for inefficiencies that you’ve let creep into the system. 
+
+TOBI LÜTKE: It’s also bad for the planet, right? Like, if people do this, because, like, I mean, every problem that can be solved by one person should be solved by one person, because there’s nothing more efficient. Like, you know, I type 120 words per minute. That’s not even, like, the speed of a modem from the ‘90s. And – but our brain interconnects with, like, some multi–terabytes of synaptic bandwidth. 
+
+So, if you encounter a problem that can be solved by a single person, the speed of communication internally to the brain to, like, having – to even just one other person is just, like, magnitudes different. This is why you have ultra–efficient people, if people have a range to solve all aspects of a problem. Now, of course, this is sort of… you know, sometimes it’s getting rarer,

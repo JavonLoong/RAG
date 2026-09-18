@@ -1,0 +1,15 @@
+Ep-55_Behind_the_Tech_Kevin_Scott_Podcast_with_Mira_Murati.txt  that you know, it’s not creating a whole bunch of harm. 
+
+So, like, you know, talk a little bit about how you all think about that. 
+
+MIRA MURATI: Yeah. That’s well put. It’s all about these trade-offs and minimizing. You can't have zero risk, for really minimizing those harms. And actually, really being able to respond quickly and iterate quickly on being able to maybe make changes to the models, themselves, or introduce tools or policies, basically, to contain those harms. 
+
+And that’s very difficult because, often, we’re kind of doing all of this in the public eye. We don’t have the privilege of, you know, doing it behind closed doors, and so, obviously, with that comes a certain responsibility, but I think, actually, there is no other way to do it. I think it’s the only way to get it right. It does need to be in the public eye and it needs to be in this continuous iterative cycle because the rate of technological advancement right now is insane. 
+
+And so, if you hold these systems back in the lab, you know, the difference between -- like if we had never released GPT-3 or 3.5 and we had just gone out with GPT-4 or ChatGPT, that would have shocked the world. It already did. And, you know, we had this continuous development cycle. 
+
+And so, I think that’s really important. But one of the things is to really -- from each deployment, every time that we put out a model, we learn something. We learn something about maybe, you know, the safety of our systems in the early development cycle or in post training or in the product cycle. Safety is really deeply embedded and integrated at each stage of developing and deploying these models. 
+
+We’re constantly changing what we’re doing because we’re just constantly learning new things. Like every week, I’d say, we’re learning something new. And so, whether it’s, you know, how you think about data, the data you’re selecting and filtering and analyzing the data early on or about the RL -- the reinforcement learning with human feedback process that makes these models more aligned or you know classifiers that we use in production or the tools that we’re making available for developers to have control and be able to be in the driver’s seat and steer these models, all these pieces along the life cycle of taking research to production. 
+
+KEVIN SCOTT: It’s a complicated set of things to manage these trade-offs. But I agree with you, I don’t know if there is any other reasonable alternative. And, you know, the trick is like having lots and lots of inputs that are coming into you, like where you can sort of hear the -- you know, what’s working, what’s not working, like, what is the scrutiny, you know, like, which of the

@@ -1,0 +1,19 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt  leaving?  (Laughter.)  
+KEVIN SCOTT:  -- he had this -- I think he thought he was going to get a different reaction out of me than he did.  He came in -- 
+NEHA NARKHEDE:  Pretty much. 
+KEVIN SCOTT:  -- like almost worried it's like, okay, I'm going to -- I'm delivering bad news.  And I told him, I'm like, oh, this is actually pretty cool. 
+NEHA NARKHEDE:  Yeah, that was the other unique thing about LinkedIn's culture, we were out in a month with no drama, a lot of support from everyone -- 
+KEVIN SCOTT:  Yeah, and we invested in the company.  
+NEHA NARKHEDE:  -- from you, from Jeff, from Reid.  And you invested in the company.  And that is unheard of, you know.  There were a lot of -- there were a couple of other stories that did not look like that back then. 
+KEVIN SCOTT:  Yeah, but what you were doing made sense.  Like, we were never going to -- like LinkedIn is a social network.  It's very important when you have a company that you have -- you have a mission and vision and you focus on the mission and vision.  And like LinkedIn's mission and vision wasn't building distributed streaming infrastructure -- 
+NEHA NARKHEDE:  Systems.  
+KEVIN SCOTT:  -- for the rest of the world.  And so like I was completely supportive of you all going out and like finding your own mission and vision that, you know, took this thing that you helped build at LinkedIn and like now you're going to make it useful for other folks, great.   
+NEHA NARKHEDE:  I still get asked that question is how -- exactly how did that play out internally?  I'm like, it was very simple.  And that's just -- it speaks volumes about LinkedIn's culture, I think.  
+KEVIN SCOTT:  Yeah.  And like the thing that I wanted to make sure that we had and like I think by and large has worked really well is that there's still a team of people at LinkedIn -- like a pretty big team of people.  
+NEHA NARKHEDE:  Pretty big team, now, 40 people I think.  
+KEVIN SCOTT:  Who work on Kafka because Kafka is a very important piece of infrastructure for LinkedIn.  I just wanted to make sure that like you guys and they were going to be able to -- 
+NEHA NARKHEDE:  Collaborate.  
+KEVIN SCOTT:  -- continue to collaborate with one another. 
+NEHA NARKHEDE:  Yes.  Yes.  
+KEVIN SCOTT:  And that's worked pretty well I think. 
+NE

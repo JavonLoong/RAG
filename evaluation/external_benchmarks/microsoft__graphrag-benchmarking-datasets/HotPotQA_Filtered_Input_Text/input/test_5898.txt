@@ -1,0 +1,37 @@
+Henry Pierce Stapp (born March 23, 1928 in Cleveland, Ohio) is an American mathematical physicist, known for his work in quantum mechanics, particularly the development of axiomatic S-matrix theory, the proofs of strong nonlocality properties, and the place of free will in the "orthodox" quantum mechanics of John von Neumann.
+José Acacio de Barros (born 1967, Barra Mansa, RJ, Brazil) is a Brazilian-American physicist and philosopher with contributions to the foundations of quantum mechanics, quantum cosmology, and quantum cognition.
+ Dr. de Barros received his PhD in Physics from the Centro Brasileiro de Pesquisas Fisicas (CBPF) in 1991 under the supervision of Francisco Antonio Doria and Antonio Fernandes da Fonseca Teixeira (he was also informally under the supervision of Newton da Costa).
+ Since 2007 he has been in the Liberal Studies faculty of San Francisco State University.
+ Before going to San Francisco, he was an Associate Professor of Physics at the Federal University at Juiz de Fora, Brazil, and he was a Visiting Associate Professor at the Center for the Study of Language and Information at Stanford University, and has also held visiting positions at the Centro Brasileiro de Pesquisas Fisicas.
+ Dr. de Barros has been a long-term collaborator of Philosopher Patrick Suppes, with whom he published extensively on the foundations of quantum mechanics and joint probabilities.
+ Among his most influential work is his joint research with Nelson Pinto-Neto, in which Bohm's interpretation of quantum mechanics was applied to quantum cosmology, paving the way for bouncing models using realistic interpretation of quantum mechanics.
+ His recent work attempts to give a neurophysiological foundation to quantum-like effects in psychology.
+ He is also among the main proponents, in collaboration with Gary Oas, of the use of negative probabilities to understand quantum systems.
+An interpretation of quantum mechanics is a set of statements which attempt to explain how quantum mechanics informs our understanding of nature.
+ Although quantum mechanics has held up to rigorous and thorough experimental testing, many of these experiments are open to different interpretations.
+ There exist a number of contending schools of thought, differing over whether quantum mechanics can be understood to be deterministic, which elements of quantum mechanics can be considered "real", and other matters.
+Grete (Henry-)Hermann (March 2, 1901 – April 15, 1984) was a German mathematician and philosopher noted for her work in mathematics, physics, philosophy and education.
+ She is noted for her early philosophical work on the foundations of quantum mechanics, and is now known most of all for an early, but long-ignored refutation of a "no-hidden-variable theorem" by John von Neumann.
+ The disputed theorem and the fact that Hermann's critique of this theorem remained nearly unknown for decades are considered to have had a strong influence on the development of quantum mechanics.
+The mathematical formulations of quantum mechanics are those mathematical formalisms that permit a rigorous description of quantum mechanics.
+ Such are distinguished from mathematical formalisms for theories developed prior to the early 1900s by the use of abstract mathematical structures, such as infinite-dimensional Hilbert spaces and operators on these spaces.
+ Many of these structures are drawn from functional analysis, a research area within pure mathematics that was influenced in part by the needs of quantum mechanics.
+ In brief, values of physical observables such as energy and momentum were no longer considered as values of functions on phase space, but as eigenvalues; more precisely as spectral values of linear operators in Hilbert space.
+In quantum mechanics, the consistent histories (also referred to as decoherent histories) approach is intended to give a modern interpretation of quantum mechanics, generalising the conventional Copenhagen interpretation and providing a natural interpretation of quantum cosmology.
+ This interpretation of quantum mechanics is based on a consistency criterion that then allows probabilities to be assigned to various alternative histories of a system such that the probabilities for each history obey the rules of classical probability while being consistent with the Schrödinger equation.
+ In contrast to some interpretations of quantum mechanics, particularly the Copenhagen interpretation, the framework does not include "wavefunction collapse" as a relevant description of any physical process, and emphasizes that measurement theory is not a fundamental ingredient of quantum mechanics.
+The book Mathematical Foundations of Quantum Mechanics (1932) by John von Neumann is an important early work in the development of quantum theory.
+In physics, relativistic quantum mechanics (RQM) is any Poincaré covariant formulation of quantum mechanics (QM).
+ This theory is applicable to massive particles propagating at all velocities up to those comparable to the speed of light "c", and can accommodate massless particles.
+ The theory has application in high energy physics, particle physics and accelerator physics, as well as atomic physics, chemistry and condensed matter physics.
+ "Non-relativistic quantum mechanics" refers to the mathematical formulation of quantum mechanics applied in the context of Galilean relativity, more specifically quantizing the equations of classical mechanics by replacing dynamical variables by operators. "Relativistic quantum mechanics" (RQM) is quantum mechanics applied with special relativity, but not general relativity.
+ Although the earlier formulations, like the Schrödinger picture and Heisenberg picture were originally formulated in a non-relativistic background, these pictures of quantum mechanics also apply with special relativity.
+The John Stewart Bell Prize for Research on Fundamental Issues in Quantum Mechanics and their Applications (short form: "Bell Prize") was established in 2009, funded and managed by the University of Toronto, Centre for Quantum Information & Quantum Control ("CQIQC").
+ It is awarded every odd-numbered year, for significant contributions relating to the foundations of quantum mechanics and to the applications of these principles – this covers, but is not limited to, quantum information theory, quantum computation, quantum foundations, quantum cryptography, and quantum control.
+ The selection committee has included Gilles Brassard, Peter Zoller, Alain Aspect, John Preskill, and Juan Ignacio Cirac Sasturain, in addition to previous winners Sandu Popescu, Michel Devoret, and Nicolas Gisin.
+Quantum chaos is a branch of physics which studies how chaotic classical dynamical systems can be described in terms of quantum theory.
+ The primary question that quantum chaos seeks to answer is: "What is the relationship between quantum mechanics and classical chaos?"
+ The correspondence principle states that classical mechanics is the classical limit of quantum mechanics.
+ If this is true, then there must be quantum mechanisms underlying classical chaos (although this may not be a fruitful way of examining classical chaos).
+ If quantum mechanics does not demonstrate an exponential sensitivity to initial conditions, how can exponential sensitivity to initial conditions arise in classical chaos, which must be the correspondence principle limit of quantum mechanics?
+ In seeking to address the basic question of quantum chaos, several approaches have been employed:

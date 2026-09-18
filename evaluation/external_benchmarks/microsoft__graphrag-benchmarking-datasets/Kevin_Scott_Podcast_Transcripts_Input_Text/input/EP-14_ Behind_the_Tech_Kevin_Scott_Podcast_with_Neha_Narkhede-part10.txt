@@ -1,0 +1,27 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt  Search -- 
+NEHA NARKHEDE:  Network -- 
+KEVIN SCOTT:  -- Network and Analytics. 
+NEHA NARKHEDE:  That's right.  
+KEVIN SCOTT:  And so he owned the LinkedIn search engine, he owned all of the LinkedIn Graph stuff, which is, you know, sort of this foundational piece of infrastructure that made LinkedIn possible. 
+And then he owned all of the sort of analytics stuff, which were like all of the data systems that had to operate at scale.  And so like it's really interesting that you were attracted to LinkedIn because of the open-source stuff, because that's how I was attracted to LinkedIn. 
+NEHA NARKHEDE:  No way. 
+KEVIN SCOTT:  So, at my startup, AdMob, we at one point needed to -- we needed to deploy a key value store for our ad systems. 
+NEHA NARKHEDE:  Yes. 
+KEVIN SCOTT:  And like we evaluated a whole bunch of stuff, including Voldemort, which is one of the open-source projects that you know your -- 
+NEHA NARKHEDE:  Co-Founder (inaudible) 
+KEVIN SCOTT:  Your co-founder Bill -- Jay Kreps in Igor's SNA group and like it was the best-performing key value store for our particular use case at the time.  
+And like we used it and like -- and also because it was open source, like you not only got to use the software, but we interacted a bunch with some of the engineers at LinkedIn.  So, you saw like it's great code, it's like super -- 
+NEHA NARKHEDE:  Yes.  
+KEVIN SCOTT:  -- good piece of design. 
+NEHA NARKHEDE:  Absolutely. 
+KEVIN SCOTT:  And the engineers were great.  And so, when I was thinking about where do I go, like, I knew some folks at LinkedIn. 
+NEHA NARKHEDE:  Wow.   
+KEVIN SCOTT:  But like the important thing to me was like, oh, there's some really great engineers there. 
+NEHA NARKHEDE:  That's right.  
+KEVIN SCOTT:  Like -- and whose mindset about open source and like how to think about like actually doing software development with that open-source ethos was aligned with my own.  
+NEHA NARKHEDE:  Yeah. 
+KEVIN SCOTT:  And that's how I chose -- one of the big, big factors in me choosing to go to LinkedIn.  
+NEHA NARKHEDE:  That is amazing.  So, you might have joined around the same time I joined.  
+KEVIN SCOTT:  Yeah, I was -- 
+NEHA NARKHEDE:  Or before that.  
+KE

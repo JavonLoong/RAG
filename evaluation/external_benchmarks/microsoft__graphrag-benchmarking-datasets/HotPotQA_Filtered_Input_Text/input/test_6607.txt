@@ -1,0 +1,28 @@
+Telespazio VEGA UK Ltd. is a British space company based in Luton, Bedfordshire.
+ Founded in 1978 by a small group of engineers at the European Space Operations Centre (ESOC) in Darmstadt, Germany, VEGA now works with Space agencies, satellite operators and manufacturers around the world.
+ It works with the European Space Agency (ESA) and ESOC in Germany, European Space Research and Technology Centre (ESTEC) in Noordwijk, the Netherlands, ESA Centre for Earth Observation (ESRIN) in Rome, Italy, and European Space Astronomy Centre (ESAC) in Madrid, Spain.
+Gaia is a space observatory of the European Space Agency (ESA) designed for astrometry: measuring the positions and distances of stars with unprecedented precision.
+ The mission aims to construct the largest and most precise 3D space catalog ever made, totalling approximately 1 billion astronomical objects, mainly stars but also planets, comets, asteroids and quasars among others.
+The Director General of the European Space Agency is the highest-ranked official of the European Space Agency (ESA), a space agency formed by the collaboration of prominent European nations.
+XEUS (X-ray Evolving Universe Spectroscopy) was a space observatory plan developed by the European Space Agency as a successor to the successful XMM-Newton X-ray satellite telescope.
+ It was merged to the International X-ray Observatory around 2008, but as that project ran into issues in 2010, the ESA component was forked off into Advanced Telescope for High Energy Astrophysics (ATHENA).
+The Herschel Space Observatory was a space observatory built and operated by the European Space Agency (ESA).
+ It was active from 2009 to 2013, and was the largest infrared telescope ever launched, carrying a 3.5 m mirror and instruments sensitive to the far infrared and submillimetre wavebands (55–672 µm).
+ "Herschel" was the fourth and final cornerstone mission in the Horizon 2000 programme, following "SOHO"/"Cluster II", "XMM-Newton" and "Rosetta".
+ NASA is a partner in the "Herschel" mission, with US participants contributing to the mission; providing mission-enabling instrument technology and sponsoring the NASA Herschel Science Center (NHSC) at the Infrared Processing and Analysis Center and the Herschel Data Search at the Infrared Science Archive.
+The ESA Centre for Earth Observation (also known as the European Space Research Institute or ESRIN) is a research centre belonging to the European Space Agency (ESA), located in Frascati, Italy.
+ It is dedicated to research involving earth observation data taken from satellites, among other specialised activities.
+ The establishment currently hosts the European Space Agency's development team for the Vega launcher.
+Robert (Bob) Fosbury is an astronomer working for the European Space Agency (ESA) as part of ESA's collaboration with NASA on the Hubble Space Telescope (HST) project at ST-ECF.
+ Based at the European Southern Observatory (ESO) near Munich in Germany, Fosbury joined this initiative in 1985, more than 5 years before launch.
+ During the latter part of this period, Bob served on NASA's Ad Hoc Science Working Group and ESA's Study Science Team as they developed the instrument concepts for the James Webb Space Telescope, the next generation space observatory.
+The Austrian Space Agency, since 2005 officially Aeronautics and Space Agency (German: Agentur für Luft- und Raumfahrt) is an organization whose purpose is to coordinate Austrian space exploration-related activities, both national programs and European Space Agency related programs.
+ It was established in 1972 in Vienna.
+ In 1987, Austria became a member state of the European Space Agency.
+The Infrared Science Archive (IRSA) curates the science products of NASA's infrared and submillimeter projects, such as the Spitzer Space Telescope, the Wide-field Infrared Survey Explorer (WISE), the Infrared Astronomical Satellite (IRAS), and the Two Micron All-Sky Survey (2MASS).
+ IRSA also serves data from infrared and submillimeter European Space Agency missions with NASA participation, including the Infrared Space Observatory (ISO), Planck, and the Herschel Space Observatory.
+ s of 2014 , IRSA provides access to more than 20 billion astronomical measurements, including all-sky coverage in 20 bands, spanning wavelengths from 1 micron to 10 millimeters.
+ Approximately 10% of all refereed astronomical journal articles cite data sets curated by IRSA.
+CoRoT (French: COnvection ROtation et Transits planétaires ; English: COnvection ROtation and planetary Transits) was a space observatory mission which operated from 2006 to 2012.
+ The mission's two objectives were to search for extrasolar planets with short orbital periods, particularly those of large terrestrial size, and to perform asteroseismology by measuring solar-like oscillations in stars.
+ The mission was led by the French Space Agency (CNES) in conjunction with the European Space Agency (ESA) and other international partners.

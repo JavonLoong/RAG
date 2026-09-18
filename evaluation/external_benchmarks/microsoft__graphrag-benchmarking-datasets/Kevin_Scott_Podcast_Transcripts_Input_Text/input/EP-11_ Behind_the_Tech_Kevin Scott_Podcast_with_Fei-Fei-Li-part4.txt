@@ -1,0 +1,17 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt  noticed that towards the later half of their life, their interest turned from the physical atomic world to the more life science world.  
+They're starting to ask the questions of origin of life, intelligence.  And that really piqued my interest.  I started to get very interested in the question about intelligence.  So I joined neuroscience research.  And I was literally as a summer intern research student, literally recording from mammalian brain and listening to the neurons, seeing the world. 
+KEVIN SCOTT:  So fun.  
+FEI-FEI LI:  Yeah, so, I decided to apply for grad school, and even there, I chose to go to Caltech because I was able to find two advisors, one in neuroscience and one in -- now we call it AI, but at that time, we call computer vision. 
+KEVIN SCOTT:  Right.  
+FEI-FEI LI:  --to do my PhD study in that combination. 
+KEVIN SCOTT:  And why vision? 
+FEI-FEI LI:  Yeah, good question.  (Laughter.)  So, well, like I said, my first experiment in neuroscience was recording from cats' neurons -- and watching their neural activity when cats see the world, you know, see oriented edges, see complex features. 
+But, really, if you think about vision, I want to tell you a story.  540 million years ago, the world is very different.  It was mostly water and simple animals floating on earth.  And there were only a few species. 
+And life was chill, you know, you just hang out by floating.  (Laughter.)  And then what zoologists have found, or evolutionary biologists have found this, this incredibly mysterious phenomenon called "Cambrian explosion," within a short 10-million-year span, in the history of earth or in the evolution sense, it's such a narrow slice of time. 
+The animal kingdom just exploded.  Many, many animal species are created or evolved.  And people called this the "Big Bang of evolution," and no one understood why. 
+So, why, from 540 million years to 530 million years ago this big bang of evolution happened?  
+So, fast forward.  A decade ago, a young evolutionary biologist called Andrew Parker from Australia studied a lot of fossils and conjectured to become a very convincing theory that it was the onset of vision. 
+KEVIN SCOTT:  Really? 
+FEI-FEI LI:  It was the first animal, some kind of floating trilobite developed a pin-hole structure.  It's very simple, it literally just collected some light.   
+Once you see light, life changes.  You become active. You see your food.  And you can hide and escape to become someone else's food.  
+So, it becomes an evolutionary arms race for animal species.  And with

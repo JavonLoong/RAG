@@ -1,0 +1,15 @@
+Ep-45_Behind_the_Tech_Kevin Scott_Podcast_with_Phil_Spencer.txt  the things that I talk with people a lot about, like there was this beautiful thing about the simplicity of the machines that we had when we were growing up. I mean, they didn’t seem simple to me at the time, but in retrospect, yeah, they were not that difficult to approach and start doing stuff on, whereas it’s the tools are way more powerful now and the machines are way more powerful, but you also have a lot more stuff to get your head wrapped around if you want to claim that you have mastery over your whole computing toolkit. 
+
+PHIL SPENCER: I was just talking about this with somebody the other day where literally starting with when I learned, I started from the bottoms up, meaning I learned assembler, and then through assembler, I learned what linkers do and what compilers did. So I was kind of working backwards from a high level language. 
+
+And I remember when I started at Microsoft working with some amazing developers, Todd Lane and these other guys, who would, when I would write code, we would literally look at the output of the compiler to see how well we thought the compiler did, and then obviously watch the linker. And you were, as you said, it was all so transparent to you, the whole kind of pipeline to getting an exe. 
+
+I would say, one of my maybe overstretches when I joined Microsoft was, if you know anything about like Amiga, Atari ST, Apple IIgs, these were all Motorola 68000 machines. And when I got hired here, all of a sudden, I’m on an Intel-based 8086 and I’m like I’m trying to, you know, learn a whole new instruction set. And it was kind of, as most things were back in the day, baptism by fire in terms of code reviews and how stuff worked at Microsoft. 
+
+But you’re absolutely right that transparency of how things not only were built, but also ran at runtime, much different today. But frankly, the things that developers do today with writing code is well beyond what I think I would have ever gotten to. 
+
+KEVIN SCOTT: Yeah. Well, yeah, don’t be so sure. (Laughter.) 
+
+But I mean, I think one of the really interesting things technically about videogames that was true then and I think it’s still true now, although you probably got a better bead on this than the me, is that, you know, you were sort of forced into like really understanding all the low level details of the machine because the things that you were trying to do were like right there on the bleeding edge of what the machines were capable of. You were just trying to wring every unit of performance out of the machine. And that’s still true, right? 
+
+PHIL SPENCER: Yeah, absolutely. I mean, I would say one of the slight differences now with videogames – well, let me say two things. One

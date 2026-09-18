@@ -1,0 +1,19 @@
+EP-21_ Behind_the_Tech_Kevin_Eric-Horvitz_Chief-Scientific-Officer_Microsoft.txt  neural networks to do medical diagnostics. 
+
+So, I'm wearing a ring from a company called Aura right now that measures your body temperature and your pulse, and a whole bunch of things about your movement. And I think this company originally intended to have these rings help you manage your all-in health, like whether you're sleeping well enough or whether you're getting enough exercise and activity. 
+
+But it may be the case that the data that's gathered by devices like this are going to be really useful when you are able to train sophisticated deep neural networks with them in detecting diseases like COVID-19, hopefully before you're gravely ill and have time to go get yourself treated so that you can jump back to a robust, good health as quickly as possible. 
+
+And then on the, you know, sort of the very far end of the spectrum, which has been some of the most surprising bits for me to see over the past handful of years, is how the tools of AI, like in particular, deep reinforcement learning are almost becoming like a new calculus for the basic sciences. So, you had calculus come about as this analytic framework for better describing and understanding the phenomena in the real world in the 18th century. And you got most of modern science from having a tool like that.
+
+And I'm seeing now with AI deep neural networks and machine learning, deep reinforcement learning, these new self-supervised learning techniques that we've developed over the past handful of years are being applied in science in sort of the same way that you might imagine calculus was many years ago to more accurately and faithfully model the phenomena in the physical world so that you can better understand them. And that might be helping to accelerate a molecular simulation that's trying to understand how the spike glycoprotein in the coronavirus is interacting with your epithelial tissue and invading cells, and infecting you with this horrible disease.
+
+And, like, we are already seeing how machine learning and AI, these new techniques are being used to accelerate those simulations and to get to more accurate results. So, I think there's going to just be a -- almost like a landslide of activity and building momentum over the next handful of years as these two worlds, artificial intelligence and biology, start to intersect in a more profound way. 
+
+And I think we're going to spend a bunch of time this season on Behind the Tech talking to some of these innovators who are in the biosciences using these tools in these innovative ways to help make us all healthier, and bring better healthcare outcomes, and to as many people as humanly possible and, you know, to use biology in ways that we really weren’t even conceiving of a few decades ago.
+
+CHRISTINA WARREN:  That's great. I'm glad, I'm glad. And what's great about this, I think it gives us hope, and we need hope right now.
+
+KEVIN SCOTT:  I know that I'm certainly feeling hopeful.
+
+CHRIST

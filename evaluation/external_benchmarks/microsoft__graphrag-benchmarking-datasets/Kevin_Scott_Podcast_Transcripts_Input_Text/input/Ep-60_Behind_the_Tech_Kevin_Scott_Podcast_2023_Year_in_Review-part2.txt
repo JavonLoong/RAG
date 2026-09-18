@@ -1,0 +1,21 @@
+Ep-60_Behind_the_Tech_Kevin_Scott_Podcast_2023_Year_in_Review.txt INA WARREN: It’s an extremely exciting moment. I’ve been describing this to people for basically a year now. It’s like, this is another iPhone moment, and that only becomes more and more true, I think, all the time. 
+
+And on the podcast this year, it’s been really exciting to hear folks talk about, as you say, what’s been happening now and the stories behind, you know, the years and years of work and research that have gotten us to this place, because, of course, it feels like it’s all happening right now, but this is the buildup of a lot of hard work. 
+
+KEVIN SCOTT: Yeah.
+
+CHRISTINA WARREN: So, back in the spring, you got to talk to Bill Gates, who, obviously, is a huge force. Like, I think it’s hard to express just how huge a force in technology he has been for decades. 
+
+KEVIN SCOTT: Yeah, for sure. And, you know, like, obviously, Bill was one of the accelerators for the personal computing revolution.
+
+CHRISTINA WARREN: Yeah.
+
+KEVIN SCOTT: Like, he played, you know, maybe the most pivotal role there in founding Microsoft in the first place, and, you know, pushing the personal computing revolution forward, and, like, played a tremendously important role in the Internet revolution, you know, honestly. And, you know, so it was really great to spend some time chatting with him about AI and his perspective on, like, what this moment means, like, how it is similar to some of the things that he’s seen in the past. 
+
+And like, obviously, Bill’s also been thinking about AI for, you know, his entire career. And so, you know, for all of us who have an interest in technology, seeing a thing that has gone from, you know, promising, but not moving as fast as all of us ambitious, people would like, to actually making some pretty big breakthroughs has been just, I think, just as exciting for him as it has been for all of us.
+
+CHRISTINA WARREN: Yeah, let’s take a listen to that conversation.
+
+KEVIN SCOTT: I wonder what your advice might be to people who are thinking about like, oh, I have this new technology that’s amazing that I can now use. Like, how should they be thinking about how to use it? Like, how should they be thinking about the urgency with which they are pursuing these new ideas? And like, how does that relate to how you thought about things in the PC era and the Internet era? 
+
+BILL GATES: Yeah, so the industry starts really small where computers aren’t personal. And then through the microprocessor and bunch of companies, we get the personal computer, IBM, Apple. And Microsoft got to be very involved in the software. You know, even the BASIC interpreter on

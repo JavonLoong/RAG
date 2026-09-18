@@ -1,0 +1,21 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt  SCOTT: Well and there are even some more subtle things. So you, as a trained mathematician, and, like, both of us, as practicing computer scientists and engineers for, you know, a handful of decades, part of our job is, like, we wield these, like, big stacks of abstractions to go solve problems. 
+
+And like, part of the reason that we need these stacks of abstractions is, like, you can only do so much with the brain that you’re born with. 
+
+SAM SCHILLACE: The brain yeah.
+
+KEVIN SCOTT: And it’s almost, like, the abstractions are a compression algorithm to allow you to, like, go approach problems and, like, you know, just sort of fit all of these tools inside of your head. 
+
+So, a lot of people, I think… So, you know, a lot of people, I think, think that mathematics itself is sort of this, like, universal thing, that it’s like a necessity of the universe. And, you know, Ted Chiang, who wrote the short story that became the movie Arrival, I think, sort of pokes at this in a bunch of different ways. 
+
+Like, you know, mathematics may be more about humans than it is about the universe. And when you have a tool like AI, that’s a way to, a different way to do a whole bunch of cognitive abstraction, you can sort of get after a bunch of problems that we solved – used to solve with mathematics that you’re now going to be able to solve in a different way. And, like, that will be uncomfortable.
+
+SAM SCHILLACE: Yeah, it’s really interesting. Like, one of the most fascinating things about AI is less that it thinks like us and more that it doesn’t, right? 
+
+KEVIN SCOTT: Correct. 
+
+SAM SCHILLACE: That’s the interesting – like, it thinks as well as we do, but in a different way. That’s fascinating, right? A lot of that, like, you know, the deep, deep dream stuff, you know that  just, like, blows your mind with some of these weird ways they’ll produce images or just knowledge – it’s just really interesting, like, what comes out of these, right?
+
+KEVIN SCOTT: Yeah, and even what you said. Like, we’ve got to get new vocabulary for talking about it because, like, in a sense, it doesn’t really think at all. Like, when you say “think,” you are thinking about what we’re doing right now. You have a – you have this cognition that’s running on your brain, and, like, it is a different qualitative thing than what a model does.
+
+SAM SCHILLACE: Well, it’s  interesting. This is going to get too abstract and too deep for us to dive into, but, like, to some

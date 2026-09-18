@@ -1,0 +1,13 @@
+Ep-45_Behind_the_Tech_Kevin Scott_Podcast_with_Phil_Spencer.txt ’s a cultural thing that you have to start very early on, because people in the end, what you’re really looking for is teams that feel safe. They feel safe taking the risk and that, like, there’s so many facets to what makes a team feel safe in today’s world.
+
+KEVIN SCOTT: Yeah, I had two different bosses a long time ago that had two pieces of feedback for me that were, like, pretty pivotal. One was like, if you’re not failing sometimes, like, you’re probably not trying hard enough. 
+
+PHIL SPENCER: That’s right, yeah.
+
+KEVIN SCOTT: And then, you know, I had another boss where, you know, God knows I have made many, many mistakes. And so, you know, like, in the ad systems that I run in the past, you know, a system outage could mean millions of dollars of revenue an hour that you’re losing. And every time one of those things would happen, I had this boss who would say, well, you know, be very calm in the moment, like, get the problem fixed and then make sure that you’re getting your K-million dollars’ worth of learning out of this – out of this episode, because each one of them teaches you something. 
+
+PHIL SPENCER: That’s exactly right. I think it’s very good learning. I – a friend of mine runs a company called Supercell that has a game called Clash Royale, Clash of Clans back in the day. And he used – when teams would set goals and ship, and if they had great success, he would take them all down to the local pub. They’d all have a beer. When teams didn’t have – reach their goals, he’d take them down and they’d all have champagne, trying to create this idea that setting that bar high and hitting the goals or exceeding the goals is always a special moment, but the outcome is actually in many ways decoupled from the effort. 
+
+We put our best and best people and most effort into some of the things that didn’t work. And to try not to create a direct causality between here – like, all of the serendipity that goes in to making something a hit. Why is Minecraft a hit, right? Why, when Marcus puts up Minecraft as this Java XE on a server, or you know, you can look at something, like, a Roblox or a Fortnite. I mean, trying to excel-ize the success of in kind of human entertainment is so, so difficult. And yeah, I think that those are words of wisdom your boss was giving you. 
+
+KEVIN SCOTT: Well, so, you know, let’s talk a little bit more about your career. So, you – you’ve been… you’ve been at Microsoft for 34 years. (Laughter.) And obviously, it’s worked out really

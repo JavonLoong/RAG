@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GraphRAG 图示</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: #ffffff;
+    }
+
+    html {
+      min-width: 100%;
+      overflow: auto;
+    }
+
+    body {
+      min-width: max-content;
+      overflow: visible;
+    }
+
+    .deck {
+      width: max-content;
+      min-width: 100%;
+      min-height: 100vh;
+      background: #ffffff;
+    }
+
+    .slide {
+      display: none;
+      width: max-content;
+      min-width: 100%;
+      min-height: 100vh;
+      background: #ffffff;
+    }
+
+    .slide.active {
+      display: block;
+    }
+
+    .slide img {
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: none;
+      max-height: none;
+      margin: 0 auto;
+      background: #ffffff;
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" aria-label="GraphRAG 全屏图示">
+    <section class="slide active">
+      <img src="assets/graphrag/graphrag-01-evidence-to-graph.png" alt="从原文证据抽取实体关系并构建知识图谱" />
+    </section>
+    <section class="slide">
+      <img src="assets/graphrag/graphrag-02-evidence-bound-edges.png" alt="图谱关系绑定原文证据、页码、来源与置信度" />
+    </section>
+    <section class="slide">
+      <img src="assets/graphrag/graphrag-03-community-summary.png" alt="社区发现、社区摘要与跨文档综合回答" />
+    </section>
+    <section class="slide">
+      <img src="assets/graphrag/graphrag-04-routing-workflow.png" alt="PowerRAG 最终问答路由与 GraphRAG 增强流程" />
+    </section>
+    <section class="slide">
+      <img src="assets/graphrag/graphrag-05-handwritten-notes.png" alt="GraphRAG 与 PowerRAG 汇报手写梳理图" />
+    </section>
+  </main>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll(".slide"));
+
+    function hashIndex() {
+      const raw = window.location.hash.replace("#", "");
+      const parsed = Number.parseInt(raw, 10);
+      if (Number.isFinite(parsed) && parsed >= 1 && parsed <= slides.length) {
+        return parsed - 1;
+      }
+      return 0;
+    }
+
+    let current = hashIndex();
+
+    function render() {
+      slides.forEach((slide, index) => {
+        slide.classList.toggle("active", index === current);
+      });
+      const nextHash = `#${current + 1}`;
+      if (window.location.hash !== nextHash) {
+        history.replaceState(null, "", nextHash);
+      }
+      document.title = `GraphRAG ${current + 1} / ${slides.length}`;
+      window.scrollTo(0, 0);
+    }
+
+    function go(delta) {
+      current = Math.max(0, Math.min(slides.length - 1, current + delta));
+      render();
+    }
+
+    window.addEventListener("hashchange", () => {
+      current = hashIndex();
+      render();
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") {
+        event.preventDefault();
+        go(1);
+      }
+      if (event.key === "ArrowLeft" || event.key === "PageUp") {
+        event.preventDefault();
+        go(-1);
+      }
+      if (event.key === "Home") {
+        event.preventDefault();
+        current = 0;
+        render();
+      }
+      if (event.key === "End") {
+        event.preventDefault();
+        current = slides.length - 1;
+        render();
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt  because, like, in a sense, it doesn’t really think at all. Like, when you say “think,” you are thinking about what we’re doing right now. You have a – you have this cognition that’s running on your brain, and, like, it is a different qualitative thing than what a model does.
+
+SAM SCHILLACE: Well, it’s  interesting. This is going to get too abstract and too deep for us to dive into, but, like, to some degree, like, our brain is a bunch of these networks, right, that kind of are strung together in a certain way. And what we’re doing is making new ones external and also kind of folding them into the mix, right? So, it’s… just defining what ‘to think ‘means is challenging all by itself, right? 
+
+KEVIN SCOTT: Yeah.
+
+SAM SCHILLACE: Like, you know, we have this, to your point, very particular sense of what that combination of networks means, right?
+
+KEVIN SCOTT: Yeah. And look, there’s just a bunch of things that you’re not going to be able to get a machine to do. I wrote about this in my book, and it started as a dinner conversation I was having with a – you know, with a bunch of people. Like, it’s one of those weird dinners, like, it was Yuval Noah Harari who wrote Sapiens was there and, like, bunch of other people. And we were you know, we were talking about some of this stuff. 
+
+And I made this assertion that I believed at the time that this group of people made me rethink, which is like, oh, I don’t think that a machine will ever be able to compose and perform music in a way that gives me the same emotional response that, like, Murray Perahia gives me when he is performing Chopin’s G minor ballad. And they were like, “Yeah, why do you believe?” And like, they just sort of pushed back hard on the assertion.
+
+And, like, they probably were right. Like, you could build a system, I’m guessing, that would produce music in a feedback loop, like you could sort of put a bunch of EKG probes on you and, like, you could probably have the system in a closed feedback loop give you the same, like, autonomic response, like, the – you know, the shivers up your spine or goosebumps. 
+
+But, like, that, to me, still is qualitatively different than, like, what I get when I listen to this performance because it’s, like, this – this human composer from a different time who was, like, trying to communicate something to everyone else. And then this performer from another different generation and a set of experiences who takes this work and interprets it in a way that no other performer interprets it that

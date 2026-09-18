@@ -1,0 +1,23 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt  save lives and like have this huge positive impact in people's lives. 
+
+If it gets used the wrong way, like you — you know, if it gets disclosed, like it compromises the trust in the system, and then people stop using the system like if it — you know, you don't want people making employment decisions based on this or like insurance — access to insurance decisions.  
+
+And so I think it's one of those places where the burden is just incredibly high right now on getting everything right about how you handle this data, and it's tough.  
+
+danah boyd:  Well, and that's where, you know, the way that I've been thinking about it is to imagine that the data that we are all consuming when we're trying to build these systems builds the data infrastructure layer, right?  We can call it data lakes, we can call it whatever, but it's infrastructure. 
+
+And the thing we know about infrastructure is that infrastructure grows brittle over time if it's not maintained.  It has vulnerabilities in it by its very nature.  And we need to treat it with that level of respect, where we have to acknowledge that. 
+
+The other thing is that once the decision-making or the systems become powerful on top of that data infrastructure, as with everything else, they become vulnerable to different kinds of exploits, right?  They become targeted.  Which means that in my mind, we have to start bringing in more of security framework.  And not just about access to data, and this is where I think when we talk about these issues with regard to privacy, we often think that if we just limit the access to the data, no harm will happen. 
+
+Well, that data affects those models.  That data has all of these different ripple effects, and it affects decision-making.  And so, one of the things that I am deeply passionate about is how do we reimagine a socio-technical security?  How do we think about how it would be exploited? 
+
+And I started out my career in graphics, and I still remember the first quality assurance engineer that I worked with.  And what was so amazing about her was that she could think through all of the ways that my code could be destroyed, and it was an amazing collaboration because I was trying to build the thing, and she was trying to tear it down. And together, we were able to build stronger systems.  
+
+KEVIN SCOTT:  Yep. 
+
+danah boyd:  And when we built a world of the perpetual beta, we lost quality assurance.  And so whether we're talking about safety or security, we need a narrative of quality assurance that comes back and really brings into the fold people who are trying to destroy the system in order to make it better.  
+
+KEVIN SCOTT:  Yeah.  
+
+danah boyd:  And that kind of — everything from threat modeling to red-teaming to quality assurance to

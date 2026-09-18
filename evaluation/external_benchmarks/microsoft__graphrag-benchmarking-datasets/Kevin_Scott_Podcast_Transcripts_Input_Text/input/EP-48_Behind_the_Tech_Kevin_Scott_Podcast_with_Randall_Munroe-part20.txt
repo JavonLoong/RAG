@@ -1,0 +1,13 @@
+EP-48_Behind_the_Tech_Kevin_Scott_Podcast_with_Randall_Munroe.txt  as like comics that people would read. And then – and then at some point, I started scanning them, and I was like, oh, these notebooks are falling apart. I have a website I’m not using. I’m going to just post some of these online. I’ll like draw a little box around these drawings. And – and – and some of them, you know, had a person saying something or some text. And then people like, started sharing them around, and I was like, oh, if people want these, I can keep drawing them, you know, and – and then sort of fell into cartooning that way.
+
+KEVIN SCOTT: And so, what did the progression look like? So you – were you working at NASA while you were – when you began xkcd and, you know, sort of doing this on the side while you were, you know, doing imaging systems?
+
+RANDALL MUNROE: Yeah, I was working – well, so I – while I was in – after my third year of college, I did an internship and a neat program that they had at the local NASA Langley Research Center down in southeastern Virginia, in the Newport News, Virginia Beach area. And I – while I was working there, I got to know some people and – and that was around when I – after that summer, I think is when I started posting my comics online. 
+
+And then that fall, I was pretty much finished with my classes, but I wasn’t going to graduate till the spring. And so, I – because I had come in with some – like, I took a bunch of AP tests. And – and – because it turned I out was free – this is – this is a tip for college that may or may not apply is when you’re going in, if they have tests you can take to get credit, and there’s no cost to taking the test, take the tests. You might – you might randomly do better than you expect. I got a bunch of credits that I was not expecting. So I was graduating early, or, you know, I was finished – I had finished all my stuff and I just had my final project left for my last semester. 
+
+And someone who I had worked with at that internship got in touch and was like, you know, we were talking about some – some – something we had talked about, and then he mentioned, oh, you know, I’ve got a spot in my lab, if you want to – if you’re interested in working on this project that we were working on. And I said, sure. 
+
+So I started working there before I graduated, and then I was there for most of 2006. But then later in 2006, you know, I was working – I was working then on – on robotics and robotic vision and stuff. 
+
+And then later in 2006, people started asking me if

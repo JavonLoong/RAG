@@ -1,0 +1,15 @@
+Ep-59_Behind_the_Tech_Kevin_Scott_Podcast_with_David_Kirtley.txt  plasma. You’re super heating it up to 100,000 degrees, or maybe even a million degrees, but then you accelerate, you push it out of the thruster into space. And that’s what gives you your Newton’s Laws, gives you your thrust, and then that pushes the spacecraft. And they can be very, very efficient, but here’s the catch, in terms of efficient, in terms of mass.
+
+So, you use a little bit of propellant to get a lot of acceleration out of it, but now it’s all electrical. And so, you have to be really careful that you’re electrically doing things efficiently. You’re ionizing efficiently. You’re harnessing the magnetic fields, and you’re not wasting any. 
+
+KEVIN SCOTT: Yeah. 
+
+DAVID KIRTLEY: And so, that’s where that application of how can you do the most efficient engineering, because in a spacecraft, you don’t have power. You’re getting power from the sun. It’s hard; solar panels are heavy and expensive. So, you have to save every single watt, joule of energy that’s coming to that spacecraft. And applying that to fusion, it turns out, is actually one of the ways to do fusion a lot faster – is if you can be efficient on all that. Hall-effect thrusters the same. You have magnetic fields that are insulating and protecting the thruster itself from this very high temperature fuel. And the J x B – the magnetic force – is what gives you the acceleration from that faster.
+
+KEVIN SCOTT: Yeah. So, I think that’s actually a perfect segue. We’ve been dancing around this whole thing. You build fusion reactors. Like, explain to us how your reactor works.
+
+DAVID KIRTLEY: Yep. Yeah, so our fusion generators, there’s a couple of techniques of fusion, very high level magnetic fusion, which is a steady version of fusion, large superconductors, like a tokamak that holds on to fusion long enough that it superheats, and then fusion can happen. It ignites, and then you use that heat to boil water and run a steam turbine. 
+
+And then there’s inertial fusion, where you do a similar thing, but in a pulsed way, in a nanosecond. I think about it as similar to a supernova, but in a nanosecond, you compress a fusion fuel. The leading way to do that is with lasers. It gets super high pressure, super high pressure where fusion happens. And then if you did your work right, it ignites, which means you get massive amounts of fusion power output, again, mostly in heat. Boiled water runs steam turbines.
+
+What we do is something that takes some of those, the best of both, the physics of both, but then new engineering to do what we call direct energy recovery. So, we take our fuel, trap

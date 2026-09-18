@@ -1,0 +1,13 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt  of say, "Oh, I'm going to add up all of the clicks that happened on this particular ad."  
+And I'm going to like store that in a database somewhere that you know sort of counts all the clicks so that I can pay the -- you know, the advertiser -- or like charge the advertiser for -- 
+NEHA NARKHEDE:  Pretty much. 
+KEVIN SCOTT:  Yeah, and it's like a gazillion different things, right?  
+NEHA NARKHEDE:  Yeah.  
+KEVIN SCOTT:  So, you need ETL to work so that you can basically reason over what's happened in your system.  And so like that's sort of where Kafka started.  It was -- like it turns out that like getting all of this data from all of these places where it's being produced and like getting it to all of the things that need to consume it -- 
+NEHA NARKHEDE:  Consume it.  
+KEVIN SCOTT:  -- like ETL systems is actually a pretty hard technical problem. 
+NEHA NARKHEDE:  It turns out, it seemed very simple when Jay drew it on the board, which is what got me excited about it.  But as I started to look into it, it was pretty complex.  You know, back then, LinkedIn was going through its own micro services transition, right?  So we were creating a lot of tiny applications. And then we had all these analytical systems and data systems that needed access to the data. 
+And if you think about, you know, what the source of truth was, there actually wasn't one.  You know, the applications sort of were talking through an MQ and because MQs didn't scale, not a lot of the micro services were talking to the MQs, and we had all this custom tooling and data warehouse-centric tooling that was copying all that data and scraping it at the end of the day. 
+And so the motivation for solving this problem was just like a simple observation is if you think about LinkedIn, we produce data 24 hours a day, you know, by processes and applications that never stop, that users that were global, never stop.  
+But if you think about all the infrastructure that we had to harness that data and put it to use, it was sort of stuck in this bi-modal world where you (inaudible) simple lookups on a relational or NoSQL database, or you could wait for the end of day, where you can get like these slow, big, batch dumps and query them.  
+And if you think about a global business, what is even end of day?  And at the same time, our use of data was changing.  It wasn't just the reports that our employees and our exec team needed to look at, it was the problem that you mentioned, which is all this data that was

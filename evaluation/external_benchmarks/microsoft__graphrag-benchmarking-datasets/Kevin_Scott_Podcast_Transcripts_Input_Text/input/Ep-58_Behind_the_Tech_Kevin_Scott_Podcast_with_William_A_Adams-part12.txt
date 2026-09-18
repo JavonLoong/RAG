@@ -1,0 +1,17 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  SCOTT: That was a brilliant operating system, like I never had one, but I always wanted a Be Box, like it was such a cool computer.
+
+WILLIAM ADAMS: I still have one. I have one, down in the basement.
+
+KEVIN SCOTT: Dude.
+
+WILLIAM ADAMS: Yeah, they were innovative in quite a few things. They were one of the first people to come out with a PC that was multiprocessing. It had two CPUs in it. And then they also had quite a lot of innovation in the UI, in terms of speed. This guy, Benoit Schillings, who later did Qt, did the UI for the BeOS. This other guy, Dominick [Giampaolo] – oh, what is Dominick’s last name? 
+
+Anyway, they had this operating system that had – it was journaled, for one, so it was kind of crash proof. And they also had tagging, so you could attach tags to things, which made it really interesting. So, they did a lot of innovations. Of course, they didn’t win. They were – we were right there at that battle between is Apple going to buy NeXT or Be, and they bought NeXT. And that was the end of Be, essentially.
+
+KEVIN SCOTT: Yeah. So, how did you end up at Microsoft? 
+ 
+WILLIAM ADAMS: So, as I was – I exited Be in, what was it, ‘96, I guess, maybe ‘97. And I was – because something happened there. It was like, ah, this is not a good place for me. So then, I was sitting around just kind of programming along, you know, compiling Linux and whatnot at home. And I had a friend at Microsoft, Chris Lovett, who said, “Hey, we’re working on this XML thing. You want to come join?” And I said, “That sounds interesting.” (Laughter.) 
+
+So, I went up, did the interview, and was, like, yeah, okay, and this was right at the time where – it was 1998. So, recession is coming, .com bubble is inflating and about to burst. Microsoft is under investigation by the DOJ, about to be split up, you know, and I thought, that place is going to be – either they’re going down in flames, or they’re rising like a phoenix. Either way, it’s going to be a fun ride. So, I jumped off to Microsoft.
+
+And it was also, I had a child. You know, these are my earning years. I’m 30-something. It’s like, well, this is my last chance to actually go get some dollars, you know, and not starve. So, I’d better go, you know, do that thing. So, I did. That’s how I came

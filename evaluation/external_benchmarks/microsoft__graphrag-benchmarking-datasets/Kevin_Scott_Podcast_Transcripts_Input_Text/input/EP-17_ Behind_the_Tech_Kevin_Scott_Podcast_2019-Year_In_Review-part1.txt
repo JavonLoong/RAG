@@ -1,0 +1,27 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt ../[MUSIC]
+
+KEVIN SCOTT:  All of us every day should be asking, like, how is it that the thing that I'm doing right now is going to positively accrue to the overall social good.  Like, if you can't answer that question in an affirmative way, then maybe you're doing the wrong damn thing.
+
+[MUSIC]
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+CHRISTINA WARREN:  Hello, and welcome to a special episode of Behind the Tech.  I'm Christina Warren, Senior Cloud Advocate at Microsoft.  
+
+KEVIN SCOTT:  And I'm Kevin Scott.  
+
+CHRISTINA WARREN:  And today, we're going to change things up a little bit with the format and do a Behind the Tech Year in Review.
+
+KEVIN SCOTT:  So, we had a bunch of incredibly good conversations this year with a bunch of really brilliant people.  And we thought we would just spend some time sharing some of the highlights from those really interesting conversations with everyone. 
+
+CHRISTINA WARREN:  Yeah, exactly.  And so, what we're going to do is we're going to basically highlight a few of our fascinating guests.  We're going to replay some of our favorite quotes.  We’re going to share some surprising moments, maybe even a few laughs.
+
+First, we're going to hear from Stanford University scholar Andrew Ng about topics like the democratization of AI.  We'll revisit our conversation with Jaron Lanier about challenges of social media and the, quote/unquote, "downfall of democracy," and we'll hear from a few more of our guests about the crazy things they do when they're not, you know, like changing the course of tech history and, like changing the course of tech history or something.  
+
+[MUSIC]
+
+ANDREW NG: With the rise of technology often comes greater concentration of power in smaller numbers of people's hands, and I think that this creates greater risk of ever-growing wealth inequality as well. To be really candid, I think that with the rise of the last few waves of technology, we actually did a great job creating wealth in the East and the West Coast, but we actually did leave large parts of the country behind, and I would love for this next one to bring everyone along with us. 
+
+KEVIN SCOTT:  So that was Andrew Ng.  Andrew is founder and CEO of Landing AI, founding lead of

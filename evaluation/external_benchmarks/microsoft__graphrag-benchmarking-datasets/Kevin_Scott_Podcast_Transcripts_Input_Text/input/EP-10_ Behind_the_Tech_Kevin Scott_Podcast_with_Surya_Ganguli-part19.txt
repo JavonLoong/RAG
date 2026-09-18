@@ -1,0 +1,14 @@
+EP-10_ Behind_the_Tech_Kevin Scott_Podcast_with_Surya_Ganguli.txt .  He actually came up with a really cool result that showed that if you look inside these neural networks, they implicitly build up syntactic trees associated with sentences, right?  
+KEVIN SCOTT:  Interesting.
+SURYA GANGULI:  And so, what he did was he -- there's something called the dependence parse tree, where you can take a sentence and come up with a dependency parse, and that gives you a distance between all pairs of words in the sentence.  He showed that he can learn a simple quadratic form going from the internal representations of these networks, Burt and Elmo, to a scalar which predicts the dependency parsed at this many words in the sentence.
+And so, now what we're doing right now is we're analyzing the dynamics of this model, trying to figure out how, on an online, word-by-word fashion, it builds up this parse tree, which is an interesting computation because conventional computer science algorithms to build up dependency parse trees need a stack to do it.  So, we suspect that a stack machinery in hiding in the dynamics of this network.  So, playing around with that.
+KEVIN SCOTT:  That also -- yeah, that's super fascinating.  I mean, like, it's interesting on a bunch of different dimensions.  Like, the thing -- as you were, as you were sort of saying all of that, that I was thinking about is, like I was a compiler in programming language person when I was a younger computer scientist.  And I remember -- I remember long, long, long ago reading Chomsky's work.  So, like, Noam Chomsky is like a very, very --
+SURYA GANGULI:  Another MIT person.  (Laughter.)
+KEVIN SCOTT:  Another MIT person, one of the most famous sort of linguists and social philosophers in the world. 
+SURYA GANGULI:  That I didn't agree with, even when I was a freshman.  (Laughter.)
+
+KEVIN SCOTT:  Yeah.  And like, look, I also didn't agree with him because, like, one of the things that he asserted a long, long time ago is that human beings had some built in notion of grammar that was, like, you know, sort of in their brains.  And what you just said is sort of striking, that like, even when you're evolving an artificial system, that like maybe some fundamental notion of grammar, like, manifests itself. 
+SURYA GANGULI:  Yeah, exactly.  
+KEVIN SCOTT:  Like, that's super interesting.
+SURYA GANGULI:  It's -- it's an emerging property of -- and we've, we've actually worked out mathematical solutions to the dynamics of learning in deep neural networks that show how hierarchical concepts can emerge naturally in a deep neural network.
+So, for example,

@@ -1,0 +1,57 @@
+Comparative planetary science or comparative planetology is a branch of space science and planetary science in which different natural processes and systems are studied by their effects and phenomena on and between multiple bodies.
+ The planetary processes in question include geology, hydrology, atmospheric physics, and interactions such as impact cratering, space weathering, and magnetospheric physics in the solar wind, and possibly biology, via astrobiology.
+Explorer 14 is a spin-stabilized, solar-cell-powered spacecraft instrumented to measure cosmic-ray particles, trapped particles, solar wind protons, and magnetospheric and interplanetary magnetic fields.
+ A 16-channel PFM/PM time-division multiplexed telemeter was used.
+ The time required to sample the 16 channels (one frame period) was 0.323 s. Half of the channels were used to convey eight-level digital information, and the others were used for analog information.
+ During ground processing of the telemetered data, the analog information was digitized with an accuracy of 1/100 of full scale.
+ One analog channel was subcommutated in a 16-frame-long pattern and was used to telemeter spacecraft temperatures, power system voltages, currents, etc.
+ A digital solar aspect sensor measured the spin period and phase, digitized to 0.041 s, and the angle between the spin axis and sun direction to about 3-degree intervals.
+A Van Allen radiation belt is a zone of energetic charged particles, most of which originate from the solar wind that is captured by and held around a planet by that planet's magnetic field.
+ The Earth has two such belts and sometimes others may be temporarily created.
+ The discovery of the belts is credited to James Van Allen, and as a result the Earth's belts are known as the Van Allen belts.
+ Earth's two main belts extend from an altitude of about 500 to 58,000 kilometers above the surface in which region radiation levels vary.
+ Most of the particles that form the belts are thought to come from solar wind and other particles by cosmic rays. By trapping the solar wind, the magnetic field deflects those energetic particles and protects the Earth's atmosphere from destruction.
+The magnetopause is the abrupt boundary between a magnetosphere and the surrounding plasma.
+ For planetary science, the magnetopause is the boundary between the planet’s magnetic field and the solar wind.
+ The location of the magnetopause is determined by the balance between the pressure of the dynamic planetary magnetic field and the dynamic pressure of the solar wind.
+ As the solar wind pressure increases and decreases, the magnetopause moves inward and outward in response.
+ Waves (ripples and flapping motion) along the magnetopause move in the direction of the solar wind flow in response to small-scale variations in the solar wind pressure and to Kelvin–Helmholtz instability.
+Joan Feynman (born March 31, 1927) is an American astrophysicist.
+ She has made important contributions to the study of solar wind particles and fields; sun-Earth relations; and magnetospheric physics.
+ In particular, Feynman is known for developing an understanding of the origin of auroras.
+ She is also known for creating a model that predicts the number of high-energy particles likely to hit a spacecraft over its lifetime, and for uncovering a method for predicting sunspot cycles.
+ Feynman is the younger sister of physicist Richard Feynman.
+The solar wind is a stream of charged particles released from the upper atmosphere of the Sun.
+ This plasma consists of mostly electrons, protons and alpha particles with thermal energies between 1.5 and 10 keV.
+ Embedded within the solar-wind plasma is the interplanetary magnetic field.
+ The solar wind varies in density, temperature and speed over time and over solar latitude and longitude.
+ Its particles can escape the Sun's gravity because of their high energy resulting from the high temperature of the corona, which in turn is a result of the coronal magnetic field.
+The term heliophysics means "physics of the Sun" (the prefix "helio", from Attic Greek "hḗlios", means Sun), and appears to have been used only in that sense until quite recently.
+ In the early times, heliophysics was concerned principally with the superficial layers of the star, and was synonymous with what is now more commonly called "solar physics".
+ Usage was extended explicitly in 1981 to its literal meaning, denoting the physics of the entire Sun: from center to corona, and has been used in that sense since.
+ As such it was a direct translation from the French "héliophysique", which had been introduced to provide a distinction from "physique solaire" (solar physics).
+ It thus became a subdiscipline of heliology.
+ Early in the 21st century the meaning of the term was extended by Dr George Siscoe of Boston University to include the physics of the heliosphere (the space around the Sun beyond the corona, in principle out to the shock where the solar wind encounters the interstellar medium, but excluding the planets and other condensed bodies), although Siscoe's view of the discipline appears not to contain most of the true realm of endeavour.
+ The term was adopted in Siscoe's restricted sense by the NASA Science Mission Directorate to denote the study of the heliosphere and the objects that interact with it—most notably planetary atmospheres and magnetospheres, the solar corona, and the interstellar medium.
+ Heliophysics combines several other disciplines, including solar physics, and stellar physics in general, and also several branches of nuclear physics, plasma physics, space physics and magnetospheric physics.
+ Solar wind interaction with magnetized planets, Solar wind propagation, Solar activity effects on planetary magnetospheres.
+ Solar magnetic field configuration from the Sun to the Heliopause.
+ The recent extension of heliophysics is closely tied to the study of space weather and the phenomena that affect it, and consequently to climatology.
+ To quote Siscoe from a recent conference presentation:
+In solar science, heliospheric pickup ions are created when neutral particles inside the heliosphere are ionized by either solar ultraviolet radiation, charge exchange with solar wind protons or electron impact ionization.
+ Pickup ions are generally characterized by their single charge state, a typical velocity that ranges between 0 km/s and twice the solar wind velocity (~800 km/s), a composition that reflects their neutral seed population and their spatial distribution in the heliosphere.
+ The neutral seed population of these ions can either be of interstellar origin or of lunar-, cometary, or inner-source origin.
+ Just after the ionization, the singly charged ions are picked up by the magnetized solar wind plasma and develop strong anisotropic and toroidal velocity distribution functions, which gradually transform into a more isotropic state.
+ After their creation, pickup ions move with the solar wind radially outwards from the Sun.
+Magnetometer (MAG) is the name of an instrument suite on the "Juno" orbiter for planet Jupiter.
+ The MAG instrument includes both the Fluxgate Magnetometer (FGM) and Advanced Stellar Compass (ASC) instruments.
+ There two sets of MAG instrument suites, and they are both positioned on the far end of on three solar panel array booms.
+ Each MAG instrument suite observes the same swath of Jupiter, and by having two sets of instruments, determining what signal is from the planet and what is from spacecraft is supported.
+ Avoiding signals from the spacecraft is another reason MAG is placed at the end of the solar panel boom, about 10 m (33 feet) and 12 m (39 feet) away from the central body of the Juno spacecraft.
+ The MAG instrument is designed to detect the magnetic field of Jupiter, which is one of the largest structures in the Solar System.
+ If one could see Jupiter's magnetic field from Earth, it would appear five times larger than the full moon in the sky despite being nearly 1700 times farther away.
+ Jupiter's internal magnetic field prevents the solar wind, a stream of ionized particles emitted by the Sun, from interacting directly with its atmosphere, and instead diverts it away from the planet, effectively creating a cavity in the solar wind flow, called a magnetosphere, composed of a plasma different from that of the solar wind.
+A geomagnetic storm is a temporary disturbance of the Earth's magnetosphere caused by a solar wind shock wave and/or cloud of magnetic field that interacts with the Earth's magnetic field.
+ The increase in the solar wind pressure initially compresses the magnetosphere.
+ The solar wind's magnetic field interacts with the Earth’s magnetic field and transfers an increased energy into the magnetosphere.
+ Both interactions cause an increase in plasma movement through the magnetosphere (driven by increased electric fields inside the magnetosphere) and an increase in electric current in the magnetosphere and ionosphere.

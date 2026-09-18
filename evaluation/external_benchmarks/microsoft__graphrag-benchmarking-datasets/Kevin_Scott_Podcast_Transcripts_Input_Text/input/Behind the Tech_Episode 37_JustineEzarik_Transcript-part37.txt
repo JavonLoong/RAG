@@ -1,0 +1,28 @@
+Behind the Tech_Episode 37_JustineEzarik_Transcript.txt ../[MUSIC] 
+
+JUSTINE: Everyone’s like, oh, like, have goals and stick to them. And I don’t believe that at all. I mean, I think it’s great to have goals, but I think if you stray from that goal, you could potentially find something way better.
+
+[MUSIC] 
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC] 
+ 
+
+CHRISTINA WARREN:  Hello and welcome to Behind the Tech! I’m Christina Warren, senior cloud advocate at Microsoft.
+
+KEVIN SCOTT:  And I’m Kevin Scott. 
+
+CHRISTINA WARREN:  And our guest on the show today is Justine Ezarik, also known as iJustine. She’s a techie, she’s a gamer, and she’s one of the top tech female influencers on YouTube. I followed her for many years. I’ve met her a few times. And it’s been so interesting to watch her career trajectory.
+
+KEVIN SCOTT:  Yeah, it’s really fascinating. I mean, I admire what she does, in general, inspiring people to get interested in technology, but like maybe even more so like I’m just inspired by her as an entrepreneur. She has – like she was one of the very earliest people who figured out that there is a way to create content and to engage with audiences using these new technologies like YouTube and streaming. And she pioneered a way to turn that interest into a business, and now it is a big thing, like a thing to the point that both of my children would love to be able to figure out how to be influencers or streamers or whatever you want to call it, which is just it’s crazy how influential she’s been, honestly. 
+
+CHRISTINA WARREN:  Yeah, no, absolutely. I mean, I read a study recently and I don’t know if this is a good or a bad thing, but apparently the number one career that kids have today is like they all want to be creators.
+
+KEVIN SCOTT:  Yeah.
+
+CHRISTINA WARREN:  Like that’s their number one career, and –
+
+KEVIN SCOTT:  Look, I think it’s a terrific thing, actually. So the creative impulse in general is a great thing to have. It’s what you have. It’s what I have. It’s like why a bunch of us are out, like trying to make new things to see whether or not

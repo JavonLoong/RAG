@@ -1,0 +1,19 @@
+EP-20_ Behind_the_Tech_Kevin_Scott_Podcast_ReprogrammingTheDream.txt  podcast, but you also wrote the book for people in your community, back in Virginia, and for others.  
+
+My father read an early proof of the book.  He's an oil and gas guy from Oklahoma, and he said he felt like, for the first time, he had a grasp of AI and what it might mean.  How should we define for ourselves; how should we think of what AI is?
+
+KEVIN SCOTT:  So, AI, on the one hand, is a[n] incredibly complicated assembly of technologies.  It's not just one thing, but maybe the simplest way to understand what it does, or like how to think about it is that AI is a tool that we built for automating tasks and doing work that would otherwise require a human being to do.
+
+And like a lot of the work that AI does is sort of cognitive sorts of things.  So, the you know, people talk about this notion of artificial general intelligence, and like this was the holy grail for AI back in the mid-1950s, when a group of mathematicians, engineers and computer scientists coined the term artificial intelligence for the first time.
+
+They wanted to build a set of software and digital systems that were functionally equivalent to human intelligence in the most general terms.  So, you know, could you build a thing that was sort of indiscernible from human intelligence.
+
+And what we found over the years is doing that is incredibly hard.  You know, one of the things that I write about in the book is that human intelligence, itself, is sort of ill understood, and so – you know, in the early days of AI, the things that the founders of the field thought were going to be the problems that one solved would be, okay, now we're over the hump.
+
+Like we're, you know, we've got this whole thing nailed, were things that we believe are high-cognitive watermarks for human intelligence, like being able to master chess, and so it turns out that AI systems are pretty good at doing things like gameplaying.
+
+And so, we – you know, we built AI systems that could beat the best human chess players, years ago, and like even over the past couple of years, you know, some of the most remarkable stunts that we've done, with AI, like with the most modern AI tools are like conquering a set of games where, you know, like we had set them up, you know, one after one, as I go.
+
+Like, once we get here, we will really have cracked the nut, so to speak.  The flipside of that is that AI still isn't able to solve very basic problems, like things that, you know, a human toddler can do are at the moment outside of the grasp of AI systems.
+
+And so, you know, one of the things that I would love to encourage people to think about is like

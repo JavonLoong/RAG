@@ -1,0 +1,13 @@
+EP-04_ Behind_the_Tech_Kevin Scott_Podcast_with_Judy Estrin.txt  had an operating system that was called RIO -- Real I/O, which was a predecessor to the operating systems of PCs. But Zilog was a microprocessor company, not a systems company. 
+And so one of the things I learned was up until then, I was an engineering elitist. I thought marketing people weren't important. (laugh) But I learned a really important lesson, which is:  If you don't look at the needs of the market and match the technology, the technology is for naught. And even if you meet those needs, if you don't understand how to market and sell it and you don't have distribution channels that match up, you don't get anywhere, you don't solve any problems. 
+KEVIN SCOTT: Yeah. 
+JUDY ESTRIN: So, it's fine if what you're doing is research and discovery, and you're not trying to bring a product to market, but if you're trying to solve a problem, you need all these pieces. I very quickly, within those years at Zilog, moved from being an individual contributor to a first-level and then second-level. I moved into management pretty quickly. 
+KEVIN SCOTT: Did you enjoy the transition? 
+JUDY ESTRIN: Yes. I -- 
+KEVIN SCOTT: And was it obvious to you that that was the right way to go? 
+JUDY ESTRIN: I never would have thought. I, as a kid, was not one of these people that thought I wanted lead, thought I wanted to be an entrepreneur. I didn't have a lemonade stand. I didn't do any of that stuff. And I found myself in this position, and what I realized very quickly is that I love people. I love collaborating. I love helping people and helping people develop and leading a team. 
+And, you know, the fact of the matter is, I wasn't a great software engineer. I think what I was best at was the architecture and the thinking about the kind of systems thinking. I never wrote the fastest or best code. And so, I ended up lucky that I had the opportunity. By going to Zilog, I also met the person who became my husband, now my ex-husband. 
+We started Bridge Communications, which was one of the early local area network providers. And so the name Bridge was about interconnecting networks. And it was interesting, our business plan, when we started, was going to be about interconnecting networks. And very quickly, we realized there are not enough networks to interconnect. And so we started off selling communications servers, which were connecting devices into networks, and then also interconnected those networks. 
+KEVIN SCOTT: That's awesome. So, presumably, you ran engineering and technology at the startup. 
+JUDY ESTRIN: Right. 
+KEVIN SCOTT: So, you went from being

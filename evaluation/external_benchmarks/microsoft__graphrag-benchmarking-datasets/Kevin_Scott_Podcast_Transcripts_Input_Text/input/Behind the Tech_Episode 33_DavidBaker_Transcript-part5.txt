@@ -1,0 +1,19 @@
+Behind the Tech_Episode 33_DavidBaker_Transcript.txt  for computing.” So, then I had to kind of learn what that was, so, that was one of the things I did. 
+
+But I do have another sort of funny story about that time which was that whole area of the building was really devoted to crystal structure determination – determining the atomic coordinates of proteins. So, one of the first days I was there, I went into the room where everyone was sitting at their workstations trying to trace a protein chain through an electron density map. And so, I said, “Oh, can I try?” So, they said, “Sure.” So, I sat down at one of the screens and tried to trace the chain through. 
+
+And I remembered then that I have horrible 3D visualization capabilities. I was totally incapable of doing it. So, everyone in the room turned to me and said, “David, shouldn’t you have checked out whether you’re any good at this stuff before you went into structural biology?” (Laughter.) 
+
+KEVIN SCOTT:  That’s – that is funny. So, I mean, maybe you could explain to the listeners a little bit about, like, what exactly that looks like. So, like, you get a protein, you try to crystallize it. Like, at the time you were shining a bunch of x-rays through it and sort of looking at the – the diffraction patterns of – I mean, like, I’m probably describing it wrong – 
+
+DAVID BAKER:  That’s right. No, you’re absolutely right. 
+
+KEVIN SCOTT:  But, so, like, that’s just an incredible amount of work just to figure out what a protein looks like when it folds itself up, right? 
+
+DAVID BAKER:  Yeah, yeah, it’s a lot of work and it’s very difficult, too, because you have to coax the proteins to crystallize and I don’t really – I don’t think – this is probably – would be – it’s probably not exactly how it was, but at some point around there, I decided I really wanted to learn how to predict protein structure from sequence so that you wouldn’t have to do all this crystallography and chain tracing and all this stuff. But – 
+
+KEVIN SCOTT:  Yeah, and so – 
+
+DAVID BAKER:  Yeah. 
+
+KEVIN SCOTT:  So, like, talk about that a little bit. Like, it’s sort of a big leap, I guess, from this idea that you’re using a bunch of scientific tools in the physical world to try to spy into the world of biology, much of which we can’t see at all. You know, at this molecular level that you’re, you know, that you’re working at to trying to go from this sequence of amino acids and say, like, if I understand the sequence of acids, like, what is this thing going to look like?

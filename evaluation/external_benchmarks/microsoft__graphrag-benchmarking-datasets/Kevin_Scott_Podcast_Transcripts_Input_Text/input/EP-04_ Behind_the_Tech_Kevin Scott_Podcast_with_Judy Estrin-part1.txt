@@ -1,0 +1,21 @@
+EP-04_ Behind_the_Tech_Kevin Scott_Podcast_with_Judy Estrin.txt ../JUDY ESTRIN: (Voiceover) Right now, so much of what is going on in the industry is driven by the values of scale and speed. It is about maximizing growth. It is about maximizing connectivity. What about thinking about what we're losing in those values. There's nothing wrong with growth, but not at the expense of humanity. 
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. In this podcast, we're going to get behind the tech. We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. 
+So, join me to maybe learn a little bit about the history of computing, and get a few behind-the-scenes insights into what's happening today. Stick around.
+
+[MUSIC]
+
+KEVIN SCOTT: Today, I'm joined by my colleague, Christina Warren. Christina is a senior cloud developer advocate at Microsoft. Welcome back, Christina. 
+CHRISTINA WARREN: Hey, Kevin. Great to be here again. 
+KEVIN SCOTT: So, we are going to talk with Judy Estrin today. And I have been super excited to get this interview on the books, because Judy is truly one of the most amazing individuals in tech who I've ever met. 
+CHRISTINA WARREN: Yeah. Just seeing how far back her association with the Internet goes, and all the different roles that she's had as an engineer and as an entrepreneur. 
+KEVIN SCOTT: Yeah, her story is incredible. Like the fact that it starts with amazing anecdotes like her dad working for John Von Neumann at the Institute for Advanced Study. And sort of goes all the way through her direct involvement in the creation of the Internet protocols, to illustrious career in the technology industry as an executive and board member. I mean, just incredible stuff. 
+CHRISTINA WARREN: I'm really looking forward to hearing what you two discuss. 
+KEVIN SCOTT: Awesome. Well, thanks for chatting, Christina. We'll catch up later in the show. 
+CHRISTINA WARREN: Talk soon. 
+
+[MUSIC]
+ 
+KEVIN SCOTT: Coming up next, Judy Estrin. Internet pioneer, entrepreneur, tech executive, author of the book Closing the Innovation Gap, and one of the most incisive thinkers on the intersection of the Internet, democracy, and humanity. So, welcome, Judy. 
+JUDY ESTRIN: It's a pleasure to be here. 
+KEVIN SCOTT: Oh, awesome, awesome. I've been so looking forward to chatting with you. So, I wanted to start with your childhood because you had this amazing career in technology, and your father is a very well-known computer scientist. So, with you, it started especially early. Right? 
+JUDY ESTR

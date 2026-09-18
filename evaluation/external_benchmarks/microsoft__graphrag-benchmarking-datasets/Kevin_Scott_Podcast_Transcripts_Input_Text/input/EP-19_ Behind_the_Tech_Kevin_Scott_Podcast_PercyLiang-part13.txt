@@ -1,0 +1,15 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  much more of a kind of a treading water kind of a situation as opposed to like really kind of building up, you know, building blocks.
+
+KEVIN SCOTT:  So, one of the interesting things that I think has really happened over my career doing machine learning things, is -- in 2003, when you're doing machine learning stuff, like you're more or less starting from scratch, whenever you're trying to build a system, and like now, if you want to do something with machine learning, you've got PyTorch, you've got -- you know, you've got like notebooks, like Jupyter Notebooks, you've got like all of this sort of incredible infrastructure that is available to you, to like build things.
+
+Like my favorite anecdote is like the thing that I did at Google, which is my first machine learning project, that took like a, reading a bunch of like heavily technical stuff, and like probably six months' worth of very hard work, like a high school kid with sufficient motivation, like using a bunch of opensource tools could do in a weekend, which is just incredible.  
+
+But I'm guessing that also puts pressure on the curriculum, like what you provide as programming exercises for kids, where you just sort of -- just keeping pace with the overall field, it's got to be challenging, right?
+
+PERCY LIANG:  Yes, so it's certainly very incredible how far we've come, in terms of tools.  And, again, this is kind of the success story of abstractions in computer science where we don't -- many people don't have to think about registers to program, and get even close to kind of assembly, although people program Python might not have to think about, you know, memory management, and now, when you're working with something like PyTorch or TensorFlow, you can think about the modeling, and focus on the modeling without thinking about how the training works.
+
+You know, of course, I think in order to get off the ground and have kind of a hackathon project, you can get by with not knowing, you know, very much.  I think to get kind of really kind of serious, the -- these abstraction barriers are also leaky, and I think someone would be well served to understand, you know, how -- what are gradients and how that is, you know, computed.
+
+So, I think in the class that I teach we definitely expose students to the raw, kind of the bare metal, so to speak.  For example, in the first class I show people how to do stochastic gradient descent, and it's -- I, you know, code it up, and it's 10 lines of code, and not using PyTorch and TensorFlow.
+
+And I want people to understand that some of these ideas are actually pretty, pretty simple, and -- but, you have to kind of -- but, I wanted people to get exposed

@@ -1,0 +1,15 @@
+EP-48_Behind_the_Tech_Kevin_Scott_Podcast_with_Randall_Munroe.txt  but like, the general trust between a bunch of people working together. 
+
+I think the maybe the – the key thing that – that is behind a lot of this is not so much like bias or lack of bias, or like, you know, who you look to as an authority versus whether you trust your own experiments over what, you know, the authorities are saying, is more just curiosity that – that you can’t – you can’t do good science if you don’t have a question that you’re earnestly trying to answer. And if you’re earnestly trying to answer it in good faith, then these tools, you know, of collaboration and of scientific experiment will help you get to it. 
+
+And if enough people are not trying to answer questions in good faith and not trying to, like understand things better, then yeah, the whole thing falls apart. But I think that that is because if people aren’t – if people are not trying to answer questions and – and learn in good faith, then you – no amount of bolting scientific philosophies onto that is – is going to help. 
+
+KEVIN SCOTT: Yeah. I super strongly agree with that. I think the other thing, too that you just mentioned, this notion that science is collaborative, is really an important thing. Like, one of my theories about why science ultimately, or like scientific ideas, like have to – good ones have to work is because often, you’re composing them together. And so, if someone publishes something that’s faulty, and then someone else picks that idea up, and uses it in a thing that they in good faith are trying to go solve, they very quickly may discover that everything sort of breaks because the thing they’re relying on was broken. 
+
+And so, you just sort of ten – like there’s – there’s sort of peer review beyond the peer review that got things published. So like, there’s just this, if it’s good science, like people are going to want to use it, and so, like the scrutiny continues.
+
+RANDALL MUNROE: Yeah. I think a lot of the – a lot of the places that we seem to run into trouble is – are where there’s a thing that we all want to solve, and then there’s a piece of science that like someone does something where it’s like, oh, if this is true, then it’s really helpful, and we can all do more with it. 
+
+And like, so then people grab onto it, and they’re like, “Oh, great, this helps me solve a problem I have here,” you know, and – and – and – and there isn’t necessarily, you know, the incentive to like, you don’t – you don’t go back and double check, hey, was that right or not? 
+
+And it’s less like – it’s less like, you know, a question of deceit and those people doing bad science.

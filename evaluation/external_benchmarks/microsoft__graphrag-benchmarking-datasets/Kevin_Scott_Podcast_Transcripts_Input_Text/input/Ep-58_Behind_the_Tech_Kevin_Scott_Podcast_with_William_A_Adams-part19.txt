@@ -1,0 +1,15 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  you did. 
+
+It’s like, A, I didn’t know we had a CTO; and B, like, can we just please make this person leave us alone for as long as humanly possible, which would then let me select into, like, what I thought were the highest priority things to go figure out first. 
+
+And, like, the unusual thing about Microsoft is we had lots of people who wanted to engage with the office of the CTO, like, very quickly. It was overwhelming. So, if I hadn’t had, like, all of you excellent TAs, like, it would have just been too daunting. 
+ 
+WILLIAM ADAMS: Yeah, I mean, in the guts of forming that office, I mean, if you asked what else I did, it was the TA part. And it was also, since the office – there’s no playbook for the office of the CTO. It’s not, like, hey, Kevin’s the CTO, and here’s the description of how an office of the CTO should run. So, we spent quite a lot of time amongst ourselves, just trying to figure out, well, what should we be focused on? What is the right use of our energies? And how should we operate? How do we evaluate whether we’re being impactful or not? 
+
+And one of the key things we did, or you did for us, was to lay out, it’s not really a manifesto, but it was the words that said, you know, how we operate, right, which was go in with humility, listen, you know, don’t go in with a sledgehammer. All that sort of stuff laid the groundwork for, and I think why the office of the CTO is successful. What, we’re six, seven years in now?
+
+KEVIN SCOTT: Almost, yeah.
+
+WILLIAM ADAMS: Yeah, so it’s like most offices of the CTO that Microsoft has had didn’t last that long, and it’s because they were different. Like, Ray Ozzie, for example, ended up trying to become a product team. So, the people he was supposed to be serving were now his competitors, right? It’s, like, well, that’s not your Kevin Scott’s office of the CTO. You stuck with the, look, man, I’m here to serve, right? (Laughter.) And I think that’s super important. 
+ 
+KEVIN SCOTT: Yeah. I think, you know, we can talk a bit about this. Companies need a mix of different things in order to be successful. So, obviously, you have to have product teams who make product, and you have to have people who sell them. And you have to have, you know, human resources teams that, like, help hire the people and retain them, and make sure that they are, you know,

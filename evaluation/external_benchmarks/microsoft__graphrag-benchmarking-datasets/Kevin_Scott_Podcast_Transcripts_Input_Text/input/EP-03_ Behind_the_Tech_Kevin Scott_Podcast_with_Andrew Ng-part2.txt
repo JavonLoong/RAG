@@ -1,0 +1,13 @@
+EP-03_ Behind_the_Tech_Kevin Scott_Podcast_with_Andrew Ng.txt . Christina, we'll check back with you after the interview. Coming up next, Andrew Ng. Andrew is founder and CEO of Landing.AI. Founding lead of the Google Brain Project and co-founder of Coursera. Andrew is one of the most influential leaders in AI and deep learning. He's also a Stanford University Computer Science adjunct professor. Andrew, thanks for being here. 
+ANDREW NG: Thanks a lot for having me Kevin. 
+KEVIN SCOTT: So, let's go all the way back to the beginning. So, you grew up in Asia? And I'm just sort of curious when was it that you realized you were really interested in math and computer science? 
+ANDREW NG: I was born in London, but grew up mostly in Hong Kong and Singapore. I think I started coding when I was six-years-old. And my father had a few very old computers. The one I used the most was some old Atari, where I remember there were these books where you would read the code in a book and just type in a computer and then you had these computer games you could play that you just implemented yourself. So, I thought that was wonderful. 
+KEVIN SCOTT: Yeah, and so that was probably the Atari 400 or 800? 
+ANDREW NG: Yeah. Atari 800 sounds right. It was definitely some Atari. 
+KEVIN SCOTT: That's awesome. And what sorts of games were you most interested in? 
+ANDREW NG: You know, the one that fascinated me the most was a number guessing game. Where you, the human, would think of a number from 1 to 100, then the computer would basically do binary search but chooses: Is it higher or lower than 50? Is it higher or lower than 75 and so on, until it guesses the right number. 
+KEVIN SCOTT: Well, in a weird way, that's like early statistical Machine Learning, right? 
+ANDREW NG: Yeah, and then, so at six-years-old it was just fascinating that the computer could guess. 
+KEVIN SCOTT: Yeah. So, from six years- did you go to a science and technology high school? Did you take computer science classes when you were a kid or...? 
+ANDREW NG: I went to good schools: St. Paul's in Hong Kong and then ACPS in the Raffles in Singapore. I was lucky to go to good schools. I was fortunate to have grown up in countries with great educational systems. Great teachers, they made us work really hard but also gave us lots of opportunities to explore. 
+And I feel like, computer science is not magic. You and I do this, we know this. While I'm very excited about the work I get to do in computer science and AI, I actually feel like anyone could do what I'd do if they put in a bit of time to learn to do

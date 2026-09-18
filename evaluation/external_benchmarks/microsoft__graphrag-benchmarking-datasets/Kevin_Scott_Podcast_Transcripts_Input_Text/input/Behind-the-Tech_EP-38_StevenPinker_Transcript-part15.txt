@@ -1,0 +1,13 @@
+Behind-the-Tech_EP-38_StevenPinker_Transcript.txt , they just say, if you don’t do anything, if you click through all these pages, if you throw out the paperwork, you’re in. If you do the work [TCR 00:50:00] of checking the box or I’m clicking the – the tab, then you can opt out. But it’s an eensy-weensy bit more cognitive work to do that. And so, people do tend to opt for the, I think, the withdrawal at the end of the month.
+
+Likewise, for organ donation, if when you renew your driver’s license, you have to tick a box so that if you die in an accident and your – your brain is destroyed, but your body is okay, your organs can then save the lives of other people. Or you can – it happens if you don’t do anything and you’ve got to tick a box so that your organs are – are not eligible for donation. And a lot more people become organ donors when they don’t have to do that onerous labor of ticking a box. 
+
+And there are other examples, and it’s a widespread – part of a widespread movement in government, sometimes called behavioral insights, or – or again nudge, to try to figure out ways of changing bureaucratic procedures, the way laws are stated, the way they’re publicized, just the interface between government and the people, so that the things that everyone wants, like fewer accidents, better health, come naturally to people. 
+
+KEVIN SCOTT: And so you also talk about this notion of public goods games, which are prisoner’s dilemmas with more than two players, and, you know, make what I think is a pretty convincing argument about how these might help us make better decisions when we’re thinking about balancing these, you know, balancing communal goods versus individual interests. Can you say a little bit more about that? 
+
+STEVEN PINKER: Yeah, it’s an example of one of the conceptual tools that I think every educated person should master. And the biggest motivation for writing Rationality is that I thought that there are a number of fairly straightforward mathematical, logical, philosophical computational tools that, like reading and writing, should just be at the fingertips of every thoughtful person, so that when they come across an example, they – they recognize it.
+
+And one of the chapters in the book is on game theory, which is one of those families of tools. And one of the scenarios in game theory, as you – as you explained, is called the prisoner’s dilemma when it involves two players, or the public goods game when it involves more than two. 
+
+And the idea is that, well, I’ll just simplify it in the case of the public goods games and the way it’s actually studied in the laboratory. Imagine that everyone is given an endowment. The experimenter gives you, you know, 10 bucks. You can contribute as much as you want to

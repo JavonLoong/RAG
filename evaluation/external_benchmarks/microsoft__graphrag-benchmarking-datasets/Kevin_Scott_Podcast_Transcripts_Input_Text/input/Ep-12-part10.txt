@@ -1,0 +1,35 @@
+Ep-12.txt days, I wanted to be a physicist. I think probably about 90 percent of the incoming class at that 
+time wanted to be physicists. 
+KEVIN SCOTT: And was Feynman there at the time? 
+BILL COUGHRAN: Feynman was there. 
+KEVIN SCOTT: Okay, so that's a good motivator. 
+BILL COUGHRAN: Yeah. And I had the opportunity to meet with him a few times in the 
+years I was there, an amazing person. Although, his books are much easier to read than it is to 
+take the exams associated with them. (Laughter.) But that's -- but I think like many of the 
+entering freshmen, I discovered I wasn't smart enough to be a physicist. So, that got me into 
+math. 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+8
+My first published paper in a refereed journal was actually when I was a freshman -- it was a 
+computational chemistry paper that I did with a post-doc and one of the faculty members. And I 
+had the opportunity to do things like that during the four years I was there. 
+KEVIN SCOTT: Do you remember what the paper was about?
+BILL COUGHRAN: (Laughter.) There's an approximation to a quantum chemistry problem 
+that's called a Hartree-Fock equations, and so this was a simulation on, at that time, a very large 
+IBM 370 or 360-something-or-other that we ran overnight and calculated a bunch of ground 
+states of different small molecules. 
+KEVIN SCOTT: That's super cool. 
+BILL COUGHRAN: A long time ago. 
+KEVIN SCOTT: No, but super cool. You know, and again, like, we'll get back to this later. 
+You already mentioned that you know like we have this sort of resurgence in like all of the 
+things that like people were interested in in high-performance computing back in the like '70s, 
+'80s, and '90s with all of the like large-scale machine learning stuff that we're doing right now. 
+But you know, I think that the things that you were doing back then are probably like largely 
+transferrable to like things that people are doing now to train machine learning models.
+BILL COUGHRAN: Yeah, it's interesting. When I went to Stanford, my primary work as a 
+graduate student was in numerical modeling. My thesis was on numerical techniques for partial 
+differential equations, fluid flow, and things like that. 
+Did a lot of work with linear algebra and so forth. But it was all early high-performance 
+computing work. And in those days, you know, there were controlled data machines around and 
+Crays were starting – Cray-1 was starting to appear

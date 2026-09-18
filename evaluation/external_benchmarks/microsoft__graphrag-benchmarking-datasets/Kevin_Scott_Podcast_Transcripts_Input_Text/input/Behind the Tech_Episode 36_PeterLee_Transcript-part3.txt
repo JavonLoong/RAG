@@ -1,0 +1,21 @@
+Behind the Tech_Episode 36_PeterLee_Transcript.txt . How did you get interested in a set of things that took you to functional programing? 
+
+PETER LEE:  You know, Norman Ramsey, I of course, know very well and was great. And I think I, in fact, pretty sure I had encountered you while you were a grad student. And so, it’s amazing how things, kind of how paths intersect. 
+
+KEVIN SCOTT:  It is. 
+
+PETER LEE:  Well, yeah. So to go back to the beginning, you know, I grew up in a hardcore physical science household. You know, my parents immigrated from Korea. My mom became a chemistry professor. My dad became a physics professor. 
+
+KEVIN SCOTT:  Wow. 
+
+PETER LEE:  And so the joke is I was a big disappointment to them when I went to college to major in math. (Laughter.)
+
+KEVIN SCOTT:  You know, we laugh at that, but that is a weird thing in academia, that there seems – everybody has a pecking order in their head about which of the disciplines are better than the others, which is sort of just outrageously ridiculous thing. 
+
+PETER LEE:  Well, you know, I think, of course, then I compounded the problem by going to grad school, not in math, but in computer science.
+
+Obviously, my parents became very, very proud of me, in time. But, you know, it’s actually something that I think all researchers encounter, because what researchers do, it’s not clearly useful to anyone. 
+
+You know, people oftentimes don’t understand what it is that you and I do, or people in a place like Microsoft Research do. Society has to actually tolerate the burden and the cost, you know, of all of these great research institutions around the world. And so, you know, we’re oftentimes encountering, you know, questions like that. So, you know, as you say, there’s a pecking order, so even I grew up with that in my own household. 
+
+KEVIN SCOTT:  Yeah, and I was thinking about this yesterday. I think tolerate is one word. I think trust is another, and like, we’re at this, you know, weird moment in time right now where I do feel that science and, like, particularly scientific research, where the result of what you’re doing, before the thing that you’re spending all of your time is going to have an impact on human beings, it sort of takes a while and sometimes it’s very indirect. Like, you make a contribution to a thing that’s going to have to have hundreds or thousands of different things contributed into it before you get a medicine or a breakthrough product or whatever it is. And I think part of the challenge with earning people’s trust and tolerance is on us just figuring out how to better tell folks what it is

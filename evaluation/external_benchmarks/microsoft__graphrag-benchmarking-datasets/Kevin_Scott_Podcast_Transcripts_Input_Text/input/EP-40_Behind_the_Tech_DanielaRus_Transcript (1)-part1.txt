@@ -1,0 +1,34 @@
+EP-40_Behind_the_Tech_DanielaRus_Transcript (1).txt ../Episode 40: Behind the Tech with Kevin Scott 
+Guest: Dr. Daniela Rus
+
+DANIELA RUS: I believe that we can stretch ourselves and go to a different stage, where we think about soft robots that are inspired in shape by the animal kingdom with its form diversity, by the natural world, with its form diversity, and even by the built environment. Because then, we would have so much more potential for applications. 
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.
+
+[music]
+
+CHRISTINA WARREN: Hello and welcome to Behind the Tech. I’m Christina Warren, senior cloud advocate at Microsoft,
+
+KEVIN SCOTT: And I’m Kevin Scott.
+
+CHRISTINA WARREN: And our guest on the show today is Daniela Rus. Daniela is a researcher, MIT professor and the head of MIT’s Computer Science and Artificial Intelligence Lab, better known as CSAIL. She’s a USA expert member for Global Partnership on AI. She’s a member of the Board for Scientific America and was recently recognized, along with another Behind the Tech guest, Fei-Fei Li, as one of the eight most influential women in AI.
+
+KEVIN SCOTT: Yeah, Daniela is really impressive, as is the institution that she leads. I’ve always been an admirer of her work in AI robotics, and she’s just a tremendous computer scientist.
+
+CHRISTINA WARREN: Yeah, no, I – I’ve always been an admirer of what happens at MIT, especially with the robotics stuff, and – and I can’t wait to hear the conversation that you two have.
+
+KEVIN SCOTT: Yeah, me – me too.
+
+CHRISTINA WARREN: All right, let’s chat with Daniela.
+
+[music]
+
+KEVIN SCOTT: Our guest today is Daniela Rus. Daniela is one of the world’s leading roboticists. She’s an MIT professor and the first female head of MIT’s Computer Science and Artificial Intelligence Lab, where her research focuses on robotics, mobile computing and data science. 
+
+Daniela is a class of 2002 MacArthur Fellow, a member of the National Academy of Engineers, and the recipient of the 2017 Engelberger Robotics Award from the Robotics Industries Association. Her work is dedicated to envisioning a future where robots are integrated into the fabric of everyday life. Welcome to the show Daniela.
+
+DANIELA RUS: Thank you so much. I’m excited to be here.
+
+KEVIN

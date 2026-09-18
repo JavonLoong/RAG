@@ -1,0 +1,15 @@
+EP-40_Behind_the_Tech_DanielaRus_Transcript (1).txt  in some sense, a few years ago, we started working on what we call the robot compiler, where the idea is you give the machine or you give the computational design platform the task you want the machine to do. And what you expect is a solution that involves the hardware configuration, and also the software and programming environment required to deliver the function of that machine. 
+
+And oh, and I didn’t tell you about interaction. So, if you want to use the machine, then you have to understand it, right? And that requires that we think seriously about how machines and people interact with one another. And until very recently, in order to use a computer, you really needed to be an expert. Like, if you think about where computing was 20 years ago, 20 years ago, only experts could use computers. You really needed to understand what to do. You needed to have a lot of money because computers were so expensive.
+
+But all that changed with the smartphone, which has democratized computing. And I believe that the same can be true for physical work. And so, we should ask ourselves in this world so changed by computation that helps us with number crunching tasks, what might it be with machines that can help us with cognitive and physical work. How much work can we offload to machines and how would machines interact with us? 
+ 
+Now, I believe that in the future, we will have, increasingly, machines that adapt to people rather than the other way around, because today, we have to adapt to the machines that we use.
+
+KEVIN SCOTT: Yeah, I totally agree. Well, I’m sort of interested, maybe this is a little bit related to what you just said. One of the big changes in artificial intelligence over the course of our careers has been this adoption, particularly over the past, let’s say, 15-20 years, of machine learning techniques. 
+
+So, I know when I was in grad school, all of my – I was a compiler and programming languages person, but all of my – my friends who were working on artificial intelligence or robotics were working on planning algorithms, and, you know, a bunch of knowledge-based systems and expert systems, and trying to build these systems that emulated intelligence and that had agency in the physical world by developing algorithms that effectively manipulated symbols and rules, and just had mathematically precise understandings of what they were doing and how they were interacting with the world. 
+
+And, like, the thing that’s really changed since I left academia and, like, sort of defined my entire career in industry is, machine learning – where you just sort of have lots and lots of data, and you are trying to train models from those data that allow you to do things. And this has obviously changed how robotics works a little bit. 
+
+I’d love, though, to get your perspective on how you’ve seen this change impact your work and – and then there are lots of

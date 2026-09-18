@@ -1,0 +1,48 @@
+Hans Albrecht Bethe (] ; July 2, 1906 – March 6, 2005) was a German and American nuclear physicist who, in addition to making important contributions to astrophysics, quantum electrodynamics and solid-state physics, won the 1967 Nobel Prize in Physics for his work on the theory of stellar nucleosynthesis.
+With the formation of stars, heavier nuclei were created from hydrogen and helium by stellar nucleosynthesis, a process that continues today.
+ Some of these elements, particularly those lighter than iron, continue to be delivered to the interstellar medium when low mass stars eject their outer envelope before they collapse to form white dwarfs.
+ The remains of their ejected mass form the planetary nebulae observable throughout our galaxy.
+The BFH paper, named after the initials of the authors of the paper, Margaret Burbidge, Geoffrey Burbidge, William Fowler, and Fred Hoyle, is a landmark paper of stellar physics published in "Reviews of Modern Physics" in 1957.
+ The formal title of the paper is "Synthesis of the Elements in Stars", but the article is generally referred to only as "BFH".
+Sir Fred Hoyle FRS (24 June 1915 – 20 August 2001) was an English astronomer who formulated the theory of stellar nucleosynthesis.
+ He also held controversial stances on other scientific matters—in particular his rejection of the "Big Bang" theory, a term coined by him on BBC radio, and his promotion of panspermia as the origin of life on Earth.
+ He also wrote science fiction novels, short stories and radio plays, and co-authored twelve books with his son, Geoffrey Hoyle.
+Neutron capture nucleosynthesis describes two nucleosynthesis pathways: the r-process and the s-process, for "rapid" and "slow" neutron captures, respectively.
+ R-process describes neutron capture in a region of high neutron flux, such as during supernova nucleosynthesis after core-collapse, and yields neutron-rich nuclides.
+ S-process describes neutron capture that is slow relative to the rate of beta decay, as for stellar nucleosynthesis in some stars, and yields nuclei with stable nuclear shells.
+ Each process is responsible for roughly half of the observed abundances of elements heavier than iron.
+ The importance of neutron capture to the observed abundance of the chemical elements was first described in 1957 in the BFH paper.
+Boron is a chemical element with symbol B and atomic number 5.
+ Produced entirely by cosmic ray spallation and supernovae and not by stellar nucleosynthesis, it is a low-abundance element in the Solar system and in the Earth's crust.
+ Boron is concentrated on Earth by the water-solubility of its more common naturally occurring compounds, the borate minerals.
+ These are mined industrially as evaporites, such as borax and kernite.
+ The largest known boron deposits are in Turkey, the largest producer of boron minerals.
+Alastair G. W. (Graham Walter) Cameron (21 June 1925 in Winnipeg, Manitoba, Canada – 3 October 2005 in Tucson, Arizona, USA) was a Canadian astrophysicist and space scientist who was an eminent staff member of the Astronomy department of Harvard University.
+ Cameron, the son of a Canadian biochemist, was born in Winnipeg.
+ He earned his undergraduate degree from the University of Manitoba, and a doctorate from the University of Saskatchewan in 1952.
+ In 1959 he emigrated to the USA, where he held academic positions at the California Institute of Technology, the Goddard Institute for Space Studies, and at Yeshiva University.
+ In 1973 he became a professor of astronomy at Harvard University and remained there for 26 years.
+ From 1976 to 1982 he was chairman of the Space Science Board of the National Academy of Sciences.
+ He pioneered the theory of stellar nucleosynthesis – the production of chemical elements in stars.
+ He was also the first to theorize that the formation of the Moon was the result of an extraterrestrial impact on the early Earth by an object at least the size of Mars.
+George Gamow (March 4 [O.S. February 20] 1904 August 19, 1968), born Georgiy Antonovich Gamov (Russian: Гео́ргий Анто́нович Га́мов ; ] ), was a theoretical physicist and cosmologist.
+ He was an early advocate and developer of Lemaître's Big Bang theory.
+ He discovered a theoretical explanation of alpha decay via quantum tunneling, and worked on radioactive decay of the atomic nucleus, star formation, stellar nucleosynthesis and Big Bang nucleosynthesis (which he collectively called nucleocosmogenesis), and molecular genetics.
+John Allen "Jack" Eddy (March 25, 1931 – June 10, 2009) was an American astronomer who published professionally under the name John A. Eddy but much of the content referencing him can be found under his nickname Jack which he preferred to use.
+ In 1976 Dr. Eddy published a landmark paper in Science titled "The Maunder Minimum" where, using the Nineteenth Century works of Edward W. Maunder and Gustav Spörer, he identified a 70-year period from 1645 to 1715 as a time when solar activity all but stopped.
+ In making the case for the anomaly, he gathered and interpreted data from a wide variety of sources, including first-hand accounts from extant historical observations of the Sun going back to the telescopic observations of Galileo and other contemporary scientists of the 17th and early 18th centuries; from historical reports of the aurora borealis observed in past centuries in Europe and the New World; from visual observations of sunspots seen with the unaided eye at sunrise and sunset in dynastic records from the Orient; from existing descriptions of the eclipsed Sun; and from measurements of carbon-14 in dated tree-rings.
+ In the last of these, which can be used as a proxy indicator of solar activity, he found evidence of other similar periods of solar quiescence in the distant past, the most recent an even longer 90-year span, from about 1460 until 1550, which he named the Spörer Minimum.
+ Both the Maunder and Spörer minima fell during the coldest parts of the Little Ice Age, which suggested a meaningful connection between the longer term behavior of the Sun and of the Earth’s mean surface temperature.
+ In advancing the theory that the Sun is a variable star Eddy observed: "It has long been thought that the Sun is a constant star of regular and repeatable behavior.
+ Measurements of the radiative output, or solar constant, seem to justify the first assumption, and the record of periodicity in sunspot numbers is taken as evidence of the second.
+ Both records, however, sample only the most recent history of the Sun."
+Stellar nucleosynthesis is the process by which the natural abundances of the chemical elements within stars change due to nuclear fusion reactions in the cores and their overlying mantles.
+ Stars are said to evolve (age) with changes in the abundances of the elements within.
+ Core fusion increases the atomic weight of elements and reduces the number of particles, which would lead to a pressure loss except that gravitation leads to contraction, an increase of temperature, and a balance of forces.
+ A star loses most of its mass when it is ejected late in the star's lifetime, thereby increasing the abundance of elements heavier than helium in the interstellar medium.
+ The term supernova nucleosynthesis is used to describe the creation of elements during the evolution and explosion of a pre-supernova star, a concept put forth by Fred Hoyle in 1954.
+ A stimulus to the development of the theory of nucleosynthesis was the discovery of variations in the abundances of elements found in the universe.
+ Those abundances, when plotted on a graph as a function of atomic number of the element, have a jagged sawtooth shape that varies by factors of tens of millions.
+ This suggested a natural process that is not random.
+ Such a graph of the abundances can be seen at History of nucleosynthesis theory article.
+ Of the several processes of nucleosynthesis, stellar nucleosynthesis is the dominating contributor to elemental abundances in the universe.

@@ -1,0 +1,19 @@
+EP-25_ Behind_the_Tech_CharlieStross_Sci-fi_author.txt , like I know there are a lot of people who have deceived themselves into thinking that they're doing good and aren't. But we do need, I think, to get the incentives genuinely aligned better than they are right now. 
+
+CHARLIE STROSS: Yeah, we currently have an incentive system that rewards sociopaths with status, and that's toxic in the long run. 
+
+KEVIN SCOTT: I've just written a book recently, not fiction, nonfiction, about AI and the future of work. And, you know, one of the provocations that I had in my book is to challenge people to think about the ways in which technology can turn zero-sum games into non-zero-sum ones. 
+
+I mean, it more or less for, like, the big challenging problems that we have, technology is the only thing that can perform that magic trick. It's the thing that allows us to relax constraints and create abundance from scarcity. And thinking very carefully about where it is, we can apply that trick to, you know, maximum global benefit I think is interesting. 
+
+Like, you mentioned one that I care a lot about, which is climate and sustainability. But there are a bunch of others as well, like feeding, you know, a word that's headed toward peak population, you know, figuring out how to deal with water scarcity, you know, figuring out, like, simple things like healthcare, like I say, they're simple, but they're not. 
+
+But, you know, that's one of those silly zero-sum games that we're in right now where you're — you have a population of human beings who want to be in excellent health, rightly so, and at least in the United States, which I've — this is an interesting discussion to have with a British person, like our cost of delivering high-quality healthcare in the United States is growing faster than our gross domestic product. And, you know, one of the ways that you potentially tackle a problem like that is like have a technological intervention that says, here's a way to bend the shape of that cost curve down, where instead of under-escalating costs, you're figuring out, like, who gets access to the healthcare and how much, which is a very contentious conversation.  
+
+If you can change the cost dynamics of the thing through technology, maybe the conversation is less contentious, and you can figure out how to give everybody access to the thing. 
+
+CHARLIE STROSS: Yes, but I'm afraid the real underlying problem in healthcare in the United States especially, but also in the U.K. and elsewhere is a regulatory framework one. 
+
+We have a problem with regulatory capture. We have a problem with drug development. We have a problem with commercialization of new medicines. Our development of new antibiotics has crashed to almost nil just as antibiotic resistance has become almost universal. 
+
+And this is killing tens of thousands of people a year in the U

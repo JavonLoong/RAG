@@ -1,0 +1,17 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt ’t – like I wasn’t getting to build interesting stuff and things like that. So my first two jobs were actually a real disaster, and I thought, “Oh my gosh, like, what am I going to do?” 
+
+The things that finally started happening for me when I took some time off after two, two and a half years, and just started writing Macintosh educational software. And that’s – that was kind of, I had to invent it on my own. 
+
+If I was more sophisticated, I would have gone and camped out at Microsoft or Apple and just said, “You must hire me,” tried to meet all of those people, but I wasn’t. So I resorted to building this first version of Interactive Physics, and that’s what kind of got me back into the stuff I really like. 
+
+KEVIN SCOTT: Well, so tell us a little bit about that. So this is, you know, both you doing something interesting programming-wise, but you’re starting a business, too. And so like those are two very, very interesting things. 
+
+DAVID BASZUCKI: Yeah, it was driven a lot by the love of constructive software. And in those days, in the mid- to late ‘80s, educational software was very early HyperCard-y, templatized, pre-canned, slider type stuff. 
+
+And I was looking at the whole educational software market, and it’s interesting when you’re on the outside of something, it seems like it must be awesome and great. But then when you go and start playing with it yourselves, the ideas start flowing. And I say, “Oh my gosh, this is all pre-canned.” What would – wouldn’t it be cool if there is a way to build all of these things and try anything and build physics experiments? 
+
+So that launched the idea of Interactive Physics. It was kind of a business, but I got to tell you, educational software is a hard business and – but I went down the path anyways. I remember meeting with a friend of my dad’s, who was very sophisticated, and he said, “Look, I think the overall size of this whole market is X,” and it was a very small market. And I kind of said to myself, “That’s impossible, it can’t be that small.” But yes, it did turn out to be exactly that size about four or five years later. 
+
+But nonetheless, yeah, we went and I did a lot of research on physics simulation. Back then, this was very early, you know, SIGGRAPH type stuff, 2D, simulation, was able to put together this physics simulator and build this thing that was called Interactive Physics, and it was really exciting. All the physics textbooks correlated to it. A lot of teachers around the – got to be millions and millions of students. So it was a great launching. 
+
+KEVIN SCOTT: Yeah

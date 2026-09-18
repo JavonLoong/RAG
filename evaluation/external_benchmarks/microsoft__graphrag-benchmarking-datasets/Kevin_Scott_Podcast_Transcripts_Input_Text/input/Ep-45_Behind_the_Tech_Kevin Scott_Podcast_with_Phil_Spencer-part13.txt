@@ -1,0 +1,21 @@
+Ep-45_Behind_the_Tech_Kevin Scott_Podcast_with_Phil_Spencer.txt VIN SCOTT: Nice.
+
+PHIL SPENCER: A great game from Miyazaki-san, a good friend, and congrats to them on all the success that they’ve had. 
+
+But it’s interesting how often I’m in a party and we’re all playing, it has some co-op capability, but usually we’re all playing in parallel and just kind of talking to each other about the experience that we’re had or, “Hey, I’m stuck somewhere; can you kind of come in and jump, jump in and help?”
+
+And I’ve always loved that part of gaming, whether it’s the old BBSs I used to run from Computer Mart and people talking about games or the experience in the store, and now so much of that has gone online, just the community around the content and the creation is it’s an integral part of what gaming is about. 
+
+KEVIN SCOTT: So, you know, maybe let’s jump back to your time at University of Washington. So you knew when you went to UW that you wanted to major in computer science or that was still up in the air?
+
+PHIL SPENCER: Like most things in my academic career, I had very little – I had no plan. I graduated from a place called Ridgefield, Washington, down in southern Washington High School. I applied to one school, University of Washington. I don’t know what I would have done if I didn’t get in, but luckily I got in. 
+
+My dad was an engineer, so he said, you’re going to join – it’s one of these schools where you kind of declare at the beginning and then after your sophomore year is when you apply you get into a school or not. So I said, okay, engineering. 
+
+My first semester, I guess, they were on a semester system, I learned what it meant to drop a class and still get a sub 3.0 grade point average. So I was quickly indoctrinated into, okay, this engineering requires real work, not just like my high school skate by. 
+
+They had a class, I think it was called Engineering 101, where it was like a one credit class. You’d go, I believe, once a week, and the different engineering disciplines would kind of come in and pitch what they were doing. And CS was not part of the engineering discipline, at least at UW.
+
+And I ended up in graduating, my actual degree is in something called human-centered design and engineering, the HCDE department at UW, and which is this mix of kind of human condition and code, and even hardware and the interaction between all of these things. When I was there, it was scientific and technical communication. It’s changed names a couple of times. 
+
+But I found that department through this Engineering 101 class and I just love the idea that we would be sitting there working on computers, building UI elements, writing code, and that intersection

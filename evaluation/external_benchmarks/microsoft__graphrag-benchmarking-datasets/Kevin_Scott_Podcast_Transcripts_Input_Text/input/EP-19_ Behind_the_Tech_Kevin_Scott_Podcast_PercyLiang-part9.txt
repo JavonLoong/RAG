@@ -1,0 +1,17 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  it’s really, you know, an exciting environment.  
+
+KEVIN SCOTT:  So, like, back to your story.  So, like, when did you decide to do semantic machines? 
+
+PERCY LIANG:  Yeah, so I started at Stanford in 2012.  And for the first three years or so, I was just trying to learn how to be a professor, teach classes, advise students.  So there’s plenty of stuff to do.  I wasn’t looking to join a startup. 
+
+But then around 2016, so Dan Klein, who was one of my advisors at Berkeley, came to me and he was working on Semantic Machines, which I had known about.  And basically convinced me to join.  
+
+And I think it was a, you know, and I think the reason for doing so is, you know, if I think about my experiences at Google, where you would take ideas and you kind of really get them to work in practice, I think that it was kind of a very, you know, compelling environment and Semantic Machines had a lot of great people, some of which I knew from grad school.  And I think the kind of critical mass of talent was, I think, one of the main draws because you have a lot of smart people working on this incredibly hard problem of conversational AI or dialogue systems. 
+
+Yeah, so it was kind of irresistible.  Even though, you know, my sanity probably suffered a little bit from that.  (Laughter.)  
+
+KEVIN SCOTT:   So, what are -- what are some of the big challenges that we still have open in conversational AI, so like you're trying to build an agent that you can communicate with as, as you would another human being.  So, like some things are -- they're like really great, like speed track ignition, like turning the utterances that come out of your mouth into some sort of structured representation, like that's pretty good now.  But like there's still some big open problems, right?
+
+PERCY LIANG:  Yes, there are a ton of open problems.  I'm not worried about losing my job any time soon.  I think the -- maybe the way to think about it is that the history of NLP has always been kind of this tension between breadth and depth, right?  We have, in the '80s and '70s, very deep language understanding systems, and the domains, and you could ask all sorts of questions, and we'll do a good job.
+
+But, you know, once you go out and leave the confines of that domain, then all bets are off. And on the other hand, we have things like search which are unstructured, they're just broad.  They don't claim to understand, in any sense of the word, understand anything, but they're incredibly useful, just because they have that, you

@@ -1,0 +1,26 @@
+Behind-the-Tech_EP39_2021_Year-in-Review_Transcript.txt  love reading sort of firsthand accounts of people at the time as they were kind of going through those. There’s this great book called Pandemonium which is – it’s all primary source material of the Industrial Revolution as it was arriving. And many of the things that people say in that book could be said now about how people feel about AI. There’s no jobs; it’s going to take over; the machines are going to kill us; like, the future is going to be terrible; or like, it’s going to be utopia. It’s like, this is so amazing. Like, there’s nothing these machines can’t do. 
+
+KEVIN SCOTT: And the reality was some complicated thing in the middle.
+
+SAM ALTMAN: And we always figure out something new to do. Like, the rate of – for instance, so one of the common themes in that book was, like, what are we all going to work on. The rate of job turnover is something like 50 percent of the jobs every 75 years, and this held remarkably constant. You know, it has, like, fits and spurts, but that’s held constant for hundreds of years. And like, we go -- like, technology changes. Whole classes of jobs go away, and we find new ones. And they’re difficult to predict what they’re going to be, but like, I think the jobs this time will change a lot, but we’re going to find things to do, I’m pretty sure. 
+
+[MUSIC]
+
+
+KEVIN SCOTT: Yeah. So, what is the most exciting thing that you think is going to happen in AI over the next few years that you can talk about?
+
+SAM ALTMAN: Well, I’ll give a few, because I think the interesting thing is the breadth of things that are going to happen. I think we’ll have language models where we can interact with computers with natural language in an amazing way that we just – that feels unimaginable, and that’s going to feel like intelligence. I think we’ll have robots that can do human dexterity levels of manipulation, and that’s going to be a huge impact on the world. I think computer games are going to get really good and fun to play. That’s a sort of small sample.  
+
+KEVIN SCOTT: Yeah. So, it’s exciting.
+
+SAM ALTMAN: Totally. It’s amazing.
+
+KEVIN SCOTT: And, you know, none of those things – and so, this is – this is sort of to my point, like, none of those things is like Commander Data from Star Trek: The Next Generation walking around, and still, useful stuff will happen. 
+
+SAM ALTMAN: Right.
+
+KEVIN SCOTT: So, that’s the thing that makes me, like, super, super excited.
+
+SAM ALTMAN: Totally. 
+
+KEVIN SCOTT: And if we get Commander Data, like,

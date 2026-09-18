@@ -1,0 +1,25 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt  providing AI solutions or by engaging deeply in AI transmission programs, whether my team at Landing.AI, whether Landing.AI can help other industries also become great at AI. 
+
+KEVIN SCOTT: Well, talk a little bit more about what Landing.AI's mission is. 
+
+ANDREW NG: We want to empower businesses with AI. There is so much need for AI to enter other industries than technology, everything ranging from manufacturing to agriculture to healthcare, and so many more. For example, in manufacturing, there are today in factories sometimes hundreds of thousands of people using their eyes to inspect parts as they come off as the assembly line to check for scratches and things and so on. 
+
+We find that we can, for the most part, automate that with deep learning and often do it at a level of reliability and consistency that's greater than the people are. People squinting at something 20 centimeters away your whole day, that's actually not great for your eyesight it turns out, and I would love for computers rather than often these young employees to do it. 
+
+So, Landing.AI is working with a few different industries to provide solutions like that. We also engage companies with broader transformation programs. So, for both Google and Baidu, it was not one thing, it's not that implement neural networks for ads and so it's a great AI company. 
+
+For a company become a great AI company is much more than that. And then having sort of helped two great companies do that, we are trying to help other companies as well, especially ones outside tech become leading AI entities in their industry vertical. So, I find that work very meaningful and very exciting. Several days ago, I tweeted out that on Monday, I literally wake up at 5:00 AM so excited about one of the Landing.AI projects, I couldn't go back to sleep. I started getting and scribbling on my notebook. So, I find these are really, really meaningful. 
+
+[MUSIC]
+
+CHRISTINA WARREN:  You know, when we talk about AI and you've had so many great conversations with people about AI, one of the big things that comes up is how to make sure that, you know, we're doing this the right way.  
+
+KEVIN SCOTT:  Yes, and we've had a bunch of conversations about that this year.  So, one of them was with Fei-Fei Li.
+
+[MUSIC]
+
+FEI-FEI LI:  Whenever humanity creates a technology as powerful and potentially useful as AI, we owe it to ourselves and our future generation to make it right.  
+
+CHRISTINA WARREN:  So that was Fei-Fei Li, a pioneering researcher in AI. 
+
+KEVIN SCOTT:  Fei-Fei is an incredible computer science researcher, she helped create in large part the entire discipline of modern deep neural networks.  So, she created this thing called ImageNet in 

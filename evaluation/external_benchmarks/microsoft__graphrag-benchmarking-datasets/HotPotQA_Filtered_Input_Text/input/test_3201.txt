@@ -1,0 +1,40 @@
+The M24 Sniper Weapon System (SWS) is the military and police version of the Remington Model 700 rifle, "M24" being the model name assigned by the United States Army after adoption as their standard sniper rifle in 1988.
+ The M24 is referred to as a "weapon system" because it consists of not only a rifle, but also a detachable telescopic sight and other accessories.
+The SWARM Remote Weapon System (Stabilised Weapon And Reconnaissance Mount) is a fully armored remote weapon system designed and built by the Thales Group in Glasgow, Scotland.
+ The SWARM system consists of two main assemblies: the Gun Processing and Interface Unit (GPIU), which is operated inside the vehicle, and the external Weapon and Sensor Platform (WASP).
+ It can fire a variety of weapons, and utilize multiple sensors.
+ On the US Marine Corps' Gladiator Tactical Unmanned Ground Vehicle (TUGV), it is equipped with a 7.62 mm M240 and day/night sensors.
+Weapon System is a United States military term that designated, along with a weapon system number (e.g., WS-110), military experimental (MX) weapons prior to official naming (e.g., under a military aircraft designation system.
+ Preceded by the first Skunk Works program (MX-813 for the Convair XF-92 in 1946), the earliest "WS" designation was the 1954 WS-117L.
+ Circa February 1950, an Air Research and Development Command ""study prepared by Maj Gen Gordon P. Saville ... recommended that a 'systems approach' to new weapons be adopted "[whereby]" development of a weapon "system" required development of support equipment as well as the actual hardware itself.""
+The 14th Marine Regiment (14th Marines) is a reserve artillery regiment of the United States Marine Corps consisting of three artillery battalions and a headquarters battery.
+ The regiment is based in Fort Worth, Texas however its units are dispersed among 15 different sites in 12 states.
+ Its primary weapon system is the M777A2 Howitzer with a maximum effective range of 30 km however one of its battalions has converted to fire the High Mobility Artillery Rocket System (HIMARS) weapon system.
+The AK-630 is a Soviet and Russian fully automatic naval close-in weapon system based on a six-barreled 30 mm rotary cannon.
+ In "630", "6" means 6 barrels and "30" means 30 mm.
+ It is mounted in an enclosed automatic turret and directed by radar and television detection and tracking.
+ The system's primary purpose is defense against anti-ship missiles and other precision guided weapons.
+ However it can also be employed against fixed or rotary wing aircraft, ships and other small craft, coastal targets, and floating mines.
+ Once operational, this weapon system was rapidly adopted, with up to 8 units installed in every new Soviet warship (from mine-hunters to aircraft carriers), and hundreds produced in total.
+The M2010 Enhanced Sniper Rifle (ESR), formerly known as the XM2010 and M24 Reconfigured Sniper Weapon System, is a sniper rifle developed by PEO Soldier for the United States Army.
+ It is derived from the M24 Sniper Weapon System and replaced the existing M24s.
+ After winning a competitive bidding process, Remington was awarded the production contract for up to 3,600 weapons.
+ The Army had anticipated fielding upgraded weapons to deployed U.S. Army Snipers near the end of December 2010, but later expected fielding would happen in January 2011.
+The ČZ 2000 is a prototype 5.56 mm caliber Czech weapon system, consisting of a standard rifle, carbine and light machine gun.
+ The system was developed in 1991 after adapting the LADA firearm prototype (chambered for the 5.45×39mm M74 cartridge to the standard NATO 5.56×45mm round with the SS109 bullet.)
+ J. Denel from the Brno-based Prototypa-ZM company is the chief designer for both systems.
+ The ČZ 2000 (short for "Česká zbrojovka", and the number 2000 signifies that this is a weapon system of the year 2000) was to be produced by Česká zbrojovka of Uherský Brod.
+ It was to be the new service weapon of the Czech Army, replacing: the 7.62 mm vz.
+ 58 assault rifle, 7.65 mm vz.
+ 61 Škorpion submachine gun and 7.62 mm vz.
+ 59 machine gun.
+ As of 2007, the project has been discontinued.
+Bofors HPM Blackout is a high-powered microwave weapon system, built by BAE Systems, which is stated to be able to destroy at distance a wide variety of commercial off-the-shelf (COTS) electronic equipment.
+ It is stated to be non-lethal to humans.
+ The total weight of the weapon system is less than 500 kg.
+The Pershing II Weapon System was a solid-fueled two-stage ballistic missile designed and built by Martin Marietta to replace the Pershing 1a Field Artillery Missile System as the United States Army's primary nuclear-capable theater-level weapon.
+ The U.S. Army replaced the Pershing 1a with the Pershing II Weapon System in 1983 while the German Air Force retained Pershing 1a until all Pershings were eliminated in 1991.
+ The U.S. Army Missile Command (MICOM) managed the development and improvements while the Field Artillery Branch deployed the systems and developed tactical doctrine.
+Goalkeeper is a Dutch close-in weapon system (CIWS) introduced in 1979.
+ It is an autonomous and completely automatic weapon system for short-range defence of ships against highly maneuverable missiles, aircraft and fast maneuvering surface vessels.
+ Once activated the system automatically undertakes the entire air defense process from surveillance and detection to destruction, including selection of the next priority target.

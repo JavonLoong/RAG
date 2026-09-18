@@ -1,0 +1,13 @@
+EP-23_ Behind_the_Tech_Kevin_Tom-Daniel_Neuroscientist_and_bioengineer.txt .
+
+The difference between the oven controller and an animal controlling its temperature setting, right, is that in the oven controller, again, you typically have one sensor, one sensor modality, and then on and off. You basically get hot, get not, and how you deal with that sensory information, whether you use some gain on it, or some differentiator, or some integrator, you know, that's kind of up to you and your design specs for that controller.
+
+And the animals have the same game to play, evolutionarily, right? They have some gains in the system, some integrators that happen. They have neurons are integrators, and they have differentiators. They have all of that, but they have it in aces. I think that's the difference, and so we like to think of them as – I think the lingo is MIMO systems, multi-input/multi-output, but all of them have gains, they could have differentiators and they can have integrators, right? They can have it all. And evolution doesn't care how complicated it is for us to unravel. It just cares that it works, that – and I'm going to come back to a slightly orthogonal view of this in a second. 
+
+Here are the challenges – is you can take a human into a gaming system and you can have them learn the game. And they could move a joystick to control a cursor, and you can adjust the gain. And they got pretty good at it. And you can change the game, and they'd get good at it. And by the way, you can reverse the gain and they can do that. It takes them a little while, but they can get there, right?
+
+You can have memory. You can have a differentiator, you basically put a human in PID loop, and you can play the game, and lo' and behold, you'll find out that they're able to do it, but their performance may vary with gain, with the differentiator, with the parameters of your loop control, and the same is true with the animals. We can put, and have put, a moth in a visual world where it thinks it's flying. And as it flies it can control, in close loop, the horizon, right, it's visual horizon. And how we do that is in the weeds, but it can control the visual horizon with a PID loop.  And you can change the gain, and it can do that. It can learn to handle different gains, and you can even reverse the gain, and it has a hard time, but eventually it gets there.
+
+So, the difference between the controller that you had historically made and the controllers of the future lies in learning, right, lies in the capacity of these closed loop systems to be adaptive, to be plastic in their responses, so that's a very neural-inspired feature.
+
+KEVIN SCOTT: You know, one of the other things

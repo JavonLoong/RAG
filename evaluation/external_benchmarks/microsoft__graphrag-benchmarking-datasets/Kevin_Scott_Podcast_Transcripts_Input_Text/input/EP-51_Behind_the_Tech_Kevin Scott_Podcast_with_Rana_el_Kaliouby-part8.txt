@@ -1,0 +1,17 @@
+EP-51_Behind_the_Tech_Kevin Scott_Podcast_with_Rana_el_Kaliouby.txt  bit about that and why you think it’s interesting.
+
+RANA EL KALIOUBY: Yeah, I mean, it’s exactly what your friend is saying. Like empathy and emotions are at the center of how connect and communicate as humans, and our emotional experiences drive our decision making, whether it’s a big decision or a small decision. It drives our learning, our memory. It drives this human connection. 
+
+It’s how we build trust, it’s everything, but if you look at how we think about technology, it’s often what I call the IQ of the device. You know, take ChatGPT, right? Very smart, very intelligent, but it’s all very focused on the IQ, the cognitive skills, and I felt like it was out of balance with our emotional and social intelligence skills, and I wanted to marry the IQ and the EQ in our machines, basically.
+
+And so I had to go back. I’m a computer scientist by background, and I had to like study the emotion – the science of emotion, and how do we express emotions as human beings, and it turns out, 93% of how we communicate is nonverbal. It’s a combination of our facial expressions, our hand gestures, our vocal intonations, how much energy is in our voice, all of these things, and only 7% is in the actual choice of words you use.
+
+So I feel like there’s been a lot of emphasis on the seven percent, but the 93% has been lost in cyberspace, and so I’m kind of reclaiming that 93%, using computer vision and machine learning technologies that weren’t available, you know, 20 years ago, but now they’re ubiquitous.
+
+KEVIN SCOTT: Yeah, look, I think you are absolutely right. In 2016 I dialed back almost all of my social media consumption because you effectively have these machine learning systems, like particularly for businesses where their business model is engagement, so – like the more you engage with the platform, the more ads run, and the more money that you make. It is very easy to like get systems that get the engagement by triggering your amygdala and like keep you in this – and it’s very easy to be triggered by email.
+
+Like I, all the time, have email conversations with colleagues, where I get super agitated by the email conversation and if I just jump into a video call with them, even, like not even face to face, but you know, what we’re doing right now, like in – in seconds, like all of the stuff that I was agitated about goes away.
+
+So I’m just super intrigued by what you’re doing. Like how do we actually get this rolled out more broadly because I think you’re absolutely right. Like we’ve focused so much on the text and text is so rife with opportunity to get us emotionally activated in the wrong way.
+
+RANA EL K

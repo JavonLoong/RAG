@@ -1,0 +1,17 @@
+Behind the Tech_Episode 35_StevenBathiche_Transcript.txt  this intersection. So, can you talk a little bit more about that?
+
+STEVIE BATHICHE:  Yeah so, first, I did three internships at Microsoft. And in one of the kind of in between rotations, I got really interested in trying to do biomimetics of ant behavior and colonies. I was really excited by the fact that while you might have a robot that had simple rules, a swarm of them would have kind of emergent behavior, and I wanted to kind of replicate that. 
+
+But that led me to something else, and I got into an idea where instead of trying to build a control system for a robot, why not just steal it? And as I went to the entomology department at Virginia Tech and I said, “I have this idea where I want to use a control system from an insect to power my robot.” And the guy, Dr. Bloomquist was his name. He’s like, “Okay, that’s really crazy, but let’s try it.” (Laughter.)
+
+And we took a cockroach and we attached the cockroach to one of my robots. And we used probes to kind of get a signal  from the insect itself. And we have the robot kind of like an – as an exoskeleton – sorry, the cockroach had an exoskeleton of this robot and it would drive around. And I took that work into the Tom Daniel Lab at UW, and I did it with moths later on. 
+
+But it was this idea of the synergy of essentially transducing biological signal, putting them in some sort of environment. That environment, the biological system was essentially effect – through end effectors that are artificial, like my robot, it would affect the environment. That environment would generate signal back into the senses of the insect. And you kind of close the loop there. 
+
+And the fascinating thing is, like, you know, the system, the biological system adapted. It was plastic. It conformed to the parameters that I gave it and – and was able to eventually kind of control the car effectively and even obstacle avoid. And I was like, that’s so cool. I mean, that was kind of the experiment, you know, that showed me how powerful biology is and how bad I was at programming. (Laughter.)
+
+KEVIN SCOTT:  (Laughter.) Those are two things that are good for all of us to learn. Like, I think every computer scientist or software engineer has that moment in their career where they just realize how much they have left to learn about getting better at the craft.
+
+STEVIE BATHICHE:  Totally. (Laughter.) That’s right.
+
+KEVIN SCOTT:  So, this is a funny story. Like, I did a podcast with Tom Daniel and Tom was telling me this story about you, and like, I’d known you pretty well for three and a half years, at that

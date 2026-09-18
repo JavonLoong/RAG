@@ -1,0 +1,13 @@
+Ep-59_Behind_the_Tech_Kevin_Scott_Podcast_with_David_Kirtley.txt  had this moment. Like, literally last night, she was sitting down doing some Science homework, and she was excited about it in exactly the way I remember at 15 years old, being excited about programming computers and Computer Science. 
+
+And you know, and I told her, I was like, you know, "I think it’s wonderful, kid, that like you found this thing at 15," because I realize in retrospect, how lucky I was to have found my thing when I was 12. And it wasn’t about me being talented. It was like about me, you know, again getting into that positive feedback loop pretty early, almost by good fortune. 
+
+So I had this other thing I wanted to ask you. I still haven’t seen the Christopher Nolan Oppenheimer movie, but I did go watch the Oppenheimer documentary about his life. And, you know, one of the interesting things in that documentary is that he started off his PhD program at Cambridge, trying to be a lab physicist, and was just evidently miserable at it, like hated it. Like wasn’t very good. And he wound up going off Göttingen to be a theoretical physicist, you know, and so like, he found the right mentor and like found the right space.
+
+And like, there is this cliquishness, I find, it’s definitely in computer science. I think it’s in physics and the physical sciences as well, where there’s this real divide between theoreticians and, like folks who do applied work. And like, I’ve always been more on the applied side myself, like I get motivated to learn the theory by finding a problem hard enough that demands that you understand the theory that goes solve the problem, but like, the thing that really excites me is like, here’s a gnarly problem, we’ve got to go solve. 
+
+And other people are like, really motivated by like living in the abstract. You know, like, I think Feynman was one of those guys where, you know, like, he just like had this, you know, intellectual life where he could imagine worlds in his head and like, get really excited about that. And you know, not saying he didn’t go solve real problems as well. But like, do you think that that exists? Have you experienced that as a physicist in your own career?
+
+DAVID KIRTLEY: Yeah, I think that – I think about it as – we actually as this as an interview question, typically. And we ask it in a number of ways, but there’s a Venn diagram of how – how much do you gravitate towards theory, experimental, or hardware and computation?
+
+And we actually put them in three individual buckets of different versions of applied and different benefits. And typically at Helion we hire people that can do a little of all of them. Like that’s a pretty hard requirement that you can do some. And

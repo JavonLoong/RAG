@@ -1,0 +1,23 @@
+EP-25_ Behind_the_Tech_CharlieStross_Sci-fi_author.txt ../CHARLIE STROSS: You know the difference between a pessimist and an optimist? The pessimist, the glass is half empty. The optimist, the glass is half full. The engineer, the glass is twice the size it needs to be. And the visionary, okay, we need to figure out how to fill this bigger glass. 
+
+KEVIN SCOTT: (Laughter) Indeed.
+
+[MUSIC]
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+[MUSIC]
+
+CHRISTINA WARREN: Hello, and welcome to Behind the Tech. I'm Christina Warren, senior cloud advocate at Microsoft. 
+
+KEVIN SCOTT: And I'm Kevin Scott. 
+
+CHRISTINA WARREN: And today our guest is Charlie Stross. And Charlie is a science fiction writer and a Hugo award winner. His novels include the “Laundry Files” series and “Merchant Princes.” His work has been translated into 12 languages for readers around the world. I'm curious, Kevin, when did you encounter Charlie's books? 
+
+KEVIN SCOTT: It's been a while now. I think I first discovered him with his first big commercial work, or at least the first one that was published in the United States. It was a book called “Singularity Sky” and it was, you know, sort of, funny enough, about the singularity. So, that moment when artificial intelligence becomes self-aware and is in control of its own development, and all of a sudden evolves beyond human understanding. 
+
+And then the rest of the storytelling in the book was what happens after that. And it was just so interesting. I read a bunch of the Singularity books that other science fiction authors have written. And, like, the interesting thing about Charlie is, like, he writes these books that have just deep technical, some of these, like, really great, hard sci-fi characteristics that I really love, but his characters are great. 
+ And he — he has humor in them, you know, and you can tell from reading his books he has such a broad range of interests and, like, reads so many things and, like, draws elements from, you know, everything from theology to, his background in the early computer industry into the fiction that he writes, which just — I really, really love his books. 
+
+CHRISTINA WARREN: I love that. I love people who have such a broad background and broad interests. I, frankly

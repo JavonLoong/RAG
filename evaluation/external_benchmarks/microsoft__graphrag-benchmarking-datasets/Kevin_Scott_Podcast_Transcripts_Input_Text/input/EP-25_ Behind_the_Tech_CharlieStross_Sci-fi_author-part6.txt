@@ -1,0 +1,19 @@
+EP-25_ Behind_the_Tech_CharlieStross_Sci-fi_author.txt  several years. 
+
+KEVIN SCOTT: Yeah, yeah, and that's the reason I ask, you know, it's —there do seem to be some interesting coincidences here, you know, you've got Ted Chang, who is, like, an excellent science fiction author who was a tech writer for a while. You've got, you know, Jerry Pournelle, who you know, despite his politics, wrote some very interesting science fiction books and had this column in Byte magazine that at least to kids like me, was influential. 
+
+CHARLIE STROSS: Byte was very influential. 
+
+KEVIN SCOTT: Yeah. 
+
+CHARLIE STROSS: Yeah, there was a lot of overlap. I think partly, it's small world syndrome. Back in 1993, the internet — at least consumer internet — was pretty much not a thing. And I had it through work, working for a multinational doing Unix stuff, but most people had never even heard of it. 
+
+And an early internet startup called Demon Internet, they were the first actual dial-in ISP startup in London. I was one of their first 2,000 customers. And about 12 months in, in early 1994, they organized a series of pub meet-ups. And a friend of mine turned around about 10 years ago and said, “Hey, Charlie, do you know anyone who was at that pub meet who didn't end up in the industry?” 
+
+And, you know, I thought for a bit and I said, “Hang on, my wife. Hang on, didn't she do some consulting for AOL? Yeah, busted.” (Laughter.) It was a small world. 
+
+KEVIN SCOTT: Well, it sort of felt at the time much smaller than it does right now. I mean, sometimes I think it's a little hard these days to get your bearings on not just the world of tech, but what is happening on the internet, because in some sense, it's sort of merged with life in this grand way, which it hadn't at the time. It was sort of this apparatus sitting on the side of things.  
+
+CHARLIE STROSS: Absolutely. One of the craziest things I've noticed is Moore's Law, the — well, we're nearing the end of Moore's Law as a phenomenon governing integrated circuit density. But for its duration, we saw something similar happening with the number of people who are connected, and also the number of people involved in computing.  
+
+I mean, nowadays, when Apple launches a new generation of iPhone, you can look at it and say, “Right, that's 50 million more sales within how many months?” Back in 1994, there weren't 50 million computers in the whole world, you know, probably less than five million.  Each time we've seen a generational improvement in microprocessor performance, the number of people using them

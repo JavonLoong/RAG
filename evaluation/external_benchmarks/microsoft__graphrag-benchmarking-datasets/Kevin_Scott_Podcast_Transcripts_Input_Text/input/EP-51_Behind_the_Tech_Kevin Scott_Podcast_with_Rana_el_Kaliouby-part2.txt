@@ -1,0 +1,19 @@
+EP-51_Behind_the_Tech_Kevin Scott_Podcast_with_Rana_el_Kaliouby.txt . Rana, thank you so much for being here with us today.
+
+RANA EL KALIOUBY: Thank you for having me. I look forward to it.
+
+KEVIN SCOTT: So we always kick these conversations off by talking about how you first got interested in science or technology. Like was it when you were a little kid? Tell us a little bit about that.
+
+RANA EL KALIOUBY: Yeah, so I am originally Egyptian. I was born in Cairo and my parents – it’s kind of a cute story. 
+
+My parents met in a programming class. My dad taught COBOL. And my mom in the ‘70s decided to learn programming. She must have been one of the very first Egyptian women to get into tech. And they met during that class, got married and moved to Kuwait. So they both had careers in tech. 
+
+And so we – I have two little sisters, and we grew up surrounded by technology. And I remember, like playing Atari video games, and my dad had these, like early, huge camcorders. And I was always fascinated by how technology brought our family together. It connected us, and this theme of how technology connects people has been really kind of a uniting thread across my career.
+
+KEVIN SCOTT: That’s sort of – it’s very interesting, and I’d love to dig into that a little bit because some people, the fascination – early fascination with technology is about videogames, and for some people, it’s about – you know, just being able to communicate with other people, so like was there a particular thing, or was it just that technology was this gravitational pull that everyone around you was fascinated with?
+
+RANA EL KALIOUBY: Yeah, I – I definitely think this whole, like – I remember there – we had this like little blue plastic chair. It probably cost like – I don’t know, like a dollar or something, but my dad used to plop me on it, and I think it was when I gave my first speeches ever, and he would sit there with the camcorder and record me like, you know, rambling.
+
+And, and so that stuck with me. I remember the first program I wrote was a BASIC program and I I’m Muslim by background, but I wrote a program that kind of created a Christmas tree, and I remember that, right? So I just think it’s various things, and it’s just being surrounded by technology and being fascinated by technology. I think exposure is important too.
+
+KEVIN SCOTT: Yeah, oh, I could not agree more. I’m convinced that for – well, it’s certainly an advantage, right? Like one of the things, one of the big things that I think folks struggle with is, if you get interested in technology or programming as a little kid, you just sort of have years and years of experience with it before you get to college

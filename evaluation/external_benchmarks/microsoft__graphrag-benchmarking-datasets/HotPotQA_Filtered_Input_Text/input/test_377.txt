@@ -1,0 +1,57 @@
+Jens Ritter Instruments is a manufacturer of high-end electric stringed instruments.
+ It was founded by Jens Ritter in the mid-1990s and was known as Ritter Bass Guitars until 2010 when Jens expanded his line to include guitars.
+ Jens produces 50 to 60 handmade instruments each year in his shop located in the small wine town of Deidesheim, Germany.
+ A number of well-known bassists play Ritter Basses including Phil Lesh, Josh Dunham and Doug Wimbish.
+ Jens Ritter Instruments are best known for their progressive design and construction, artistic appearance and limited availability.
+ They also produce strings and other accessories.
+An NTFS symbolic link (symlink) is a filesystem object in the NTFS filesystem that points to another filesystem object.
+ The object being pointed to is called the target.
+ Symbolic links should be transparent to users; the links appear as normal files or directories, and can be acted upon by the user or application in exactly the same manner.
+ Symbolic links to directories or volumes, called junction points and mount points, were introduced with NTFS 3.0 that shipped with Windows 2000.
+ From NTFS 3.1 onwards, symbolic links can be created for any kind of file system object.
+ NTFS 3.1 was introduced together with Windows XP, but the functionality was not made available (through ntfs.sys) to user mode applications.
+ Third-party filter drivers such as Masatoshi Kimura's opensource codice_1 driver could however be installed to make the feature available in user mode as well.
+ The ntfs.sys released with Windows Vista made the functionality available to user mode applications by default.
+Extensibility is a software engineering and systems design principle where the implementation takes future growth into consideration.
+ The term extensibility can also be seen as a systemic measure of the ability to extend a system and the level of effort required to implement the extension.
+ Extensions can be through the addition of new functionality or through modification of existing functionality.
+ The central theme is to provide for change – typically enhancements – while minimizing impact to existing system functions.
+ An extensible system is one whose internal structure and data flow are minimally or not affected by new or modified functionality, for example recompiling or changing the original source code might be unnecessary when changing a system’s behavior, either by the creator or other programmers.
+ Because software systems are long lived and will be modified for new features and added functionalities demanded by users, extensibility enables developers to expand or add to the software’s capabilities and facilitates systematic reuse.
+ Some of its approaches include facilities for allowing users’ own program routines to be inserted and the abilities to define new data types as well as to define new formatting markup tags.
+Workflow Resource Planning is a new term coined by Charles Lim Chee Pang(the founder of Peliontech) in the year 2003, to name a new class of Enterprise Resource Planning (ERP) Software.
+ Conventional ERP software work in a data entry and processing model.
+ Mr. Charles Lim changed that when he introduced the first WRP software that incorporates workflow functionality into its core design and released this new ERP called Radix ERP.
+ Work flow functionality was not new.
+ Lotus Notes was the pioneer of workflow systems until it went out of favor in early 2000.
+ From the designs of Lotus Notes, Mr. Charles combined the idea into ERP systems and created Radix WRP, a new class of ERP system with workflow manageability.
+An HTML attribute is a modifier of an "HTML element type".
+ An attribute either modifies the default functionality of an element type or provides functionality to certain element types unable to function correctly without them.
+ In HTML syntax, an attribute is added to an "HTML start tag".
+Bio-inspired robotic locomotion is a fairly new subcategory of bio-inspired design.
+ It is about learning concepts from nature and applying them to the design of real-world engineered systems.
+ More specifically, this field is about making robots that are inspired by biological systems.
+ Biomimicry and bio-inspired design are sometimes confused.
+ Biomimicry is copying the nature while bio-inspired design is learning from nature and making a mechanism that is simpler and more effective than the system observed in nature.
+ Biomimicry has led to the development of a different branch of robotics called soft robotics.
+ The biological systems have been optimized for specific tasks according to their habitat.
+ However, they are multifunctional and are not designed for only one specific functionality.
+ Bio-inspired robotics is about studying biological systems, and look for the mechanisms that may solve a problem in the engineering field.
+ The designer should then try to simplify and enhance that mechanism for the specific task of interest.
+ Bio-inspired roboticists are usually interested in biosensors (e.g. eye), bioactuators (e.g. muscle), or biomaterials (e.g. spider silk).
+ Most of the robots have some type of locomotion system.
+ Thus, in this article different modes of animal locomotion and few examples of the corresponding bio-inspired robots are introduced.
+Jens Risom ( ; 8 May 1916 – 9 December 2016) was a Danish American furniture designer.
+ An exemplar of Mid-Century modern design, Risom was one of the first designers to introduce Scandinavian design in the United States.
+In United States trademark law, the functionality doctrine prevents manufacturers from protecting specific features of a product by means of trademark law.
+ There are two branches of the functionality doctrine: utilitarian functionality and aesthetic functionality.
+ The rationale behind functionality doctrine is that product markets would not be truly competitive if newcomers could not make a product with a feature that consumers demand.
+ Utilitarian functionality provides grounds to deny federal trademark protection to product features which do something useful.
+ Patent law, not trademark, protects useful processes, machines, and material inventions. Patented designs are presumed to be functional until proven otherwise.
+ Aesthetic functionality provides grounds to deny trademark protection to design features which are included to make the product more aesthetically appealing and commercially desirable.
+ Aesthetic features are within the purview of copyright law, which provides protection to creative and original works of authorship.
+Scandinavian design is a design movement characterized by simplicity, minimalism and functionality that emerged in the 1950s in the five Nordic countries of Finland, Norway, Sweden, Iceland and Denmark.
+ While the term Scandinavia only refers to the three kingdoms of Denmark, Sweden and Norway, it is often used colloquially to refer to all five of these countries.
+Jacqueline "Jackie" Winsor (born October 20, 1941, in St. John's, Newfoundland) is a Canadian-American sculptor.
+ Her style, which developed in the early 1970s as a reaction to the work of minimal artists, has been characterized as post-minimal, anti-form, and process art.
+ Informed by her own personal history, Winsor's sculptures from this period sit at the intersection of Minimalism and feminism, maintaining an attention to elementary geometry and symmetrical form while eschewing Minimalism's reliance on industrial materials and methods through the incorporation of hand-crafted, organic materials such as wood and hemp.

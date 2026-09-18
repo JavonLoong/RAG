@@ -1,0 +1,32 @@
+In mathematics, specifically in the representation theory of Lie groups, a Harish-Chandra module, named after the Indian mathematician and physicist Harish-Chandra, is a representation of a real Lie group, associated to a general representation, with regularity and finiteness conditions.
+ When the associated representation is a formula_1-module, then its Harish-Chandra module is a representation with desirable factorization properties.
+The Cockcroft–Walton (CW) generator, or multiplier, is an electric circuit that generates a high DC voltage from a low-voltage AC or pulsing DC input.
+ It was named after the British and Irish physicists John Douglas Cockcroft and Ernest Thomas Sinton Walton, who in 1932 used this circuit design to power their particle accelerator, performing the first artificial nuclear disintegration in history.
+ They used this voltage multiplier cascade for most of their research, which in 1951 won them the Nobel Prize in Physics for "Transmutation of atomic nuclei by artificially accelerated atomic particles".
+ Less well known is the fact that the circuit was discovered much earlier, in 1919, by Heinrich Greinacher, a Swiss physicist.
+ For this reason, this doubler cascade is sometimes also referred to as the Greinacher multiplier.
+ Cockcroft–Walton circuits are still used in particle accelerators.
+ They also are used in everyday electronic devices that require high voltages, such as X-ray machines, television sets, microwave ovens and photocopiers.
+Dieter Pohl (born 1938) is a German–Swiss physicist.
+ He became known especially for his work in nano-optics, near field optics (NFO), and plasmonics.
+Paulscherrerite, UO(OH), is a newly named mineral of the schoepite subgroup of hexavalent uranium hydrate/hydroxides.
+ It is monoclinic, but no space group has been determined because no single-crystal study has been done.
+ Paulscherrerite occurs as a canary yellow microcrystalline powdery product with a length of ~500 nm.
+ It forms by the weathering and ultimate pseudomorphism of uranium-lead bearing minerals such as metaschoepite.
+ The type locality for paulscherrerite is the Number 2 Workings, Radium Ridge near Mount Painter, North Flinders Ranges, South Australia, an area where radiogenic heat has driven hydrothermal activity for millions of years.
+ It is named for Swiss physicist Paul Scherrer, co-inventor of the Debye-Scherrer X-ray powder diffraction camera.
+ Study of paulscherrerite and related minerals is important for understanding the mobility of uranium around mining sites, as well as designing successful strategies for the storage of nuclear weapons and the containment of nuclear waste.
+Nicolas Gisin (born 1952) is a Swiss physicist and professor at the University of Geneva working on quantum information and communication, as well as on the foundations of quantum mechanics.
+ His work includes both experimental and theoretical physics.
+ He has done significant work on the fields of experimental quantum cryptography and long distance quantum communication in standard telecom optical fibres.
+ As a theoretician, Gisin brought deep insights into quantum mechanics.
+ He is also the first to develop quantum information technology to such a level that it was for the first time possible to take it out of the lab and into the commercial world: he co-founded IDQuantique, a spin-off company which quickly developed into one of the world leaders in the field of quantum information and communication technologies.
+Paul Frédéric Culmann (23 February 1860, Zürich – 27 November 1936, Paris) was a Swiss physicist known for contributions made in the field of bryology.
+Konrad Bleuler (] ; 23 September 1912, Herzogenbuchsee – 1 January 1992, Königswinter) was a Swiss physicist who worked in the field of theoretical particle physics and quantum field theory.
+ He is known for his work on the quantisation of the photon, the Gupta–Bleuler formalism.
+The tetractys (Greek: τετρακτύς ), or tetrad, or the tetractys of the decad is a triangular figure consisting of ten points arranged in four rows: one, two, three, and four points in each row, which is the geometrical representation of the fourth triangular number.
+ As a mystical symbol, it was very important to the secret worship of Pythagoreanism.
+ There were four seasons, and the number was also associated with planetary motions and music.
+In music theory, the circle of fifths (or circle of fourths) is the relationship among the 12 tones of the chromatic scale, their corresponding key signatures, and the associated major and minor keys.
+ More specifically, it is a geometrical representation of relationships among the 12 pitch classes of the chromatic scale in pitch class space.
+In quantum mechanics, the Bloch sphere is a geometrical representation of the pure state space of a two-level quantum mechanical system (qubit), named after the physicist Felix Bloch.

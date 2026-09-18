@@ -1,0 +1,31 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt ’ll make it easier, and it will make it less expensive. 
+
+And then for our partners in the automotive community and in the transportation and logistics communities, you know, they’ll have an opportunity to help build better businesses themselves.  
+
+KEVIN SCOTT:  Right, and the idea is, like, there will be lots and lots of these businesses, like not a small number, but like you will have maybe hundreds or thousands of companies that are, like, instantiating some sort of AI driver in a vehicle of some sort.  And the vehicle could be your giant 400-ton Caterpillar thing or it could be like a consumer-owned automobile that you’re using to commute to work, or it could be a completely unmanned drone vehicle of some type. 
+
+CHRIS URMSON:  Yeah, that’s exactly right.  That I think -- I don’t have enough imagination, and we probably as a team don’t to figure out how -- all the ways -- all the great ways this could be used out in the world.  So, again, stick to the thing we know how to do, open it up, and let it flourish. 
+
+KEVIN SCOTT:  So one of the things I’m really interested in is your perspective on what has changed in the technology over the history of autonomous vehicles, from the point where you entered, which was pretty early, you know, like, you know, sort of Grand Challenge, you know, DARPA problem, all the way through to 2020. 
+
+CHRIS URMSON:  Yeah, no, it’s been incredible.  You know, you could start by thinking about the hardware side of this.  And maybe even the mundane hardware side.  So, vehicles are now almost all electronic.  And so you can communicate to the brake system or the steering wheel or you can talk to the gas pedal, right?  
+
+And that wasn’t the case.  We literally had a motor with an arm on it that would press the brake pedal in those earliest vehicles.  
+
+KEVIN SCOTT:  That would compress a hydraulic cylinder somewhere -- 
+
+CHRIS URMSON:  Yeah.  And they all still have hydraulic cylinders, but the front end of them now, almost all of them there’s -- 
+
+KEVIN SCOTT:  There’s no mechanical linkage -- 
+
+CHRIS URMSON:  Oh, sorry, no, there actually is in cars.  But there’s on top of that there’s also an electronic control. 
+
+KEVIN SCOTT:  Okay.  
+
+CHRIS URMSON:  And that’s actually one of the challenges -- 
+
+KEVIN SCOTT:  And so you had the mechanical linkage for safety? 
+
+CHRIS URMSON:  So today, yes.  And this is actually one of the areas where there’s still steps that have to be made before we’ll see broad distribution of this technology. 
+
+KE

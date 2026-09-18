@@ -1,0 +1,23 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt  bit more of that, but a lot, definitely a lot of personal self-discovery back in those days. 
+
+KEVIN SCOTT: And – and was gaming or writing games one of the early things that captured your imagination with computers –
+
+DAVID BASZUCKI: Yeah.
+
+KEVIN SCOTT: – or did that come later? 
+
+DAVID BASZUCKI: No. I remember writing, you know, an assembler with the very primitive shape rotation graphics the Apple II had, you know, versions of Asteroids and things like that, just to see what it felt like. 
+
+And there was one game on the Apple II, it was called Robot War, that had a very simple programing language. And you’d program your robots and they would go do battle. And I remember my brother and I just spent hours and hours on that. So there was an interest – there’s kind of an intersection of gaming, programing, user-generated content that was all interesting to me. 
+
+KEVIN SCOTT: Super cool. And how did you get from Minneapolis to Stanford? 
+
+DAVID BASZUCKI: Yeah. Pretty naively, reading magazines and what’s a good school for computer science kids. Where I was growing up, we didn’t really know. And it was Stanford and MIT, and luckily it was Stanford. My dad took me out. We visited and it’s an amazing campus. So it was a fairly non-sophisticated trajectory. 
+
+KEVIN SCOTT: And so you’re at Stanford. I’m guessing you and I are about the same age. So it was probably like a very interesting time to be at Stanford. And so when you graduated, there was probably like all of this super cool stuff going on. You know, the Internet boom was, I’m guessing, about to happen when you graduated, not quite there, but about. So how did you decide what to go work on after you graduated? 
+
+DAVID BASZUCKI: Yeah, I was pretty – when I graduated, I was pretty shy and pretty unsophisticated. And knowing what I know now, you know, there were all these companies I really would have liked: Microsoft, Apple. They were all coming along. But I was very much going through the standard channels and the college campus recruiting center and all of that stuff. So I ended up getting a couple, I would say, much less optimal jobs, where I wasn’t – like I wasn’t getting to build interesting stuff and things like that. So my first two jobs were actually a real disaster, and I thought, “Oh my gosh, like, what am I going to do?” 
+
+The things that finally started happening for me when I took some time off after two, two and a half years, and just started writing Macintosh educational software. And that’s – that was kind of, I had to invent it on my own. 
+
+If I

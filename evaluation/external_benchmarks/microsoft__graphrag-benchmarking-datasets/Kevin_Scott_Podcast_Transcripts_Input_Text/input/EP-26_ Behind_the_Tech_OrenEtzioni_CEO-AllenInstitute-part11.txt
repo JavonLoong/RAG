@@ -1,0 +1,15 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt , for instance. 
+
+And they are very, very highly specialized neural circuits. It’s not a, you know, sort of a general like deep network that you know – like maybe a deep network could learn that behavior, but like there’s certainly – there seems to be an efficiency opportunity. 
+
+And like I could not more strongly agree with that point. I forget what the numbers are, but if you look at like the world champion Go player, Lee Sedol, like, he probably got to world-champion levels of expertise on a small number like, low tens of thousands of hours’ worth of game play, which is like more than you or I would ever be willing to commit, but far, far less than the millions of simulated hours that a thing like AlphaGo Zero invested to get to the point where it could play competitively with him. 
+
+And that is – you know, that amounts to millions of dollars and millions of watts of power and it’s a very, very interesting chasm that I think we have an opportunity to cover at some point – hopefully in the not-too-distant future. 
+
+OREN ETZIONI: Absolutely. You know, at the Allen Institute, we’ve recently written a paper that’s going to appear in Communications of the ACM on something we call “green AI.” And the idea of it is both to think about the carbon footprint, right, and the “Can we build these more efficient systems?” But there’s another thread here that I want to highlight, which is making sure that the research that we’re doing is sufficiently inclusive. 
+
+So, back in the day, it used to be that you or I or a talented undergraduate in India or some other country with a laptop could do something really cool and write a paper about it and get noticed. If we reach the point where you have to have so much infrastructure and so much compute to do an experiment that leads to a published paper, that’s a real problem for the field, right? We don’t get to harness all the brilliant ideas and creativity of a broader population. And so we suggested some pragmatic ideas of how to fix that not by, you know, forbidding or cutting off this very exciting, high-end research, but by saying, “Okay, let’s also look at efficiency, at results of, okay, how can we run these types of models on a much more limited device?”
+
+KEVIN SCOTT: But I’m so glad to hear that you all have written that paper and are pushing on that because I do think it’s one of the fundamental issues that we’ve got at this particular moment in time with AI research, these models are not only extremely expensive to train, they are extremely expensive to serve. So, you’ve got this cost thing that makes it difficult to make them widely available. 
+
+I mean, like, we could – I’ll give you an example. I won’t talk about GPT-3, but I’ll

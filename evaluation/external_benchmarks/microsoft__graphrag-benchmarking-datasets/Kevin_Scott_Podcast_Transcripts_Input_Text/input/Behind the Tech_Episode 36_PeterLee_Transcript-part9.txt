@@ -1,0 +1,23 @@
+Behind the Tech_Episode 36_PeterLee_Transcript.txt ’s true. And I think what happens also is it’s a real test as a mentor or a manager or advisor. You know, I think part of the struggle for you and me is sort of the tension between, you know, like you and I are opinionated, we have our own clear ideas. And it is not the case that the people that work for us across Microsoft Research share our points of view. 
+
+KEVIN SCOTT:  Correct. 
+
+PETER LEE:  And – 
+
+KEVIN SCOTT:  Which is a good thing.
+
+PETER LEE:  Which is a good thing, but it’s still really hard, you know? And you know, when I was a professor, you know, I started off my career as an academic thinking, wow, I’m going to be able to, you know, work with these graduate students and form them all in my own image. And you know, they’re going to amplify, you know, how I view the world and the kinds of scientific research I like to do, and it’ll all be grand and glorious. 
+
+And of course, you learn pretty quickly, it just does not work that way. Well, there might be some second rate graduate students that do that, but at Carnegie Mellon, everyone is first rate. And you know, wow, they have their own opinions. And no, you know, they’re not going to just take my lead on things. 
+
+And so George Necula, you know, was one of those students and he, you know had this idea, which you refer to as Proof Carrying Code. And it’s true, I thought he was really on the wrong track, you know, that this would be just way too difficult. 
+
+The first drafts of some of the early papers and proofs that he wrote, it would take me less than 10 minutes to find horrible bugs in the proofs. You know, they would be simple little proofs, you know, less than 10 lines long, and they would be wrong. And so it just sort of cast doubt over the whole thing. But you have to decide, are you going to give the freedom to fail here and learn and grow from that or not? 
+
+And one of the golden rules then to translate to our current jobs that we have now is to decide, are you betting on the person and their commitment to something or are you betting on the idea? 
+
+KEVIN SCOTT:  Yep. 
+
+PETER LEE:  And time and time again, you learn that you’re better off trying to make an assessment of betting on the person than on the idea. And that makes it then super important for us to make sure that we’re viewing things fairly, you know, that we’re not engaging in any kind of favoritism or biases. 
+
+Ultimately, when we’re leading research, what we’re doing is we’re trying to understand where is the passion

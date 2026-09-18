@@ -1,0 +1,34 @@
+Ernst Abbe Sportfield is a sports facility in Jena, Germany.
+ It was dedicated on August 24, 1924 and was named after entrepreneur Ernst Abbe 15 years later.
+ The facility is in southern Jena, directly on the Saale River.
+ The City of Jena purchased the stadium from the Ernst-Abbe-Stiftung (The Ernst Abbe Foundation) in 1991.
+In the trading card collecting hobby, an error card is a card that shows incorrect information or some other unintended flaw.
+ It can contain a mistake, such as a misspelling or a photo of someone other than the athlete named on the card.
+ Depending on whether the manufacturer noticed the problem while the cards were still being produced, a card may exist in both correct and incorrect versions.
+ If the correction is made sufficiently early in the print run, the error card may be significantly rarer and more valuable than the corrected version.
+ However, the opposite may be true if the error is corrected late in the printing cycle, resulting in a smaller population of the corrected version of the card compared to the error version.
+Errors of impunity is a term used in Brian Forst's book "Errors of Justice" and in Robert Bohm's introduction to a special edition of "The Journal of Criminal Justice" on miscarriages of justice.
+ They are defined as lapses that result in criminals either remaining at large or receiving sanctions that are below a socially optimal level.
+ If convicting an innocent person, called a miscarriage of justice, is a Type I error for falsely identifying culpability (a "false positive"), then an error of impunity would be a Type II error of failing to find a culpable person guilty (a "false negative").
+In mathematics, particularly numerical analysis, the Bramble–Hilbert lemma, named after James H. Bramble and Stephen Hilbert, bounds the error of an approximation of a function formula_1 by a polynomial of order at most formula_2 in terms of derivatives of formula_1 of order formula_4.
+ Both the error of the approximation and the derivatives of formula_1 are measured by formula_6 norms on a bounded domain in formula_7.
+ This is similar to classical numerical analysis, where, for example, the error of linear interpolation formula_1 can be bounded using the second derivative of formula_1.
+ However, the Bramble–Hilbert lemma applies in any number of dimensions, not just one dimension, and the approximation error and the derivatives of formula_1 are measured by more general norms involving averages, not just the maximum norm.
+A Porro–Abbe prism (sometimes called a Abbe–Porro prism), named for Ignazio Porro and Ernst Abbe, is a type of reflection prism used in some optical instruments to alter the orientation of an image.
+ It is a variant of the more common double Porro prism configuration.
+Van Abbemuseum (] ) is a museum of modern and contemporary art located in central Eindhoven, Netherlands, on the east bank of the Dommel river.
+ Established in 1936, the Abbe Museum is named after its founder, Henri van Abbe.
+ Van Abbe was a lover of modern art and wanted to enjoy it there from Eindhoven.
+ As of 2010, the collection of the museum houses more than 2700 works of art, of which about 1000 are on paper, are 700 paintings, and 1000 are sculptures, installations and video work.
+A description error or selection error is an error, or more specifically a human error, that occurs when a person performs the correct action on the wrong object due to insufficient specification of an action which would have led to a desired result.
+ This commonly happens when similar actions lead to different results.
+ A typical example is a panel with rows of identical switches, where it is easy to carry out a correct action (flip a switch) on a wrong switch due to their insufficient differentiation.
+Abbe is a lunar impact crater that is located in the southern hemisphere on the far side of the Moon.
+ It is located just to the south of the crater Hess, and lies to the east of the large walled basin Poincaré.
+ It is named after the German physicist Ernst Abbe.
+Abbe error, named after Ernst Abbe, also called sine error, describes the magnification of angular error over distance.
+ For example, when one measures a point that is 1 meter away at 45 degrees, an angular error of 1 degree corresponds to a positional error of over 1.745 cm, equivalent to a distance-measurement error of 1.745%.
+Othello error occurs when a suspicious observer discounts cues of truthfulness.
+ Essentially the Othello error occurs, Paul Ekman states, "when the lie catcher fails to consider that a truthful person who is under stress may appear to be lying" their non-verbal signals expressing their worry at the possibility of being disbelieved.
+ A lie-detector or polygraph may be deceived in the same way, by misinterpreting nervous signals from a truthful person.
+ The error is named after William Shakespeare's tragic play "Othello"; the dynamics between the two main characters, Othello and Desdemona are a particularly notable example of the error in practice.

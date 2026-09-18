@@ -1,0 +1,23 @@
+Ep-61_Behind_the_Tech_Kevin_Scott_Podcast_with_Lisa_Su.txt  part of my career at IBM in New York, and I joined the – you know, what was TJ Watson Research Center, and then the IBM Microelectronics team.
+
+KEVIN SCOTT: And so were you working on the RISC processors that they were building there?
+
+LISA SU: I was. I was always – you know, I spent my time in their sort of process technology area as we were continuing to look at the next generation technologies, but yeah, the first processor – I’ve been working on processors, like forever. I mean, like, you know, it’s been – I don’t know, now 30 years. 
+
+The first processor that I worked on at IBM was actually a Power PC processor that went into PCs. It actually went into some of the PCs, as well as into some of the larger server systems at IBM.
+
+KEVIN SCOTT: Yeah, I remember, like I went to a science and technology Governor’s School, and – like, which had us do a bunch of internships, and I interned at a place that had a Power PC, like one of the very first ones, that I just remember, like what an amazing thing that was.
+
+LISA SU: It really – it was super, super fun. I mean, it was – again, the idea of, you know, sort of RISC processing, you know, for us, it was how do we get the performance and power, and all that, in the right place, so –
+
+KEVIN SCOTT: Yeah, this is sort of an interesting thing. I – like, I don’t know whether you want to talk about this or not, but – you know, we had this big revolution, like I’m guessing early in both of our careers, where like there was all of this innovation on instruction set architectures and – you know, there was like Power PC, and PA-RISC and MIPS, and the deck part, the –like, 21, 164, 264 series.
+
+LISA SU: Yeah, the Alpha stuff.
+
+KEVIN SCOTT: Alpha, yeah, and you know, what ended up happening, just in terms of like where the bulk of the compute in the world went was to processors running this X86 instruction set, which you build them, 
+
+LISA SU: We do build them.
+
+KEVIN SCOTT: you know, Intel builds them, and now, like we’ve got this sort of interesting world where you’ve got ARM in a bunch of places, you know, that are RISC construction set machines, and then you’ve got these GPUs, which are like an increasingly large volume of compute, and so it’s sort of interesting. Like a lot of the things happening now feel to me like the things that were happening 30 years ago, 20 years ago, and like I don’t know if you’ve reflected any on that.
+
+LISA SU: Yeah, you know,

@@ -1,0 +1,47 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt  that came later.  But when we did that, the first one had 64,000 processors.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  And that was just like a --
+
+KEVIN SCOTT:  Radical.
+
+DANNY HILLIS: -- I mean, people would think you were joking --
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  when you said that. It was incredible.  And I wrote an article for Scientific America.  I said, you know, it's interesting there will be lots of processors, and it's much better to put them close together than to each other than to people because they talk at higher bandwidth.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  So, we are going to put, like, all the processors, you know, the whole country will run off some big pile of it will be like utility.  And Scientific America said the --
+
+KEVIN SCOTT:  Yeah, you predicted the cloud.
+
+DANNY HILLIS:  -- they said, look, this is just too implausible.  You can't say that. And so they said, well, we'll let you say a single city.
+
+KEVIN SCOTT:  And this was when?
+
+DANNY HILLIS:  Oh, this was in the early '80s probably.
+
+KEVIN SCOTT:  Yep.
+
+DANNY HILLIS:  Yeah. So, they made me talk it down to a whole city will run off this.  But that's how implausible it seemed to people, yeah, that.  And it wasn't obvious for a while how general purpose it was.  So, of course, some of the first people to use it were people like, you know, Geoffrey Hinton, who used it, you know for connectionist things, as it turns and you know, it gave him a few orders of magnitude.  As it turned out, he needed a few more orders of magnitude than that.
+
+KEVIN SCOTT:  Right.  And for folks who are listening, Geoffrey Hinton is like more or less the creator of modern deep learning.
+
+DANNY HILLIS:  So, he was certainly one of the key creators.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  That's right. And he was working on it back in those days, and pretty much the same algorithms that --
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  -- are the ones that have come to work.
+
+KEVIN SCOTT:  Yeah.  And he was compute constrains, like, they were
+
+DANNY HILLIS:  Yeah.
+
+KEVIN SCOTT:  -- just very computationally expensive, and, like, nowhere in the world was there enough compute to train a deep

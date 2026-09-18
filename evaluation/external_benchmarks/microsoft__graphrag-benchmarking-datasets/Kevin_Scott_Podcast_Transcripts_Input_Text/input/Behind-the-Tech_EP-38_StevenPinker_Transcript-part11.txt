@@ -1,0 +1,18 @@
+Behind-the-Tech_EP-38_StevenPinker_Transcript.txt  we haven’t talked about, Enlightenment Now and The Better Angels of Our Nature, both of which try to document progress as a real historical phenomenon, a quantifiable set of trends, namely we live longer, our kids die less. We – we learn more, we have more leisure time, we fight fewer wars. There’s less violence against women, there’s less institutionalized bigotry. All of those things, how did we come to enjoy them? 
+
+Well, it isn’t that this universe contains some force called progress. That’s kind of mystical. In fact, if anything, the universe tries to grind us down. It’s constantly throwing pandemics at us, and – and natural disasters and entropy, things wearing down, and falling apart and rotting. To the extent that life gets better, it’s only because people have applied their ingenuity to try to make it better. We’ve invented antibiotics and vaccines, and intergovernmental organizations, and liberal democracies brain children that – that fight back against a pitiless cosmos, and allow us to increments of well-being. 
+
+So, ultimately, rationality matters for ascertaining the good things in life. 
+
+KEVIN SCOTT: Yeah, and rationality is not a super hard argument to make to a computer scientist. 
+
+STEVEN PINKER: (Laughter.) Right. Well, it’s kind of mechanized. A computer is mechanized rationality, in a way. 
+
+KEVIN SCOTT: Yeah. And one of the things that I’ve discussed with many other guests on this podcast is that if you don’t have rational processes for making, creating, developing or understanding complex things, you really do get stuck pretty quickly. 
+
+And, you know, so for instance, if the processes that you use to understand or construct things aren’t rational, then they tend not to compose, which means that you really do have to hold way too much stuff in your head, which then limits the scope of the problems you can solve. So, you have to be able to stack your abstractions. And – and it’s just hard to imagine how that happens without rationality. And, you know, also when things break or you encounter something that you don’t understand, if you don’t have rational processes to investigate what’s going on, you – you just have a hard time fixing them. 
+
+And so, you know, I think a lot of computer scientists, and scientists in general, sort of get this and almost take it for granted, but one of the things that we’re seeing right now is maybe we can’t take for granted that rationality is as important as it is. 
+
+STEVEN PINKER: Yeah, it’s – well, the – the – I mean, what you’ve just explained is, I think, it’s exactly right. Problems are inevitable and problems have solutions, but we will never arrive at them unless we try to – to solve them. 
+

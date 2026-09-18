@@ -1,0 +1,13 @@
+EP-05_ Behind_the_Tech_Kevin Scott_Podcast_with_Danielle Feinberg.txt  was super happy with my specialization. I was a compiler guy. 
+DANIELLE FEINBERG: Nice! 
+KEVIN SCOTT: I've always had this great degree of empathy for software developers and wanting to do things for them that help them practice their craft. And it's underlied my entire career. But I've always sort of wondered about the computer graphic stuff because it's a little bit more performative than maybe any other kind of software engineering. 
+DANIELLE FEINBERG: Yeah. 
+KEVIN SCOTT: Because, I can't show, my "Ooh! Look, I did static single assignment form." And show it to my mom and like, "Yay!" (laugh) No, none of that. Whereas you worked on Coco. And I literally wept three times in the course of this movie because it was so compelling. So, that must be amazing. 
+DANIELLE FEINBERG: It's incredible. Yeah. It's really incredible. 
+KEVIN SCOTT: So, you see these films in this class, and then how soon were you able to connect programming to you being able... That must have been a really interesting journey. 
+DANIELLE FEINBERG: Yeah. Thinking back to then, it was like, okay, I saw these Pixar short films. But what's Pixar? Nobody knows what Pixar is. It's nothing right now. It's some animation studio you've never heard of. 
+And even if I wanted to watch those films again, I couldn't, because it's not like we had iTunes or YouTube or something. You had to go to a Spike and Mike's Animation festival in a theater or someone had to have an actual copy of them -- a VHS tape, perhaps. (laugh) 
+And so the next year, my senior year, Toy Story came out. And it was like suddenly that's that same company that made those short films. And they've made this feature film. It was the first feature-length, computer-animated film that was ever made. And I was, like, "Those are the guys." But how do I work there? Like, what do I have to do to qualify to work there? Because who knows? Because it's this brand-new thing that's coming up. 
+So I thought, "Well, I'd better get some art on my resume." So, I took a couple classes through the art department. And my senior year, I took a year-long animation class. That was more traditional animation. But for my senior film, I managed to use some computer animation for my senior film. 
+KEVIN SCOTT: Oh, that's awesome. Do you still have that laying around? 
+DANIELLE FEINBERG: I do. The lighting is atrocious. I didn't know what lighting was at all. It's really

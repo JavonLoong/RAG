@@ -1,0 +1,13 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt  they – I did a lot of like goofy, weird little side programming projects in college, like making, like sort of pseudo 3 – 2-1/2-D landscapes that were randomly generated that I liked to look at, and crazy stuff like that.
+
+And then, you know, I took one class in – one CS class in college. It was like the Knuth algorithm class, you know, the first book. It was cool, but at the time I was really into math and really into science, and I thought I was premed, and I was doing like graduate math classes, so that Intro to Algorithms class was just super easy. It was like the only thing I ever got an A+ in, ever in college, and my math profs really looked down on it, and sort of discouraged me from doing computers because it’s like – well, there’s like math, and then there’s applied math, and then there’s engineering, and then there’s whatever the hell those hairy computer guys are, you know, it’s like the bottom of the bucket.
+
+So I didn’t really pursue it, like I didn’t get a CS degree. I kept doing my math degree, got to the end of college, and my college roommate, who was one of the cofounders of Writely, ultimately, had dropped out to go do a company that was also a word processing company, called Ann Arbor Software, they got bought by this company called Ashton Tate, before Oracle killed them, and got moved – he got moved out to the Valley, and I didn’t know what to do with this weird math degree, and I didn’t want to be a doctor anymore, and so I just moved out to the Valley and started writing code with him.
+
+We wrote a video game and then ultimately wound up starting six companies together, and just worked together for about 25 years, just fell into it, I mean, just absolutely fell into it.
+
+KEVIN SCOTT: Going back a little bit. I’m curious, like why math? 
+
+SAM SCHILLACE: I don’t know. Like, I liked math. I thought it was fun. I’ve always been kind of an abstract thinker. I like math. I like the – I don’t know, I like being able to kind of tinker and build stuff with your mind. I mean, that might be a – kind of a throughline of all of this, like software is always – you know, you and I are both makers, we really like to make stuff, and I always liked software because it was the most that you could – you know, the most direct connection between your mind and making something, right, like there’s as little mediating that as possible.
+
+Math is kind of the same way, right, where like you can think really interesting crazy cool thoughts, but you can do it in this interesting structured way where you’re not just bullshitting

@@ -1,0 +1,17 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt ’s – you know, here’s the why not. Like, it’s happened before. It’s really hard. I don’t like that. People, I don’t want people to be out of jobs, like, all those reasons.
+
+KEVIN SCOTT: It’s too expensive. It’s dangerous in these ways.
+
+SAM SCHILLACE: But like, we’ll solve them. Like, we’ll solve those, and the what-if is amazing.
+
+KEVIN SCOTT: We will, yeah. And – and that is the thing. I – I wrote an essay in… like, I published in the March issue of Daedalus, which is the Journal of the American Academy of Arts and Sciences, where the framing that I was proposing for thinking about this stuff is just sort of cognitive work, and, like, thinking about AI as a set of tools that we’re developing that will help us with our cognitive work, like, the same way…
+
+And, like, we had a whole – in the Industrial Revolution, like, you had this big set of changes that were happening with physical work. And so, the practice arrived a little bit before the theory, but the theory came that you had thermodynamics. Like, you have very precise definitions of what physical work was. Then you had whole engineering practices that developed around it, and, you know, it is just ubiquitous in the industrialized world. Like, I think that’s the kind of transformation that we’re about to go through.
+
+SAM SCHILLACE: And I think, like, similarly to that, like, you have – there’s this process we need to start of, like, unlearning some stuff, right? Like, we had to unlearn what work meant and kind of relearn it for that process. And I think we’ve spent 40 years convincing ourselves as computer technologists that we have to do a bunch of work for the computers. Like, we have to build a schema, and we have to put things in a form, and we have to, like, structure data in certain ways. 
+
+And, like, it was true. We didn’t have the tools for that, but now we do. And now, we understand how to deal with messier stuff. And we don’t – like, we don’t have to have forms. We have classifiers instead and we have things that have judgment, and we have things that can synthesize, synthesize.
+
+KEVIN SCOTT: Well and there are even some more subtle things. So you, as a trained mathematician, and, like, both of us, as practicing computer scientists and engineers for, you know, a handful of decades, part of our job is, like, we wield these, like, big stacks of abstractions to go solve problems. 
+
+And like, part of the reason that we need these stacks of abstractions is, like, you can only do so much with the brain that

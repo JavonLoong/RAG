@@ -1,0 +1,92 @@
+[
+  {
+    "record_id": "gt-vibration-001",
+    "source_file": "燃气轮机运行维护手册_示例.pdf",
+    "source_kind": "PDF",
+    "page_num": 12,
+    "title": "燃气轮机异常振动排查",
+    "text": "燃气轮机出现异常振动时，应优先检查转子动平衡、轴承磨损、联轴器对中、压气机叶片积垢和基础松动。若振动伴随排气温度分散度升高，应同时检查燃烧室喷嘴堵塞、燃料分配不均和火焰稳定性。处理时先降低负荷并记录振动频谱，再按轴系、燃烧、气动和基础四类原因逐项排查。",
+    "metadata": {
+      "collection": "power_equipment_demo",
+      "equipment_type": "燃气轮机",
+      "component": "转子/轴承/燃烧室",
+      "topic": "故障诊断",
+      "page": 12
+    }
+  },
+  {
+    "record_id": "gt-compressor-002",
+    "source_file": "燃气轮机性能分析资料_示例.pdf",
+    "source_kind": "PDF",
+    "page_num": 27,
+    "title": "压气机出口温度偏高",
+    "text": "压气机出口温度偏高通常与进气滤网压差升高、压气机叶片污染、环境温度升高、可转导叶角度偏差和压比异常有关。若同时出现压气机效率下降，应结合进气压损、排气温度、燃料流量和转速趋势判断。清洗压气机前应确认污染趋势和性能衰减幅度，避免把单点温度波动误判为部件故障。",
+    "metadata": {
+      "collection": "power_equipment_demo",
+      "equipment_type": "燃气轮机",
+      "component": "压气机",
+      "topic": "参数异常",
+      "page": 27
+    }
+  },
+  {
+    "record_id": "steam-turbine-001",
+    "source_file": "汽轮机检修规程_示例.docx",
+    "source_kind": "DOCX",
+    "page_num": 8,
+    "title": "汽轮机轴向位移异常",
+    "text": "汽轮机轴向位移异常应检查推力轴承瓦温、润滑油压力、轴封供汽、真空变化和负荷突变。若轴向位移与负荷变化同步，应重点分析蒸汽通流推力变化；若伴随推力瓦温升高，应检查油膜稳定性和轴承磨损。报警后应限制负荷变化速率，并核对保护定值和测点漂移。",
+    "metadata": {
+      "collection": "power_equipment_demo",
+      "equipment_type": "汽轮机",
+      "component": "推力轴承/轴封",
+      "topic": "保护与检修",
+      "page": 8
+    }
+  },
+  {
+    "record_id": "boiler-001",
+    "source_file": "锅炉受热面运行分析_示例.pdf",
+    "source_kind": "PDF",
+    "page_num": 34,
+    "title": "锅炉受热面超温",
+    "text": "锅炉受热面超温可能由燃烧偏斜、吹灰不足、给水流量波动、减温水调节异常、烟气挡板位置偏差和管内结垢引起。若超温集中在局部区域，应优先检查火焰中心偏移和该区域积灰；若多个屏区同时升高，应关注负荷变化、煤质变化和减温系统响应。",
+    "metadata": {
+      "collection": "power_equipment_demo",
+      "equipment_type": "锅炉",
+      "component": "过热器/再热器",
+      "topic": "温度控制",
+      "page": 34
+    }
+  },
+  {
+    "record_id": "aux-pump-001",
+    "source_file": "辅机设备维护卡片_示例.xlsx",
+    "source_kind": "TABLE",
+    "page_num": 3,
+    "title": "给水泵汽蚀判断",
+    "text": "给水泵出现汽蚀时，常见现象包括入口压力降低、泵体噪声增大、振动升高、出口压力波动和流量不稳定。排查时应检查除氧器水位、入口滤网、入口阀门开度、介质温度和泵入口管路阻力。处理措施包括提高入口压力、降低介质温度、清理滤网并避免长时间小流量运行。",
+    "metadata": {
+      "collection": "power_equipment_demo",
+      "equipment_type": "辅机",
+      "component": "给水泵",
+      "topic": "汽蚀与振动",
+      "page": 3
+    }
+  },
+  {
+    "record_id": "cross-doc-001",
+    "source_file": "动力装备故障关联分析_示例.md",
+    "source_kind": "Markdown",
+    "page_num": 1,
+    "title": "跨设备故障关联",
+    "text": "燃气轮机压气机效率下降、锅炉受热面超温和给水泵流量波动都可能表现为效率下降或温度异常，但证据链不同。燃机问题通常需要结合压比、排气温度分散度和进气压损；锅炉问题需要结合烟温、减温水和燃烧偏斜；给水泵问题需要结合入口压力、流量和振动。GraphRAG 问答应先识别设备类型，再沿设备-部件-参数-故障原因路径展开。",
+    "metadata": {
+      "collection": "power_equipment_demo",
+      "equipment_type": "跨设备",
+      "component": "知识图谱",
+      "topic": "跨文档关联",
+      "page": 1
+    }
+  }
+]

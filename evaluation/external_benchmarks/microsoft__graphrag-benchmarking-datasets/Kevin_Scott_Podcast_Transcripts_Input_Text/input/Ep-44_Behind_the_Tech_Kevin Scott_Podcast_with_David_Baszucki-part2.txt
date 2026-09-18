@@ -1,0 +1,19 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt  and say, “I just talked to the head of Roblox,” and they’re gonna be like, “Oh my God.” Like that’s – like all the other very important and famous people that you talk to all the time, it’s like, nah, not a big deal, but you’re like, I know the Roblox guy. All of a sudden, hero. 
+
+KEVIN SCOTT: Yeah, 100%. 
+
+CHRISTINA WARREN: All right. Well, let’s now get into Kevin’s conversation with David. 
+
+KEVIN SCOTT: David Baszucki is an entrepreneur, engineer, and inventor. He’s the founder and CEO of Roblox, an online game creation platform that allows users to design their own games and play different kinds of games created by others. Roblox has helped millions of up-and-coming game developers learn the basics of their domain and work on their talents. 
+
+Welcome to the show, David. 
+
+DAVID BASZUCKI: Kevin, it’s a real pleasure to be here. Thank you for having me on the podcast. 
+
+KEVIN SCOTT: Yeah. And thanks for being here, too. You and I have chatted about this before, but my kids are going to think I’m a superhero for having you on the show. They spend more time in Roblox than probably any other piece of software that they use. 
+
+DAVID BASZUCKI: Well, that’s awesome. I think they should think you’re a superhero because you design and build incredible infrastructure and think about technical things. So that’s really why you’re a superhero. 
+
+But, hey, it’s great to hear that, and yeah, we like to think when parents share that their kids are spending a lot of time in Roblox, we like to think that’s a lot like the time they might spend on the phone with their friends or the time they might spend creating a level in Dungeons and Dragons with their friend or spending time playing hide and go seek when they can’t play it outside. So we’re actually not always trying to optimize that engagement time, but we do want that engagement time to be socially connected. 
+
+KEVIN SCOTT: Yeah, I think that’s a – it’s an interesting, interesting thing. My wife and I had, for a very long while, been really sensitive to the amount of screen time that our kids were getting. And then, you know, we had this epiphany during the pandemic that Roblox was actually one of the places where our kids were able to get the socialization that they weren’t getting because of all of the lockdown stuff that was going on. So they would jump into Roblox and play with their friends. It was their digital playground, so to speak, and they’d be on, you know, Facetime on the side and like having a conversation. And like in a certain sense it was life-saving. I don

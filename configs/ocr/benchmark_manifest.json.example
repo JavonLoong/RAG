@@ -1,0 +1,26 @@
+{
+  "dataset_name": "M2 OCR 人工金标小样本",
+  "description": "每页先由人工抄录 gold_text；只有确认允许外发的页面才能把 external_allowed 改为 true。",
+  "samples": [
+    {
+      "sample_id": "body-001",
+      "source_path": "../../tests/fixtures/ocr/allowed_body_page.png",
+      "page": 1,
+      "category": "body_text",
+      "external_allowed": false,
+      "local_result_path": "../../tests/fixtures/ocr/allowed_body_page.local.json",
+      "gold_text": "请在这里填写人工逐字核对后的正确文本",
+      "notes": "默认禁止上传；取得资料外发许可后才能修改 external_allowed。"
+    },
+    {
+      "sample_id": "table-001",
+      "source_path": "../../tests/fixtures/ocr/allowed_table_page.png",
+      "page": 1,
+      "category": "table",
+      "external_allowed": false,
+      "local_result_path": "../../tests/fixtures/ocr/allowed_table_page.local.json",
+      "gold_text": "请按统一的行列顺序填写人工金标",
+      "notes": "表格页必须单独统计，不能与正文页混算。"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt imos. I know, it’s going to be exciting, we’re going with you," right?
+
+So as he did NeXT Computers – and of course, Steve Jobs, for anyone who knows, was quite the showman, you know, not in a fluffy way there’s like, there’s no – there’s no steak with that sizzle. It’s like he knew what he was talking about. And he knew what people really wanted. He had a sense of style, right? 
+
+KEVIN SCOTT: Yeah.
+
+WILLIAM ADAMS: It’s like, "Whatever you do, Steve is probably going to be good. We’re in." That’s what drove us, right?
+
+KEVIN SCOTT: Well, and NeXT was a really interesting company. I mean, as – so Apple ultimately bought NeXT.
+
+WILLIAM ADAMS: Right.
+
+KEVIN SCOTT: A whole bunch of the – of NeXT team, you know, like Craig Federighi, for instance, are still at Apple doing interesting stuff today, but you know, they – the – they had beautiful industrial design.
+
+WILLIAM ADAMS: Yeah.
+
+KEVIN SCOTT: There were two machines, so the NeXT Cube and the NeXT Station.
+
+WILLIAM ADAMS: Yeah,
+
+KEVIN SCOTT: So one was a cube, and one was a pizza box, but it was – the, the back end of the operating system was UNIX. 
+
+WILLIAM ADAMS: Yeah.
+
+KEVIN SCOTT: It had a really nice graphical user interface. They embraced object-oriented programming super early.
+
+WILLIAM ADAMS: Yeah.
+
+KEVIN SCOTT: So like they were innovating and doing a bunch of interesting things and putting a bunch of pieces together that are exactly the pieces that are together now that – you know, are the basis of what we use every day.
+
+WILLIAM ADAMS: Yeah, yeah, exactly. And there was at that time, they introduced this thing called App Builder, which was the way of visually putting your application together by dragging and dropping, and all that sort of stuff. And today we go, yeah, of course. But at that time, it didn’t exist, right? So they were innovating in that sort of way. And Steve also did things like he said, "You should think of your …" 
+
+He had a sense for how apps should work. "You should be no more than one click away from achieving some action." So he hated like, endless lists of menus, and all that sort of stuff. It was like one click, direct action is the way things should work, so you know, there were certain things about the platform Display PostScript, like you said, the networking model.
+
+They have this thing called Speaker Listener, and it was a way of passing messages back and forth, even across the network. So yeah, there was a lot

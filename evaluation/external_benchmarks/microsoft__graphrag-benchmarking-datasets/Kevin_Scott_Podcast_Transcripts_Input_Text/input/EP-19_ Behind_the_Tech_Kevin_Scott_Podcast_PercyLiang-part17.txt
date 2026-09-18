@@ -1,0 +1,17 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  know, doesn't invalidate the thing that -- you know, that the machine learning system can do.
+
+PERCY LIANG:  Yeah, definitely.  I think these examples merely illustrate the kind of the gap between these machine learn models and humans, and I think it's absolutely right to think of machine learning AI as not chasing human intelligence, but more -- they're a different thing. And I've always thought about these things as -- you know, tools that we build to help us.  
+
+I think they're -- a lot of AI does come from this, you know, chasing human intelligence as inspiration, which has gotten, you know, quite a bit of mileage. But at the end of the day, you know, we're computer scientists building, you know, systems for the world, and I think humans make mistakes.  They have fallacies, they have biases, they're not super transparent sometimes, and why inherit all these when, maybe, you can design, you know, a better system?
+
+And I think computers, already, clearly have many other advantages that humans don't have.  They have, you know, they don't need to sleep, they have -- you know, memory which is vast and compute that vastly exceeds --
+
+KEVIN SCOTT:  They don't get bored.
+
+PERCY LIANG:  Yeah, yeah, so I think leveraging these, which we already have, but kind of further just thinking holistically about how do we build the most useful tools might be a good way forward.
+
+KEVIN SCOTT:  Yeah, yeah, I really love that vision, like this sort of notion of thinking about the AI systems as tools, like maybe thinking more about task intelligence than general intelligence, and you know, trying to derive inspiration from biology, but like not being, you know, not being fixated on it.
+
+PERCY LIANG:  Yeah, I mean, this kind of whole debate goes back to, you know, the '50s, and with AI versus IA, artificial intelligence versus intelligence augmentation, where intelligence augmentation kind of more -- we're, as kind of a spiritual ancestors of, you know, the field of HCI, human computer interaction, and at some level I think that I'm more kind of philosophically attached to that kind of way of thinking about how we build tools. But clearly AI is providing this kind of massive set of, you know, assets that we should be able to use, somehow.
+
+KEVIN SCOTT:  Yeah, so a couple more questions before I ask you something, something fun.  So, how do you think academia and industry could be doing more together?  Like one of the things that I'm a little bit worried about, like less so this year, than last, is some of these machine learning workloads now just require exorbitant levels of resources to run.  So, like training one of these big self-supervised models, just like --

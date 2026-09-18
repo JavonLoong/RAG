@@ -1,0 +1,15 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt  of making a living when, in fact, there isn't.  It's only for a token, small number of people.
+
+However, there's another population of people out there who are making a living, but not within the rules dictated by a central hub, but as actors.  For instance, there are tens of millions, maybe -- we don't know the total number.  But at least 50 million people in the world who are actually making a living delivering online video lessons and counseling and guidance.  This is anything from legal consulting to religious training, to yoga teachers, to musical instrument teachers.
+
+All those people have sort of cobbled together something that has to fight against the grain of everything, because there's no – 
+
+KEVIN SCOTT:  There's no infrastructure to support them.
+
+JARON LANIER:  There's no infrastructure, so each one of them has had to invent their own infrastructure by cobbling together little pieces from the different digital companies.  And that population interests me.  In a way I see them as the future.  Those are the people who don't have to worry about their jobs being taken by robots, unless I mean they could be, all we have to do is create some machine learning thing that steals all their data and makes a fake clarinet teacher, without paying them for their data, just stealing their value.  And that's what we've done in so many other areas.
+
+So the future I would see is to, first of all, try to support, to identify those groups and support them and also identify those communities that are trying to create new structures to help people cooperate in decentralized ways.  And here the blockchain community, not the get rich quick blockchain, but the other blockchain, the blockchain of people who are interested in new ways of cooperation that can be mediated by networks, those people could be really important and helpful.
+
+I think we need to invent new structures.  The reason that we treat data as being worthless, even though the companies that collect the data become the most valuable ones in the world, is that there's no collective bargaining for people whose data is taken.  So in any other economic example, in order to have a productive economy you have to have some -- you have to invent some kind of structure so that people can cooperate and have it not be this Hobbesian race to the bottom where each person is against each other person.  If you believe more in capital than labor you call that a corporation or a legal partnership or something.  So, these people are incentivized to cooperate instead of try to kill each other.  If you believe in labor over capital you call it the union.  And you call it collective bargaining.  But on the Internet the difference is academic. 
+
+I was playing around with terms like Unorp and Corporion and they're terrible.  So we just came up with -- my research partner Glen Weyl and I came up with

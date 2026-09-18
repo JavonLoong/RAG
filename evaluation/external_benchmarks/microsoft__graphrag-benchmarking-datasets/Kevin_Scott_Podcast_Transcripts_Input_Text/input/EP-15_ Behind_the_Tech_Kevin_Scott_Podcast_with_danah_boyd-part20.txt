@@ -1,0 +1,19 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt  to understand how to reduce the cost to climate for technology, but also the possibilities that we can model, understand, and innovate because we have a big, heavy challenge in front of us on that front. 
+
+But that's like — those are the like glimmer stages as opposed to like here's where we have tools.  
+
+KEVIN SCOTT:  There's so much opportunity there.  I mean, it's unbelievable.  Like, if you just look at — if you could co-optimize production and consumption of power, like there probably is on the order of like one or two magnitudes of efficiencies that we could drive, which would be unbelievable. 
+
+And then, you know, that's without sort of having the even bigger thoughts about like what could you do with some of these big machine learning models to like design better systems that are like fundamentally more efficient in and of themselves. 
+
+danah boyd:  Well, so here's an example of something that, you know, is a mixed sort — mixed, you know, feelings on.  
+
+We also have the ability to model what land will be arable.  And we can really think about the future of agriculture, the future of water supply.  Who controls that information?  Who controls the decision-making that happens from that information?  So that's that moment where I'm like, okay, we're getting there.  We actually have a decent understanding.  
+
+But if we're at a point where that material gets coopted, it gets controlled, then I'm deeply concerned.  So, like these are the contradictions I think we're sitting in the middle of because if we can really understand — I mean, where did data analytics begin?  Farming, right?  
+
+If with can really understand what this will do to ag, we're going to be able to better build resilience.  And that's those moments where I'm like, okay, you know, this is not about just NOAA — the National Oceanographic Atmospheric Administration.  It's not just about NOAA being able to model, but it's also being able to give that information publicly in a way where it doesn't get perverted for political purposes.  
+
+And that's a tricky thing right now.  
+
+KEVIN SCOTT:  Yeah, and you know on the hopeful side of things, you know, what we've even seen at Microsoft with some of the stuff that's happening with this Farm Beats program that's happening at Microsoft Research, is that you can take some of this data, so like the weather data, weather forecasts, like all of the sort of historical information, like stuff that like you used to get embedded into a farmer's almanac, which was almost you know like a little bit like astrology. But like there was real, you know, data and trending that people built into these almanacs that helped people decide, like, very prosaic things like when to put the

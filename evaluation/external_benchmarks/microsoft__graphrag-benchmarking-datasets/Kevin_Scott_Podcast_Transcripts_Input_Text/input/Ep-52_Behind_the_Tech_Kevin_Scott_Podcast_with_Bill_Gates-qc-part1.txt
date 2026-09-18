@@ -1,0 +1,25 @@
+Ep-52_Behind_the_Tech_Kevin_Scott_Podcast_with_Bill_Gates-qc.txt ../Behind the Tech with Kevin Scott Podcast
+Episode 52 – Bill Gates
+
+BILL GATES: It was stunning, it was mind blowing. After the biology question I had them type in, “What do you say to a father with a sick child?” And it gave this very careful, excellent answer that was perhaps better than any of us in the room might have given. And so, it was like, wow, what is it – what is the scope of this thing? Because this is way better.
+[MUSIC]
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around. 
+
+[MUSIC]
+
+KEVIN SCOTT: Hi, welcome to Behind the Tech. We have a great episode for you today with a really special guest, Bill Gates, who needs no introduction. Given the unbelievable impact that he's had on the world of technology and the world at large over the past several decades, he has been working very closely with the teams at Microsoft and OpenAI over the past handful of months, helping us think through what the amazing revolution that we're experiencing right now in AI means for OpenAI, Microsoft, all of our stakeholders, and for the world at large.
+
+I've learned so much from my conversations that I've had with Bill over these past months that I thought it might be a great thing to share. Just a tiny little glimpse of those conversations with all of you listeners today. So with that, let's introduce Bill and get a great conversation started.
+
+[MUSIC]
+
+KEVIN SCOTT: Thank you so much for doing the show today, and I just wanted to jump right in with maybe one of the more interesting things that’s happened in the past few years in technology, which is GPT-4 and ChatGPT and the work that we’ve been doing together at Microsoft with OpenAI. 
+
+By the time this podcast airs, OpenAI will have made their announcement to the world about GPT-4, but I want to sort of set the stage. The unveiling of the first instance of GPT-4 outside of OpenAI was actually to you last August at a dinner that you hosted with Reid and Sam Altman and Greg Brockman and Satya and a whole bunch of other folks. 
+
+The OpenAI folks had been very anxious about showing you this because your bar for AI had been really high, and I think it has been really helpful actually, the push that you had made on all of us for like what acceptable high ambition I would look like. 
+
+And so, I wanted to

@@ -1,0 +1,17 @@
+Ep-45_Behind_the_Tech_Kevin Scott_Podcast_with_Phil_Spencer.txt  sort of forced into like really understanding all the low level details of the machine because the things that you were trying to do were like right there on the bleeding edge of what the machines were capable of. You were just trying to wring every unit of performance out of the machine. And that’s still true, right? 
+
+PHIL SPENCER: Yeah, absolutely. I mean, I would say one of the slight differences now with videogames – well, let me say two things. One, most games that are built are targeting multiple platforms, from mobile maybe all the way through a high-end gaming PC. So it requires a certain level of abstraction in how you’re kind of building your game because you do expect that experience to flow.
+
+I mean, we were talking about Minecraft just a minute ago. You know, think about a game like that and the different target platforms that they have. It requires more abstraction in the code than maybe back in the day where you’re building one game to run in one place. 
+
+The other thing in a videogame today is, you know, a videogame can easily reach 50, 60, 100 gigabytes of data. And the creation of the data is the most expensive part in building a videogame, and all of that is animation, music, art assets. 
+
+So the code itself, yes, you want it to run as effectively as it can, and efficiently as it can, but at the same time, it’s not actually the critical path in getting a game done as effectively as you can. Toolchain and asset production is way more important. 
+
+So we spend a lot of cycles actually on getting – writing code to help us build a game, as opposed to just running the game, because the running of the game itself is critical, but when you think about getting that game done and making your creators on your team as effective as possible, there’s a lot more internal work that goes into building a videogame than there has ever been before. 
+
+KEVIN SCOTT: Well, you know, maybe let’s talk about that for a minute, because we’ve made reference to this teaser video that you and I made for – for Microsoft’s big developer conference, Build. And one of the things that that teaser video is trying to do is show people that, hey, we’ve got this AI abstraction layer now that you can use to, like, help you do things like make videogames more interactive and enjoyable. 
+
+But like this point that you made about how like the games themselves are so complex, that you have to build layers of tooling to help manage this complex task of making a modern videogame, so you know, maybe we can talk a little bit about that. 
+
+So just for folks who know nothing about the gaming industry, like let’s take a, you know, top title, something like, you know, Halo, for instance, like, what does it take to

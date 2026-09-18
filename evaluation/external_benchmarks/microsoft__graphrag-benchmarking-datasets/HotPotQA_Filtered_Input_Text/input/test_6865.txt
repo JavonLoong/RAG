@@ -1,0 +1,41 @@
+Papa Gino's, Inc. is a restaurant chain based in Dedham, Massachusetts specializing in American-style pizza along with pasta, subs, salads, and a variety of appetizers.
+ There are over 150 Papa Gino's locations in Connecticut, Maine, Massachusetts, New Hampshire, and Rhode Island.
+The Whopperito is a Tex-Mex Burger King menu item that was introduced in 2016.
+ It consists of most of the ingredients of the Whopper wrapped inside a tortilla.
+ Instead of the ketchup, mayonnaise, or mustard, the Whopperito contains queso sauce.
+ Burger King originally introduced it only at several of their Pennsylvania locations in June; on August 15, they began selling it nationwide.
+ Leslie Patton of Bloomberg News speculated that the Whopperito represented an attempt by Burger King to compete with Chipotle Mexican Grill.
+ In a statement, Burger King said that they decided to introduce it nationally after testing the item at local franchises "sparked widespread demand from guests" on social media.
+ Alex Macedo, the president of Burger King North America, said of the item, "It’s just to get peoples' attention to come in to the restaurants," adding that limited-time menu items like the Whopperito are not just important to boost sales, but "also important for keeping the brand relevant."
+Freedom fries was a political euphemism for French fries in the United States.
+ The term came to prominence in 2003 when the then Republican Chairman of the Committee on House Administration, Bob Ney, renamed the menu item in three Congressional cafeterias in response to France's opposition to the proposed invasion of Iraq.
+ Although originally supported with several restaurants changing their menus as well, the term fell out of use due to declining support for the Iraq War.
+ Following Ney's resignation as Chairman in 2006, it was quietly reverted.
+A menu extra, menu item, menulet, or status item is a graphical control element in macOS.
+ It is a small indicator that appears at the right of the menu bar.
+ They often provide quick ways to use applications (e.g. iChat) or display information (for example the system clock), or control system-level variables (for example audio volume).
+ There are a number of third-party menu items available.
+ Menu extras are similar to items in the Microsoft Windows notification area but are less common.
+A combination meal, also referred to as a combo meal, is a type of meal that typically includes food items and a beverage.
+ They are a common menu item at fast food restaurants, and other restaurants also purvey them.
+ Combination meals may be priced lower compared to ordering items separately, but this is not always the case.
+ A combination meal is also a meal in which the consumer orders items à la carte to create their own meal combination.
+ The "casada" is a common type of lunch combination meal in Costa Rica and Panama.
+In 1949, Jim and Margaret Knudson visited a friend's home for dinner.
+ They were served tacos for the first time, and having experience in the food business, Jim thought the taco would have universal appeal, and so he developed his own taco recipe, calling it the "TAYCO".
+ Jim added his recipe to the menu of his restaurant "Jimmy's 49er Cafe" located in Grass Valley, California.
+ Jim said that his customers were not enthusiastic about trying the menu item.
+A mnemonic is an underlined alphanumeric character, typically appearing in a menu title, menu item, or the text of a button or component of the user interface.
+ A mnemonic indicates to the user which key to press (in conjunction with the Alt key) to activate a command or navigate to a component.
+LaRosa's Pizzeria is a chain of pizzerias serving neighborhoods throughout the Cincinnati, Greater Dayton, central Ohio, Northern Kentucky, Southeast Indiana and central Tennessee areas.
+ It was founded in 1954 by Donald "Buddy" LaRosa, along with partners Richard "Muzzie" Minella, Mike Soldano and Frank "Head" Serraino.
+ Originally called Papa Gino's, LaRosa later bought out his partners, and changed the name to LaRosa's.
+Haab's Restaurant is located in downtown Ypsilanti, Michigan, at 18 West Michigan Avenue.
+ The restaurant has a bar area with an 30 ft African mahagony bar and overhead ceiling fans, and two dining rooms.
+ The decor is 19th-century with a pressed tin ceiling and features Tiffany lamps and heirlooms from the Haab family.
+ It has seating for 130.
+ The menu entrées are mainly steaks, chops, fried chicken and seafood, with the London broil being the most popular menu item.
+ The front entrance displays an article in "Monthly Detroit" about Detroit area steakhouses in which the author names Haab's as his favorite
+In Windows programming, an accelerator table allows an application to specify a list of "accelerators" (keyboard shortcuts) for menu items or other commands.
+ For example, Ctrl+S is often used as a shortcut to the File→Save menu item, Ctrl+O is a common shortcut to the File→Open menu item, etc.
+ An accelerator takes precedence over normal processing and can be a convenient way to program some event handling.

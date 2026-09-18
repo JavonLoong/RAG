@@ -1,0 +1,25 @@
+Behind the Tech_Episode 36_PeterLee_Transcript.txt urring more and more over the past decade or so as technology has had such a large impact on society at large. 
+
+And it may sound like a small thing, but I think, you know, one of the very encouraging signs to me is that you can have people from all of these different disciplines participating in these works as equals.
+
+And, you know, it sort of goes back to this, you know, this thing we were laughing at earlier like this, you know, and you have a different telling like, you know, mathematicians think they’re better than the physicists and physicists think they’re better than computer scientists, right? But you just can’t have that in crisis response research, like everybody has to have a full seat at the table. 
+
+PETER LEE:  That’s right. I think one of the biggest challenges is that normal scientific research, when it transitions to the real world, it has the luxury of time normally. So like, if there’s a new drug to treat some disease, you know, you go through a whole bunch of trials, you publish papers, it gets debated at conferences, and over a course of, say, five to 10 years, it gets thoroughly discussed and a scientific consensus emerges. When you’re dealing with a crisis, that luxury of time evaporates.
+
+KEVIN SCOTT:  Yeah. 
+
+PETER LEE:  And so another reason that crisis response science, I think, is a different discipline is because of that. And if the crisis has the power to bring down power structures, you know, bring down governments, you know, like a global pandemic has that power, then it also becomes political and very public. 
+
+KEVIN SCOTT:  Yeah. 
+
+PETER LEE:  And all of the debate that normally happens in the kind of cloistered halls of academia and big research labs like Microsoft Research, it becomes exposed to the world. You know, all the sausage making gets exposed. 
+
+And so, I think as researchers and as a research community, we’re all going to have to learn how to do that well and do that correctly. And there’s tremendous power in being explicit about it, recognizing this is what’s going on and understanding that context, because once you understand that, then you have a chance to write it down on paper – 
+
+KEVIN SCOTT:  Yeah.
+
+PETER LEE:  – teach it and – and become better at it in the future. 
+
+KEVIN SCOTT:  Yeah, and I think one of the big challenges there, and like, we’re not going to solve this in this podcast today, but there are many, many challenges, and one of them is as everybody gets exposed to the sausage making of science, like it can be a little bit disconcerting if you’ve never seen it before.
+
+I mean, time and again in this pandemic, people have looked, and continue to look, to

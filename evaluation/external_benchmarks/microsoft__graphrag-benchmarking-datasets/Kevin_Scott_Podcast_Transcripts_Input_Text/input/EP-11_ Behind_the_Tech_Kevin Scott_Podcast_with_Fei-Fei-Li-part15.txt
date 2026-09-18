@@ -1,0 +1,19 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt  technology. 
+KEVIN SCOTT:  Yes. 
+FEI-FEI LI:  But your life is better.  
+KEVIN SCOTT:  Yes. 
+FEI-FEI LI:  That's the best technology. 
+KEVIN SCOTT:  I could not agree more.  
+FEI-FEI LI:  And also just talking about the rural America, this is something I feel passionate about, and I have a story to share with you.   So, you probably know that I co-founded and chair this nonprofit educational organization called AI4ALL, right? 
+KEVIN SCOTT:  Yeah. 
+FEI-FEI LI:  It started as a summer camp at Stanford about five years ago to encourage diversity students to get involved in AI, especially through human-centered AI, studying and research experience to encourage them to stay in the field and then our goal is in ten years, we would change the workforce composition. 
+KEVIN SCOTT:  Yeah. 
+FEI-FEI LI:  Now, it became a national nonprofit and seed granted by Melinda Gates and Jen-Hsun Huang Foundation and -- 
+ KEVIN SCOTT:  That's awesome, I didn't know Jen-Hsun was involved.  That's great.  
+FEI-FEI LI:  Yeah.  It's Jen-Hsun & Lori Huang Foundation.  And this year, we're on 11 campuses nationwide.  One of the populations we put a lot of focus on in addition to gender, race, income, is geographic diversity and serving rural community, for example, our CMU campus is serving rural community in Pennsylvania.  We also have Arizona campus. 
+One story actually came out of our Stanford camp is Stephanie. Stephanie is still a high school junior now.  And she grew up in the backdrop of strawberry field in rural California. 
+In a trailer park with a Mexican mom.  And she come from that extremely rural community, but she's such a talented student and has this knack and interest for computer science. 
+And she came to our AI4ALL program at Stanford two years ago.  And after learning some basics about AI, one thing she really was inspired is she realized this technology is not a cold-blooded, just bunch of code.  It really can help people. So, she went back to her rural community and start thinking about what she can do using AI to help.  And one of the things she came up with is water quality. 
+KEVIN SCOTT:  Yes. 
+FEI-FEI LI:  Really matters to her community.  And so, she started to use machine learning techniques to look at water quality through water samples. 
+And that's just such a beautiful example.  I just love her story to show that when we democratize this technology to the communities, the diverse communities, especially these communities that technology hasn't reached enough in, the young people, the leaders and

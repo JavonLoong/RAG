@@ -1,0 +1,30 @@
+EP-43_ Behind_the_Tech_Kevin_Scott_Podcast_with_Alexis_Ohanian.txt ../BTT Episode 43 Alexis Ohanian
+
+Audio: https://microsoft.sharepoint.com/:u:/t/BehindtheTechPodcast2/EZ3oRdwF3epJqwbAZ_ZpINYBz3PEexqH5YmB65eobFpV-Q?e=dBq0gJ 
+TRT: 53:42
+
+HOOK: I hoped people would say, “I read it on Reddit.” I don’t think anyone to date has, but that was the dream.
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.
+
+[MUSIC]
+
+CHRISTINA WARREN: Hello, and welcome to Behind the Tech. I’m Christina Warren, Senior Developer advocate at GitHub.
+
+KEVIN SCOTT: And I’m Kevin Scott.
+
+CHRISTINA WARREN: And our guest on the show today is Alexis Ohanian, and he is known for so many things in the tech world, but perhaps he is best known as being the cofounder and the executive chairman of Reddit, which he launched as part of the very first Y Combinator class back in 2005, and today he’s running a venture firm called 776. In fact, he was also once my Lyft driver.
+
+KEVIN SCOTT: Wow, that’s – that’s awesome. I mean, like Alexis may be the – you know, the – the king of coincidences as far as guests go. So, he and I overlapped at the University of Virginia, when he was an undergraduate and I was a PhD student in the computer science department. 
+
+So, I don’t think I was ever his TA, but there is a distinct possibility that my wife was his TA given that he was a history major, and my wife is – was a history PhD student there while he was a student.
+
+CHRISTINA WARREN: That’s amazing. That’s amazing, and I – I’m so looking forward to the conversation that you two are going to have because he is so interesting and has done so many things over the last, you know, life 15 – 16 years or so, so I – I can’t wait to hear what you talk about.
+
+KEVIN SCOTT: For sure.
+
+[MUSIC]
+
+KEVIN SCOTT: Alexis Ohanian was the cofounder and Executive Chairman of Reddit, which he launched as part of Y Combinator’s first class in 2005. In 2010, he cofounded Initialized Capital with Garry Tan with

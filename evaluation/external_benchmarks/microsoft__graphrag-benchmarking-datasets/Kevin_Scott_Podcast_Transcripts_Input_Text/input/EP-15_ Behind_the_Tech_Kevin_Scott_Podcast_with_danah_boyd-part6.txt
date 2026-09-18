@@ -1,0 +1,19 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt .  You know, and I just — I dug my feet in and I became determined, so much so, to be honest, that I stopped realizing what I liked about computer science and what I didn't.  And I was just so determined to do computer science because people told me I couldn't, that I wasn't willing to look at the broader field, if you will.  
+
+I mean, I graduated Brown with very few classes that weren't computer science or math, because you can at Brown.  And it took me many more years to be, like, no, actually, what I love about computing is not just doing software development.  I like thinking about how these systems are built coherently, how they fit into broader social issues. 
+
+So, it took me a long time, and it was really about Andy that made me go back.  I had dropped out of my first PhD program, so I went back, and Andy introduced me to basically with anthropologists.  
+
+And I was like — I mean, I knew nothing about anthropology.  I was, like, what?  How does this relate at all?  And it was just this moment of like, oh, studying peoples and culture and practices could give me a different way into it all.  
+
+KEVIN SCOTT:  Interesting.  And, you know, it's — I think it's — you've certainly had a really interesting career because you pushed yourself or were pushed in this particular direction.  
+
+You know, if anything, I think the world needs a lot more folks like you who are looking at computing and the context surrounding it and like what space it occupies in society and like what all of this sort of complicated set of entanglements we have now between like this thing computing that I think we still think a lot is if it's this like monolith that stands on its own, versus like this enormous impact that it has in the world. 
+
+danah boyd:  Well, I'm really grateful that I can be a hybrid in this because that computer science degree has done me so many levels of good — not the least of is it provided a form of security that I didn't have growing up and I couldn't even imagine.  This moment where I could take risks because I had in my head, I can always get a job. 
+
+You know, and that's one of the things with the software industry in particular growing was, I can always get a job. 
+
+Now, of course, the idea of me doing software development right now is pretty laughable, but it provided, you know, a frame that helped me actually take risk.  And it also allows me these moments in my career where I keep coming back to it, you know.  
+
+I'm working on this project right now where — with the Census Bureau, the U.S. Census Bureau.  And part of it is that they're going to implement the largest

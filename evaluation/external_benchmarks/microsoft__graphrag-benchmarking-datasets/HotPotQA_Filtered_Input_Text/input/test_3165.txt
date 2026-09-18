@@ -1,0 +1,45 @@
+The Saturn V Instrument Unit is a ring-shaped structure fitted to the top of the Saturn V rocket's third stage (S-IVB) and the Saturn IB's second stage (also an S-IVB).
+ It was immediately below the SLA "(Spacecraft/Lunar Module Adapter)" panels that contained the Lunar Module.
+ The Instrument Unit contains the guidance system for the Saturn V rocket.
+ Some of the electronics contained within the Instrument Unit are a digital computer, analog flight control computer, emergency detection system, inertial guidance platform, control accelerometers and control rate gyros.
+ The instrument unit (IU) for Saturn V was designed by NASA at Marshall Space Flight Center (MSFC) and was developed from the Saturn I IU.
+ NASA's contractor to construct the Saturn V Instrument Unit was International Business Machines (IBM).
+Saturn V Dynamic Test Stand, also known as Dynamic Structural Test Facility, at the George C. Marshall Space Flight Center in Huntsville, Alabama is the test stand used for testing of the Saturn V rocket and the Space Shuttle prior to the vehicles' first flights.
+ Designated building 4550, it stands 363 ft tall and is 98 ft square.
+ NASA built the test stand in 1964 to conduct mechanical and vibrational tests on the fully assembled Saturn V rocket.
+ Major problems capable of causing failure of the vehicle were discovered and corrected here.
+Arthur Louis Hugo Rudolph (November 9, 1906 – January 1, 1996) was a German Nazi rocket engineer who was a leader of the effort to develop the V-2 rocket for Nazi Germany.
+ After the war, the United States Government's Office of Strategic Services (OSS) brought him to the U.S. as part of the clandestine Operation Paperclip, where he became one of the main developers of the U.S. space program.
+ He worked within the U.S. Army and NASA, where he managed the development of several systems, including the Pershing missile and the Saturn V Moon rocket.
+ In 1984, the U.S. Government investigated him for war crimes, and he agreed to renounce his United States citizenship and leave the U.S. in return for not being prosecuted.
+Skylab was the United States' first space station, orbiting Earth from 1973 to 1979, when it fell back to Earth amid huge worldwide media attention.
+ Launched and operated by NASA, Skylab included a workshop, a solar observatory, and other systems necessary for crew survival and scientific experiments.
+ It was launched unmanned by a modified Saturn V rocket, with a weight of 170000 lb .
+ Lifting Skylab into low earth orbit was the final mission and launch of a Saturn V rocket (which was famous for carrying the manned Moon landing missions).
+ Skylab was not simply a place of habitation; massive science experimentation was undertaken there.
+ When data from these experiments (some of which were on physical film) were returned to Earth, analysis of scientific and engineering data of each mission was completed.
+ Skylab's solar observatory was one of its major functions.
+ Solar science was significantly advanced by the telescope, and its observation of the Sun was unprecedented.
+ As the Skylab program drew to a close, NASA's focus had shifted to the development of the Space Shuttle, through which NASA hoped to reduce the cost of space access compared to previous launch systems.
+Saturn V Dynamic Test Vehicle, designated SA-500D, is a prototype Saturn V rocket used by NASA to test the performance of the rocket when vibrated to simulate the shaking which subsequent rockets would experience during launch.
+ It was the first full-scale Saturn V completed by the Marshall Space Flight Center (MSFC).
+ Though SA-500D never flew, it was instrumental in the development of the Saturn V rocket which propelled the first men to the Moon as part of the Apollo program.
+ Built under the direction of Dr. Wernher von Braun, it served as the test vehicle for all of the Saturn support facilities at MSFC.
+The Saturn II was a series of American expendable launch vehicles, studied by North American Aviation under NASA contract in 1966, derived from the Saturn V rocket used for the Apollo lunar program.
+ The intent of the study was to eliminate production of the Saturn IB, and create a lower-cost heavy launch vehicle based on Saturn V hardware.
+ North American studied three versions with the S-IC first stage removed: the INT-17, a two-stage vehicle with a low Earth orbit payload capability of 47,000 lb ; the INT-18, which added Titan UA1204 or UA1207 strap-on solid rocket boosters, with payloads ranging from 47000 lb to 146400 lb ; and the INT-19, using solid boosters derived from the Minuteman missile first stage.
+Nova was a series of proposed rocket designs, originally as NASA's first large launchers for missions similar to the production-level Saturn V.
+ Nova studied designs that closely mirrored the Saturn V in basic concept, power, size and function.
+ Differences were minor but practical, and the Saturn was selected for the Apollo Project largely because they would re-use existing facilities to a greater extent and could make it to the pad slightly earlier.
+Wernher Magnus Maximilian Freiherr von Braun (March 23, 1912 – June 16, 1977) was a German, later American, aerospace engineer and space architect credited with inventing the V-2 rocket for Nazi Germany and the Saturn V for the United States.
+ He was the leading figure in the development of rocket technology in Germany and the father of rocket technology and space science in the United States.
+The Saturn V (spoken as "Saturn five") was an American human-rated expendable rocket used by NASA between 1967 and 1973.
+ The three-stage liquid-fueled super heavy-lift launch vehicle was developed to support the Apollo program for human exploration of the Moon and was later used to launch Skylab, the first American space station.
+ The Saturn V was launched 13 times from the Kennedy Space Center in Florida with no loss of crew or payload.
+ As of 2017,  the Saturn V remains the tallest, heaviest, and most powerful (highest total impulse) rocket ever brought to operational status, and holds records for the heaviest payload launched and largest payload capacity to low Earth orbit (LEO) of 140000 kg , which included the third stage and unburned propellant needed to send the Apollo Command/Service Module and Lunar Module to the Moon.
+The Redl-Zipf V-2 rocket facility (code name "Schlier") in central Austria between Vöcklabruck and Vöcklamarkt was for V-2 rocket motor testing after Raxwerke test equipment had been moved from Friedrichshafen.
+ The facility tested V-2 combustion chambers' compatibility with turbopumps since the rocket did not have a controller for reducing the turbopumping of propellant into the chamber if pressure became too high.
+ The World War II facility used forced labor of the Schlier-Redl-Zipf subcamp of the Mauthausen-Gusen concentration camp and included a liquid oxygen generation plant in a nearby tunnel.
+ After an August 1944  explosion at the liquid oxygen plant stopped Schlier production, the third V-2 liquid oxygen plant (5000 tons/month) was built at a slate quarry at Lehesten near the Mittelwerk (turbopump/chamber compatibility testing for Mittelwerk production was also performed at the Lehesten facility).
+ Karl Heimberg, who had worked at Peenemünde Test Stand 7, was transferred to ""Vorwerk Sued"" at Redl-Zipf and then, for the period from late 1944-early April 1945, to Lehesten (he later returned to Peenemünde with Walter Riedel III to burn design office files and participated in the post-war Operation Backfire.)
+

@@ -1,0 +1,59 @@
+Rabies is a viral zoonotic neuroinvasive disease which causes inflammation in the brain and is usually fatal.
+ Rabies, caused by the rabies virus, primarily infects mammals.
+ In the laboratory it has been found that birds can be infected, as well as cell cultures from birds, reptiles and insects.
+ Animals with rabies suffer deterioration of the brain and tend to behave bizarrely and often aggressively, increasing the chances that they will bite another animal or a person and transmit the disease.
+ Most cases of humans contracting the disease from infected animals are in developing nations.
+ In 2010, an estimated 26,000 people died from rabies, down from 54,000 in 1990.
+West Nile fever is a mosquito-borne infection by the West Nile virus.
+ Approximately 80% of West Nile virus infections in humans have few or no symptoms.
+ In the cases where symptoms do occur—termed West Nile fever in cases without neurological disease—the time from infection to the appearance of symptoms is typically between 2 and 15 days.
+ Symptoms may include fever, headaches, feeling tired, muscle pain or aches, nausea, loss of appetite, vomiting, and rash.
+ Less than 1% of the cases are severe and result in neurological disease when the central nervous system is affected.
+ People of advanced age, the very young, or those with immunosuppression, either medically induced, such as those taking immunosuppressive drugs, or due to a pre-existing medical condition such as HIV infection, are most susceptible.
+ The specific neurological diseases that may occur are West Nile encephalitis, which causes inflammation of the brain, West Nile meningitis, which causes inflammation of the meninges, which are the protective membranes that cover the brain and spinal cord, West Nile meningoencephalitis, which causes inflammation of the brain and also the meninges surrounding it, and West Nile poliomyelitis—spinal cord inflammation, which results in a syndrome similar to polio, which may cause acute flaccid paralysis.
+Aujeszky's disease, usually called pseudorabies in the United States, is a viral disease in swine that has been endemic in most parts of the world.
+ It is caused by "Suid herpesvirus 1" (SuHV1).
+ Aujeszky's disease is considered to be the most economically important viral disease of swine in areas where hog cholera has been eradicated.
+ Other mammals, such as humans, cattle, sheep, goats, cats, dogs, and raccoons, are also susceptible.
+ The disease is usually fatal in these animal species bar humans.
+Rabies in Haiti is a viral disease rabies that causes an often fatal inflammation of the brain in humans and other mammals, such as dogs and mongooses in Haiti.
+ The term "rabies" is derived from a Latin word that means "to rage".
+ That is because animals with rabies sometimes act as if they are angry.
+ Early symptoms can include fever as well as tingling at the site of exposure, followed by one or more of the following symptoms: violent movements, uncontrolled excitement, fear of water, an inability to move parts of the body, confusion, and loss of consciousness.
+ Once symptoms appear, the result is nearly always death.
+ The time period between contracting the disease and the start of symptoms is usually one to three months; however, this time period can vary from less than one week to more than one year.
+ The time is dependent on the distance the virus must travel to reach the central nervous system.
+Vaccine efficacy is the percentage reduction of disease in a vaccinated group of people compared to an unvaccinated group, using the most favorable conditions.
+ Vaccine efficacy was designed and calculated by Greenwood and Yule in 1915 for the cholera and typhoid vaccines.
+ It is best measured using double- blind, randomized, clinical controlled trials, such that it is studied under “best case scenarios.”
+ Vaccine effectiveness differs from vaccine efficacy in that vaccine effectiveness shows how well a vaccine works when they are always used and in a bigger population whereas vaccine efficacy shows how well a vaccine works in certain, often controlled, conditions.
+ Vaccine efficacy studies are used to measure several possible outcomes such as disease attack rates, hospitalizations, medical visits, and costs.
+Rabies is a viral disease that causes inflammation of the brain in humans and other mammals.
+ Early symptoms can include fever and tingling at the site of exposure.
+ These symptoms are followed by one or more of the following symptoms: violent movements, uncontrolled excitement, fear of water, an inability to move parts of the body, confusion, and loss of consciousness.
+ Once symptoms appear, the result is nearly always death.
+ The time period between contracting the disease and the start of symptoms is usually one to three months; however, this time period can vary from less than one week to more than one year.
+ The time is dependent on the distance the virus must travel to reach the central nervous system.
+BCG disease is an adverse effect of the Bacillus Calmette-Guérin vaccine.
+ The vaccine contains living "Mycobacterium bovis" BCG, and in BCG disease, the bacterium causes a disease in persons vaccinated.
+ Between 2000 and 2006, several hundred children in Finland had serious adverse events from the vaccine, including osteitis and osteomyelitis, disseminated (usually fatal) BCG infection, arthritis, and lymph node abscesses.
+ Four deaths were registered in the official adverse event register, and while in only two cases a clear causal link was considered to be in place, two other cases were diagnosed with a disease which in scientific peer-reviewed articles (case descriptions) have been mistakenly first made, and afterward have been noticed to be disseminated BCG infections.
+ One death with a causal link considered established by the adverse event monitoring agency was vaccinated with pre-August 2002 vaccine (Evans), while the three other registered deaths were with the new post-August 2002 vaccine (BCG Vaccine SSI).
+Infectious hematopoietic necrosis virus (IHNV), is a negative-sense single-stranded, bullet-shaped RNA virus that is a member of the "Rhabdoviridae" family, and from the genus "Novirhabdovirus".
+ It causes the disease known as infectious hematopoietic necrosis in salmonid fish such as trout and salmon.
+ The disease may be referred to by a number of other names such as Chinook salmon disease, Coleman disease, Columbia River sockeye disease, Cultus Lake virus disease, Oregon sockeye disease, Sacramento River Chinook disease and sockeye salmon viral disease.
+ IHNV is commonly found in the Pacific Coast of Canada and the United States, and has also been found in Europe and Japan.
+ The first reported epidemics of IHNV occurred in the United States at the Washington and the Oregon fish hatcheries during the 1950s.
+Marek's disease is a highly contagious viral neoplastic disease in chickens.
+ It is named after József Marek, a Hungarian veterinarian.
+ Marek's disease is caused by an alphaherpesvirus known as 'Marek's disease virus' (MDV) or "Gallid herpesvirus 2" (GaHV-2).
+ The disease is characterized by the presence of T cell lymphoma as well as infiltration of nerves and organs by lymphocytes. Viruses "related" to MDV appear to be benign and can be used as vaccine strains to prevent Marek's disease.
+ For example, the related Herpesvirus of Turkeys (HVT), causes no apparent disease in turkeys and continues to be used as a vaccine strain for prevention of Marek's disease (see below).
+ Birds infected with GaHV-2 can be carriers and shedders of the virus for life.
+ Newborn chicks are protected by maternal antibodies for a few weeks.
+ After infection, microscopic lesions are present after one to two weeks, and gross lesions are present after three to four weeks.
+ The virus is spread in dander from feather follicles and transmitted by inhalation.
+Experimental autoimmune encephalomyelitis, sometimes experimental allergic encephalomyelitis (EAE) is an animal model of brain inflammation.
+ It is an inflammatory demyelinating disease of the central nervous system (CNS).
+ It is mostly used with rodents and is widely studied as an animal model of the human CNS demyelinating diseases, including multiple sclerosis and acute disseminated encephalomyelitis (ADEM).
+ EAE is also the prototype for T-cell-mediated autoimmune disease in general.

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -27,6 +28,7 @@ class CommunitySummary:
     entity_count: int
     edge_count: int
     entity_names: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
@@ -78,10 +80,12 @@ def build_community_prompt(
 
     edge_lines = []
     for edge in edges[:max_edges]:
+        triple_id = str(edge.get("triple_id") or "").strip()
         subject = edge.get("subject", "?")
         predicate = edge.get("predicate", "RELATED_TO")
         obj = edge.get("object", "?")
-        edge_lines.append(f"- {subject} --{predicate}--> {obj}")
+        prefix = f"[{triple_id}] " if triple_id else ""
+        edge_lines.append(f"- {prefix}{subject} --{predicate}--> {obj}")
     if len(edges) > max_edges:
         edge_lines.append(f"- ... and {len(edges) - max_edges} more relationships")
 
@@ -108,6 +112,100 @@ Generate a comprehensive summary of this community. Your response MUST be valid 
 }}
 
 Respond with ONLY the JSON object, no additional text."""
+
+
+def split_summary_sentences(summary: str) -> list[str]:
+    """Return sentence-like claims that should carry source evidence."""
+    text = str(summary or "").strip()
+    if not text:
+        return []
+
+    punctuated = [
+        match.group(0).strip()
+        for match in re.finditer(r"[^.!?。！？\n]+[.!?。！？]", text)
+        if match.group(0).strip()
+    ]
+    if punctuated:
+        return punctuated
+
+    return [line.strip("- \t") for line in text.splitlines() if line.strip("- \t")]
+
+
+def build_summary_sentence_evidence(summary: str, edges: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Bind each summary sentence to source triples from the community.
+
+    The matcher prefers triples whose endpoint or predicate text appears in the
+    sentence, then falls back to the full community edge set so no generated
+    sentence is left without an auditable source trail.
+    """
+    sentences = split_summary_sentences(summary)
+    triple_ids = [_edge_triple_id(edge) for edge in edges]
+    triple_ids = [triple_id for triple_id in triple_ids if triple_id]
+    if not sentences or not triple_ids:
+        return []
+
+    bindings: list[dict[str, Any]] = []
+    for index, sentence in enumerate(sentences):
+        matched = _match_sentence_edges(sentence, edges)
+        evidence_triple_ids = matched or triple_ids
+        source_evidence = [
+            source
+            for edge in edges
+            if _edge_triple_id(edge) in evidence_triple_ids
+            for source in [_edge_source_evidence(edge)]
+            if source
+        ]
+        bindings.append(
+            {
+                "sentence_index": index,
+                "sentence": sentence,
+                "evidence_triple_ids": evidence_triple_ids,
+                "source_evidence": source_evidence,
+            }
+        )
+    return bindings
+
+
+def _edge_triple_id(edge: dict[str, Any]) -> str:
+    return str(edge.get("triple_id") or "").strip()
+
+
+def _match_sentence_edges(sentence: str, edges: list[dict[str, Any]]) -> list[str]:
+    sentence_lower = sentence.lower()
+    scored: list[tuple[int, str]] = []
+    for edge in edges:
+        triple_id = _edge_triple_id(edge)
+        if not triple_id:
+            continue
+        terms = (
+            str(edge.get("subject") or ""),
+            str(edge.get("object") or ""),
+            str(edge.get("predicate") or "").replace("_", " "),
+        )
+        score = sum(1 for term in terms if term.strip() and term.lower() in sentence_lower)
+        if score > 0:
+            scored.append((score, triple_id))
+    if not scored:
+        return []
+    best_score = max(score for score, _triple_id in scored)
+    return [triple_id for score, triple_id in scored if score == best_score]
+
+
+def _edge_source_evidence(edge: dict[str, Any]) -> dict[str, str]:
+    evidence_text = str(edge.get("evidence") or edge.get("text") or "").strip()
+    triple_id = _edge_triple_id(edge)
+    if not evidence_text or not triple_id:
+        return {}
+
+    source = {
+        "triple_id": triple_id,
+        "text": evidence_text,
+    }
+    for key in ("source_file", "source_page", "source_chunk_id"):
+        value = str(edge.get(key) or "").strip()
+        if value:
+            source[key] = value
+    return source
 
 
 def _call_llm(llm_client: Any, prompt: str) -> str:
@@ -209,6 +307,14 @@ def summarize_communities(
                 entity_count=len(entities),
                 edge_count=len(edges),
                 entity_names=[e["name"] for e in entities],
+                metadata={
+                    "evidence_triple_ids": [
+                        _edge_triple_id(edge)
+                        for edge in edges
+                        if _edge_triple_id(edge)
+                    ],
+                    "sentence_evidence": build_summary_sentence_evidence(parsed["summary"], edges),
+                },
             )
             summaries.append(summary)
             logger.info(
@@ -232,6 +338,7 @@ def summarize_communities(
                     "summary": s.summary,
                     "entity_count": s.entity_count,
                     "edge_count": s.edge_count,
+                    "metadata": s.metadata,
                 }
                 for s in summaries
             ],

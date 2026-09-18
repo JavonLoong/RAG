@@ -1,0 +1,17 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt  building up the ability to think about the bridge, because without that, you can't actually deploy at the levels to make a difference. 
+
+And that's one of the reasons, like, I'm firmly a believer that we need societal kinds of regulation -- and I'll use that abstractly, rather than government -- so that we can actually advance the inter -- the development of these things.  
+
+KEVIN SCOTT: I think we all have very concrete roles that we can play in it.  But like, the thing that I think we technology folks, like, have a special duty and obligation to-- and you inherently get this, like, you've been doing this since the very beginning -- is like, all of us every day should be asking, like, how is it that the thing that I'm doing right now is going to positively accrue to the overall social good.  Like, if you can't answer that question in an affirmative way, then maybe you're doing the wrong damn thing.
+
+danah boyd:  Right.  No, I agree, and I think this is also where I'm a big believer in putting yourself in networks where this is in conversation.  So like, one of the things that really struck me, especially when I was, you know, doing old dev days, you can imagine the positiveness, but you actually need people around you who are thinking about it, and how to implement, which is, like, everything from business to policy, etc.  
+
+You need people around you saying, "And what if this goes wrong?"  You need to be doing this in networks, in communities, and you need to be thinking with all of the different, affected communities, or the people that you're trying to really engage and create possibilities, because they need part of that conversation. 
+
+And I think, you know, one of the weirdest things right now, as I'm, you know, trying to do this exercise in coordination around differential privacy, it's like the technology will get there, hopefully as fast as we need it to. But it will get there.  
+
+But we need that buy-in process. We need people understanding it.  We need people really embracing and figuring out how to make it work, or we're going to end up in a weird moment where we have this beautiful object sitting on a shelf that we're going to look back, you know, 15 years, and go, "We had it.  Why didn't we put it out there?"  
+
+And so, that's where it's like, as you're thinking about the goodness, think not just about, like, the goodness, you know, of that, but like, how to actually build your teams and your communities in ways that actually can make this really be part of it.
+
+And I'll say, one of the most powerful things that I learned from an old mentor is that there is nothing more successful than getting

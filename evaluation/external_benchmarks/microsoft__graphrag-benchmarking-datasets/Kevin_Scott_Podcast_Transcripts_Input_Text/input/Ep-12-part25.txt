@@ -1,0 +1,38 @@
+Ep-12.txt  accomplish big things. 
+And like you're at Sequoia, which is like one of the top venture capital firms in the world. So, 
+like, what's interesting right now? 
+BILL COUGHRAN: Well, there's clearly a lot of interest in software around machine learning. 
+I think that there's a bunch of companies trying to create tooling or do vertical applications. 
+I think there aren't very many companies proposing to do platforms because you've got 
+TensorFlow, PyTorch, and other things in the market from companies that have, obviously, 
+much larger resources than you can mount from a startup. 
+But the sort of machine learning software and getting machine learning that's usable and
+digestible by a broad community is very hard to do. And I think there are some interesting ideas 
+and companies around that. 
+There's a lot of interest in processor technology both for machine learning, but also I'm starting 
+to see some companies that are talking about rethinking more server processors more generally 
+and so forth. And so, I think there's a lot of that. 
+Those are harder companies I think for venture capital just because it requires hundreds and 
+millions of dollars of investment rather than you know tens of millions of dollars of investment. 
+So, I think -- but I see interest in that area. 
+There's a lot of interest in quantum computing, which is -- you know, people will debate whether 
+it's about to go commercial or whether it's still going to be research for a few more years. It feels 
+to me like we're on the cusp of a bunch of things right now in that area. Those are very 
+interesting. 
+And then there are interesting companies in storage and networking and so forth, but I think the 
+big things have been processors, machine learning, and then quantum are areas that I think are 
+particularly interesting. 
+KEVIN SCOTT: And the processor trend, aside from the machine learning stuff, so like we're 
+seeing with distributed systems, right now that like architecturally, like one way to compose 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+19
+these things now is streams and stream processors, which are going to have different compute 
+requirements than normal sorts of processors. 
+There's also like this interesting thing where you sort of reach your sort of power saturation point 
+with transistors for logic, but you haven't yet for memory cells.
+BILL COUGHRAN: Yeah, I think there's tradeoffs now that people are rethinking about --
+between you know actual logic-type processing versus memory, what kind of embedded memory 
+do you want, what kind of memory structures, you know, there's obviously new kinds of memory
+coming into the market that don't require DRAM refreshes, but are faster, that's another area that 
+may be interesting.

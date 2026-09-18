@@ -84,6 +84,28 @@ def _call_llm(llm_client: Any, prompt: str) -> str:
     raise TypeError("LLM client must be callable or expose generate/complete/invoke.")
 
 
+def _community_summaries_as_context(summaries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return community summaries as retrieval context without LLM map calls."""
+    partial_answers: list[dict[str, Any]] = []
+    for summary in summaries:
+        if not isinstance(summary, dict):
+            continue
+        answer = str(summary.get("summary") or summary.get("description") or "").strip()
+        if not answer:
+            continue
+        partial_answers.append(
+            {
+                "community_id": summary.get("community_id"),
+                "title": summary.get("title", ""),
+                "entity_count": summary.get("entity_count", 0),
+                "answer": answer,
+                "source_evidence": _summary_source_evidence(summary),
+                "context_only_summary": True,
+            }
+        )
+    return partial_answers
+
+
 class GlobalSearchOrchestrator:
     """Orchestrates global search using map-reduce over community summaries.
 
@@ -122,6 +144,7 @@ class GlobalSearchOrchestrator:
         *,
         level: int = 0,
         context_only: bool = False,
+        stream_callback: Any | None = None,
     ) -> GlobalSearchResult:
         """Execute a global search over community summaries.
 
@@ -129,6 +152,7 @@ class GlobalSearchOrchestrator:
             question: The user's question.
             level: Community hierarchy level to search.
             context_only: If True, return partial answers without final synthesis.
+            stream_callback: Optional callback func(current: int, total: int, pa: dict) for streaming progress.
 
         Returns:
             GlobalSearchResult with the final answer and metadata.
@@ -151,12 +175,27 @@ class GlobalSearchOrchestrator:
 
         # Limit to max_communities (sorted by entity_count, largest first)
         summaries = summaries[: self.max_communities]
+        total_communities = len(summaries)
+
+        if context_only:
+            partial_answers = _community_summaries_as_context(summaries)
+            if stream_callback:
+                for i, partial_answer in enumerate(partial_answers, start=1):
+                    stream_callback(i, total_communities, partial_answer)
+            return GlobalSearchResult(
+                question=question,
+                answer="",
+                communities_searched=len(summaries),
+                communities_relevant=len(partial_answers),
+                partial_answers=partial_answers,
+                context_only=True,
+            )
 
         # MAP phase: generate partial answers from each community
         partial_answers: list[dict[str, Any]] = []
         relevant_count = 0
 
-        for summary in summaries:
+        for i, summary in enumerate(summaries, start=1):
             map_prompt = self.map_prompt.format(
                 title=summary.get("title", ""),
                 summary=summary.get("summary", ""),
@@ -167,33 +206,29 @@ class GlobalSearchOrchestrator:
                 response = response.strip()
 
                 if response == "NOT_RELEVANT" or not response:
+                    if stream_callback:
+                        stream_callback(i, total_communities, None)
                     continue
 
                 relevant_count += 1
-                partial_answers.append(
-                    {
-                        "community_id": summary["community_id"],
-                        "title": summary.get("title", ""),
-                        "entity_count": summary.get("entity_count", 0),
-                        "answer": response,
-                    }
-                )
+                pa_dict = {
+                    "community_id": summary["community_id"],
+                    "title": summary.get("title", ""),
+                    "entity_count": summary.get("entity_count", 0),
+                    "answer": response,
+                    "source_evidence": _summary_source_evidence(summary),
+                }
+                partial_answers.append(pa_dict)
+                if stream_callback:
+                    stream_callback(i, total_communities, pa_dict)
             except Exception as exc:
                 logger.error(
                     "Map step failed for community %s: %s",
                     summary["community_id"],
                     exc,
                 )
-
-        if context_only:
-            return GlobalSearchResult(
-                question=question,
-                answer="",
-                communities_searched=len(summaries),
-                communities_relevant=relevant_count,
-                partial_answers=partial_answers,
-                context_only=True,
-            )
+                if stream_callback:
+                    stream_callback(i, total_communities, None)
 
         # REDUCE phase: synthesize partial answers
         if not partial_answers:
@@ -234,3 +269,39 @@ class GlobalSearchOrchestrator:
             communities_relevant=relevant_count,
             partial_answers=partial_answers,
         )
+
+
+def _summary_source_evidence(summary: dict[str, Any]) -> list[dict[str, Any]]:
+    metadata = summary.get("metadata")
+    if not isinstance(metadata, dict):
+        return []
+
+    sources: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    sentence_bindings = metadata.get("sentence_evidence")
+    if not isinstance(sentence_bindings, list):
+        return []
+
+    for binding in sentence_bindings:
+        if not isinstance(binding, dict):
+            continue
+        sentence_index = binding.get("sentence_index")
+        for source in binding.get("source_evidence") or []:
+            if not isinstance(source, dict):
+                continue
+            text = str(source.get("text") or source.get("evidence") or "").strip()
+            triple_id = str(source.get("triple_id") or "").strip()
+            if not text:
+                continue
+            key = (triple_id, text)
+            if key in seen:
+                continue
+            seen.add(key)
+            item = dict(source)
+            item["text"] = text
+            if triple_id:
+                item["triple_id"] = triple_id
+            if sentence_index is not None:
+                item["sentence_index"] = sentence_index
+            sources.append(item)
+    return sources

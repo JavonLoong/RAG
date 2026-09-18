@@ -1,0 +1,17 @@
+Ep-53_Behind_the_Tech_Kevin_Scott_Podcast_with_Adrian_Tchaikovsky.txt  of grounding it in a database of medical facts, are actually more accurate than a human who also has, you know, faulty memory and, you know, weird recall mechanisms and whatnot.  
+ 
+But, you know, they’re just a whole bunch of things people are going to do with this technology that is hard for us to imagine. And it’s one of the reasons why I think it’s so interesting to have folks like you thinking about it, because, you know, your job is speculating in, like, really comprehensive ways about what the future is going to look like.  
+ 
+I was sort of wondering, like, you know, along those lines, like, what your… like, do you have any predictions about where you think things are going? 
+ 
+ADRIAN TCHAIKOVSKY: I mean, looking at the… I mean, it’s worth noting, the old – the old science fiction writers are generally not terribly good at telling you what will happen in the future, but they’re very good at commenting on what is happening now. And with that in mind, I think the problem we’re going to see with this sort of in inverted commas “AI style program” is: it is very good at certain tasks. It is not, like I say, it is not very good without a very sort of specialist handling system, good at other tasks, which require awareness of context, because it has literally no awareness of context.  
+ 
+But what it is also very good at is producing a vast quantity of whatever you want, very, very economically. And because of that, it’s going to get used in all sorts of circumstances where it honestly doesn’t belong. It’s going to get used to write journalistic articles by the tens of thousands. And some of those may well – you know, hopefully, the majority of those may well end up being accurate because of the dataset, because the datasets that they are drawing on basically, sort of will bottleneck it into accuracy. But that’s not necessarily guaranteed.  
+ 
+And certainly, whenever you’re writing an article on something where there is a difference of opinion, I think that it’s a profoundly dangerous thing to just sign over to an AI.  
+ 
+KEVIN SCOTT: Yeah. 
+ 
+ADRIAN TCHAIKOVSKY: But obviously, you know, online journalism is a game of tens of thousands of articles with clickbait headlines desperately trying to get people to click on the link to read them. And it’s going to cost a fraction of the cost to just get your program to write them all, and not really care whether they are accurate or not.  
+ 
+And so, I think there’s going to be a… in the simple kind of field of meaningful information, which is kind of a field that has been under attack for a while now, anyway, that is going to get vastly more problematic,

@@ -1,0 +1,14 @@
+EP-04_ Behind_the_Tech_Kevin Scott_Podcast_with_Judy Estrin.txt : Compare string. That nobody had ever put in a microprocessor. I was very lucky to be in an environment of -- that notion of it's not so much interdisciplinary, but the different perspectives and the strength of having software and hardware designers working together. This is one of the early examples of the abstraction of how do you abstract, and one of the benefits of doing it. 
+KEVIN SCOTT: Yeah. 
+JUDY ESTRIN: Because it just made things like that so much easier. 
+KEVIN SCOTT: Yeah. And, you know, now it's just incredible to think about where the abstractions are. 
+JUDY ESTRIN: Right. 
+KEVIN SCOTT: You can, with a few lines of code, maybe no code at all, you can go to a cloud provider and click a few checkboxes and have petabyte-scale data storage system deployed planet wide that can do tens of millions of transactions per second, and build your application on top of this. 
+So, on the one hand, I think the abstractions are absolutely beneficial. You don't want everybody all the way back, you know, at the dawn of time having to write assembly language for their apps. But being able to punch past those abstraction boundaries when you need to and to be able to think holistically about these systems I think is still just as important as ever. 
+JUDY ESTRIN: We do realize that there's a huge amount of power in some of these systems that we are making -- enabling people to use who don't understand the power of it. There are some abstractions that maybe you shouldn't do, because if you understand how a system works, you understand how it can go wrong. And then you're a little bit more careful in terms of how you deploy it. 
+And we look at cars and how cars have evolved and where you can fix things, where you can't, and let's take self-driving cars out for a minute. When we let somebody get behind the wheel and yield the power of a machine that can do wonders, and do harm, we train them. They get a license. We could abstract brakes and putting your foot on the gas even more than we do, and we don't for a reason, because there are consequences if you don't understand a little bit about those trade-offs. 
+KEVIN SCOTT: Yeah. 
+JUDY ESTRIN: And so, I worry, especially with cloud computing, that we can get to a place where that -- we unleash technology without people having to have an understanding of the consequences. 
+KEVIN SCOTT: Yeah. 
+JUDY ESTRIN: And the stuff that's gone on about facial recognition. We really need to think about how we communicate those implications. 
+KEVIN SCOTT: Yeah. There's also this impetuousness to young engineers sometimes, where you'll just sort of disregard a

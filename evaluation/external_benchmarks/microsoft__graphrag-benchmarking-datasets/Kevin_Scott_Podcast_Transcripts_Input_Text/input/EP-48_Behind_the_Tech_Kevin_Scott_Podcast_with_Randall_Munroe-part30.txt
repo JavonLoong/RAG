@@ -1,0 +1,31 @@
+EP-48_Behind_the_Tech_Kevin_Scott_Podcast_with_Randall_Munroe.txt ALL MUNROE: Yeah, yeah, and – and – and anything where you’re trying to – to do a long, you know, deep exposure of the sky, you’ve got to build sky tracking equipment and use software that was written by someone in like 1993 and is unchanged since then. It’s a – that’s – that’s a fun, technical rabbit hole, if you’re inclined to go down those.
+
+KEVIN SCOTT: Yeah, super fun. 
+
+Well, thank you so much for taking the time to talk with us today, and –
+
+RANDALL MUNROE: No, thanks for having me.
+
+KEVIN SCOTT: and Moreover, thank you for doing what you do. Like I think it’s an incredible, generous service you’re doing for the world.
+
+RANDALL MUNROE: No, well, thank you. I mean, it’s been a lot of fun to chat about this. I appreciate the fun questions. 
+
+KEVIN SCOTT: Awesome. 
+
+CHRISTINA WARREN: Okay, what a great conversation with Randall Munroe. There were so many good tidbits there. I have to start off, my mind was blown that he is the second most famous comic who was a physics major born on October 17. Like that, that blew my mind.
+
+KEVIN SCOTT: Yeah, mind blown. 
+
+CHRISTINA WARREN: Completely mind blown. And – and I am a Mike Judge fan and – and huge Mike Judge fan, huge fan of King of the Hill, and, you know, Silicon Valley and Beavis and Butthead and all that stuff, but I had no idea that they – like that he’s –
+
+KEVIN SCOTT: Don’t forget Idiocracy.
+
+CHRISTINA WARREN: Idiocracy, yes, Office Space. You know, he’s great. Idiocracy, which did predict basically. Anyway. 
+
+But the fact that like, they’re, you know, he’s not the only kind of comic physics, you know, physics major, physicist turned comic is so interesting. 
+
+But, uh, you know, wanted to kind of get your perspective. You talked a lot about this. I don’t know if he would classify himself this way. I think I would. Like, he’s – he’s, I think, a generalist who knows a lot about a lot of things. 
+
+And I think that that means that his approach of being able to write his comic and write his books, to kind of explain and go into these areas is really profound, because, as we were talking about earlier, he can create these comics strips that – these panels that, you know, apply to a large swath of people, even though we feel it’s individualized. But he can do that on just so many different topics. So interesting.
+
+KEVIN SCOTT: Yeah, I think it’s a – it is a

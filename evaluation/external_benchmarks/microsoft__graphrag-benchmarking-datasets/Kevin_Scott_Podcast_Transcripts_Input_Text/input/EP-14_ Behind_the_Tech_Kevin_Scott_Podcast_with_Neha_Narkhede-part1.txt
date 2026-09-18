@@ -1,0 +1,16 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt ../NEHA NARKHEDE: So you know, why we wanted to open source it is this was an observation we made is, you know, this trend that you know technology companies are going to essentially be defined in software, you know, not just use more software, but literally all the actions and decisions in a company happen through software.  It's going to be a trend.  
+[MUSIC]
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+[MUSIC]
+CHRISTINA WARREN:  Hello and welcome to Behind the Tech.  I'm Christina Warren, Senior Cloud Advocate at Microsoft.
+KEVIN SCOTT:  And I'm Kevin Scott.
+Today, our guest is Neha Narkhede, cofounder and CTO of Confluent, one of the initial authors of Apache Kafka and a former colleague of mine.
+CHRISTINA WARREN:  And, you know, Neha is on a Forbes list of the top 80 self-made women in America.  And this is actually kind of an amazing list.  It includes women in sports and TV and music.  Beyoncé is on this list, Serena Williams and Oprah are on this list.  But it also has a lot of women in tech and in business like Sheryl Sandberg, who's the COO at Facebook, and Safra Catz from Oracle and Marissa Mayer and a number of other women in -- in tech and business.
+And I think it's so cool that women in tech are counted among some of the most successful entrepreneurs in the country. And I'm really curious to hear about Neha and how she got to where she is today.
+KEVIN SCOTT:  Yeah, I mean, it's no surprise to me at all that Neha is on this sort of list.  It may actually be the closest I'm ever going to get to Beyoncé is my association with Neha.
+But, you know, I got the privilege at LinkedIn of watching her develop as an engineer and as an engineering leader, and she's absolutely spectacular.  So, I'm just really excited to chat with her today and to have her share with everyone else like this really amazing and in some ways like an archetypical Silicon Valley tech industry story with everyone.  She's awesome.
+CHRISTINA WARREN:  All right, let's hear from Neha. 
+KEVIN SCOTT:  Awesome.
+[MUSIC]
+KEVIN SCOTT: 

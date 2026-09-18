@@ -1,0 +1,15 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt ups on a relational or NoSQL database, or you could wait for the end of day, where you can get like these slow, big, batch dumps and query them.  
+And if you think about a global business, what is even end of day?  And at the same time, our use of data was changing.  It wasn't just the reports that our employees and our exec team needed to look at, it was the problem that you mentioned, which is all this data that was being generated on the side, we wanted a way to take it and supply it to all the software that basically ran the business. 
+You know, every user action we wanted to make a decision on, every user experience, we wanted to customize instantly, not a couple times a week, which is what we were doing. 
+We started by just looking at existing systems, if you remember.  It was trying out MQs and looking into why they didn't scale.  We invited folks from Scribe, you know, all these different log -- logging systems, and trying to see if we could turn that into a real-time thing.  And what we realized is it's a fundamental architectural flaw at the heart of the system.  
+KEVIN SCOTT:  And one of the really interesting bits of genius I think about Kafka, like one of the things you all did especially well is -- and I think the reason that it's caught on so broadly and gets used for so many things is that you tried really hard to make as few assumptions as humanly possible about what was going to be producing data and what was going to be consuming it.  Because a lot of the failure of these other systems like Active MQ and like we had this thing inside the company called Data Bus -- 
+NEHA NARKHEDE:  Yes.  
+KEVIN SCOTT:  -- is that they made a bunch of assumptions about what it is that was producing the data and like all sorts of things like event ordering and -- 
+NEHA NARKHEDE:  Absolutely.  The GMS API -- 
+KEVIN SCOTT:  The more constraints that you added, like, the less utility you could get out of the messaging system as a whole, and it sort of restricted how it could be used and it made it cumbersome to reason about and to scale and to manage.  
+NEHA NARKHEDE:  Absolutely.  
+KEVIN SCOTT:  And like Kafka is really this brilliant piece of design because it's very, very easy to just take something that makes data and like write it into Kafka and then it's there for -- the producer doesn't have to think anything at all about the -- 
+(Crosstalk.) 
+KEVIN SCOTT:  -- about the consumers. 
+NEHA NARKHEDE:  Yes.  
+KEVIN SCOTT:  So, anybody can consume the data.  I mean, at LinkedIn now, like,

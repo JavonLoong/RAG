@@ -1,0 +1,25 @@
+Ep-53_Behind_the_Tech_Kevin_Scott_Podcast_with_Adrian_Tchaikovsky.txt  should get sorted out.  
+ 
+The thing that I worry about is, you know, because you’ll be able to put these things in feedback loops, if the objective of clickbait journalism is to get people to click on things, you could have an optimization cycle where you sort of say, model, generate whatever it is that someone is going to click on, and it will be able to do that better than a human being.  
+ 
+ADRIAN TCHAIKOVSKY: Yes, although –  
+ 
+KEVIN SCOTT: And like, that is a scary loop. (Laughter.) 
+ 
+ADRIAN TCHAIKOVSKY: The the logical corollary of the sort of model you’re talking about is that, well, actually we’re not going to be doing our own searching. We’re going to be getting our robot butlers, effectively, to do are searching for us based on our parameters.  
+ 
+And so, what all of those clickbait headlines will eventually be optimized for is there’ll be optimized for the robot butlers.  
+ 
+KEVIN SCOTT: Yeah. 
+ 
+ADRIAN TCHAIKOVSKY: And quite possibly, we would then, you know, if you ventured personally onto Google, you’d just see this field of links that made really zero sense at all, and possibly just literally had no recognizable language in it, because they were coded in a way to act as flytraps for the electronic search engines that everyone was then using to filter all the – I mean, you’d get this peculiar arms race, really, between the searchers and the searched. 
+ 
+KEVIN SCOTT: Yeah. 
+ 
+ADRIAN TCHAIKOVSKY: And you’d get a lot of – you know, you’d get the genuine sites trying to kind of show that they were genuine, and you would get an awful lot of mimicry, mimicry killers, really, like the flies that dress up as wasps, because they will be trying to look like the genuine thing in order to get your butler, so to speak, to click on them. 
+ 
+KEVIN SCOTT: Yeah, and the question there is whether or not that will be easier or harder to deal with than the current arms race that you already have. So, with, like – with search engines for the past 20 years, like, you also have search engine optimization where, you know, people who have some kind of economic interest in you clicking through to a particular search result do all sorts of crazy things to get their content featured highly for particular queries. 
+ 
+ADRIAN TCHAIKOVSKY: I mean, it’ll – whatever, whether it’ll be easier or harder, it will be the evolution cycle of what’s going on will be vastly faster. 
+ 
+KEVIN SCOTT: Correct.

@@ -1,0 +1,13 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt  were we were messing around with stuff, and we were listening to signal from the market and from users, right? 
+
+And that’s really the important thing, is, you know, this stuff in retrospect, 16 years later, looks super obvious, like, oh yeah, of course, collaborative documents and mobile and all this other stuff is obvious. But, like, it wasn’t at the time. It was super controversial. And  there are a bunch of reasons why stuff like that is controversial. You know, it’s not only that it’s just hard to implement, but there are also, like, kind of natural psychological reasons that people push back on stuff, right? 
+
+Like, you know, you also have to remember, like, in that era we were mostly on the desktop. The Internet was just kind of starting. And, you know, the idea was like, well, Microsoft has won this game. Like, Office is this giant thing with all these features, and they have this distribution channel, and software is just – software comes in boxes and that’s just how it is. 
+
+And so, like, this disruption of, like, we’re going to distribute differently, we’re going to focus on convenience instead of functionality, we’re going to kind of go down this different path, like, it was super controversial to – challenging to a lot of people’s worldview. And when you – when your worldview is challenged, you have this very stark binary choice that you have to make, which is I’m wrong or it’s wrong. Like, that’s, you know, something – either I was wrong about the world or, like, the world is right or, you know, this thing is wrong. 
+
+Like, and so, usually, people choose the thing, and humans are great at coming up with stories for why, whatever they want, right? Like, we all know this. So, like, if you want to think a thing is wrong, a new challenging thing that challenges your worldview, if you want to think something’s wrong, 100%, you will find a reason why that thing is wrong.
+
+I told you that, like, my founder said, like, “The browser won’t support it.” That’s a good example of that kind of story. But almost every new technology gets dismissed as a toy or impractical, or there’s no use for it, or whatever. Like, and I always feel like, you know, the right place to put yourself is the what if, not the why not right? Like, you have to ask the question of what if. Like, when you confront this thing and you see a bunch of problems with it, you don’t – why not is like, well, here’s all the why not? Here’s why it’s not going to work, right? Here’s the problems, all the problems I can see, the stories I can tell. 
+
+But the

@@ -1,0 +1,21 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt  mean, there is extra value there. 
+
+KEVIN SCOTT: Yep.
+
+DAVID BASZUCKI: And so, I think when people see this in the digital domain, sometimes they go, “Oh my gosh, that makes sense” and they lose track of the fact that in the real world, we already have had this forever. 
+
+So for us, it’s a really interesting opportunity. There’s – there are items on Roblox right now worth $20,000. You know, a Dominus Crown is very valuable. And when having that economy be resilient around that, it does logically start to open the opportunity that the trading doesn’t need to be on Roblox. There could be off-platform trading of those same things. We want to have a healthy economy that’s user generated with scarcity. So there is a big opportunity to make the value on Roblox liquid on and off of Roblox, which is something we’re looking at. 
+
+KEVIN SCOTT: So looking forward a bit into the future, like what are you most excited about right now? 
+
+DAVID BASZUCKI: Wow. We have, you know, some projects we’ve shared and then some that we haven’t that are all about keeping trying to innovate, really. I love some of the stuff we’ve shared. You know, we want everyone’s avatar to be fully UGC. People lose track of the fact that Roblox has gotten pretty far with a lot of the avatar tech still being controlled by us, unlike the 3D experience tech. So I think that’s just going to be very exciting when our creator community has full control of bodies, heads, faces, all the clothing, all of that, really excited.
+
+Our behind the scenes, you know, our core engine team and developer tooling team, we just have started shipping more and more technology where the Roblox cloud backend is accessible not just through Roblox studio, but just through any kind of web API with auth. 
+
+And so, an example we would like to get to is, you know, the data in your place or the persistent data, our devs can build their own tools to access it rather than using Roblox studios. 
+
+So we just – I was just this reading about this yesterday. All of the key value stores that our developers use in their experiences, they can access programmatically now. They can start building stuff on top of that rather than just through studios. So super fun stuff there. 
+
+I think we’re really getting into how do we do voice in a safe and civilized way because it’s ultimately a big part of what we’re going to do. Syncing facial animation, either automatically with the camera, with lip synching, is going to bring a next level of life to these platforms, as long as it’s once again done in a safe and secure way. So that’s, super interested about that. 
+
+Interested in ROS scale. Interested

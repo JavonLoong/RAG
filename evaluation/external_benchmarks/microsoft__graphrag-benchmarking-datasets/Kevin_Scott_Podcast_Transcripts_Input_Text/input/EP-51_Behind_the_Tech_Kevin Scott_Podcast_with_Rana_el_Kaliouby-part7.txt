@@ -1,0 +1,15 @@
+EP-51_Behind_the_Tech_Kevin Scott_Podcast_with_Rana_el_Kaliouby.txt , "I have, you know, an hour to kill, I’d love to meet some students." I raised my hand, of course, and I booked a 15-minute slot with her, which turned into 45 minutes. And I spent weeks preparing for that meeting. I was going to demo my technology and kind of – you know, I had all of these ideas, and we totally hit it off.
+
+And she said, you know, "I’d love to bring you on a postdoc in my group," and I remember saying, "Oh, my God, this is like a dream come true, but I have this husband who’s been waiting for me, for the past four years, back in Egypt, and I kind of need to go back."
+
+And she said, "That’s fine, just commute." So I started a four-year commute between Cairo and Boston. I would literally like spend a few weeks in Cairo and a few weeks in Boston, which is fun but also exhausting and not good for any marriage. That’s how I ended up at MIT, and then within a couple of years at the media lab, it was clear that we had a huge commercial potential for the technology, and we spun out.
+
+KEVIN SCOTT: Well, so let’s talk a little bit about, like the technology itself. So like I’m really intrigued by this idea of emotional AI, because – like one of the things that we think about all of the time in all of the infrastructure that we do, and all the work that we’ve done with OpenAI, and like our very strong conviction around how fast these systems are becoming very capable, is you do want them to be able to be really useful to human beings.
+
+I mean, one of the things that I wrote about in my book was this experience going to – back home to Rural Central Virginia, and I was talking to one of my friends who is the office administrator for a nursing home. And I talked a little bit about AI, and she’s like, "Yeah, I don’t know how AI would actually connect with the people in this home." It may be able to do a bunch of diagnostic things as well as a doctor, but like that’s not the important thing. The important thing is being able to be in the lives of these people in a way that they can connect with.
+
+So like, I think what you’re doing is very, very intriguing, so maybe talk a little bit about that and why you think it’s interesting.
+
+RANA EL KALIOUBY: Yeah, I mean, it’s exactly what your friend is saying. Like empathy and emotions are at the center of how connect and communicate as humans, and our emotional experiences drive our decision making, whether it’s a big decision or a small decision. It drives our learning, our memory. It drives this human connection. 
+
+It’s how we build trust, it’s everything, but if you look at

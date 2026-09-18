@@ -44,6 +44,7 @@ class EvidenceItem:
     subject: str | None = None
     predicate: str | None = None
     object_: str | None = None
+    valid_time: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         payload: dict[str, Any] = {
@@ -62,6 +63,7 @@ class EvidenceItem:
                 "subject": self.subject,
                 "predicate": self.predicate,
                 "object": self.object_,
+                "valid_time": self.valid_time,
             }
         return payload
 
@@ -116,7 +118,7 @@ class GraphRagQAOrchestrator:
         self.llm = llm
         self.prompt_builder = prompt_builder or build_default_prompt
 
-    def answer(self, question: str, *, top_k: int = 5, context_only: bool = False) -> GraphRagQAResult:
+    def answer(self, question: str, *, top_k: int = 5, context_only: bool = False, stream_callback: Any | None = None) -> GraphRagQAResult:
         question = (question or "").strip()
         if not question:
             raise ValueError(EMPTY_QUESTION_ERROR)
@@ -134,6 +136,7 @@ class GraphRagQAOrchestrator:
         # 2. Retrieve evidence selectively based on routing strategy
         text_evidence = []
         graph_evidence = []
+        global_source_evidence = []
         global_context = ""
 
         # Run text retriever for VECTOR_ONLY and LOCAL_SEARCH (and optionally GLOBAL)
@@ -144,25 +147,40 @@ class GraphRagQAOrchestrator:
                 for rank, item in enumerate(_as_items(text_raw), start=1)
             ]
 
-        # Run graph retriever for LOCAL_SEARCH
-        if route_strategy == "LOCAL_SEARCH":
+        # Run graph retriever for entity-local and corpus-global questions.
+        if route_strategy in ("LOCAL_SEARCH", "GLOBAL_SEARCH"):
             graph_raw = _call_retriever(self.graph_retriever, question, top_k)
             graph_evidence = [
                 _normalize_graph_evidence(item, rank=rank)
                 for rank, item in enumerate(_as_items(graph_raw), start=1)
             ]
 
-        # Run global search only for GLOBAL_SEARCH
-        if route_strategy == "GLOBAL_SEARCH" and self.global_searcher is not None:
+        # Include global community context when a global searcher is available,
+        # unless a router explicitly chose vector-only retrieval.
+        if route_strategy in ("LOCAL_SEARCH", "GLOBAL_SEARCH") and self.global_searcher is not None:
             try:
-                gs_result = self.global_searcher.search(question, context_only=True)
+                # A real global answer must run community map/reduce. Local and
+                # context-only requests can use stored summaries directly.
+                global_context_only = context_only or route_strategy != "GLOBAL_SEARCH"
+                # Use duck-typing for the search method call since stream_callback was just added
+                if "stream_callback" in inspect.signature(self.global_searcher.search).parameters:
+                    gs_result = self.global_searcher.search(
+                        question,
+                        context_only=global_context_only,
+                        stream_callback=stream_callback,
+                    )
+                else:
+                    gs_result = self.global_searcher.search(question, context_only=global_context_only)
+
                 if hasattr(gs_result, "partial_answers") and gs_result.partial_answers:
                     global_context = _format_global_context(gs_result)
+                    global_source_evidence = _global_source_evidence_items(gs_result)
             except Exception:  # noqa: BLE001
                 pass  # Gracefully skip if global search fails
 
-        context = build_context(question, text_evidence, graph_evidence, global_context)
-        citations = [item.to_dict() for item in [*text_evidence, *graph_evidence]]
+        graph_context_evidence = [*graph_evidence, *global_source_evidence]
+        context = build_context(question, text_evidence, graph_context_evidence, global_context)
+        citations = [item.to_dict() for item in [*text_evidence, *graph_context_evidence]]
 
         if context_only:
             return GraphRagQAResult(
@@ -175,13 +193,25 @@ class GraphRagQAOrchestrator:
             )
 
         prompt = self.prompt_builder(question, context, citations)
-        answer = _call_llm(self.llm, prompt, question=question, context=context, citations=citations)
+        
+        # 4. Generate and verify with self-correction loop
+        max_retries = 3
+        guard_result = None
+        for attempt in range(max_retries):
+            current_prompt = prompt
+            if attempt > 0 and guard_result and not guard_result.is_safe:
+                current_prompt += f"\n\nIMPORTANT CORRECTION: Your previous answer contained the following unverified claims: {', '.join(guard_result.hallucinated_claims)}. Please strictly remove these and base your answer ONLY on the provided evidence."
+                
+            answer = _call_llm(self.llm, current_prompt, question=question, context=context, citations=citations)
 
-        # 4. Verify answer if hallucination guard is present
-        if self.hallucination_guard is not None and answer:
-            guard_result = self.hallucination_guard.verify(answer, context)
-            if not guard_result.is_safe:
-                answer += "\n\n[System Warning]: Some claims in this answer might not be fully supported by the evidence: " + ", ".join(guard_result.hallucinated_claims)
+            if self.hallucination_guard is not None and answer:
+                guard_result = self.hallucination_guard.verify(answer, context)
+                if guard_result.is_safe:
+                    break
+                elif attempt == max_retries - 1:
+                    answer += "\n\n[System Warning]: Some claims in this answer might not be fully supported by the evidence: " + ", ".join(guard_result.hallucinated_claims)
+            else:
+                break
 
         return GraphRagQAResult(
             question=question,
@@ -230,6 +260,11 @@ def build_context(
     parts.append("## Graph retrieval evidence")
     if graph_evidence:
         for item in graph_evidence:
+            if item.source_type == "graph_community_source":
+                source = f" source={item.source}" if item.source else ""
+                community = item.metadata.get("community_id") or "unknown"
+                parts.append(f"[{item.citation_id}] community:{community}{source}\nEvidence: {item.text}")
+                continue
             triple = _format_graph_triple(item)
             score = f" confidence={item.score:.4g}" if item.score is not None else ""
             source = f" source={item.source}" if item.source else ""
@@ -255,9 +290,49 @@ def _format_global_context(gs_result: Any) -> str:
     return "\n\n".join(sections)
 
 
+def _global_source_evidence_items(gs_result: Any) -> list[EvidenceItem]:
+    items: list[EvidenceItem] = []
+    for partial_answer in getattr(gs_result, "partial_answers", []) or []:
+        if not isinstance(partial_answer, Mapping):
+            continue
+        community_id = str(partial_answer.get("community_id") or "")
+        title = str(partial_answer.get("title") or "")
+        for source in partial_answer.get("source_evidence") or []:
+            if not isinstance(source, Mapping):
+                continue
+            text = str(source.get("text") or source.get("evidence") or "").strip()
+            if not text:
+                continue
+            triple_id = source.get("triple_id")
+            metadata = {
+                "community_id": community_id,
+                "community_title": title,
+            }
+            if source.get("sentence_index") is not None:
+                metadata["sentence_index"] = source.get("sentence_index")
+            if triple_id:
+                metadata["triple_id"] = triple_id
+            source_file = source.get("source_file") or source.get("source")
+            items.append(
+                EvidenceItem(
+                    citation_id=f"C{len(items) + 1}",
+                    source_type="graph_community_source",
+                    rank=len(items) + 1,
+                    text=text,
+                    source=str(source_file) if source_file else f"community:{community_id}",
+                    metadata=metadata,
+                    raw_id=str(triple_id) if triple_id else None,
+                )
+            )
+    return items
+
+
 def _format_graph_triple(item: EvidenceItem) -> str:
     if item.subject or item.predicate or item.object_:
-        return f"{item.subject or '?'} --{item.predicate or 'RELATED_TO'}--> {item.object_ or '?'}"
+        base_triple = f"{item.subject or '?'} --{item.predicate or 'RELATED_TO'}--> {item.object_ or '?'}"
+        if item.valid_time:
+            return f"{base_triple} (Valid Time: {item.valid_time})"
+        return base_triple
     return item.text
 
 
@@ -463,6 +538,7 @@ def _normalize_graph_evidence(item: Any, *, rank: int) -> EvidenceItem:
     )
     score = _as_float(_lookup(item, "confidence", "score", "weight"))
     raw_id = _lookup(item, "id", "edge_id", "triple_id")
+    valid_time = _lookup(item, "valid_time", "timestamp") or metadata.get("valid_time")
     return EvidenceItem(
         citation_id=f"G{rank}",
         source_type="graph",
@@ -475,6 +551,7 @@ def _normalize_graph_evidence(item: Any, *, rank: int) -> EvidenceItem:
         subject=str(subject) if subject else None,
         predicate=str(predicate) if predicate else None,
         object_=str(obj) if obj else None,
+        valid_time=str(valid_time) if valid_time else None,
     )
 
 

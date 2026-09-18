@@ -1,0 +1,33 @@
+Ep-12.txt  user interface on a consumer device right now and it's going to be not too terribly 
+expensive in the not-too-distant future. Like, I'm going to be able to do this with 30 bucks' worth 
+of electronics and like the price of that's going down to two over the next few years, I would 
+imagine. 
+BILL COUGHRAN: I think you'll see that in a lot of consumer devices, but they'll be very 
+limited and narrow use cases. So --
+KEVIN SCOTT: Yeah. I just -- I'm just super excited about (laughter) about what's possible 
+there, so I want to get people inspired to do more. 
+BILL COUGHRAN: I think human interfaces that are voice driven and have some aspect of 
+computer vision is clearly where things are going. So --
+KEVIN SCOTT: Yeah, awesome. Well, thank you so much for taking the time to talk with us 
+today, Bill. It's been a pleasure. 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+21
+BILL COUGHRAN: It's been my pleasure to be here. Thank you for again for the invitation. 
+KEVIN SCOTT: Awesome. 
+CHRISTINA WARREN: Well, we hope you enjoyed Kevin's interview with Bill Coughran. 
+So, Kevin, one of the really interesting things that you and Bill were talking about is what was 
+old is kind of new again, and kind of how the tech that was -- the problems that we were trying to 
+solve in the '70s and '80s and even the '90s are now kind of coming back in vogue again. Why do 
+you think that it is that those problems are so relevant and that we're still going back and kind of 
+revisiting some of those ideas?
+KEVIN SCOTT: Yeah, it's amazing to me how cyclical technology is as a business. Like I've 
+been coding since I'm 12, I'm 47 now, so, you know, 35 years-ish of like paying very close 
+attention to what's happening in computing.
+And like just inside of like the 35 years like there have been multiple cycles where you'll like
+have this intense enthusiasm for a thing and then it will sort of fall a bit out of fashion, and then 
+the next thing comes in and you'll sort of forget temporarily all about the old stuff.
+You know, I think these older technologies that pop back up, it's almost a puzzle why they went 
+out of fashion in the first place. You know, it's like you look high performance computing for 
+instance, we were building in the '70s, '80s, and '90s like these very sort of idiosyncratic 
+supercomputers and very high performance machines that all were different

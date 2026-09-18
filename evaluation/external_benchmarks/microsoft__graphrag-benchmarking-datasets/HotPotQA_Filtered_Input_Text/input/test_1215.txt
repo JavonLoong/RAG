@@ -1,0 +1,40 @@
+Anneli Cahn Lax (23 February 1922, Katowice – 24 September 1999, New York City) was an American mathematician, who was known for being an editor of the Mathematics Association of America's New Mathematical Library Series, and for her work in reforming mathematics education with the inclusion of language skills.
+ Anneli Lax received a bachelor's degree in 1942 from Adelphi University and her doctorate in 1956.
+ She taught at New York University as a mathematics professor.
+ She was married to the mathematician, Peter Lax.
+Ivo M. Babuška (born March 22, 1926 in Prague) is a Czech-American mathematician, noted for his studies of the finite element method and the proof of the Babuška–Lax–Milgram theorem in partial differential equations.
+ One of the celebrated result in the finite elements is the so-called Ladyženskaja–Babuška–Brezzi (LBB) condition (also referred to in some literature as Banach–Necas–Babuška (BNB)), which provides sufficient conditions for a stable mixed formulation.
+ The LBB condition has guided mathematicians and engineers to develop state-of-the-art formulations for many technologically important problems like Darcy flow, Stokes flow, incompressible Navier–Stokes, nearly incompressible elasticity.
+ He is also well known for his work on adaptive methods and the "p"- and "hp"-versions of the finite element method.
+ He also developed the mathematical framework for the partition of unity methods.
+Peter David Lax (born 1 May 1926) is a Hungarian-born American mathematician working in the areas of pure and applied mathematics.
+ He has made important contributions to integrable systems, fluid dynamics and shock waves, solitonic physics, hyperbolic conservation laws, and mathematical and scientific computing, among other fields.
+ Lax is listed as an ISI highly cited researcher.
+Angela Steinmüller (born 15 April 1941 in Schmalkalden) is a German mathematician and science fiction author.
+ Together with her husband Karlheinz Steinmüller she has written science fiction short stories and novels that depict human development on a cosmic scale, grounded in an analysis of social structures and mechanisms.
+ Angela and Karlheinz Steinmüller were not only among the most widely read authors in the GDR, ranking at the top of a 1989 poll of most popular science fiction authors in the GDR, but their works continue to be republished.
+Vera T. Sós (born September 11, 1930) is a Hungarian mathematician, specializing in number theory and combinatorics.
+ She was a student and close collaborator of both Paul Erdős and Alfréd Rényi.
+ She also collaborated frequently with her husband Pál Turán, the analyst, number theorist, and combinatorist (the letter T in her name stands for Turán).
+ Until 1987, she worked at the Department of Analysis at the Eötvös Loránd University, Budapest.
+ Since then, she has been employed by the Alfréd Rényi Institute of Mathematics.
+ She was elected a corresponding member (1985), member (1990) of the Hungarian Academy of Sciences.
+ In 1997, Sós was awarded the Széchenyi Prize.
+James Macklin "Mac" Hyman (born 1950) is an applied mathematician formerly at Los Alamos National Laboratory and currently at Tulane University in the United States.
+ He received his undergraduate degree from Tulane University and his PhD in 1976 from NYU's Courant Institute of Mathematical Sciences under Peter Lax with thesis "The method of lines solution of partial differential equations".
+Thaleia Zariphopoulou (born 1962) is a Greek-American mathematician specializing in mathematical finance.
+ She is the Chair in Mathematics and the V. H. Neuhaus Centennial Professor of Finance at the University of Texas at Austin.
+ Her husband is Panagiotis E. Souganidis, the
+Humphrey Seymour Ramsay Critchley-Salmonson, born at Preston in Dorset on 19 January 1894 and died at Ottery St Mary, Devon on 24 April 1956, played first-class cricket intermittently over an 18-year period for Somerset.
+ He later played two first-class matches for Sir Julien Cahn's XI in Argentina.
+Kirsten Menger-Anderson (born December 6, 1969 in Santa Cruz, California) is an American fiction writer.
+ Her first book, a collection of linked short stories titled "Doctor Olaf van Schuler's Brain", was published by Algonquin Books in 2008.
+ A number of the collected stories have also appeared in literary journals, such as Ploughshares and the Southwest Review.
+ Menger-Anderson has a degree in Economics from Haverford College and an MA in English and creative writing from San Francisco State University.
+ She previously held positions at Salon.com and Wired.com.
+ Menger-Anderson currently lives in an old Victorian house in San Francisco with her husband and children.
+ Her grandfather is the mathematician Karl Menger.
+Burton Wendroff (born 10 March 1930) is an American applied mathematician and an Adjunct Professor at the Department of Mathematics and Statistics, University of New Mexico.
+ He is also a retired Fellow and Associate at the Los Alamos National Laboratory.
+ He is known for his contributions to the development of numerical methods for the solution of hyperbolic partial differential equations.
+ The Lax–Wendroff method for the solution of hyperbolic PDE was named after Peter Lax and him.

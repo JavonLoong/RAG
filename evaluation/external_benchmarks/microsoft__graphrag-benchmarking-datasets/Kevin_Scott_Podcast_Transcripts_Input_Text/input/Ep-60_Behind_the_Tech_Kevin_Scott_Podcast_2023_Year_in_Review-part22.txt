@@ -1,0 +1,15 @@
+Ep-60_Behind_the_Tech_Kevin_Scott_Podcast_2023_Year_in_Review.txt  driver distraction, and you know, if you’re texting while driving.
+Well, we can tell that, using computer vision, right? Look at your eyes, your head movements, and if you have a phone in your hand, drowsiness, intoxication, even. We can – we’ve started like doing a lot of research to detect that, using cameras, you know, optical sensors. So automotive is one area. 
+We can do advanced safety solutions. We can look at, like is there a child seat in the car, and an infant in it, and often – not often, but about 50 kids or so get forgotten in the car every year, and they die of heat, so that’s very fixable. We can fix that.
+Mental health is another space that I’m really fascinated by, that we know that there are facial and vocal biomarkers of mental health disease, depression, anxiety, stress, even Parkinson’s. So imagine if we – every time we hop in front of our computer, with people’s opt in, of course, we can kind of articulate your baseline, using machine learning.
+We know your baseline, and then if you start deviating from it, we can flag that to you, a loved one, or – you know, a psychiatrist. So I think there’s a lot of opportunity, but we’re missing the scale.
+
+CHRISTINA WARREN: Yeah, it’s definitely exciting to think about where we might be able to go with this idea of EQ.
+
+KEVIN SCOTT: Yeah, for sure.
+
+CHRISTINA WARREN: And so, that actually kind of makes me think about how connected to creativity so many of our guests have been, as we’ve kind of been going through this year in review. And so, let’s share a clip now from will.i.am. He talked about technology, and how it changed the music industry in a super, super interesting way.
+
+WILL.I.AM: Yeah, so imagine this is 1970, and you’re a drummer from a band that’s pretty popular. And you’re a drummer that’s coming up, and you have aspirations as a drummer. And then, like, there was a drum machine, but you weren’t really threatened by the drum machine, because it sounded like (doot-doot-doot). It didn’t really sound like drums. And then the ‘80s come around and the LINN-900, and it started sounding a little bit more realistic, but it was, like, stiff and robotic. And then Prince really, like, made some pretty awesome songs with the LINN-900. 
+
+And then the Akai MPC60 drum machine came, and you could sample live drums, and put the swing on it, and it kind of sounds realistic. And then 2000 comes around, you’re like, yo, fuck these drum machines, bro. Like, all the songs on the radio are

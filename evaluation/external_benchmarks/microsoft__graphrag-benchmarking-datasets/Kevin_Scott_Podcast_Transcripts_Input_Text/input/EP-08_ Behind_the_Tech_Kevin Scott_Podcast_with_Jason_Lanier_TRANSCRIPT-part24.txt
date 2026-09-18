@@ -1,0 +1,26 @@
+EP-08_ Behind_the_Tech_Kevin Scott_Podcast_with_Jason_Lanier_TRANSCRIPT.txt  from time to time.  And this goes -- this all started, because my first serious girlfriend was a daughter of the head of the Physics Department at Caltech.  So when I was a teenager, I was sort of hanging out here and I got an informal chance to learn directly from Feynman and Gell-Mann and all these amazing people.  And ever since -- 
+
+KEVIN SCOTT:  Which is insane.
+
+JARON LANIER:  Yeah, ever since then I've had this kind of -- so one of my best friends is this guy named Lee Smolin, who cofounded the loop quantum gravity approach to trying to find a unified theory, which is probably -- since string theory kind of burned itself out, it might be one of the most prominent ones found as an alternative.
+Anyway, so there's this thing in physics where we've always had pretty -- we want really simple equations to describe let's say fields in that we want them to have emergent behavior that's complicated enough to be reality.  But the thing is we've kind of burned -- it's kind of like in a house where you put all your mess in one room to pretend the house is clean.  So in string theory they tried to simplify some stuff and they ended up with this insane.
+
+KEVIN SCOTT:  Room full of mess.
+
+JARON LANIER:  Really messy room of like of like an unbounded number of possible -- this was a really messy room, the sort of range of possible string theories.  And it's kind of like playing whack-a-mole, when you try to -- you often end up creating this big mess in another corner when you're cleaning up one part of it. 
+
+KEVIN SCOTT:  Yeah, I think it's fantastic how broadly your mind wanders.  And with that I think we should wrap up.  Thank you.
+
+JARON LANIER:  Sure.
+
+KEVIN SCOTT:  Thanks so much, Jaron, for being on the podcast.
+
+JARON LANIER:  Delighted to be here.  Thank you for having me.
+
+KEVIN SCOTT:  Awesome.
+
+[MUSIC]
+
+CHRISTINA WARREN:  Well, thanks for joining us for Behind the Tech.  You just heard Microsoft CTO Kevin Scott speaking with Jaron Lanier.  So, what really struck me about that conversation was how far ahead some of the visions for virtual reality were, you know, decades ago and how similar those visions are to what we're actually seeing in the market now with both VR and with augmented reality. 
+
+KEVIN SCOTT:  Yeah, it's the -- it's this really fascinating thing with true visionaries like Jaron.  Like, he saw this thing, like, way, way, way, way before anyone else did, and it's not just the -- the vision of sort of seeing this thing that one day might

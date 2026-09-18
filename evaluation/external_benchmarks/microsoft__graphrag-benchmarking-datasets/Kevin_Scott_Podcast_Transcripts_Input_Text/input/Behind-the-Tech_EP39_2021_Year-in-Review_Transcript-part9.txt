@@ -1,0 +1,27 @@
+Behind-the-Tech_EP39_2021_Year-in-Review_Transcript.txt : I couldn’t not believe that I saw that in my lifetime, that capability. 
+
+KEVIN SCOTT: Yeah. I sort of wonder, like, whether or not these big, unsupervised language models right now, these transformer things that people are building, the models that come out of them, like, have such -- they’re just very large and, like, there’s not much. You sort of barely have, like, any signal in the parameters at all. It’s, like, just diffuse across the entire model. I just wonder, like, whether getting, like a vision model coordinated with training these things is going to be the way that, like, they more concisely learn. 
+
+FEI-FEI LI: Oh, I see. Well, yeah, I mean, human intelligence is very multi-modal. So, multi-modality is definitely not only complementary, but sometimes is more efficient.
+
+KEVIN SCOTT: Yeah. 
+
+FEI-FEI LI:  We should also just recognize that, by and large, these storytelling models are still fitting patterns. They lack the kind of comprehension, and abstraction and deep understanding that humans have. They can say, two people are sitting in a room having a conversation, but they lack the common-sense knowledge of the social interactions or, you know, why are we having eye contact, or whatever, right? So, there is a lot more deeper things going on that we don’t know how to do yet. 
+
+[MUSIC]
+
+CHRISTINA WARREN: That was Stanford researcher Dr. Fei-Fei Li talking about her organization AI4ALL. 
+
+Now let’s continue our conversation about AI with Sam Altman, who joined the show two years ago. Sam is the CEO of OpenAI and former president of Y Combinator.
+
+KEVIN SCOTT: Yeah, Y Combinator is one of the most successful, if not the most successful startup incubators in existence. And OpenAI is a really interesting model. It’s an AI research and deployment company with a mission of ensuring that AGI (artificial general intelligence) is safe and benefits all of humanity.
+
+CHRISTINA WARREN: And the recent news about OpenAI is that Microsoft announced in early November of 2021 the launch of the Azure OpenAI Service, which makes OpenAI’s machine learning models available on the Azure platform. 
+
+KEVIN SCOTT: Yeah, this is really exciting, because these models, like OpenAI’s GPT3, are incredibly difficult to train. So, having them behind an API, available on a cloud like Azure really helps democratize the power of those models, and gets it into the hands of people who can do the really interesting things with the models that the world needs them to do.
+
+CHRISTINA WARREN: Let’s listen to Kevin’s chat with Sam Altman.
+
+[MUSIC]
+
+KEVIN SCOTT: And like, one of the

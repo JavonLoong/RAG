@@ -1,0 +1,16 @@
+EP-21_ Behind_the_Tech_Kevin_Eric-Horvitz_Chief-Scientific-Officer_Microsoft.txt !”  And I’d go write everything down before I forgot. And, like, that is -- it is, like, I experience that sometimes as discomfort. So, I like totally understand what you’re saying about this. You know, like, sometimes maybe people experience a little bit of fear and anxiety when they are approaching an unknown. 
+
+ERIC HORVITZ: Right. And they have to get used to the notion that -- or get familiar with the idea that-- there are pleasurable bumps along the way, and a pop toward the end when you get near a solution. 
+
+You know, for me, it’s similar. Sometimes I’ll have a problem. I remember from my dissertation work, actually, at Stanford I was really at a time -- worrying about this tension between how do you do things formally with probability and decision theory when it’s intractable and when you needed this kind of reasoning to do some good work in high-stakes decision problems?
+
+And just being at loggerheads with the contradiction. I remember actually where I was at the moment. I was visiting my family and cleaning the garage. I’m not sure how they got me to do that on this day, but I actually had this image of looking at this, you know, stuff scattered throughout the garage, and in my mind seeing an interesting solution coming to the fore finally just out of the blue that became the kernel of what I ended up working on and the solution to this tension. 
+
+So, sometimes you get -- you might run these batch jobs which are just  tantalizing and in the background and they’re popping up when you’re driving the car or when you’re cleaning a garage. But you’re online and you’re sort of -- you know, a portion of your soul is really focused on getting to an answer continually. 
+
+
+KEVIN SCOTT: Yeah, and I think, you know, the other thing that I will say and then we should start talking about your trajectory a little bit more, but I think there is a very interesting thing about this whole phenomenon that you are describing, where you’ve got the discomfort of the unknown and this sort of tension between the thrill of discovery and the frustration of navigating a problem. 
+
+That you can get better at over time if you practice. So, like, the more you do it, the more that you understand that you are going to be able to get these little victories over the problem and, like, hopefully, be able to get to a good solution at the end of the day. And I think as you understand that, it makes you more -- not just willing, but eager to go seek these problems out because it really does become this amazing experience and, like, very rewarding. 
+
+ERIC HORVITZ: And I should say that it’s not all individual. As I’m thinking about the visceral sensations we have as we think about a problem or ask a question and then pursue and answer urgently or over time,

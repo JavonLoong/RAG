@@ -1,0 +1,16 @@
+EP-48_Behind_the_Tech_Kevin_Scott_Podcast_with_Randall_Munroe.txt , the examiner just asked the question, “Why is the sky blue?” And – and – and he answers, “Oh, God, that’s a – wait, I was prepared for all these specific – Rayleigh scattering.” And then the examiner was like, “Can you explain in more detail,” and then – and it’s like, “Ah, okay, yeah, it’s because of this interaction with the electrons, you know, as the photons move past the atoms.” “Can you explain in more detail?” And like two hours later, they’ve run through like half of modern physics just trying to answer these questions. 
+
+And I – and I like how really simple questions, you can kind of keep drilling into them and – and find more unanswered questions. Although one of my favorite things in – in the questions I answered in What If 2, I love when you run into a simple question, where we don’t really know the answer. 
+
+One of my favorite examples of that is, until very recently, we did not really understand why ice was slippery, and why ice skates worked. I feel like we’ve sort of finally nailed that one down. We’ve got a rough understanding of like, what happens on the surface of ice that makes metal skates slide on them – on it. But you know, the common explanation you would hear sometimes about like, oh, well the pressure of the skate causes the ice’s melting point to drop and makes a thin layer of water form, turns out like not to be true at all. And the actual mechanism is like a weird, complicated materials thing.
+
+KEVIN SCOTT: Interesting.
+
+RANDALL MUNROE: And – and there, you know –
+
+KEVIN SCOTT: And you explain that in the book?
+
+RANDALL MUNROE: I actually talked about that some in – in How To. In What If there’s – in What If 2, there – there are some fun questions like the – so there’s a –if you’ve ever tried taking a pair of pliers and crushing a sugar cube in the dark, there’s a flash of light. This – it – when I heard that, I was like, that can’t be true. And I like went and got a sugar cube and like pliers. And you have to let your eyes adjust to the dark first. And I like crushed the sugar, and I’m like, there’s not going to be a flash of light, and I crushed and there was a flash of light. Like, it was the weirdest thing. I was like, oh, this is – and it’s called tribo – triboluminescence is the – the term for it. 
+
+But – and so, someone asked like, how it looks like there’s a little spark. So how much sugar would I have to crush to create a lightning bolt, like with the power and brightness of a bolt of lightning. 
+

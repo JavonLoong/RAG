@@ -1,0 +1,17 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt And my partner, to his credence, Erik, said, “No, like we have to build the first moderation safety system right now” and that was a really good learning. We actually when there were four of us in the company, we were on a daily rotation where the four of us were running the moderation and safety queue and, you know, kind of getting a feel for this before we hired other people. So that learning came very early.
+
+And some other really good learnings we had early on, one of the learnings was very early on, back then there was this thing called forums which, you know, that’s very 19 – you know, early 2000s kind of stuff. We would – besides interacting with all the players, we’d interact on the forums. 
+
+And what was really a good learning was anything we did, half the people on the forums were going to quit Roblox. You know, I don’t care how good it was or how creative it was, when we added better animation, when we added clothing, there was just so much passion around the community, that anything, any enhancements from the retro original Roblox was like a big deal. So that was also good learning, to kind of balance the community.
+
+KEVIN SCOTT: And so, like I’m curious about that in particular. So, you know, obviously when you’re making an improvement or enhancement to the product and like half of the people are threatening to quit or are actually quitting, like if that happens monotonically, you go to zero. So you obviously –
+
+DAVID BASZUCKI: They never quit. They never quit. (Laughter.) 
+
+KEVIN SCOTT: Well, and I’m guessing that a bunch of these enhancements are like things that drove growth, right? 
+
+DAVID BASZUCKI: That’s – yes, they were always things that drove growth. It kind of highlighted the passion of the community and how much people wanted to be involved with that. 
+
+And that, I think, also taught us to respect the community and to start, you know, coming together with them, holding developer conferences, all of that. And we ended up with a really good balance where we have to drive part of the product with our own vision, and at the same time, we have to be listening to the community continuously, dev relations all over the place, because they’re very early warning thing around places where we may be going astray. So it’s a great balance. We have an amazing, passionate community and it has evolved into an amazing creator developer community as well. 
+
+KEVIN SCOTT: Well, so that’s a good segue into the next thing I wanted to chat about.  The thing that I didn’t understand about Roblox when I was first watching my kids play it is I didn’t understand that Roblox was a platform for creating games. I thought it was a game.

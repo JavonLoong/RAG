@@ -1,0 +1,19 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt  was aligned with my own.  
+NEHA NARKHEDE:  Yeah. 
+KEVIN SCOTT:  And that's how I chose -- one of the big, big factors in me choosing to go to LinkedIn.  
+NEHA NARKHEDE:  That is amazing.  So, you might have joined around the same time I joined.  
+KEVIN SCOTT:  Yeah, I was -- 
+NEHA NARKHEDE:  Or before that.  
+KEVIN SCOTT:  I started in the -- February of 2011. 
+NEHA NARKHEDE:  Got it, yeah.  I started end of 2009 -- 
+KEVIN SCOTT:  So, you were -- 
+(Crosstalk.) 
+NEHA NARKHEDE:  Maybe a year, yes.  
+KEVIN SCOTT:  You substantially preceded me.  (Laughter.)  But yeah, it's sort of fascinating.  So, like, tell me a little bit about what it was like working in that group, because one of the things that Igor always encouraged folks to do, and it sort of set part of like what is now a core value in LinkedIn engineering is like it's open source first. 
+NEHA NARKHEDE:  Yes.  
+KEVIN SCOTT:  Like, you actually have to have an excuse to say no to open sourcing something.  So, what was that like as an engineer?  
+NEHA NARKHEDE:  It was fascinating.  So, Igor was super supportive, very technical, and I was just basically extremely fortunate to land in his group.  So, I started on the search team, because I had a search background and I thought, you know, why not?  And you know, when I joined on the search team what I was doing more of was ETL and data pipeline stuff. 
+KEVIN SCOTT:  Yeah. 
+NEHA NARKHEDE:  And how to get data into all the search systems.  And I was doing less of, you know, deep distributed systems challenges, which is what I thought I would do on the team.  And so that's when I realized that our big problem as a company back then was actually data pipelines, right?  And that was the one thing that was at least slowing or stopping us from building these data-driven products at scale. 
+So, I started digging around, you know, I started talking to Chris Riccomini who was on the analytics side.  I talked to Jay, who was thinking about, you know, Hadoop adoption at LinkedIn.  And I asked him, like, hey, Jay, like, what is -- what is the biggest challenge you think we need to solve? 
+And he walked me through this data pipeline problem that he was thinking through and he said that, actually, you know, the main stuff is

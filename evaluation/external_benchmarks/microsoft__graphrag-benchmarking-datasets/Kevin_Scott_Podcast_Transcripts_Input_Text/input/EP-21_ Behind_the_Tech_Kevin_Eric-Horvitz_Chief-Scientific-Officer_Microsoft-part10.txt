@@ -1,0 +1,15 @@
+EP-21_ Behind_the_Tech_Kevin_Eric-Horvitz_Chief-Scientific-Officer_Microsoft.txt  physicist. 
+
+And at the same time, I started talking to Robert Isaacson, who was taking a biophysics perspective on brains, looking at limbic systems in rats. So I started talking to him, he persuaded me to work in his lab. I started looking at these living neural networks.
+
+And I started getting very interested in brains. I hadn’t really been thinking a lot about brains and minds since trying to build an electronic brain in first and second grade with peanut cans and springs and wires and clay and light bulbs. 
+
+So, right towards the senior year, I was trying to pull together my biophysics background, into looking at how brains work. I ended up reading a couple of books. One was Herb Simon’s book called Sciences of the Artificial, and another book was Michael Arbib’s book Brains, Machines, and Mathematics. And both were very motivating to me in terms of the questions that were being asked. And so, I ended up applying to graduate programs which combined neurobiology with an MD. I thought, “Why not get into the human -- have this human dimension to understanding the clinical worlds. Someday, we’ll understand brains.” So, I ended up getting a bunch of acceptances and had to choose among places that had more of a mix of things and flexibility around your degree, and other that would be very classical MD/PhD work, and very focused. And I ended up –on a set of intuitions—thinking through that Stanford might have more of the mix that I was looking for, but I wasn’t sure, because by the time I ended up going to grad school, I was really zooming toward computation at a time where you wouldn’t be thinking as an undergrad, you know getting into the ‘80s, about artificial intelligence. You’d be thinking about neurobiology, neuroscience, biophysics. 
+
+And so, when I hit Stanford, there I was interested in getting going on neurobiology, being thrown, believe it or not, into a medical school class with a cadaver, where I ran into some close colleagues who actually had similar interests to mine. 
+
+At Stanford, you can wander off to the main campus, which was just a bike ride away. So, I spent a lot of time in my first year taking classes in computer science, artificial intelligence, philosophy of mind, and cognitive psychology, along with the regular medical school classes. 
+
+And toward the second year I said, “You know something, I need to -- I don’t think neurobio is going to have the right mix for me in my pursuit of my core curiosities about what the freak was going on with minds, with human brains, and brains of vertebrates and other animals on the planet.”  
+
+And the fastest path to insights would be through computer science. And I remember one of the moments I was thinking about what I’d been doing in  my laboratory work that I became very good doing unit recordings

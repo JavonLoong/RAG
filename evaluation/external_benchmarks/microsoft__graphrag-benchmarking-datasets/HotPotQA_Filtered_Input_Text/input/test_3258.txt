@@ -1,0 +1,44 @@
+The UIC College of Pharmacy (UIC COP) is a public pharmacy school with two campuses located in Chicago and Rockford, Illinois.
+ It offers a four-year professional degree program that leads to the PharmD, the highest level of professional education in pharmacy, which is approved by the Accreditation Council for Pharmacy Education as the sole entry level degree for the profession.
+ Besides the professional degree, the College also offers programs leading to six master's degrees and four doctorate degrees, covering a spectrum of research areas within the pharmaceutical sciences.
+The Helene Fuld College of Nursing is an American private, nonsectarian institution of higher learning that offers associate and comprehensive baccalaureate science degrees as continuing education to Licensed Practical and Registered Nurses who aspire to elevate their academic and professional credentials.
+ The college is located in New York City in the East Harlem section of Manhattan in the Mount Morris Park Historic District at Marcus Garvey Park.
+ It was founded years ago – in 1945.
+Multi-level caches can be designed in various ways depending on whether the content of one cache is present in other level of caches.
+ If all blocks in the higher level cache are also present in the lower level cache, then the lower level cache is said to be inclusive of the higher level cache.
+ If the lower level cache contains blocks that are not present in the higher level cache, then the lower level cache is said to be exclusive of the higher level cache.
+ If the contents of the lower level cache are neither strictly inclusive nor exclusive of the higher level cache, then it is called non-inclusive non-exclusive (NINE) cache.
+The Helene Fuld Health Trust is the largest charitable trust in the United States devoted exclusively to supporting student nurses and nursing education.
+ The trust — which began as a foundation in 1935, but transferred its assets to the trust in 1969 — has provided grants, scholarships, and financial aid for the education, health, and welfare of student nurses.
+Platt College is a college located in Aurora, Colorado that serves students from all over the Denver Metro area.
+ Platt College offers only one degree program, a Bachelor of Science in Nursing (BSN) in 36 months.
+ Graduates of the School of Nursing at Platt College are awarded a Bachelor of Science in Nursing degree.
+ Following successful completion of the BSN curriculum, graduates apply to take the National Council Licensure Examination-Registered Nurse (NCLEX-RN®) through the State Board of Nursing.
+ Upon successful completion of the NCLEX-RN, a graduate of Platt College is then qualified to seek employment as a Registered Nurse (RN).
+The University of Nursing, Yangon (Burmese: သူနာပြု တက္ကသိုလ် (ရန်ကုန်) ] ; formerly The Institute of Nursing, Yangon) is a nursing university, located in Lanmadaw Township, Yangon, Myanmar.
+ It is one of three universities in the country that offers a four-year bachelor's degree program in nursing (i.e. B.N.Sc (Generic)).
+ The UON - Yangon also offers a master's degree program in nursing and diploma programs in dental, EENT, mental health, pediatrics, critical care, and orthopedics.
+ Moreover, there is a two-year B.N.Sc (Bridge) program for in-service nurses who have earned a nursing diploma.
+The Master of Science in Leadership (MSL) is a master's degree in leadership studies that is offered by a college of business.
+ It is an alternative to, not a substitute for, the traditional Master of Business Administration (MBA) degree.
+ The MSL degree requirements may include some business/management courses that are required in an MBA program.
+ However, this degree program concentrates heavily on leader-follower interactions, cross-cultural communications, coaching, influencing, team development, leading organizational changes, strategic thinking, project leadership, and behavioral motivation theories.
+ It does not concentrate on financial or quantitative analysis, marketing, or accounting which are common in MBA programs.
+ The degree program is appealing to businesspeople in well-established careers already.
+ The MSL degree is similar to the Master of Science in Organizational Leadership (MSOL) degree or the Master of Leadership Sciences degree offered by the National School of Leadership in India.
+The University of Nursing, Mandalay (also the Institute of Nursing, Mandalay; Burmese: သူနာပြု တက္ကသိုလ် (မန္တလေး) , ] ) is a university of nursing, located in Mandalay, Myanmar.
+ It is one of three universities in the nation that offers a four-year bachelor's degree program in nursing.
+ The university also offers a master's degree program in nursing.
+The Bachelor of Science in Nursing (BSN, BScN) also known in some countries as a Bachelor of Nursing (BN) or Bachelor of Science (BS) with a Major in Nursing is an academic degree in the science and principles of nursing, granted by an accredited tertiary education provider.
+ The course of study is typically three or four years.
+ The difference in degree designation may relate to the amount of basic science courses required as part of the degree, with BScN and BSN degree curriculums requiring completion of more courses on math and natural sciences that are more typical of BSc degrees (e.g. calculus, physics, chemistry, biology) and BN curriculums more focused on nursing theory, nursing process, and teaching versions of general science topics that are adapted to be more specific and relevant to nursing practice.
+ Nursing school students are generally required to take courses in social and behavioral sciences and liberal arts, including nutrition, anatomy, chemistry, mathematics, and English.
+ In addition to those courses, experience in physical and social sciences, communication, leadership, and critical thinking is required for a bachelor's degree.
+ BSN programs typically last 3-4 years.
+ With a BSN you can work in private medical and surgical hospital, a physician's office, public medical and surgical hospitals, home health care services, and nursing facilities.
+ Having a BSN can result in more opportunities and better salary than just an associate degree.
+Nurse education consists of the theoretical and practical training provided to nurses with the purpose to prepare them for their duties as nursing care professionals.
+ This education is provided to nursing students by experienced nurses and other medical professionals who have qualified or experienced for educational tasks.
+ Most countries offer nurse education courses that can be relevant to general nursing or to specialized areas including mental health nursing, pediatric nursing and post-operatory nursing.
+ Courses leading to autonomous registration as a nurse typically last four years.
+ Nurse education also provides post-qualification courses in specialist subjects within nursing.

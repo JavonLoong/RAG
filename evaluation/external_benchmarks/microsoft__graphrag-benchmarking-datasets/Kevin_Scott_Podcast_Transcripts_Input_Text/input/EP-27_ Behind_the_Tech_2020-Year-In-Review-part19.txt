@@ -1,0 +1,21 @@
+EP-27_ Behind_the_Tech_2020-Year-In-Review.txt  a craftsman and someone who would have been fascinated by AI.
+
+I mention this because, you know, the book is titled Reprogramming the American Dream, and you had your family and other families in mind.  What's involved in reprograming the American dream, and what do you mean by the American dream?
+
+KEVIN SCOTT:  So, I think that we have an opportunity with better investment in advance technology, and like making those investments in a way where they're accessible to as many people as humanly possible, to have people in rural and middle America have the opportunity to create really very interesting new businesses, that create jobs and economic opportunity, and that help them realize their creative vision.
+
+And that, you know, serves as a platform, in the same way that industrial technology serves as a platform for these communities to build their economies in the you know, in the early mid-20th century, that AI can have a similar sort of effect in these communities today.
+
+GREG SHAW:  Yeah, you offer a number of different suggestions related to education and skilling, and that sort of thing.  I'm curious, what would you say is your advice to young people who are might be growing up in rural central Virginia or Oklahoma, where I'm from? You know, how should they prepare for jobs of the future?
+
+KEVIN SCOTT:  Yeah.  I think, I've chatted with a bunch of people about this over the past few weeks, and you know, when I get this question about what we need to do to make AI accessible to those kids in rural and middle America, yeah, some of the things that we need to do are just very prosaic, I think.
+
+So, the tools themselves have never been more powerful.  Like the really interesting thing to me is that first machine learning project that I did, 16 years ago, now, required me to sit down with like a couple of graduate-level statistical machine learning textbooks, and a whole stack full of fairly complicated research papers.
+
+And then I spent six months writing a bunch of code, from scratch, to use machine learning to solve the particular problem I was trying to solve at the time.  
+
+If I look at the state of opensource software and cloud platforms, and just the online training materials that are available for free to everyone, a motivated high school student could do that same project that I did 16 years ago, probably in a weekend, using modern tools.
+
+And so, you know, I think that the thing that we really need to be doing is figuring out how to take these tools that are now very accessible, and like we shouldn't feel intimidated by them, in any shape, form or fashion, and figure out how to get those into high school curricula so that we are teaching kids in a project-oriented way, like how to use these tools to solve real world problems.
+
+I think getting kids those skills is super important.

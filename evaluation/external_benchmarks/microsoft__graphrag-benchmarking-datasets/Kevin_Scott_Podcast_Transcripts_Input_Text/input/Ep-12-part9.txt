@@ -1,0 +1,37 @@
+Ep-12.txt  modern software suffers from is I think people sometimes do not 
+spend enough time thinking about what the right abstractions are and how to make them very 
+simple. 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+7
+I think one of the things I've admired about Unix, which you can see in Linux today, is a lot of 
+the very low-level system calls that were introduced in Unix have stood the test of now multiple 
+decades because they were very thoughtful about what should be here and what shouldn't, and 
+they didn't add a lot of complexity or cross-functional capabilities. They were all pretty clear 
+interfaces. It's something a lot of modern software designers don't take the time and thought to 
+do it right. 
+KEVIN SCOTT: And how much of that do you think were the individuals and their tastes and 
+how much of it was just the constraints they were operating under? I mean, like obviously, like a
+lot of people at the time were operating under the same constraints and not all of them invented 
+Unix. But the constraints have to be useful, right? 
+BILL COUGHRAN: The constraints are useful, but it is true that we live in a much more 
+complicated world now. I think in the period where some of these early time-sharing systems 
+were built and a lot of the mini-computer work that then led to the personal computer work, you 
+know, people had glass teletypes, they were 24-by-80 character fixed-width kind of devices for 
+output, very simple input, and now everybody expects a lot of graphics, a lot of visuals. 
+I think just the human-computer interface stuff that we do is much more complicated. You're 
+right, I think the best systems designers know how to think about simplicity and scalability, but 
+our world has continued to get more complicated, so --
+KEVIN SCOTT: Yeah, it's like one of the most interesting tensions I think we have in modern 
+software engineering. 
+BILL COUGHRAN: Agree with that. 
+KEVIN SCOTT: So, you get access to this machine at a local university, like you continue to 
+get better and better programming. You go to college, you major in computer science? 
+BILL COUGHRAN: Well, I think like many entering freshmen at Caltech, at least in those 
+days, I wanted to be a physicist. I think probably about 90 percent of the incoming class at that 
+time wanted to be physicists. 
+KEVIN SCOTT: And was Feynman there at the time? 
+BILL COUGHRAN: Feynman was there. 
+KEVIN SCOTT: Okay, so that's a good motivator. 
+BILL COUGHRAN: Yeah. And I had the opportunity to meet with him a few times in the 
+years I

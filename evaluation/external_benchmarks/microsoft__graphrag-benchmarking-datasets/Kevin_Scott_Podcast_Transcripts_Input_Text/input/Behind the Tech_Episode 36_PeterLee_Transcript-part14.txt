@@ -1,0 +1,23 @@
+Behind the Tech_Episode 36_PeterLee_Transcript.txt  it looks like they’re really going to depend on things like deep neural nets in a really fundamental way. And thank god that people did stick to these ideas and were willing to experiment. 
+
+KEVIN SCOTT:  Yeah. You know, the really interesting things that wasn’t obvious to me, even when I started doing machine learning work in 2003 is – so I left graduate school where I was before I finished my dissertation, which was on dynamic binary translation. So I was doing a bunch of like deep systems-y stuff to try to figure out, like how much information you could recover from an executing stream of binary level instructions. You know, could you do alias analysis, like, with high enough precision that you can do any sort of like memory safety analysis at the binary level and like a whole bunch of other things like that. 
+
+And I stopped doing that and went to Google and pretty quickly was doing machine learning stuff, and I thought I would never, ever use any of my compiler domain specific knowledge ever again. 
+
+And like, one of the things that we’re seeing right now with the deep learning revolution is that there’s a whole bunch of really interesting algorithmic stuff happening in how you architect these neural networks and, you know, like what you do with data and whatnot, but the systems work that sits beneath it is very reminiscent, to me at least, of ‘90s era high performance computing and high performance systems software work because we’re building supercomputers to train these things, like it’s a bunch of numerical optimization. It’s, you know, like programing languages matter again and like, there are very interesting sorts of programing languages often built on top of other PLs. So I don’t know, it’s like, this is another lesson for me, like, you know, things just seem to come around. 
+
+PETER LEE:  Yeah. Well, it makes perfect sense because when we’re talking about machine learning and AI systems today, they are staged computations. You know, right at the highest level there is the training stage, and then there’s the infant stage. But then when you break those down, there are, you know, each of those big stages are broken down into smaller stages. 
+
+And whenever you have that staging, all of those sort of dynamic compilation ideas become super relevant. It becomes sort of the key to making them practical and affordable to run at all. 
+
+KEVIN SCOTT:  Yeah. And a bunch of these computations, like the way that you express some of them looks very functional and like there, a bunch of like functional language compilation ideas that are useful now as well. 
+
+PETER LEE:  Yeah.
+
+KEVIN SCOTT:  It’s really interesting. 
+
+PETER LEE:  It is. Well, in fact, it is functional. I mean – 
+
+KEVIN SCOTT:  It is.
+
+PETER LEE: 

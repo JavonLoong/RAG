@@ -1,0 +1,14 @@
+EP-03_ Behind_the_Tech_Kevin Scott_Podcast_with_Andrew Ng.txt  of our farm partners. The Microsoft Research has been working with the things that they're doing with AI machine learning and edge computing in this small organic farm in rural Washington state is absolutely incredible.
+They're doing all of this stuff with a mind towards "How do you take a small independent farmer and help them optimize yields, reduce the amount of chemicals that they have to use on their crop, how much water they have to use so you're minimizing environmental impacts and raising more food and doing it in this local way?" In the developing world, that means that more people are going to get fed. In the developed world, it means that we all get to be a little more healthy because the quality of the food that we're eating is going to increase. 
+There's just this trend, I think, right now where people are just starting to apply this technology to these things that are parts of human subsistence. Here's the food, clothing, shelter, the things that all of us need in order to live a good quality life. I think as I see these things and I see the potential that AI has to help everyone have access to a high quality of life, the more excited I get. I think in some cases, it may be the only way that you're able to deliver these things at scale to all of society because some of them are just really expensive right now. No matter how you redistribute the world's wealth, you're not going to be able to tend to the needs of a growing population without some sort of technological intervention.  
+CHRISTINA WARREN: See, I thought you were going to say something like, "Oh, we're going to be able to live in the world of Tron Legacy or the Matrix or whatever." Instead, you get all serious on me and talk about all the great things that in the world changing awesome things that are going to happen. I'm going to live in my fantasy but I like that there are very cool things happening.  
+KEVIN SCOTT: I did over my vacation read "Ready Player One" and despite its mild dystopian overtones.  
+CHRISTINA WARREN: It's a great book. I like the book.  
+KEVIN SCOTT: That's a damn good book. I was like, "I want some of this."  
+CHRISTINA WARREN: I'm with you. I'm with you. I was a little disappointed in the movie but I loved the book. Yeah. We can talk about this offline but we'll end this now.  
+KEVIN SCOTT: Yeah. Well, awesome Christina. I look forward to chatting with you again on the next episode.  
+CHRISTINA WARREN: Me too. I can't wait.  
+
+[MUSIC]
+
+KEVIN SCOTT: Next time on Behind the Tech, we're going to talk with Judy Estrin who is a former CTO Cisco, serial entrepreneur, and as a Ph.D. student,

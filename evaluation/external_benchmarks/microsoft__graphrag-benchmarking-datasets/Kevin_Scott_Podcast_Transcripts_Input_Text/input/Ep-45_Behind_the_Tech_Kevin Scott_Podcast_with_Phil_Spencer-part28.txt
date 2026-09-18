@@ -1,0 +1,15 @@
+Ep-45_Behind_the_Tech_Kevin Scott_Podcast_with_Phil_Spencer.txt  being a participant where you want to be a creator, too. 
+
+I wanted to ask you, you know, you and Phil talked about so many things and both of you, actually, I think are really interesting in that you have very strong, like, technical backgrounds in engineering things, but you’ve gone on to be managers and business leaders. What do you think – I guess, you know, speaking for yourself a little bit, and I know you know Phil, too, what was it – I guess, when did you decide that you wanted to kind of make that sort of transition into thinking not just about the things that you’re building, but also about the way that the businesses are run? 
+
+You know, Phil was talking about how thinking about the business model is a pretty core component to gaming, to building games, which I thought was interesting. But I’m curious from your perspective, like, when did you kind of make that switch in your mind from just wanting to focus on the tech to also thinking about some of the bigger business challenges and opportunities? 
+
+KEVIN SCOTT: Yeah, it was a really super clear moment for me. I just realized over a short period of time that the interesting things that we were making with technology were so complicated that there was zero hope that one person was going to build an interesting thing all by themselves. You know, it’s still possible. Like, single creators do all sorts of interesting things, but, like, a lot of the stuff that runs their world is the effort of lots and lots and lots of people working on things for long periods of time. 
+
+And I made my decision to become a manager when I was at Google. And I just sort of looked around me, and we were hiring all of these people. So, I helped start Google’s New York engineering office. Like, I think I was the 10th engineer there. Like, my boss, Craig Nevill-Manning, had actually started the office and I was there at the early stages. 
+
+And we were hiring all of these really great people from Bell Labs and from, you know, investment banks and whatnot. Just, and they were better engineers than I was. I was pretty good engineer. But, like, we were hiring people that were, like, so much technically better than I was and, like, some of the people who were my computer science heroes who worked at Bell Labs.
+
+And I decided that maybe the thing that I could do for them is to help organize the effort that they were undertaking so that they could have as much impact as humanly possible. And, like, it was just this crystal clear moment. And I was like, okay, well, I am probably going to be of more service to the people around me by helping to lead them than I will be trying to be one among them as, you know, just another engineer who’s not quite as good as they are. 
+
+CHR

@@ -1,0 +1,13 @@
+Ep-45_Behind_the_Tech_Kevin Scott_Podcast_with_Phil_Spencer.txt KEVIN SCOTT: What you just described is what… what I think folks are very lucky when they get to be a part of, like, particularly being in this intense environment where you’re working with really smart people. You are, you know, like, trying to push some technical frontiers forward. And, like, you all, hopefully, you’re sort of, you know, civil and compassionate or whatnot, but, like, you’re also just sort of moving at a rate where you just can’t not give people feedback to help them get better about what it is they’re doing. 
+
+PHIL SPENCER: That’s right.
+
+KEVIN SCOTT: And, like, the learning that you can get in an environment like that is unbelievable. 
+
+PHIL SPENCER: I remember this one story, and it’s somebody who I still work with. His name’s Kevin Gamble, and he was at the University of Washington when I was there, and we were interns at the same time, and we both still work together, what, 34 years later. How crazy is that? And he’s in the gaming org. 
+
+But we were on the CD-ROM, in the CD-ROM group, and there was a company called Amdek that made PC-based CD-ROMs. And they wanted to bundle DOS Bookshelf with this CD-ROM when people purchased it, but they didn’t have a device driver for the CD-ROM. So, and we literally had two months to port all of the old DOS Bookshelf to kind of a new display engine that we had, write the device driver, which was going to have some impact on how our data was structured on the CD. 
+
+And it was Kevin and I with some of the kind of platform people that would help. But as you said, kind of any opportunity to make us more efficient between each other, and not just in hours or lack of food, but actual the work that we’re doing, from a debugging standpoint, from a data prep standpoint, from a build timing standpoint, like, we were doing the math, because if we could cut an hour out of our build time, like, what would that mean in this hyper-concentrated, you’ve got two months to go get this thing done for, you know, some business deal at the end of it. 
+
+And those experiences were just so eye opening. And then when you finally get it done and, you know, it’s out in the market, I don’t know, probably 10,000 people use the thing in the end. But, you know, there was something magical about that feedback loop of actually seeing customers use the product that you had built that just, again, reinforced the whole loop about if you can spend more time in the creation on the things that really matter to your customers, you get so much more value out of that. And just looking at your production pipeline through that lens,

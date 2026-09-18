@@ -1,0 +1,21 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt  So, it was absolutely incredible, like, just procedurally generating textures, and landscapes and so on, like, programming for the art of it. 
+
+And so, you know, like, I mean, we’re recording this in 20… right at the end of 2022, very different world than it was 12 months ago. I sort of talked about the 2021 energy as sort of the tail end of the boom times. And now, there’s like a 2022 energy around us, which I think, whatever else it does, it really compels people to think more about what to do with limited resources, right? 
+
+And actually, this is so much better. Like, it’s not engineering, if you have infinite resources. That is called daydreaming. (Laughter.)
+
+KEVIN SCOTT: Yes.
+
+TOBI LÜTKE: It doesn’t qualify as engineering if you think, oh, we could refactor this to be so perfect, if you had unlimited time. And, you know, like, yeah, that – that’s hallucination. That’s not actually engineering. Engineering is getting the thing you want with what you’ve got. And I think that’s actually a very good energy to seep into our industry again, because we lost this a little bit. 
+
+KEVIN SCOTT: Yeah, I could not agree with you more, and I wish we had more time. We’re almost at the end. But, like, maybe very quickly, I could ask you... what outside – and so, I know, like, being CEO of, like, one of the fastest growing, most important e-commerce companies on the planet is a lot of work. But like, what outside of work do you do for fun? Like, what’s energizing you right now? 
+
+TOBI LÜTKE: Right now, I am playing Dwarf Fortress. (Laughter.) 
+
+KEVIN SCOTT: Nice.
+
+TOBI LÜTKE: But like, I mean, I tinker a lot. I mean, I have three kids; I have three boys, 12, 10 and eight. I – we’ll be on Replit together and using Kahoot – no, Kaboom, anyway, like, for making video games, which is really, really fun. And we fell in love with this open source fantasy console called TIC–80, which is, like, basically a computer like they were when I was a kid. 
+
+And so, these are fun things, but I tinker a lot. I love technology. I am as addicted as – although sometimes annoyed as everyone else – to Hacker News as I ever have been. I have a home lab at home that’s now has increasingly getting GPUs, because I’m doing more machine learning. It’s – it’s all built on Nix, because that seemed interesting to learn. 
+
+And, in fact, I

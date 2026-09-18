@@ -1,0 +1,18 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt 're here, you want to think about, you know, what would minimize your regrets in the next five years?  And so that's when I said, "Well, I really need to go dabble in the startup world and just figure it out.  And if it goes wrong, you know, I'm going to try and come back to a big company anyway." 
+KEVIN SCOTT:  Yeah. 
+NEHA NARKHEDE:  So back then, LinkedIn -- when I told my friends, you know, this thing about LinkedIn is people just didn't believe that it was going to be this big behemoth, right, of a company.  They just like -- it's going to be bought by Google and it's you know maybe going to be a midsized company. 
+And I was like, well, let me just interview there, right?  And so when I interviewed people, the people really convinced me, you know, the -- sort of the culture was of inclusion and when I interviewed at a couple other social network -- networking companies, I didn't sort of get that.  It was a lot of like you know nerdy sort of individualistic, move fast, and LinkedIn I think really convinced me that it was about this community and about the open source contribution.  And that's kind of why I weighed the risks and said, "This is the right company to take the leap with." 
+KEVIN SCOTT:  Yeah, and so when you joined LinkedIn, you went into Igor Perisic's group.  
+NEHA NARKHEDE:  Yes. 
+KEVIN SCOTT:  So Igor is now LinkedIn's Chief Data Officer and Igor worked for me for six years. 
+NEHA NARKHEDE:  Wow. 
+KEVIN SCOTT:  Yeah, and Igor is -- every time I -- every time I see him, I tell him he's my favorite Swiss PhD.  He is. (Laughter.) 
+NEHA NARKHEDE:  He is.  
+KEVIN SCOTT:  And he's also one of my favorite people in the -- in the whole world.  Like, Igor is a -- is like a wonderful brilliant technologist and genuinely good human being.  And he was running this group at the time that was called SNA -- 
+NEHA NARKHEDE:  SNA.  
+KEVIN SCOTT:  So, Search -- 
+NEHA NARKHEDE:  Network -- 
+KEVIN SCOTT:  -- Network and Analytics. 
+NEHA NARKHEDE:  That's right.  
+KEVIN SCOTT:  And so he owned the LinkedIn search engine, he owned all of the LinkedIn Graph stuff, which is, you know, sort of this foundational piece of infrastructure that made LinkedIn possible. 
+And then he owned all of the sort of analytics stuff, which were like all of the

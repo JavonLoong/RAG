@@ -1,0 +1,24 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt  too late for me, Fei-Fei.  (Laughter.) 
+FEI-FEI LI:  Well, if you don't try, how do you know?  (Laughter.)  
+KEVIN SCOTT:  Well, thank you -- 
+FEI-FEI LI:  Okay, thank you.  
+KEVIN SCOTT:  Thank you so much for being on the podcast. 
+
+FEI-FEI LI:  Thank you, Kevin. 
+KEVIN SCOTT:  And more importantly, like, thank you for, like, all of the great work that you're doing now trying to make AI more human -- 
+FEI-FEI LI:  And good luck to your book.  I look forward to that. 
+KEVIN SCOTT:  Yeah, thank you.  
+FEI-FEI LI:  All right.   
+KEVIN SCOTT:  Awesome.  
+FEI-FEI LI:  Thank you. 
+
+[MUSIC]
+
+CHRISTINA WARREN:  We hope you enjoyed Kevin's interview with Fei-Fei Li, researcher and professor at Stanford University.
+So, what I thought was really interesting about this conversation, Kevin, was she described her “convoluted,” in her words, entry point to computer science and that her passion for physics was kind of what led her into this.
+But this is something that we've kind of seen with other guests on the show where people have an untraditional way of getting into these subjects.
+KEVIN SCOTT:  Yeah, and it's really amazing, like a bunch of different people find their way to AI from a bunch of different paths, although the physics one is not that uncommon.
+CHRISTINA WARREN:  I was going to say, that's the one we've kind of heard again and again is that there's something to that, I guess.
+KEVIN SCOTT:  I've been thinking for a bit about this idea that maybe artificial intelligence for human intelligence is sort of the same thing as physics is for the natural world.  So, like when you think about physics, it's the way that a curious person can approach like all of these super-complicated phenomena that occur in the natural world.  And so, like you can describe them and like build these models up and then understand them and be able to predict them.
+And human intelligence is this super-duper complicated thing.  I'm sure that one of the first thoughts that human beings had as soon as we were self-aware and had language was like, what is this thing, like, you know, why do I have the thoughts that I have, like what is -- what's the nature of my own intelligence.
+And so, we've been thinking about it philosophically for thousands and thousands of years, just sort of the nature of human intelligence.  And we've been thinking about it scientifically for several hundred years now with increasingly better, you know

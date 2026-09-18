@@ -1,0 +1,27 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt  replacing you with a program anytime soon. 
+
+KEVIN SCOTT: I don’t know, maybe that would be nice. (Laughter.) 
+
+OREN ETZIONI: Well, what would be nice is to have a program that helps you, right? 
+
+KEVIN SCOTT: Yeah. 
+
+OREN ETZIONI: So, a lot of the work that we do and a lot of the work elsewhere really can think of AI as “augmented intelligence.” Would you be more effective at your job if you had a program that helped, I don’t know, prioritize your emails, right? That helps you author emails more efficiently or even papers, right, all that.  
+
+KEVIN SCOTT: Yeah, so let’s go back a minute. So, you found the TRS-80 when you were a kid, you read, you know, Godel, Escher, Bach like was that when you were in high school or in college? 
+
+OREN ETZIONI: In high school, yeah. 
+
+KEVIN SCOTT: Yeah, so as a high school student you read this, like, really formative book. And then did you major in computer science when you went to university?  
+
+OREN ETZIONI: Well, actually, it was – I’ll share with you a quick little anecdote. So, when I went to college, I went to what I like to call a small community college in Cambridge, Massachusetts, but it has the august name of Harvard. They didn’t have a computer science major. They had applied math. And they – their approach, I heard this from some of the professors there, was viewing computer science as more of a kind of applied discipline. They said, “Hey, we don’t have a major in automotive science, so why would we have a major in computer science?”
+
+And right around the time I was there, so this is 1992, 1993, right at the beginning of my time there, they realized, no, this isn’t a fad, and this isn’t some applied discipline, it’s quite transformative. Again, I wasn’t privy to those discussions as a freshman. All I know is they did create a new concentration, as it’s called. And being an eager beaver, I ran to Howard Lewis to declare my new concentration and he signed my paper form, if you can believe that. And he raised his head and he said, “Hey, you’re the first.” 
+
+So, I feel like my – I’ll go down in – 
+
+KEVIN SCOTT: Wow. 
+
+OREN ETZIONI: -in history as the first person to major in computer science at Harvard. 
+
+KEVIN SCOTT: That is so cool. That’s really, really neat. And so, what was that program like? Because I’m guessing, you know, given that it was early days, and

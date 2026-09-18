@@ -1,0 +1,50 @@
+Greenhouse Item was an American nuclear test conducted on May 25, 1951, as part of Operation Greenhouse at the Pacific Proving Ground, specifically on the island of Engebi in the Eniwetok Atoll in the Central Pacific Ocean.
+ This test explosion was the first test of a boosted fission weapon.
+ In this test deuterium-tritium (D-T) gas was injected into the enriched uranium core of a nuclear fission bomb.
+ The extreme heat of the fissioning bomb produced thermonuclear fusion reactions within the D-T gas, but not enough of them to be considered a full nuclear fusion bomb.
+ This fusion reaction released a large number of free neutrons, which greatly increased the efficiency of the nuclear fission reaction.
+ The explosive yield of this bomb was 45.5 kilotons, about twice the yield of the unboosted bomb.
+Nuclear fission products are the atomic fragments left after a large atomic nucleus undergoes nuclear fission.
+ Typically, a large nucleus like that of uranium fissions by splitting into two smaller nuclei, along with a few neutrons, the release of heat energy (kinetic energy of the nuclei), and gamma rays.
+ The two smaller nuclei are the "fission products".
+ (See also Fission products (by element)).
+A thermonuclear weapon is a second-generation nuclear weapon design using a secondary nuclear fusion stage consisting of implosion tamper, fusion fuel, and sparkplug which is bombarded by the energy released by the detonation of a primary fission bomb within, compressing the fuel material (tritium, deuterium or lithium deuteride) and causing a fusion reaction.
+ Some advanced designs use fast neutrons produced by this second stage to ignite a third fast fission or fusion stage.
+ The fission bomb and fusion fuel are placed near each other in a special radiation-reflecting container called a radiation case that is designed to contain x-rays for as long as possible.
+ The result is greatly increased explosive power when compared to single-stage fission weapons.
+ The device is colloquially referred to as a hydrogen bomb or, an H-bomb, because it employs the fusion of isotopes of hydrogen.
+The uranium hydride bomb was a variant design of the atomic bomb that was first suggested by Robert Oppenheimer in 1939 and advocated and tested by Edward Teller.
+ It used deuterium, an isotope of hydrogen, as a neutron moderator in a U235-deuterium compound.
+ The chain reaction is a slow nuclear fission (see neutron temperature).
+ Bomb efficiency is very adversely affected by the cooling of neutrons since it delays the reaction.
+A nuclear weapon is an explosive device that derives its destructive force from nuclear reactions, either fission (fission bomb) or from a combination of fission and fusion reactions (thermonuclear bomb).
+ Both bomb types release large quantities of energy from relatively small amounts of matter.
+ The first test of a fission ("atomic") bomb released an amount of energy approximately equal to 20,000 tonTNT .
+ The first thermonuclear ("hydrogen") bomb test released energy approximately equal to 10 e6tonTNT .
+ A thermonuclear weapon weighing little more than 2400 lb can release energy equal to more than 1.2 e6tonTNT .
+ A nuclear device no larger than traditional bombs can devastate an entire city by blast, fire, and radiation.
+ Since they are weapons of mass destruction, the proliferation of nuclear weapons is a focus of international relations policy.
+Lise Meitner ( ; 7 November 1878 – 27 October 1968) was an Austrian-Swedish physicist who worked on radioactivity and nuclear physics.
+ Otto Hahn and Meitner led the small group of scientists who first discovered nuclear fission of uranium when it absorbed an extra neutron; the results were published in early 1939.
+ Meitner and Otto Frisch understood that the fission process, which splits the atomic nucleus of uranium into two smaller nuclei, must be accompanied by an enormous release of energy.
+ This process is the basis of the nuclear weapons that were developed in the U.S. during World War II and used against Japan in 1945.
+ Nuclear fission is also the process exploited by nuclear reactors to generate electricity.
+Nuclear weapons possess enormous destructive power from nuclear fission or combined fission and fusion reactions.
+ Starting with scientific breakthroughs made during the 1930s, the United States, the United Kingdom and Canada collaborated during World War II in what was called the Manhattan Project to counter the suspected Nazi German atomic bomb project.
+ In August 1945, two fission bombs were dropped on Japan, standing to date as the only use of nuclear weapons in combat.
+ The Soviet Union started development shortly thereafter with their own atomic bomb project, and not long after that both countries developed even more powerful fusion weapons known as "hydrogen bombs".
+Otto Robert Frisch FRS (1 October 1904 – 22 September 1979) was an Austrian-British physicist.
+ With his collaborator Rudolf Peierls he designed the first theoretical mechanism for the detonation of an atomic bomb in 1940.
+Iodine-131 (I) is an important radioisotope of iodine discovered by Glenn Seaborg and John Livingood in 1938 at the University of California, Berkeley.
+ It has a radioactive decay half-life of about eight days.
+ It is associated with nuclear energy, medical diagnostic and treatment procedures, and natural gas production.
+ It also plays a major role as a radioactive isotope present in nuclear fission products, and was a significant contributor to the health hazards from open-air atomic bomb testing in the 1950s, and from the Chernobyl disaster, as well as being a large fraction of the contamination hazard in the first weeks in the Fukushima nuclear crisis.
+ This is because I-131 is a major fission product of uranium and plutonium, comprising nearly 3% of the total products of fission (by weight).
+ See fission product yield for a comparison with other radioactive fission products.
+ I-131 is also a major fission product of uranium-233, produced from thorium.
+Britain contributed to the Manhattan Project by helping initiate the effort to build the first atomic bombs in the United States during World War II, and helped carry it through to completion in August 1945 by supplying crucial expertise.
+ Following the discovery of nuclear fission in uranium, scientists Rudolf Peierls and Otto Frisch at the University of Birmingham calculated, in March 1940, that the critical mass of a metallic sphere of pure uranium-235 was as little as 1 to , and would explode with the power of thousands of tons of dynamite.
+ The Frisch–Peierls memorandum prompted Britain to create an atomic bomb project, known as Tube Alloys.
+ Mark Oliphant, an Australian physicist working in Britain, was instrumental in making the results of the British MAUD Report known in the United States in 1941 by a visit in person.
+ Initially the British project was larger and more advanced, but after the United States entered the war, the American project soon outstripped and dwarfed its British counterpart.
+ The British government then decided to shelve its own nuclear ambitions, and participate in the American project.

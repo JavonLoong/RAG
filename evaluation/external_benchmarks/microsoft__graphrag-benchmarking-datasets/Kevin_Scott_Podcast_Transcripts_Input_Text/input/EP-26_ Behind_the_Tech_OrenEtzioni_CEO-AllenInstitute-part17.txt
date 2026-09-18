@@ -1,0 +1,18 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt  productive using AI? And actually a callout to Microsoft Research and the work on the Microsoft Academic Graph. Right? We’ve made extensive use of those resources to build Semantic Scholar. 
+
+KEVIN SCOTT: That is awesome. So, I want to dig a little bit into the particulars of these big models that folks are building right now, particularly around language, although soon they’re going to be multimodal and you know sort of applied to a bunch of different domains. 
+
+But one of the interesting things that you all did. I think this was sometime the middle of last year was this system called Arista that is your test-taking system. And so you’ve been working on this for a really long time, and my understanding is that you were able to leverage some of these newer, self-supervised language models like Google’s BERT model in particular, to finally get the system to the point where it can reach parity with students at taking science tests. Talk a little bit about that.  
+
+OREN ETZIONI: Sure, so this really starts with the late Paul Allen’s vision. And he asked the question, “Gosh, if our technology is so great, be it computer science or AI, why can’t it pick up a book – a textbook – read the textbook and then answer the questions at the back of the book?”
+
+And he had a project even before Allen AI, which started in 2014, he had an earlier project that attempted to do that in various ways and were not successful. 
+
+So, when we launched Allen AI, AI2, in 2014, we said, “Why don’t we focus on grade school tests?” Let’s work our way up to reading a college-level biology textbook. 
+ 
+
+And the way we do that is we’re going to have the program take a fourth-grade science test, and eighth-grade test, take the SATs. And the beautiful thing about that is we can measure the system’s performance and we’ll take it on unseen tests, right, the same way, you know, the Regents New York State publishes a new test every year. 
+
+So, we’ll take an unseen test, the machine has never seen the test before. And like a kid, we’ll measure the performance. We’ll also compare it to human performance. We’ll have a benchmark where we say, “Okay, how is our progress going?”
+
+And I think that helped Paul Allen, reassure him that he could get a sense, right, without being there every minute, get a sense of our progress and that we were really making progress rather than building towers in the air. So that became our benchmark is these science tests. And we struggled mightily with these tests in part because it turns out the tests are written in English and they require a lot of background knowledge. They require understanding of various phrases. They have phrases in there like “the onset of winter.” What the heck is the onset of winter?

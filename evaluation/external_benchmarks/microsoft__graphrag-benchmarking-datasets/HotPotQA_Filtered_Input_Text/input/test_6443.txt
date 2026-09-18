@@ -1,0 +1,28 @@
+Meeting Resistance is a 2007 documentary film about the Iraq War.
+ The film presents the views of eleven Iraqi resistance fighters in the Adhamiyah neighborhood of Baghdad.
+ The film was directed by journalists Molly Bingham (United States) and Steve Connors (UK).
+Transmission control room (TCR) or ' transmission suite' , or ' Tx room' , or "presentation" is a room at broadcast facilities and television stations around the world.
+ Compared to a Master Control Room, it is usually smaller in size and is a scaled-down version of centralcasting.
+ The TX Room or Presentation suite are staffed 24x7 by Presentation Coordinators and Tape Operators and is fitted out with video play out systems often using server based broadcast automation.
+A distributed control system (DCS) is a computerised control system for a process or plant usually with a large number of control loops, in which autonomous controllers are distributed throughout the system, but there is central operator supervisory control.
+ This is in contrast to non-distributed control systems that use centralised controllers; either discrete controllers located at a central control room or within a central computer.
+ The DCS concept increases reliability and reduces installation costs by localising control functions near the process plant, with remote monitoring and supervision.
+Master control is the technical hub of a broadcast operation common among most over-the-air television stations and television networks.
+ It is distinct from a production control room (PCR) in television studios where the activities such as switching from camera to camera are coordinated.
+ It is also vastly different from the studio where the talent are located.
+ A transmission control room (TCR) is usually smaller in size and is a scaled down version of centralcasting.
+The cargo control room, CCR, or cargo office of a tankship is where the person in charge (PIC) can monitor and control the loading and unloading of the ship's liquid cargo.
+ Prevalent on automated vessels, the CCR may be in its own room, or located on the ship's bridge.
+ Among other things, the equipment in the CCR may allow the person in charge to control cargo and stripping pumps, control and monitor valve positions, and monitor cargo tank liquid levels.
+Production control is the activity of monitoring and controlling any particular production or operation.
+ Production control is often run from a specific control room or operations room.
+ With inventory control and quality control, production control is one of the key functions of operations management.
+In sound recording, talkback refers to the intercom system used in recording studios and production control rooms (PCR) in television studios to enable personnel to communicate with people in the recording area or booth.
+ While the control room can hear the person in the booth over the studio microphones, the person in the booth hears the control room over a PA, monitor speaker, in their headphones or Interruptible feedback (IFB) earpiece.
+ Take numbers, reference data, and sometimes count-ins or remarks are also "stamped" onto recordings through talkback, similar to a clapperboard.
+Control Room is a 2004 documentary film about Al Jazeera and its relations with the US Central Command (CENTCOM), as well as the other news organizations that covered the 2003 invasion of Iraq.
+ Made by Egyptian-American filmmaker Jehane Noujaim, the film was distributed by Magnolia Pictures (owned by 2929 Entertainment).
+A control room, operations center, or operations control center (OCC) is a room serving as a central space where a large physical facility or physically dispersed service can be monitored and controlled.
+ A control room will often be part of a larger command center.
+The production control room or studio control room (SCR) is the place in a television studio in which the composition of the outgoing program takes place.
+ An SCR is also often the acronym for the Satellite Control Room, from here TV feeds are sent to & received from the local Satellite used by the TV station

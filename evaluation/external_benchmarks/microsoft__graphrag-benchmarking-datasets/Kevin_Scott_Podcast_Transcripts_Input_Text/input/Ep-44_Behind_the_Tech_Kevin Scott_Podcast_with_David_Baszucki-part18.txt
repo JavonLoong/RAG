@@ -1,0 +1,17 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt  there’s going to be multiple stages, including the AOL, CompuServe stage, Prodigy stage, till finally we do get open standards, and there will ultimately be metaverse LAMP stacks and there’ll be metaverse, you know, open standards and all of that.
+
+I think what the tension is, and this was tried with VRML 15 or 20 years ago is, you know, HTML with some JavaScript has gotten us very far for 2D and a lot of people have standardized on this and it’s been wonderful. 
+
+The raw fabric of 3D, multiplayer, photorealistic simulation, including a cloud across many devices around the world, it’s just such a big technical problem to solve, that I think it’s going to be how do we solve this on the way to open standards, and solving this may be 10 or 20 years. So, you know, it’s just very early and I can’t predict when the full openness of these standards starts to arise. 
+
+KEVIN SCOTT: Yeah, and I think you’re totally right. I mean, the most interesting standards that we use right now to run the internet co-evolved with product. It wasn’t that they like came out in whole cloth and then we built everything on top of them. They sort of come along with each other. And I do think you’re right, we do feel pretty early to even have the idea that we’re going to go standardize all of this stuff. 
+
+But I tell you, I have been interested over the past couple of years with, you know, what people are doing with NFTs and like what, you know, property can look like in the digital domain, like how you go from a thing that had zero marginal reproduction cost and like you can still figure out how to make it scarce and rare and, you know, collectible and, you know, like a thing that, you know, a set of social contracts give value, you know, not that it’s like physically rare.
+
+DAVID BASZUCKI: Yeah, I think this is a huge opportunity and we’re seeing the natural evolution that in the digital domain, just as we have things of value in our physical world, it makes no sense that some of these things have so much value. Rare items, collectible items, nostalgic items, tradable items, they do have value besides the value of them as food or shelter. I mean, there is extra value there. 
+
+KEVIN SCOTT: Yep.
+
+DAVID BASZUCKI: And so, I think when people see this in the digital domain, sometimes they go, “Oh my gosh, that makes sense” and they lose track of the fact that in the real world, we already have had this forever. 
+
+So for us, it’s a really interesting opportunity. There’s – there are items on Roblox right now worth $20,000.

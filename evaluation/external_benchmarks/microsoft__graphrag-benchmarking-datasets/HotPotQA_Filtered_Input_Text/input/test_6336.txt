@@ -1,0 +1,41 @@
+The Association for Computing Machinery Special Interest Group on University and College Computing Services Hall of Fame Award was established by the Association for Computing Machinery to recognize individuals whose specific contributions have had a positive impact on the organization and therefore on the professional careers of the members and their institutions.
+The Gordon Bell Prize is an award presented by the Association for Computing Machinery each year in conjunction with the SC Conference series (formerly known as the Supercomputing Conference).
+ The prize recognizes outstanding achievement in high-performance computing applications.
+ The main purpose is to track the progress over time of parallel computing, by acknowledging and rewarding innovation in applying high-performance computing to applications in science, engineering, and large-scale data analytics.
+ The prize was established in 1987.
+ A cash award of $10,000 (since 2011) accompanies the recognition, funded by Gordon Bell, a pioneer in high-performance and parallel computing.
+Gloria Townsend is an American computer scientist and professor in the department of Computer Science at DePauw University in Indiana.
+ She is known for her work in evolutionary computation and her involvement with women in computing.
+ She has served on the Executive Committee of the Association for Computing Machinery (ACM) Council on Women in Computing.
+ She is the author of "One Hundred One Ideas for Small Regional Celebrations of Women in Computing".
+ In 2013, she received the Mr. and Mrs. Fred C. Tucker Jr.
+ Distinguished Career Award for notable contributions to DePauw through her commitments to students, teaching excellence, their chosen disciplines, and service to the University.
+SIGMOBILE is the Association for Computing Machinery's Special Interest Group on Mobility of Systems, Users, Data and Computing, which specializes in the field of mobile computing and wireless networks and wearable computing.
+George W. Brown (June 2, 1917 – June 20, 2005) was an American statistician, game theorist, and computer scientist known for his work and research in early computing machinery, game theory, mathematical logic, decision theory and administration.
+ He was a major force in the design and construction of early computing machinery, including the IAS machine, and subsequently directed the construction of JOHNNIAC.
+ His publication of EDUNET in 1967 presaged the details and rise of the early internet.
+ The concept of fictitious play in game theory is due to him.
+The Grace Hopper Celebration of Women in Computing (GHC) is a series of conferences designed to bring the research and career interests of women in computing to the forefront.
+ It is the world’s largest gathering of women in computing.
+ The Grace Hopper Celebration, named after computer scientist Grace Hopper, is organized by the Anita Borg Institute for Women and Technology and the Association for Computing Machinery.
+ The 2016 conference was held in Houston, Texas.
+Michael Randolph Garey is a computer science researcher, and co-author (with David S. Johnson) of "Computers and Intractability: A Guide to the Theory of NP-completeness".
+ He and Johnson received the 1979 Lanchester Prize from the Operations Research Society of America for the book.
+ Garey earned his PhD in computer science in 1970 from the University of Wisconsin–Madison.
+ He was employed by AT&T Bell Laboratories in the Mathematical Sciences Research Center from 1970 until his retirement in 1999.
+ For his last 11 years with the organization, he served as its Director.
+ His technical specialties included discrete algorithms and computational complexity, approximation algorithms, scheduling theory, and graph theory.
+ From 1978 until 1981 he served as Editor-in-Chief of The Journal of the Association for Computing Machinery.
+ In 1995, Garey was inducted as a Fellow of the Association for Computing Machinery.
+Anthony "Tony" Gervin Oettinger (born 29 March 1929 in Nuremberg, Germany) is a linguist and computer scientist best known for his work on information resources policy.
+ Oettinger coined the term “compunications” in the late 1970s to describe the combination of computer and telecommunications technologies that would take place as digital technologies replaced analog forms.
+ In 1973 he co-founded, with John LeGates, the Program on Information Resources Policy at Harvard University.
+ He served as a consultant to the President’s Foreign Intelligence Advisory Board and the National Security Council and NASA’s Apollo moon-landing program.
+ From 1966 to 1968 he was president of the Association for Computing Machinery (ACM).
+ He was recognized for his work in the intelligence community with the naming of the Anthony G. Oettinger School of Science and Technology Intelligence of the National Intelligence University.
+ He is Gordon McKay Professor of Applied Mathematics and Professor of Information Resources Policy, Emeritus, at Harvard.
+ACM SIGHPC is the Association for Computing Machinery's Special Interest Group on High Performance Computing, an international community of students, faculty, researchers, and practitioners working on research and in professional practice related to supercomputing, high-end computers, and cluster computing.
+ The organization co-sponsors international conferences related to high-performance and scientific computing, including the SC Conference (formerly ACM/IEEE Supercomputing Conference).
+ACM SIGAI is the Association for Computing Machinery's Special Interest Group on Artificial Intelligence (AI), an interdisciplinary group of academic and industrial researchers, practitioners, software developers, end users, and students who work together to promote and support the growth and application of AI principles and techniques throughout computing.
+ SIGAI is one of the oldest special interest groups in the ACM.
+ SIGAI, previously called SIGART, started in 1966, publishing the SIGART Newsletter that later became the SIGART Bulletin and Intelligence Magazine.

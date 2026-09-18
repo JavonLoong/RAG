@@ -1,0 +1,17 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt , which is doing this kind of thing. And they’re using, like, tools, which are, again, made by engineers for engineering problems, but actually generalized to people system cases in ways that I think isn’t clear to people. 
+
+So, for instance, you’ll like this because this is your thing. Probably the most sort of politics–inducing process that I’ve ever encountered in my company is headcount allocation. 
+
+KEVIN SCOTT: Yeah. (Laughter.)
+
+TOBI LÜTKE: Because it’s – you know, it’s very many – like, a lot of things aren’t zero sum games, and people just pretend they are. But some things are, you know, resources are finite, and – and it’s a rivalrous process, right? Like, and headcount allocation is clearly one of those. 
+
+So, we now in the same GitHub repository, we have a full, like stated via DSL. The principles by which Shopify does headcount, the decisions that are high level on, like, which groups should be which size. And then we run it through, I think it’s called Z3. It’s a SAT solver, like an optimized version of a SAT solver, which comes out of Microsoft Research. 
+
+And I read the entire doc on it. It talks about every single problem that you could imagine, except not headcount allocation. (Laughter.) So, it’s – certainly an off–label use, but, like, it’s magical. Like, it’s a magical tool applied in this space. 
+
+And it’s an incredibly complex problem, and it solves – like, suddenly, people don’t have to go fight. People just – I mean, people will make their cases on the principal level, and then we make decisions, which are committed. And then on CI, the thing reruns, and it generates data and a book. (Laughter.) And, like, everyone can read how many people they get. So, it’s really neat, if you can get there.
+
+KEVIN SCOTT: Yeah, I – I think, again, that’s super smart. Like, this is one of the very interesting things I think about, being in an organization and making decisions. Like, frequently, like, all of this stuff, that sort of politics and emotion and whatnot, goes away as soon as everybody understands what the rubric is for making the decision. And they believe that it’s fair, that the decision maker or the decision making process, like in the case, this SAT solver that you’re using, like, has seen all of the relevant data, when it is producing the solution, the decision. So, I think it’s clever. 
+
+The one thing that I will add, though, I agree with you that headcount allocation is mostly a zero sum problem. But there are ways to, like, make it slightly non zero in that I find

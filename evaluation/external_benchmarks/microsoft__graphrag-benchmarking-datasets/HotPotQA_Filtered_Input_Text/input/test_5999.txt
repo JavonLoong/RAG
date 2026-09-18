@@ -1,0 +1,67 @@
+"Electron Blue" is a song by American alternative rock band R.E.M. It was released as the third single from their thirteenth studio album "Around the Sun" on February 28, 2005.
+ Written by group members Peter Buck, Mike Mills and Michael Stipe, the song features a synthesizer-heavy arrangement.
+ Its lyrics describe an electric hallucinogenic drug made of light, a concept which was developed from a recurring dream of Stipe's.
+ Upon release as a single, "Electron Blue" peaked at numbers 43 and 26 on the singles charts of Ireland and the United Kingdom respectively.
+ Michael Stipe performed on the "Around the Sun" tour with a blue band painted across his eyes as a reference to the song, his personal favorite from "Around the Sun".
+Naturally occurring zirconium (Zr) is composed of four stable isotopes (of which one may in the future be found radioactive), and one very long-lived radioisotope (Zr), a primordial nuclide that decays via double beta decay with an observed half-life of 2.0×10 years; it can also undergo single beta decay, which is not yet observed, but the theoretically predicted value of t is 2.4×10 years.
+ The second most stable radioisotope is Zr, which has a half-life of 1.53 million years.
+ Twenty-seven other radioisotopes have been observed.
+ All have half-lives less than a day except for Zr (64.02 days), Zr (63.4 days), and Zr (78.41 hours).
+ The primary decay mode is electron capture for isotopes lighter than Zr, and the primary mode for heavier isotopes is beta decay.
+Stellacyanin is a member of the blue or type I copper protein family.
+ This family of copper proteins is generally involved in electron transfer reactions with the Cu center transitioning between the oxidized Cu(II) form and the reduced Cu(I) form.
+ Stellacyanin is ubiquitous among vascular seed plants.
+ It is a 20kDa protein whose structure is made up of beta strands forming 2 beta sheets to form a Greek key beta barrel with variable alpha helical structure.
+ The copper binding domain of the protein is located at the amino-terminal end, while the carboxyl-terminal end is rich in hydroxyproline and serine residues, typical of proteins associated with cell walls of plants.
+ In addition, it is also heavily glycosylated.
+ The copper is tetrahedrally coordinated by a cysteine, 2 histidines, and a glutamine residue.
+ The glutamine residue takes place of a methione ligand typically found in other blue copper proteins.
+ In addition, electron transfer rates for stellacyanin are faster than for other type I copper proteins suggesting stellacyanin is more solvent accessible at the active site.
+ The exact function of stellacyanin is unknown.
+ However, given the fact that type I copper proteins are involved in electron transfer and stellacyanin appears to be associated with the plant cell wall, it is suggested that it is involved in oxidative cross-linking reactions to build polymeric material making up the cell wall.
+Alcian blue or alcian blue ( ) is any member of a family of polyvalent basic dyes, of which the Alcian blue 8G (also called Ingrain blue 1, and C.I. 74240, formerly called Alcian blue 8GX from the name of a batch of an ICI product) has been historically the most common and the most reliable member.
+ It is used to stain acidic polysaccharides such as glycosaminoglycans in cartilages and other body structures, some types of mucopolysaccharides, sialylated glycocalyx of cells etc.
+ For many of these targets it is one of the most widely used cationic dyes for both light and electron microscopy.
+ Use of alcian blue has historically been a popular staining method in histology especially for light microscopy in paraffin embedded sections and in semithin resin sections.
+ The tissue parts that specifically stain by this dye become blue to bluish-green after staining and are called "Alcianophilic" (akin to "eosinophilic" or "sudanophilic").
+ Alcian blue staining can be combined with H&E staining, PAS staining and van Gieson staining methods.
+ Alcian blue can be used to quantitate acidic glycans both in microspectrophotometric quantitation in solution or for staining glycoproteins in polyacrylamide gels or on western blots. Biochemists had used it to assay acid polysaccharides in urine since the 1960s for diagnosis of diseases like mucopolysaccharidosis but from 1970's, partly due to lack of availability of Alcian and partly due to length and tediousness of the procedure, alternative methods had to be developed e.g. Dimethyl methylene blue (DMB) method.
+In solid-state physics, heavy fermion materials are a specific type of intermetallic compound, containing elements with 4f or 5f electrons in unfilled electron bands.
+ Electrons are one type of fermion, and when they are found in such materials, they are sometimes referred to as heavy electrons.
+ Heavy fermion materials have a low-temperature specific heat whose linear term is up to 1000 times larger than the value expected from the free-electron theory.
+ The properties of the heavy fermion compounds often derive from the partly filled f-orbitals of rare-earth or actinide ions, which behave like localized magnetic moments.
+ The name "heavy fermion" comes from the fact that the fermion behaves as if it has an effective mass greater than its rest mass.
+ In the case of electrons, below a characteristic temperature (typically 10 K), the conduction electrons in these metallic compounds behave as if they had an effective mass up to 1000 times the free-electron mass.
+ This large effective mass is also reflected in a large contribution to the resistivity from electron-electron scattering via the Kadowaki Woods ratio.
+ Heavy fermion behavior has been found in a broad variety of states including metallic, superconducting, insulating and magnetic states.
+ Characteristic examples are CeCu, CeAl, CeCuSi, YbAl, UBe and UPt.
+Membrane contact sites (MCS) are close appositions between two organelles. Ultrastructural studies typically reveal an intermembrane distance in the order of the size of a single protein (10 nm).
+ These zones of apposition are highly conserved in evolution but not much is understood about their biological meaning.
+ These sites are thought to be important in mainly three cellular functions: they facilitate signalling, they promote the passage of ions, and they are the sites where the non-vesicular lipid trafficking from one cellular compartment to another occurs.
+ MCS may be particularly important in the function of the endoplasmic reticulum (ER), since this is the major site of lipid synthesis within cells.
+ These structures can form between the ER and many organelles, including mitochondria, Golgi, endosomes, lysosomes, peroxisomes, chloroplasts and the plasma membrane.
+ They can also form between other organelles, such as between the cell nucleus and the vacuole in yeast (nucleus vacuole junction, NVJ).
+ First mentions of these contact sites can be found in papers published in the late 1950s mainly visualized using electron microscopy (EM) techniques.
+ Copeland and Dalton described them as “highly specialized tubular form of endoplasmic reticulum in association with the mitochondria and apparently in turn, with the vascular border of the cell”.
+In bacteriology, a fimbria (plural fimbriae), also referred to as an "attachment pilus" by some scientists, is an appendage that can be found on many Gram-negative and some Gram-positive bacteria that is thinner and shorter than a flagellum.
+ This appendage ranges from 3-10 nanometers in diameter and can be up to several micrometers long.
+ Fimbriae are used by bacteria to adhere to one another and to adhere to animal cells and some inanimate objects.
+ A bacterium can have as many as 1,000 fimbriae.
+ Fimbriae are only visible with the use of an electron microscope.
+ They may be straight or flexible.
+The Positron-Electron Tandem Ring Accelerator (PETRA) is one of the particle accelerators at DESY in Hamburg, Germany.
+ From 1978 to 1986 it was used to study electron–positron collisions.
+ It was here that the TASSO collaboration found the first direct evidence for gluons in three jet events.
+ The modification called PETRA-II is a source of high-energy synchrotron radiation and also a pre-accelerator for the HERA.
+ Started in 2007, an upgrade has been converting it to PETRA-III, which is a high intensity source for synchrotron radiation.
+Lanthanum hexaboride (LaB, also called lanthanum boride and LaB) is an inorganic chemical, a boride of lanthanum.
+ It is a refractory ceramic material that has a melting point of 2210 °C, and is insoluble in water and hydrochloric acid.
+ It has a low work function and one of the highest electron emissivities known, and is stable in vacuum.
+ Stoichiometric samples are colored intense purple-violet, while boron-rich ones (above LaB) are blue.
+ Ion bombardment changes its color from purple to emerald green.
+Wilhelm Walcher (7 July 1910 in Kaufbeuren – 9 November 2005 in Marburg) was a German experimental physicist.
+ During World War II, he worked on the German nuclear energy project, also known as the Uranium Club; he worked on mass spectrometers for isotope separation.
+ After the war, he was director of the Institute of Physics at the University of Marburg.
+ He was a president of the German Physical Society and a vice president of the German Research Foundation.
+ He helped found the Society for Heavy Ion Research and the German Electron Synchrotron DESY.
+ He was also one of the 18 signatories of the Göttingen Manifest.

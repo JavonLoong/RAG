@@ -1,0 +1,13 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt  we may be going astray. So it’s a great balance. We have an amazing, passionate community and it has evolved into an amazing creator developer community as well. 
+
+KEVIN SCOTT: Well, so that’s a good segue into the next thing I wanted to chat about.  The thing that I didn’t understand about Roblox when I was first watching my kids play it is I didn’t understand that Roblox was a platform for creating games. I thought it was a game. 
+
+And so I would see my kids. I’d ask them, “What you’re doing?” “Oh, we’re playing, you know, X or Y or Z.” And I would watch them and I was like, “Oh, this looks like Roblox.” And like, what – what made you all decide that the thing to do here was to create this platform versus like making a single game with a big, expansive world? 
+
+DAVID BASZUCKI: I think Erik and I inherently didn’t see ourselves as content creator capable. It’s almost like we had a bunch of ideas for things, but we trusted more our ability to build the technology and platform than those things themselves. 
+
+And I think we also loved the combinatorial possibility of building tools that if we were to build them right – it’s interesting, right? If we’re going to build this open-ended tool in Roblox Studio and a platform, it’s– there’s a such a wide range of what might happen. No one might use it. Okay, boom. Or many people might build stuff we’ve never seen before and we could never imagine. And so that variability of outcome and that risk was exciting to us. 
+
+And when we – I remember launching – when we launched Roblox, we at times would have 6 to 20 people online using an experience that we had built as a prototype place. It was called Crossroads. And we were not in any way viral. We knew we wanted to launch a Roblox Studio and see what other people would build, and so it was a bit scary. Okay, we’re going to launch Roblox Studio. If they don’t build really good stuff, like we’re not going to be viral, this isn’t going to go anywhere, but there’s a chance they’re going to build really interesting stuff. So let’s see what happens. 
+
+So the day we launched Roblox Studio, it’s kind of those days you remember in your company where, oh my gosh, five creations, 10, 20. This one’s pretty interesting. Oh my gosh, I can’t believe that. And so, you know, we knew that that bet had paid off. It is really good learning. Time and time again, I think we try to solve things or figure them out ourselves rather than take a step back and think through, could the community do this better than us if we gave them the tools

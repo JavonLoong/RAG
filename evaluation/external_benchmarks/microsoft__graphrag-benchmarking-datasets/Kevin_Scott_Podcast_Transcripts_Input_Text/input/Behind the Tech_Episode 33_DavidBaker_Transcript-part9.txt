@@ -1,0 +1,17 @@
+Behind the Tech_Episode 33_DavidBaker_Transcript.txt And the third area, my colleague Neil King at the Institute has been developing sort of a next generation of coronavirus vaccines using designed protein nanomaterials that we’ve created at the institute, which self-assemble into big things that look like Death Stars, and we can put the parts of the coronavirus spike on the surface. And when Neil does that, it binds, it gets very, very strong immune responses – stronger than with the current vaccines. So, those these designed nanoparticle vaccines are now in clinical trials. 
+
+So, that sort of illustrates some of the key areas in protein design now, being able to design, you know, very precise shapes that can block – can bind very tightly to targets, being able to design molecular devices that can undergo – that can basically do logic calculations and being able to design nanomaterials like these protein death stars. 
+
+KEVIN SCOTT:  Yeah, to me, this is some of the most incredible stuff that I’ve ever seen in my life. Like, it’s just amazing to me that you can go from a published sequence for this virus, simulate a – like a compound that has this incredible binding affinity to the RBD, like, in this computational domain. And then you know, just be able to go from there to a, like, diagnostics, vaccines, you know, like, potentially therapies. Like, I’m guessing even that you can use these same techniques to try to assess how effective a human antibody response might be to the variants of the virus, so–  
+
+DAVID BAKER:  Yeah, in fact, yeah, that’s – we’re actually doing that now. Yeah. That’s, yeah, you know, it sounds kind of “science-fictiony” to me, to you it also still sounds that way to me, which is why – I mean, this field has been moving so fast we’ve been able to make so much progress. There are things we can do now that still are a lot of work, but I don’t think I would have thought would be possible just even, you know, several years ago. And that’s what’s been exciting. I mean, people always ask me to predict the future of the field. And I always say, “Well, my biggest hope is that it will move so fast in such new directions I can’t predict it.” And that’s actually what’s been happening pretty continuously, so– 
+
+KEVIN SCOTT:  Yeah. And so, what are the big things that are moving progress forward right now? Like, what is – I mean, and like, you can sort of take a long view, right? 
+
+DAVID BAKER:  Yeah. 
+
+KEVIN SCOTT:  Like, I think the landscape was very, very different when you started than it is now, like, what’s been the big thing– 
+
+DAVID BAKER:  It’s totally different. 
+
+KEVIN SCOTT

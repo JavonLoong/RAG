@@ -1,0 +1,14 @@
+EP-10_ Behind_the_Tech_Kevin Scott_Podcast_with_Surya_Ganguli.txt  systems, all that.
+KEVIN SCOTT:  And what year was this?
+SURYA GANGULI:  This was around -- in the middle of the '90s, essentially.  
+KEVIN SCOTT:  Okay, great.
+SURYA GANGULI:  So then, you know, I asked my professor, "Shouldn't we try to reverse engineer the brain?" and I'll never forget his answer.  He told me, "No, no, no, Surya.  Just ignore the brain.  It'll just confuse you.  All you've got to do is figure out the software program the brain is running.”  And even as a freshman, that didn't feel right to me.  
+And so, I wasn't sure I wanted to do AI anymore.  I stuck with a CS degree, but I had friends taking math and physics courses, and I kind of enjoyed that.  So then, I ended up triple majoring through, just serendipitously, in math, physics and computer science.
+KEVIN SCOTT:  How do you serendipitously triple-major?
+SURYA GANGULI:  I just took courses for fun, and then I checked the requirements for the courses in my junior year, and I realized, okay, if I just take the junior physics lab, which is a terrible experimental course -- I mean, it's a good experimental course, but not if you want to be a theorist -- then, I could get a physics degree and the math degree would come for free, based on what I'd done. And so, I just, you know, I sucked it up and took the experimental physics course.
+KEVIN SCOTT:  That's awesome.  And were your parents scientists or engineers?
+SURYA GANGULI:  No, my dad was an engineer.  Yeah, he's a mechanical engineer, and my mom was actually a philosophy major in undergrad.  And then, she became practical and became a certified public accountant for the IRS.
+KEVIN SCOTT:  Oh, interesting.  And so, were they encouraging you to pursue a particular path?
+SURYA GANGULI:  Yeah, they were -- they were super encouraging.  I think my dad was, like, an amazing mentor.  He still has quotes that he would say all the time that stick in my head, like we were watching a video about neurosurgery, right?  There was a neurosurgeon who was working his butt off doing this surgery.  He was tired and he made it happen. And my dad said something like, "Surya, the power of a concentrated mind is limitless."  
+KEVIN SCOTT:  Wow.
+SURYA GANGULI:  And it just, it just stuck.  And he was full of these kinds of inspirational things.  And I was

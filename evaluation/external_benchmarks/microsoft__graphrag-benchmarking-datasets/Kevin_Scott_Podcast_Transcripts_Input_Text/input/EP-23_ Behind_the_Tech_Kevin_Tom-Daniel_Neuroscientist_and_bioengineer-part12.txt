@@ -1,0 +1,19 @@
+EP-23_ Behind_the_Tech_Kevin_Tom-Daniel_Neuroscientist_and_bioengineer.txt  low-noise, massively parallel sets of channels, right, for sensory information. We haven't been building systems like that because of sort of the technical challenges of lots of sensors. I mean, if you can get by with five, why not get by with five, right, and just do that. Because there are some fabrication challenges that are of less concern naturally in natural systems.
+
+KEVIN SCOTT: Well, and a lot of times it's sort of the cost thing that you mentioned before, so like having designed a bunch of things where you're going to build 50,000 of something, like a penny here and a penny there matters. Whereas in biology, like if you can get these things for relatively low cost, like why not have a lot of them, right?
+
+TOM DANIEL: That's right. I mean, it's not that cost isn't a – a criterion in evolution, the cost of fabrication, or the cost of running things. It's not like it isn't an objective function of which evolution selection may be acting. But it's only part of the problem. So, at the end of the day, it's “Is this thing going to survive and reproduce better than the other thing?” (Laughter) That's all that mattered, right. So, cost matters to some extent. Fabrication and running costs matter, but also robustness, stability, adaptability, the ability to fly under different circumstances, vastly different circumstances, to navigate, to tolerate, you know, falling, running into things, that's sort of the more natural system approach, right? Living systems are – cost is a concern, but at the end of the day, fitness is the concern.
+
+KEVIN SCOTT: Right.
+
+TOM DANIEL: Right.
+
+KEVIN SCOTT: And the cost is just one of the inputs into the fitness function.
+
+TOM DANIEL: Part of it. Part of it, part of it, absolutely.
+
+KEVIN SCOTT: Yep.
+TOM DANIEL: And so, you can play a revolutionary algorithm on a design problem, but you'd have to make sure your objective function includes as many things as you want.
+KEVIN SCOTT: Yeah, super interesting. You have this beautiful point of view because you've been doing this for a while, so what are some of the interesting things that have changed in the field, other than like it being easier to do some of this interdisciplinary stuff?
+TOM DANIEL: Yeah, I would say there are probably three big transformations today that are going to propel the field much further forward than I will see in my career, okay? Candidly, ML methods, machine learning is coming to bear on a vast number of problems in neuroscience, everything from imaging to you know, how do we handle the massive data flowing in from neural systems, how does a brain handle massive data, can ML give us some insight?
+So, as we said, not

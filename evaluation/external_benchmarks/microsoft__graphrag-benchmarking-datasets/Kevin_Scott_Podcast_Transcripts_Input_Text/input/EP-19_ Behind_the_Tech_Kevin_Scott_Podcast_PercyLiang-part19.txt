@@ -1,0 +1,13 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  and heterogenic -- heterogeneity, and I think there's a lot of potential for surfacing these kinds of questions that I think that the academic community would be -- would be helpful in kind of answering that, not at a -- kind of a conceptual level.  I think probably teams are probably too busy to be worried -- pondering about what is the right way to solve these problems, but they have the problems, and it these can be somehow, you know, brought out, I think we would probably be able to leverage all the kind of intellectual horsepower in academia to solve kind of real -- really relevant, you know, problems.
+
+KEVIN SCOTT:  That sounds like a great idea.  So, two more questions.  One, one, in your role as an AI researcher, so what's the -- what's the thing that excites you most about what you see on the horizon, like what's going to be really interesting over the next few years?
+
+PERCY LIANG:  Yeah, if only I could predict the future.  I think one of the things that has been exciting to me is program synthesis, the idea that you can automatically write programs, from either test case examples, or natural language, and in some ways, this is kind of an extension of some of the work I did on, you know, somatic parsing, but if you think about it, from -- at a high level, you know, we have users, and they have, you know, desires and things that they want to do, how can you best harness the ability of a computer to, you know, meet those needs?
+
+And currently -- while you have -- you can either program, if you know how to program, or you can use one of these existing interfaces, but I think those kind of two are, you know, very limiting.  If, if you could have users that could kind of express their desire in some sort of more fluid way, even with examples or language, and computers kind of synthesize these programs or computations, then you could really, I think, amp up the amount of leverage that ordinary people have. 
+
+And also to think about how even not kind of end users, but, you know, programmers could benefit from a lot from having, you know, better tools.
+
+We have these enormous code bases and programming is, at the end of the day, a lot of in-the-weeds work. And I think, you know, the use of machine learning and program synthesis could really open up the way towards maybe a different -- a completely different way of thinking about programming and code, and that's kind of -- as a computer scientist, that is very, you know, fascinating.
+
+KEVIN SCOTT: Yeah, and I'm, I'm really glad to hear you say that you're excited about the prospect of that because one of the things that I do worry about is we -- you know, we're now at

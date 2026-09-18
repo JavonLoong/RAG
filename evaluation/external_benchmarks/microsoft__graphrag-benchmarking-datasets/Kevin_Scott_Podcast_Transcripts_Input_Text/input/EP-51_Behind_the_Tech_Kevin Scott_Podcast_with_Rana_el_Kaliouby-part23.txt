@@ -1,0 +1,13 @@
+EP-51_Behind_the_Tech_Kevin Scott_Podcast_with_Rana_el_Kaliouby.txt  a person, whenever you find someone who is having a successful career in technology, or in any other domain, there has to be support somewhere because it’s so hard to be successful at anything. There’s so much pulling you in the other direction, like people telling you, you can’t do it, you know, like people trying to get you to doubt yourself, just institutional things that, like, are either aggressively or passive aggressively, pushing back against what it is you’re trying to accomplish, normal human emotion.
+
+Like, you know, some of this stuff is just sort of hard. And people, I think, are naturally afraid of failing, and so, figuring out how to get the courage to get on top of that. And that is a lot of hard to deal with all on your own. So, having that support, like somebody, like, hopefully, lots of somebodies, who are there trying to help you to actually make it, I think, is really important. 
+
+And her story is fascinating, because she had a lot of things, you know, sort of that could have potentially pushed back against her achieving these really ambitious and awesome goals that she had for herself.
+
+CHRISTINA WARREN: Absolutely, absolutely. But I think, likewise, you know, her background, but also her interests and the support she had and just, you know, the drive she has within herself, I think, makes her really well suited to doing what she’s doing, which in her own words is, you know, wanting to marry the worlds of AI and emotional… EQ and IQ, I think, is what she said, wanting to marry EQ and IQ, and AI. 
+
+One of the interesting stats that she pointed out was that, you know, 93% of how we communicate is nonverbal, but when it comes to AI, we’ve been focusing on that seven percent. And I was really thinking a lot about that, especially as you know, the last few months, we’ve all been playing with so many various GPT3 models. And those models, I think, have gotten really good at – at that seven percent, right? Like, they’re obviously not all the way there, but I think they’re pretty good at some of the written stuff. 
+
+From your perspective, as a technologist, as somebody who follows a lot of these things, from having, you know, conversations with people like Rana, what do you think we need to do next to attack that other 93%, those nonverbal cues which become so important to human interaction?
+
+KEVIN SCOTT: Yeah, I think it’s maybe the most important question we should be asking right now. So, it’s easy for me, at least, and I think this is true for other people in technology, to get really carried away with the capability of a thing, so, like, what it can do, or, like, how
