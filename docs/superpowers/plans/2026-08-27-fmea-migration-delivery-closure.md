@@ -1,6 +1,8 @@
 # FMEA Migration and Delivery Closure Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+**Completion record (2026-09-04):** Tasks 1–8 complete within the approved Phase 4 scope. Final 27-file gate: 563 passed, 3 platform skips; browser gate: 8 passed. Independent full runner/verifier passed. Overall review's six binding findings closed by scoped Round 1 (READY/GO). Delivery details, test chronology, and the existing publisher's identity-summary limitation are recorded in `docs/handoff/full-fmea-product.md`. Work remains on the existing local branch; no push/PR is part of this completion.
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Complete reusable DomainPack/template migration, canonical JSON/XLSX/DOCX export, thin browser workbench, multi-domain proof, and bounded scale acceptance.
 
@@ -41,7 +43,7 @@
 - `fmea_infrastructure/export_docx.py`: DOCX adapter.
 - `fmea_infrastructure/artifact_store.py`: contained atomic artifact publication.
 - `fmea_infrastructure/delivery_repository_sqlite.py`: draft/patch/migration/export-run persistence.
-- `fmea_infrastructure/migrations/006_fmea_migration_delivery.sql`: delivery schema.
+- `fmea_infrastructure/migrations/010_fmea_migration_delivery.sql`: additive delivery schema after the completed governance migration sequence `005`-`009`.
 - `domain_packs/electrical-demo/` and `domain_packs/software-demo/`: structurally distinct demonstration packs.
 - `api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/fmea_delivery_contracts.py`: REST schemas.
 - `api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/routes_fmea_delivery_v1.py`: DomainPack, migration, and export routes.
@@ -65,7 +67,7 @@
 - Consumes: `DomainPackManifest`, compiled template identity, and immutable revision contracts.
 - Produces: `TemplateDraft`, `TemplatePatchCandidate`, `CompatibilityReport`, `MigrationPlan`, `MigrationReport`, `ExportRun`, and `ExportArtifactManifest`.
 
-- [ ] **Step 1: Write strict contract tests**
+- [x] **Step 1: Write strict contract tests**
 
 ```python
 def test_template_draft_preserves_unknown_and_ambiguous_fields():
@@ -80,13 +82,13 @@ def test_migration_plan_rejects_missing_explicit_version_edge():
         MigrationPlan(source=("fuel-combustion", "1.0.0"), target=("fuel-combustion", "3.0.0"), steps=())
 ```
 
-- [ ] **Step 2: Run tests and confirm RED**
+- [x] **Step 2: Run tests and confirm RED**
 
 Run: `.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_template_migration_contracts.py -q`
 
 Expected: FAIL because migration/delivery contracts are absent.
 
-- [ ] **Step 3: Implement immutable, bounded contracts**
+- [x] **Step 3: Implement immutable, bounded contracts**
 
 ```python
 @dataclass(frozen=True, slots=True)
@@ -122,13 +124,13 @@ class ExportArtifactManifest:
 
 Validate canonical SHA-256, finite sizes, bounded strings/collections, exact enums, unique mapping keys, explicit migration edge continuity, and published-versus-preview identity rules.
 
-- [ ] **Step 4: Run contract and snapshot tests**
+- [x] **Step 4: Run contract and snapshot tests**
 
 Run: `.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_template_migration_contracts.py tests/unit/test_fmea_snapshot_contracts.py tests/unit/test_fmea_domain_pack.py -q`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit delivery contracts**
+- [x] **Step 5: Commit delivery contracts**
 
 ```powershell
 git add core_domain/fmea/template_migration.py core_domain/fmea/__init__.py fmea_application/delivery_contracts.py tests/unit/test_fmea_template_migration_contracts.py
@@ -139,11 +141,15 @@ git commit -m "feat(fmea): define migration and delivery contracts"
 
 **Files:**
 - Modify: `pyproject.toml`
+- Modify: `uv.lock`
+- Create: `fmea_infrastructure/office_package.py`
 - Create: `fmea_infrastructure/template_import_excel.py`
 - Create: `fmea_infrastructure/template_import_docx.py`
 - Create: `fmea_infrastructure/template_patch_generator.py`
+- Create: `fmea_application/template_patch_contracts.py`
 - Create: `fmea_application/domain_pack_service.py`
 - Modify: `fmea_application/ports.py`
+- Create: `templates/examples/fmea-template-patch.yaml`
 - Test: `tests/unit/test_fmea_template_import_excel.py`
 - Test: `tests/unit/test_fmea_template_import_docx.py`
 - Test: `tests/unit/test_fmea_template_patch_generator.py`
@@ -153,7 +159,7 @@ git commit -m "feat(fmea): define migration and delivery contracts"
 - Consumes: Task 1 draft/patch contracts and existing `TemplateCompiler`/file registry.
 - Produces: safe import ports, immutable patch suggestions, human accept/reject, compile/register lifecycle.
 
-- [ ] **Step 1: Write malicious-file and human-authority tests**
+- [x] **Step 1: Write malicious-file and human-authority tests**
 
 ```python
 def test_excel_import_preserves_cells_merges_unknown_and_ambiguous_headers():
@@ -172,7 +178,7 @@ def test_model_patch_cannot_register_template(service, model_actor):
         service.accept_patch(accept_patch_command(suggestion.suggestion_id, patch.patch_id), model_actor)
 ```
 
-- [ ] **Step 2: Add dependencies and run tests to confirm RED**
+- [x] **Step 2: Add dependencies and run tests to confirm RED**
 
 Add exact dependency: `openpyxl>=3.1.5,<4`.
 
@@ -180,7 +186,7 @@ Run: `.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_template_import_ex
 
 Expected: FAIL because importers and service are absent.
 
-- [ ] **Step 3: Implement safe import and patch lifecycle**
+- [x] **Step 3: Implement safe import and patch lifecycle**
 
 ```python
 class TemplateImporter(Protocol):
@@ -188,37 +194,43 @@ class TemplateImporter(Protocol):
 
 
 class TemplatePatchGenerator(Protocol):
-    def suggest(self, request: TemplatePatchRequest) -> AssistanceSuggestion[TemplatePatchCandidate]: ...
+    def suggest(self, request: TemplatePatchRequest) -> TemplatePatchSuggestion: ...
 
 
 class DomainPackService:
     def import_template(self, command: ImportTemplateCommand, actor: ActorContext) -> TemplateDraft: ...
     def suggest_patch(
         self, command: SuggestTemplatePatchCommand, actor: ActorContext
-    ) -> AssistanceSuggestion[TemplatePatchCandidate]: ...
+    ) -> TemplatePatchSuggestion: ...
     def accept_patch(self, command: AcceptTemplatePatchCommand, actor: ActorContext) -> CompiledTemplate: ...
-    def reject_patch(self, command: RejectTemplatePatchCommand, actor: ActorContext) -> TemplatePatchCandidate: ...
+    def reject_patch(self, command: RejectTemplatePatchCommand, actor: ActorContext) -> TemplatePatchDecision: ...
 ```
 
-XLSX import rejects macros, external links, malformed ZIPs, formulas requiring execution, excessive sheets/cells, and path escapes. DOCX import reads paragraphs/tables/relationships without executing fields, macros, or external links. Preserve source bytes hash and structural addresses. Model output is an `AssistanceSuggestion[TemplatePatchCandidate]` containing a bounded mapping diff; reuse Flash generation plus `deepseek-v4-pro` criticism through the provider-neutral pipeline. Only human `template_admin` acceptance invokes the existing compiler and immutable registry.
+XLSX import rejects macros, ActiveX/plugins, external or broken relationships, malformed ZIPs, formulas requiring execution, excessive sheets/cells, and path escapes. DOCX import reads bounded paragraphs/tables/relationships without executing fields, macros, plugins, or external links. A shared OPC safety adapter validates every relationship target and relevant XML part before either Office library opens the package. Preserve source bytes hash and structural addresses.
 
-- [ ] **Step 4: Run import, registry, and security tests**
+`TemplatePatchCandidate.target_template_*` identifies the immutable server-owned base template being patched; `input_template_version` must match that base. The model cannot choose a registered output version. A human `template_admin` supplies an explicit higher `new_template_version` in the acceptance command. The service loads and hash-verifies the base source, applies the accepted declarative `/fields` and `/mappings` diff deterministically, persists normalized import mappings in the optional generic `source_mappings` template member, compiles the resulting source, and registers the new immutable version. Already-valid ASCII identities are preserved only outside the reserved generated-key namespace: a letter-starting readable ASCII slug of at most 103 characters followed by `_` and 24 lowercase hexadecimal digest characters. A literal header in that namespace is normalized again with its own digest; every other header requiring normalization receives a readable ASCII prefix plus deterministic content digest so punctuation, length, and Unicode cannot silently collapse distinct headers. The exact normalized key is included in the bounded model projection. Templates without `source_mappings` retain their existing canonical hashes, and a mapped version remains a valid base for later patches. A real compiler/registry test must prove the canonical registered source changes exactly as the accepted patch specifies and survives a second patch cycle.
+
+The generic `AssistanceSuggestion` remains JSON-safe. FMEA returns a typed immutable `TemplatePatchSuggestion` containing both the validated `TemplatePatchCandidate` and its JSON-safe generic envelope; no mapping-to-dataclass type claim is made. Model-visible input is only a bounded canonical header/mapping projection plus explicitly selected, length-bounded evidence IDs and excerpts, with every untrusted value delimited; workspace, ACL, EvidencePack identity/hash, document identity, private paths, and complete document content stay server-side. Reuse the existing Flash generation -> `deepseek-v4-pro` criticism -> at-most-one-repair pipeline behind the provider-neutral port; default tests use deterministic fakes and never call the network. Accepted and rejected decisions retain the exact immutable candidate, including `/mappings` operations, so later durable persistence and replay can reproduce what the human decided.
+
+Only human `template_admin` acceptance invokes the existing compiler and immutable registry. Task 2 uses a process-local reservation/lock and immutable decision record to prevent concurrent duplicate side effects; Task 3 replaces that scaffold with durable idempotency, checkpoints, audit, and replay. `uv.lock` must be regenerated and checked with the declared `openpyxl` dependency.
+
+- [x] **Step 4: Run import, registry, and security tests**
 
 Run: `.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_template_import_excel.py tests/unit/test_fmea_template_import_docx.py tests/unit/test_fmea_template_patch_generator.py tests/integration/test_fmea_template_draft_lifecycle.py tests/integration/test_output_template_skill_cli.py tests/unit/test_structured_output_file_registry.py -q`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit import and patch workflow**
+- [x] **Step 5: Commit import and patch workflow**
 
 ```powershell
-git add pyproject.toml fmea_infrastructure/template_import_excel.py fmea_infrastructure/template_import_docx.py fmea_infrastructure/template_patch_generator.py fmea_application/domain_pack_service.py fmea_application/ports.py tests/unit/test_fmea_template_import_excel.py tests/unit/test_fmea_template_import_docx.py tests/unit/test_fmea_template_patch_generator.py tests/integration/test_fmea_template_draft_lifecycle.py
+git add pyproject.toml uv.lock fmea_infrastructure/office_package.py fmea_infrastructure/template_import_excel.py fmea_infrastructure/template_import_docx.py fmea_infrastructure/template_patch_generator.py fmea_application/template_patch_contracts.py fmea_application/domain_pack_service.py fmea_application/ports.py templates/examples/fmea-template-patch.yaml tests/unit/test_fmea_template_import_excel.py tests/unit/test_fmea_template_import_docx.py tests/unit/test_fmea_template_patch_generator.py tests/integration/test_fmea_template_draft_lifecycle.py
 git commit -m "feat(fmea): import and review template drafts"
 ```
 
 ### Task 3: Persist delivery state and execute explicit dry-run migrations
 
 **Files:**
-- Create: `fmea_infrastructure/migrations/006_fmea_migration_delivery.sql`
+- Create: `fmea_infrastructure/migrations/010_fmea_migration_delivery.sql`
 - Create: `fmea_infrastructure/delivery_repository_sqlite.py`
 - Create: `fmea_infrastructure/migration_registry.py`
 - Create: `fmea_application/migration_service.py`
@@ -232,7 +244,7 @@ git commit -m "feat(fmea): import and review template drafts"
 - Consumes: immutable source revisions, DomainPack registry, explicit migration adapters, governance assembler.
 - Produces: dry-run reports and human-confirmed child revisions.
 
-- [ ] **Step 1: Write dry-run, rollback, and no-in-place-mutation tests**
+- [x] **Step 1: Write dry-run, rollback, and no-in-place-mutation tests**
 
 ```python
 def test_dry_run_is_repeatable_and_does_not_create_revision(service):
@@ -249,13 +261,13 @@ def test_failed_confirmed_migration_rolls_back_child_and_events(service, faultin
     assert repository.count_outbox_events("migration.completed") == 0
 ```
 
-- [ ] **Step 2: Run tests and confirm RED**
+- [x] **Step 2: Run tests and confirm RED**
 
 Run: `.venv\Scripts\python.exe -m pytest tests/integration/test_fmea_delivery_sqlite.py tests/unit/test_fmea_migration_service.py tests/regression/test_fmea_migration_rollback.py -q`
 
-Expected: FAIL because migration `006`, registry, repository, and service are absent.
+Expected: FAIL because migration `010`, registry, repository, and service are absent.
 
-- [ ] **Step 3: Implement explicit migration graph and atomic child creation**
+- [x] **Step 3: Implement explicit migration graph and atomic child creation**
 
 ```python
 class MigrationAdapter(Protocol):
@@ -270,18 +282,18 @@ class MigrationService:
     def confirm(self, command: ConfirmMigrationCommand, actor: ActorContext) -> MigrationResult: ...
 ```
 
-Migration `006` creates template drafts, patch candidates/decisions, migration runs/reports/confirmations, export runs/artifacts, and required indexes/triggers. The service resolves an exact allowlisted edge sequence, checks source hash, runs deterministic transformations, validates target template/DomainPack, reports every mapped/dropped/unresolved field, and on human confirmation creates child rows/revision with risk and propagation statuses `invalidated`.
+Migration `010` creates template drafts, patch candidates/decisions, migration runs/reports/confirmations, export runs/artifacts, and required indexes/triggers. It is strictly additive after migrations `005`-`009` and must not rewrite their bytes or historical behavior. The service resolves an exact allowlisted edge sequence, checks source hash, runs deterministic transformations, validates target template/DomainPack, reports every mapped/dropped/unresolved field, and on human confirmation creates child rows/revision with risk and propagation statuses `invalidated`.
 
-- [ ] **Step 4: Run migration, governance, and registry tests**
+- [x] **Step 4: Run migration, governance, and registry tests**
 
 Run: `.venv\Scripts\python.exe -m pytest tests/integration/test_fmea_delivery_sqlite.py tests/unit/test_fmea_migration_service.py tests/regression/test_fmea_migration_rollback.py tests/integration/test_fmea_governance_sqlite.py tests/integration/test_fmea_template_draft_lifecycle.py -q`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit migration workflow**
+- [x] **Step 5: Commit migration workflow**
 
 ```powershell
-git add fmea_infrastructure/migrations/006_fmea_migration_delivery.sql fmea_infrastructure/delivery_repository_sqlite.py fmea_infrastructure/migration_registry.py fmea_application/migration_service.py fmea_application/ports.py fmea_infrastructure/composition.py tests/integration/test_fmea_delivery_sqlite.py tests/unit/test_fmea_migration_service.py tests/regression/test_fmea_migration_rollback.py
+git add fmea_infrastructure/migrations/010_fmea_migration_delivery.sql fmea_infrastructure/delivery_repository_sqlite.py fmea_infrastructure/migration_registry.py fmea_application/migration_service.py fmea_application/ports.py fmea_infrastructure/composition.py tests/integration/test_fmea_delivery_sqlite.py tests/unit/test_fmea_migration_service.py tests/regression/test_fmea_migration_rollback.py
 git commit -m "feat(fmea): migrate domain packs through child revisions"
 ```
 
@@ -303,7 +315,7 @@ git commit -m "feat(fmea): migrate domain packs through child revisions"
 - Consumes: immutable `NormalizedFmeaSnapshot` and delivery repository.
 - Produces: canonical JSON export run, immutable export-narrative suggestions, and atomically published artifact manifest.
 
-- [ ] **Step 1: Write canonical identity and partial-artifact tests**
+- [x] **Step 1: Write canonical identity and partial-artifact tests**
 
 ```python
 def test_json_export_hash_is_stable_for_same_snapshot():
@@ -327,13 +339,13 @@ def test_model_narrative_is_unapplied_and_cannot_mutate_published_snapshot(servi
     assert snapshot_repository().get(published.revision_id) == published
 ```
 
-- [ ] **Step 2: Run tests and confirm RED**
+- [x] **Step 2: Run tests and confirm RED**
 
 Run: `.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_export_json.py tests/unit/test_fmea_export_narrative.py tests/unit/test_fmea_artifact_store.py tests/integration/test_fmea_export_runs.py -q`
 
 Expected: FAIL because export service and adapters are absent.
 
-- [ ] **Step 3: Implement canonical exporter and contained atomic store**
+- [x] **Step 3: Implement canonical exporter and contained atomic store**
 
 ```python
 class SnapshotExporter(Protocol):
@@ -358,13 +370,13 @@ class ExportService:
 
 Canonical JSON uses sorted keys, finite values, UTF-8, one newline, and schema `graphrag.fmea.export.v1`. Narrative generation receives a bounded snapshot projection and returns the shared `AssistanceSuggestion` envelope through Flash generation plus `deepseek-v4-pro` criticism; adopting or editing it creates a new draft/child revision and never mutates a published snapshot. The store resolves only server-owned filenames under a workspace artifact root, writes and fsyncs a sibling temporary directory, verifies byte length/hash/manifest, atomically renames, and only then completes the export run.
 
-- [ ] **Step 4: Run JSON, store, snapshot, and governance tests**
+- [x] **Step 4: Run JSON, store, snapshot, and governance tests**
 
 Run: `.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_export_json.py tests/unit/test_fmea_export_narrative.py tests/unit/test_fmea_artifact_store.py tests/integration/test_fmea_export_runs.py tests/unit/test_fmea_snapshot_contracts.py tests/integration/test_fmea_governance_lifecycle.py -q`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit canonical export boundary**
+- [x] **Step 5: Commit canonical export boundary**
 
 ```powershell
 git add fmea_application/export_service.py fmea_infrastructure/export_json.py fmea_infrastructure/export_narrative_generator.py fmea_infrastructure/artifact_store.py fmea_application/ports.py fmea_infrastructure/composition.py tests/unit/test_fmea_export_json.py tests/unit/test_fmea_export_narrative.py tests/unit/test_fmea_artifact_store.py tests/integration/test_fmea_export_runs.py
@@ -384,7 +396,7 @@ git commit -m "feat(fmea): export canonical snapshots atomically"
 - Consumes: `SnapshotExporter` and `NormalizedFmeaSnapshot`.
 - Produces: verified XLSX and DOCX bytes with the same semantic identity as canonical JSON.
 
-- [ ] **Step 1: Write cross-format semantic comparison tests**
+- [x] **Step 1: Write cross-format semantic comparison tests**
 
 ```python
 def test_json_xlsx_docx_share_revision_snapshot_rows_and_evidence():
@@ -400,23 +412,23 @@ def test_draft_preview_has_visible_marker_in_every_format():
     assert all(view.preview_marker == "DRAFT PREVIEW — NOT PUBLISHED" for view in render_and_parse_all(snap))
 ```
 
-- [ ] **Step 2: Run tests and confirm RED**
+- [x] **Step 2: Run tests and confirm RED**
 
 Run: `.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_export_xlsx.py tests/unit/test_fmea_export_docx.py tests/integration/test_fmea_export_consistency.py -q`
 
 Expected: FAIL because office adapters are absent.
 
-- [ ] **Step 3: Implement presentation-only adapters**
+- [x] **Step 3: Implement presentation-only adapters**
 
 XLSX creates sheets `Manifest`, `FMEA`, `Risk`, `Propagation`, `Evidence`, `Decisions`, and `Unresolved`; freezes headers, applies bounded widths, writes text values without formula interpretation, and stores revision/snapshot hashes in `Manifest`. DOCX creates title/manifest, FMEA tables, risk and propagation sections, evidence references, decisions, unresolved items, and footer identity. Sanitize control characters and formula-leading Excel strings. Neither adapter queries repositories or changes semantic values.
 
-- [ ] **Step 4: Run office and canonical export tests**
+- [x] **Step 4: Run office and canonical export tests**
 
 Run: `.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_export_json.py tests/unit/test_fmea_export_xlsx.py tests/unit/test_fmea_export_docx.py tests/integration/test_fmea_export_consistency.py -q`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit office exports**
+- [x] **Step 5: Commit office exports**
 
 ```powershell
 git add fmea_infrastructure/export_xlsx.py fmea_infrastructure/export_docx.py tests/unit/test_fmea_export_xlsx.py tests/unit/test_fmea_export_docx.py tests/integration/test_fmea_export_consistency.py
@@ -432,6 +444,12 @@ git commit -m "feat(fmea): export consistent xlsx and docx"
 - Modify: `api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/api.py`
 - Modify: `scripts/fmea_skill.py`
 - Modify: `fmea_infrastructure/local_auth.py`
+- Modify: `fmea_application/ports.py`
+- Modify: `fmea_application/domain_pack_service.py`
+- Modify: `fmea_application/migration_service.py`
+- Modify: `fmea_application/export_service.py`
+- Modify: `fmea_infrastructure/delivery_repository_sqlite.py`
+- Modify: `fmea_infrastructure/composition.py`
 - Test: `tests/unit/test_fmea_delivery_api_contracts.py`
 - Test: `tests/unit/test_fmea_codex_skill.py`
 - Test: `tests/integration/test_fmea_delivery_api_v1.py`
@@ -441,7 +459,7 @@ git commit -m "feat(fmea): export consistent xlsx and docx"
 - Consumes: DomainPack, migration, export, and export-narrative assistance services.
 - Produces: matching REST/CLI operations and a safe Codex Skill wrapper with template-admin and export permissions while keeping narrative suggestions non-authoritative.
 
-- [ ] **Step 1: Write authority, artifact, and parity tests**
+- [x] **Step 1: Write authority, artifact, and parity tests**
 
 ```python
 def test_template_patch_accept_requires_template_admin(client_without_template_admin):
@@ -476,13 +494,13 @@ def test_codex_skill_is_cli_only_read_only_by_default_and_requires_confirmation(
     assert "--confirm-publication" in text
 ```
 
-- [ ] **Step 2: Run tests and confirm RED**
+- [x] **Step 2: Run tests and confirm RED**
 
 Run: `.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_delivery_api_contracts.py tests/unit/test_fmea_codex_skill.py tests/integration/test_fmea_delivery_api_v1.py tests/integration/test_fmea_delivery_cli.py -q`
 
 Expected: FAIL because delivery transports are absent.
 
-- [ ] **Step 3: Implement strict routes and CLI**
+- [x] **Step 3: Implement strict routes and CLI**
 
 REST resources:
 
@@ -504,13 +522,17 @@ CLI groups `domain-pack`, `migration`, and `export` mirror the resources, includ
 
 Use `superpowers:writing-skills` when implementing `skills/graphrag-fmea/SKILL.md`. The Skill invokes `scripts/fmea_skill.py` only, never imports repositories or reads SQLite, defaults to query/status/export-preview operations, explains all orthogonal states, preserves EvidencePack citations, and requires the exact human confirmation flag for assistance adoption, field review, risk confirmation, propagation review, approval, publication, withdrawal, template registration, or migration. It must not infer confirmation from conversational wording and must surface safe CLI errors unchanged.
 
-- [ ] **Step 4: Run delivery and governance transport matrices**
+The transport layer may expose only typed application-service operations. Template drafts, patch candidates, and decisions must survive separate CLI processes and service restarts through the delivery repository; route and CLI modules must not probe repositories or compose subordinate runtimes. Response projection must use the real domain/application contracts and fail explicitly on unsupported values instead of converting unknown fields to `null`.
+
+All mutating resources retain operational concurrency semantics rather than decorative headers: the application command receives the parsed expected record version and idempotency key, rejects stale versions, replays matching requests, and rejects key reuse with a different payload. REST returns the current `ETag`; CLI carries the same expected-version value. Patch status returns the same provisional or decided state through both transports. Narrative lookup honors the requested revision through an application query port. Default migration composition registers only explicit server-owned adapters and fails closed when no compatible path exists.
+
+- [x] **Step 4: Run delivery and governance transport matrices**
 
 Run: `.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_delivery_api_contracts.py tests/unit/test_fmea_codex_skill.py tests/integration/test_fmea_delivery_api_v1.py tests/integration/test_fmea_delivery_cli.py tests/integration/test_fmea_governance_api_v1.py tests/integration/test_fmea_governance_cli.py tests/unit/test_fmea_local_auth.py -q`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit delivery transports**
+- [x] **Step 5: Commit delivery transports**
 
 ```powershell
 git add api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/fmea_delivery_contracts.py api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/routes_fmea_delivery_v1.py api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/api.py scripts/fmea_skill.py skills/graphrag-fmea/SKILL.md fmea_infrastructure/local_auth.py tests/unit/test_fmea_delivery_api_contracts.py tests/unit/test_fmea_codex_skill.py tests/integration/test_fmea_delivery_api_v1.py tests/integration/test_fmea_delivery_cli.py tests/unit/test_fmea_local_auth.py
@@ -541,7 +563,7 @@ git commit -m "feat(fmea): expose migration and export interfaces"
 - Consumes: REST APIs only.
 - Produces: accessible, paginated, event-driven workbench with explicit model/human/publication states.
 
-- [ ] **Step 1: Add Playwright dependencies and failing main-chain tests**
+- [x] **Step 1: Add Playwright dependencies and failing main-chain tests**
 
 Add dev dependencies: `playwright>=1.50,<2` and `pytest-playwright>=0.7,<1`.
 
@@ -566,25 +588,25 @@ def test_model_suggestion_never_uses_confirmed_state_class():
     assert 'data-authority="human-confirmed"' in source
 ```
 
-- [ ] **Step 2: Run tests and confirm RED**
+- [x] **Step 2: Run tests and confirm RED**
 
 Run: `.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_frontend_contract.py tests/browser/test_fmea_workbench.py -q`
 
 Expected: FAIL because the workbench does not exist.
 
-- [ ] **Step 3: Implement shell, state store, API client, and focused views**
+- [x] **Step 3: Implement shell, state store, API client, and focused views**
 
 `api-client.js` owns auth header, ETag capture, canonical idempotency key generation, cursor pagination, safe problem details, and cancellation. `store.js` owns selected analysis/revision, current resources, run states, and conflict refresh. Views render semantic data and dispatch commands; they never calculate risk, infer propagation, alter approval readiness, or access SQLite.
 
 Provide keyboard navigation, visible focus, status text plus icons, responsive table/detail layout, evidence side panel, read-only propagation SVG, explicit draft/published banners, and confirmation dialogs naming the revision and action. Do not add a frontend framework or duplicate the existing general console.
 
-- [ ] **Step 4: Run browser, API, and static contract tests**
+- [x] **Step 4: Run browser, API, and static contract tests**
 
 Run: `.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_frontend_contract.py tests/browser/test_fmea_workbench.py tests/integration/test_fmea_delivery_api_v1.py tests/integration/test_fmea_governance_api_v1.py -q`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit the workbench**
+- [x] **Step 5: Commit the workbench**
 
 ```powershell
 git add pyproject.toml frontend_app/current_console/fmea.html frontend_app/current_console/fmea tests/unit/test_fmea_frontend_contract.py tests/browser/test_fmea_workbench.py
@@ -609,7 +631,7 @@ git commit -m "feat(fmea): add full workflow workbench"
 - Consumes: every completed phase.
 - Produces: `graphrag.fmea.full.acceptance.v1` and an independent verifier covering the full product.
 
-- [ ] **Step 1: Write cross-domain, scale, and P0 tests**
+- [x] **Step 1: Write cross-domain, scale, and P0 tests**
 
 ```python
 @pytest.mark.parametrize("pack_id", ["fuel-combustion", "electrical-demo", "software-demo"])
@@ -633,23 +655,24 @@ def test_p0_authority_and_evidence_counts_are_zero(full_acceptance):
     assert full_acceptance.accepted_high_risk_evidence_free_edge_count == 0
 ```
 
-- [ ] **Step 2: Run tests and confirm RED**
+- [x] **Step 2: Run tests and confirm RED**
 
 Run: `.venv\Scripts\python.exe -m pytest tests/integration/test_fmea_cross_domain_acceptance.py tests/integration/test_fmea_full_acceptance.py tests/performance/test_fmea_10000_row_export.py tests/regression/test_fmea_delivery_security.py -q`
 
 Expected: FAIL because demonstration packs and final acceptance are absent.
 
-- [ ] **Step 3: Add structurally distinct packs and independent full verifier**
+- [x] **Step 3: Add structurally distinct packs and independent full verifier**
 
 Electrical demo adds voltage/current/isolation fields and a different scoring anchor set. Software demo adds software function, hazardous behavior, trigger, detection mechanism, and no physical-unit propagation requirement. Both use DomainPack/template/rule/migration contracts without imports from generic core.
 
 The runner executes evidence selection, candidate generation with deterministic fake, field review, risk proposal/confirmation, propagation proposal/review where applicable, revision assembly, approval, publication, JSON/XLSX/DOCX export, template import draft, migration dry-run/confirmation, withdrawal/supersession, and audit/outbox replay. The verifier independently recomputes all identities and rejects extra/missing files, duplicate cases/events, partial artifacts, private markers, authority violations, or cross-format semantic drift.
 
-- [ ] **Step 4: Run the final product gate**
+- [x] **Step 4: Run the final product gate**
 
 Run:
 
 ```powershell
+$env:PYTHONPATH = "api_server/current_console/chroma_rag_poc/src"
 .venv\Scripts\python.exe -m pytest tests/unit/test_fmea_template_migration_contracts.py tests/unit/test_fmea_template_import_excel.py tests/unit/test_fmea_template_import_docx.py tests/unit/test_fmea_template_patch_generator.py tests/unit/test_fmea_migration_service.py tests/unit/test_fmea_export_json.py tests/unit/test_fmea_export_narrative.py tests/unit/test_fmea_export_xlsx.py tests/unit/test_fmea_export_docx.py tests/unit/test_fmea_artifact_store.py tests/unit/test_fmea_delivery_api_contracts.py tests/unit/test_fmea_codex_skill.py tests/unit/test_fmea_frontend_contract.py tests/integration/test_fmea_template_draft_lifecycle.py tests/integration/test_fmea_delivery_sqlite.py tests/integration/test_fmea_export_runs.py tests/integration/test_fmea_export_consistency.py tests/integration/test_fmea_delivery_api_v1.py tests/integration/test_fmea_delivery_cli.py tests/integration/test_fmea_cross_domain_acceptance.py tests/integration/test_fmea_full_acceptance.py tests/performance/test_fmea_10000_row_export.py tests/regression/test_fmea_migration_rollback.py tests/regression/test_fmea_delivery_security.py -q
 .venv\Scripts\python.exe -m pytest tests/browser/test_fmea_workbench.py -q
 .venv\Scripts\python.exe scripts/run_fmea_full_acceptance.py
@@ -661,7 +684,7 @@ git diff --check
 
 Expected: every command exits 0. Paid live DeepSeek validation remains a separately authorized, non-default smoke gate.
 
-- [ ] **Step 5: Commit final portability and acceptance**
+- [x] **Step 5: Commit final portability and acceptance**
 
 ```powershell
 git add domain_packs/electrical-demo domain_packs/software-demo examples/fmea/full-acceptance scripts/run_fmea_full_acceptance.py scripts/verify_fmea_full_acceptance.py tests/integration/test_fmea_cross_domain_acceptance.py tests/integration/test_fmea_full_acceptance.py tests/performance/test_fmea_10000_row_export.py tests/regression/test_fmea_delivery_security.py docs/handoff/full-fmea-product.md
@@ -670,11 +693,11 @@ git commit -m "test(fmea): close full product acceptance"
 
 ## Phase 4 completion checklist
 
-- [ ] Excel/Word imports create drafts and preserve source structure/hash.
-- [ ] Model patches cannot register templates or DomainPacks.
-- [ ] Explicit dry-run migrations create child revisions and invalidate dependent risk/propagation.
-- [ ] JSON/XLSX/DOCX derive from one snapshot and pass semantic/hash verification.
-- [ ] Workbench uses REST only and distinguishes model, human, draft, approved, and published states.
-- [ ] Three structurally distinct DomainPacks use the same generic kernel.
-- [ ] 10,000-row export remains paginated/streamed and bounded.
-- [ ] Final independent acceptance reports every P0 authority/evidence violation count as zero.
+- [x] Excel/Word imports create drafts and preserve source structure/hash.
+- [x] Model patches cannot register templates or DomainPacks.
+- [x] Explicit dry-run migrations create child revisions and invalidate dependent risk/propagation.
+- [x] JSON/XLSX/DOCX derive from one snapshot and pass semantic/hash verification.
+- [x] Workbench uses REST only and distinguishes model, human, draft, approved, and published states.
+- [x] Three structurally distinct DomainPacks use the same generic kernel.
+- [x] 10,000-row export remains paginated/streamed and bounded.
+- [x] Final independent acceptance reports every P0 authority/evidence violation count as zero.

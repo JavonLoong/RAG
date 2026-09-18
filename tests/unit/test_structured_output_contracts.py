@@ -128,6 +128,20 @@ def test_duplicate_claim_binding_and_candidate_id_are_rejected() -> None:
             canonical_json="{}",
         )
 
+
+def test_compiled_template_reports_invalid_source_mapping_with_public_mapping_code() -> None:
+    with pytest.raises(StructuredOutputError) as raised:
+        CompiledTemplate(
+            metadata=metadata(),
+            output_schema={"type": "object", "properties": {"field": {"type": "string"}}},
+            evidence_bindings=(),
+            template_hash="a" * 64,
+            canonical_json="{}",
+            source_mappings={"1invalid": "field"},
+        )
+
+    assert raised.value.code == "TEMPLATE_MAPPING_INVALID"
+
     item = candidate()
     with pytest.raises(StructuredOutputError, match="candidate_id"):
         StructuredCandidateBatch(

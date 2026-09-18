@@ -1,5 +1,12 @@
 """Application-layer ports for the FMEA evidence handoff."""
 
+from .delivery_contracts import (
+    ExportArtifactManifest,
+    ExportFormat,
+    ExportRun,
+    bind_export_artifact,
+    validate_export_binding,
+)
 from .ports import (
     EvidenceProvider,
     EvidenceRequest,
@@ -68,6 +75,7 @@ from .structured_candidate_adapter import (
     FmeaTemplateProfile,
     StructuredCandidateFmeaAdapter,
 )
+from .template_patch_contracts import TemplatePatchDecision, TemplatePatchSuggestion
 
 __all__ = [
     "EDITABLE_REVIEW_FIELDS",
@@ -80,6 +88,9 @@ __all__ = [
     "EvidenceRequest",
     "EvidenceRequestItem",
     "EvidenceSnapshot",
+    "ExportArtifactManifest",
+    "ExportFormat",
+    "ExportRun",
     "FieldFinding",
     "FieldReviewEdit",
     "FieldReviewState",
@@ -126,10 +137,14 @@ __all__ = [
     "StartReviewSuggestionCommand",
     "StructuredCandidateFmeaAdapter",
     "SuggestionRunReservation",
+    "TemplatePatchDecision",
+    "TemplatePatchSuggestion",
     "UnresolvedAcknowledgement",
+    "bind_export_artifact",
     "build_propagation_analysis_service",
     "build_review_context",
     "build_review_service",
     "canonical_payload_hash",
     "idempotency_key_hash",
+    "validate_export_binding",
 ]

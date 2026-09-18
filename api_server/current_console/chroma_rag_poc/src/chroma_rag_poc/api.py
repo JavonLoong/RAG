@@ -40,6 +40,7 @@ from fmea_infrastructure.composition import (
     GovernanceRuntime,
     ReviewRuntime,
     RiskRuntime,
+    build_default_workspace_delivery_runtime,
     build_workspace_review_runtime,
 )
 from fmea_infrastructure.local_auth import LocalReviewAuthProvider
@@ -4151,6 +4152,7 @@ def create_app(
     risk_runtime_factory: Callable[[WorkspaceConfig], RiskRuntime] | None = None,
     propagation_runtime_factory: Callable[[WorkspaceConfig], object] | None = None,
     governance_runtime_factory: Callable[[WorkspaceConfig], GovernanceRuntime] | None = None,
+    delivery_runtime_factory: Callable[[WorkspaceConfig], object] | None = None,
     review_auth_provider: LocalReviewAuthProvider | None = None,
 ) -> FastAPI:
     resolved_frontend_dir = Path(frontend_dir) if frontend_dir is not None else _resolve_frontend_dir()
@@ -4203,6 +4205,9 @@ def create_app(
     app.state.governance_runtime_factory = governance_runtime_factory
     app.state.governance_runtimes = {}
     app.state.governance_runtime_lock = Lock()
+    app.state.fmea_delivery_runtime_factory = delivery_runtime_factory or build_default_workspace_delivery_runtime
+    app.state.fmea_delivery_runtimes = {}
+    app.state.fmea_delivery_runtime_lock = Lock()
     configured_cursor_secret = os.environ.get("FMEA_GOVERNANCE_CURSOR_SECRET")
     try:
         app.state.governance_cursor_secret = derive_governance_cursor_secret(configured_cursor_secret)
@@ -4220,6 +4225,13 @@ def create_app(
             app.state.review_auth_error = exc
 
     from .routes_fmea_assistance_v1 import router as fmea_assistance_v1_router
+    from .routes_fmea_delivery_v1 import (
+        DeliveryError,
+        delivery_error_response,
+        delivery_validation_error_response,
+        is_delivery_path,
+    )
+    from .routes_fmea_delivery_v1 import router as fmea_delivery_v1_router
     from .routes_fmea_governance_v1 import (
         governance_error_response,
         governance_validation_error_response,
@@ -4242,6 +4254,8 @@ def create_app(
 
     @app.exception_handler(RequestValidationError)
     async def request_validation_error_handler(request: Request, exc: RequestValidationError):
+        if is_delivery_path(request.url.path):
+            return delivery_validation_error_response(request, exc)
         if is_governance_path(request.url.path):
             return governance_validation_error_response(request, exc)
         if request.url.path.startswith("/api/v1/fmea/"):
@@ -4252,10 +4266,12 @@ def create_app(
 
     app.add_exception_handler(ReviewError, review_error_response)
     app.add_exception_handler(GovernanceServiceError, governance_error_response)
+    app.add_exception_handler(DeliveryError, delivery_error_response)
 
     app.include_router(query_v1_router)
     app.include_router(fmea_review_v1_router)
     app.include_router(fmea_governance_v1_router)
+    app.include_router(fmea_delivery_v1_router)
     app.include_router(fmea_assistance_v1_router)
     app.include_router(fmea_risk_v1_router)
     app.include_router(fmea_propagation_v1_router)
@@ -4268,6 +4284,14 @@ def create_app(
                 continue
             closed.add(id(runtime))
             runtime.executor.close()
+        delivery_runtimes = tuple(cast(dict[str, object], app.state.fmea_delivery_runtimes).values())
+        for runtime in delivery_runtimes:
+            if id(runtime) in closed:
+                continue
+            closed.add(id(runtime))
+            closer = getattr(runtime, "close", None)
+            if callable(closer):
+                closer()
 
     app.router.add_event_handler("shutdown", close_review_runtimes)
 

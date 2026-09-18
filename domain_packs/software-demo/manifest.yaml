@@ -1,0 +1,27 @@
+domain_pack:
+  id: software-demo
+  version: 1.0.0
+  content_hash: 987c45e42a66ed2084ca7f75387f63c1705b9edbef16c9025df10d702421d01f
+  kernel_compatibility_range: ">=1.0.0,<2.0.0"
+  compatible_schema_ids:
+    - graphrag.fmea.v1
+  analysis_types:
+    - design_fmea
+    - process_fmea
+    - system_fmea
+  templates:
+    - id: software-demo-fmea
+      version: 1.0.0
+  scoring_rules:
+    - id: software-sod-rpn
+      version: 1.0.0
+  propagation_rules: []
+  extension_fields:
+    - key: software.function
+      type: string
+    - key: software.hazardous_behavior
+      type: string
+    - key: software.trigger
+      type: string
+    - key: software.detection
+      type: string

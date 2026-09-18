@@ -1,0 +1,659 @@
+"""Presentation-only XLSX rendering for normalized FMEA snapshots."""
+
+# ruff: noqa: RUF001
+
+from __future__ import annotations
+
+import io
+import math
+import unicodedata
+from collections.abc import Mapping, Sequence
+from typing import Final, NoReturn
+from xml.etree.ElementTree import ParseError
+from zipfile import BadZipFile, ZipFile
+
+import openpyxl
+import orjson
+from defusedxml.ElementTree import fromstring as safe_xml_fromstring
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.utils import get_column_letter
+
+from fmea_application.report_view import build_report_view
+from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot, revalidate_normalized_snapshot
+
+from .export_json import _snapshot_projection, _validate_export_value
+
+_MAX_EXCEL_CELL_TEXT: Final = 32_767
+_MAX_COLUMNS: Final = 256
+_MAX_WIDTH: Final = 48
+_MIN_WIDTH: Final = 12
+_WIDTH_SAMPLE_ROWS: Final = 32
+_TYPES_COLUMN: Final = "__types__"
+_RESERVED_HEADERS: Final = frozenset({"Identity", _TYPES_COLUMN})
+_READABLE_MAIN_EXTRA_HEADERS: Final = ("评分摘要", "复核状态", "证据编号")
+_READABLE_ROW_LINE_BUDGET: Final = 24
+_READABLE_MAIN_MARKER_WIDTHS: Final = (12.0, 10.0, 24.0)
+_READABLE_MAIN_VALUE_WIDTH: Final = 24.0
+_READABLE_DETAIL_COLUMN_WIDTHS: Final = (14.0, 12.0, 16.0, 28.0, 48.0)
+
+
+class XlsxExportError(ValueError):
+    """Stable, public-safe XLSX rendering failure."""
+
+    def __init__(self, code: str, message: str) -> None:
+        self.code = code
+        super().__init__(message)
+
+
+def _error(code: str, message: str) -> XlsxExportError:
+    return XlsxExportError(code, message)
+
+
+def _invalid() -> NoReturn:
+    raise ValueError
+
+
+def _is_xml_char(value: str) -> bool:
+    return all(
+        codepoint in {0x9, 0xA, 0xD}
+        or 0x20 <= codepoint <= 0xD7FF
+        or 0xE000 <= codepoint <= 0xFFFD
+        or 0x10000 <= codepoint <= 0x10FFFF
+        for codepoint in map(ord, value)
+    )
+
+
+def _validate_office_value(value: object) -> None:
+    if isinstance(value, str):
+        if not _is_xml_char(value):
+            _invalid()
+        return
+    if isinstance(value, Mapping):
+        for key, item in value.items():
+            if not isinstance(key, str) or not _is_xml_char(key):
+                _invalid()
+            _validate_office_value(item)
+        return
+    if isinstance(value, Sequence) and not isinstance(value, str | bytes):
+        for item in value:
+            _validate_office_value(item)
+
+
+def _json_text(value: object) -> str:
+    try:
+        return orjson.dumps(value, option=orjson.OPT_SORT_KEYS).decode("utf-8")
+    except (TypeError, ValueError, OverflowError):
+        _invalid()
+
+
+def _value_encoding(value: object) -> tuple[str, str]:
+    if type(value) is str:
+        return value, "str"
+    if value is None:
+        return "null", "null"
+    if type(value) is bool:
+        return "true" if value else "false", "bool"
+    if type(value) is int:
+        return str(value), "int"
+    if type(value) is float:
+        return _json_text(value), "float"
+    if isinstance(value, Mapping | list):
+        return _json_text(value), "json"
+    _invalid()
+
+
+def _cell_text(value: str) -> str:
+    if len(value) > _MAX_EXCEL_CELL_TEXT:
+        _invalid()
+    return value
+
+
+def _set_string_cell(cell, value: str) -> None:
+    cell.value = _cell_text(value)
+    cell.data_type = "s"
+    cell.number_format = "@"
+    cell.alignment = Alignment(vertical="top", wrap_text=True)
+
+
+def _identity(record: Mapping[str, object], identity_field: str | None, index: int) -> str:
+    if identity_field is not None:
+        value = record.get(identity_field)
+        if type(value) is not str or not value.strip():
+            _invalid()
+        return value
+    for field_name in ("source_id", "code", "item_id"):
+        value = record.get(field_name)
+        if type(value) is str and value.strip():
+            return value
+    return f"item-{index:03d}"
+
+
+def _record_columns(records: Sequence[Mapping[str, object]]) -> list[str]:
+    keys = {key for record in records for key in record}
+    if any(type(key) is not str or key in _RESERVED_HEADERS for key in keys):
+        _invalid()
+    columns = sorted(keys)
+    if len(columns) + 2 > _MAX_COLUMNS:
+        _invalid()
+    return columns
+
+
+def _style_sheet(worksheet) -> None:
+    header_fill = PatternFill(fill_type="solid", fgColor="1F4E78")
+    header_font = Font(color="FFFFFF", bold=True)
+    header_border = Border(bottom=Side(style="thin", color="D9EAF7"))
+    for cell in worksheet[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.border = header_border
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    worksheet.freeze_panes = "A2"
+    end_row = max(1, worksheet.max_row)
+    end_column = get_column_letter(max(1, worksheet.max_column))
+    worksheet.auto_filter.ref = f"A1:{end_column}{end_row}"
+    worksheet.sheet_view.showGridLines = False
+    for column_index in range(1, worksheet.max_column + 1):
+        letter = get_column_letter(column_index)
+        sample = [worksheet.cell(row, column_index).value for row in range(1, min(end_row, _WIDTH_SAMPLE_ROWS) + 1)]
+        width = min(
+            _MAX_WIDTH, max(_MIN_WIDTH, max((len(str(value)) for value in sample if value is not None), default=0) + 2)
+        )
+        worksheet.column_dimensions[letter].width = width
+    if worksheet.max_column >= 1 and worksheet.cell(1, worksheet.max_column).value == _TYPES_COLUMN:
+        worksheet.column_dimensions[get_column_letter(worksheet.max_column)].hidden = True
+
+
+def _append_manifest(worksheet, projection: Mapping[str, object]) -> None:
+    headers = ("Key", "Value", "Type")
+    for column, value in enumerate(headers, start=1):
+        _set_string_cell(worksheet.cell(1, column), value)
+    metadata: tuple[tuple[str, object], ...] = (
+        ("schema_version", projection["schema_version"]),
+        ("snapshot_schema_version", projection["snapshot_schema_version"]),
+        ("snapshot_id", projection["snapshot_id"]),
+        ("workspace_id", projection["workspace_id"]),
+        ("analysis_id", projection["analysis_id"]),
+        ("revision_id", projection["revision_id"]),
+        ("revision_hash", projection["revision_hash"]),
+        ("publication_id", projection["publication_id"]),
+        ("source_publication_id", projection["source_publication_id"]),
+        ("manifest_id", projection["manifest_id"]),
+        ("row_count", projection["row_count"]),
+        ("risk_count", len(projection["risk_records"])),
+        ("propagation_present", projection["propagation"] is not None),
+        ("evidence_count", len(projection["evidence_summary"])),
+        ("decision_count", len(projection["decision_summary"])),
+        ("unresolved_count", len(projection["unresolved_items"])),
+        ("snapshot_hash", projection["snapshot_hash"]),
+        ("created_at", projection["created_at"]),
+        ("version_manifest", projection["version_manifest"]),
+        ("audit_summary", projection["audit_summary"]),
+        ("draft_preview", projection["draft_preview"]),
+        ("draft_marker", projection["draft_marker"]),
+        ("format", projection["format"]),
+        ("media_type", projection["media_type"]),
+    )
+    for row_index, (key, value) in enumerate(metadata, start=2):
+        encoded, value_type = _value_encoding(value)
+        _set_string_cell(worksheet.cell(row_index, 1), key)
+        _set_string_cell(worksheet.cell(row_index, 2), encoded)
+        _set_string_cell(worksheet.cell(row_index, 3), value_type)
+
+
+def _append_typed_table(
+    worksheet,
+    records: Sequence[Mapping[str, object]],
+    *,
+    identity_field: str | None,
+) -> None:
+    columns = _record_columns(records)
+    headers = ["Identity", *columns, _TYPES_COLUMN]
+    for column_index, header in enumerate(headers, start=1):
+        _set_string_cell(worksheet.cell(1, column_index), header)
+    for row_index, record in enumerate(records, start=2):
+        _set_string_cell(worksheet.cell(row_index, 1), _identity(record, identity_field, row_index - 1))
+        types: dict[str, str] = {}
+        for column_index, key in enumerate(columns, start=2):
+            if key not in record:
+                _set_string_cell(worksheet.cell(row_index, column_index), "")
+                continue
+            encoded, value_type = _value_encoding(record[key])
+            types[key] = value_type
+            _set_string_cell(worksheet.cell(row_index, column_index), encoded)
+        _set_string_cell(worksheet.cell(row_index, len(headers)), _json_text(types))
+
+
+def _plain_value(value: object) -> object:
+    if isinstance(value, Mapping):
+        return {str(key): _plain_value(item) for key, item in value.items()}
+    if isinstance(value, Sequence) and not isinstance(value, str | bytes):
+        return [_plain_value(item) for item in value]
+    return value
+
+
+def _human_text(value: object) -> str:
+    if value is None:
+        return "（无）"
+    if isinstance(value, str):
+        if value == "":
+            return "（空字符串）"
+        if not value.strip():
+            return "（空白字符串）"
+        return value
+    if isinstance(value, Mapping):
+        if not value:
+            return "（空对象）"
+        return _json_text(_plain_value(value))
+    if isinstance(value, Sequence) and not isinstance(value, str | bytes):
+        if not value:
+            return "（空列表）"
+        return "；".join(_human_text(item) for item in value)
+    return str(value)
+
+
+def _readable_columns(view) -> tuple[object, ...]:
+    return tuple(view.columns)
+
+
+def _display_width(value: str) -> int:
+    return sum(2 if unicodedata.east_asian_width(character) in {"W", "F", "A"} else 1 for character in value)
+
+
+def _visual_line_count(value: str, column_width: float) -> int:
+    return sum(
+        max(1, math.ceil(_display_width(line.rstrip("\r")) / max(1, column_width)))
+        for line in value.split("\n")
+    )
+
+
+def _readable_text_parts(value: str, column_width: float) -> tuple[str, ...]:
+    if _visual_line_count(value, column_width) <= _READABLE_ROW_LINE_BUDGET:
+        return (value,)
+
+    parts: list[str] = []
+    part_start = 0
+    line_count = 1
+    line_width = 0
+    for index, character in enumerate(value):
+        if character == "\n":
+            next_line_count = line_count + 1
+            next_line_width = 0
+        else:
+            character_width = 0 if character == "\r" else (2 if unicodedata.east_asian_width(character) in {"W", "F", "A"} else 1)
+            wraps = line_width > 0 and line_width + character_width > column_width
+            next_line_count = line_count + int(wraps)
+            next_line_width = character_width if wraps else line_width + character_width
+        if next_line_count > _READABLE_ROW_LINE_BUDGET:
+            parts.append(value[part_start:index])
+            part_start = index
+            line_count = 1
+            line_width = 0
+            if character == "\n":
+                line_count = 2
+            else:
+                character_width = 0 if character == "\r" else (2 if unicodedata.east_asian_width(character) in {"W", "F", "A"} else 1)
+                line_width = character_width
+            continue
+        line_count = next_line_count
+        line_width = next_line_width
+    parts.append(value[part_start:])
+    if any(_visual_line_count(part, column_width) > _READABLE_ROW_LINE_BUDGET for part in parts):
+        _invalid()
+    return tuple(parts)
+
+
+def _set_readable_widths(worksheet, widths: Sequence[float]) -> None:
+    for column_index, width in enumerate(widths, start=1):
+        worksheet.column_dimensions[get_column_letter(column_index)].width = width
+
+
+def _main_column_widths(column_count: int) -> tuple[float, ...]:
+    return (*_READABLE_MAIN_MARKER_WIDTHS, *(_READABLE_MAIN_VALUE_WIDTH for _ in range(column_count - 3)))
+
+
+def _detail_row(detail: Mapping[str, object]) -> Mapping[str, object]:
+    row = detail.get("row")
+    return row if isinstance(row, Mapping) else detail
+
+
+def _detail_risks(detail: Mapping[str, object], row: Mapping[str, object]) -> tuple[Mapping[str, object], ...]:
+    row_id = row.get("row_id")
+    record_version = row.get("record_version")
+    records = detail.get("risk_records", ())
+    if not isinstance(records, Sequence) or isinstance(records, str | bytes):
+        return ()
+    return tuple(
+        risk
+        for risk in records
+        if isinstance(risk, Mapping)
+        and risk.get("row_id") == row_id
+        and risk.get("source_record_version") == record_version
+    )
+
+
+def _detail_evidence_ids(row: Mapping[str, object]) -> tuple[str, ...]:
+    result: set[str] = set()
+    bindings = row.get("field_evidence", ())
+    if isinstance(bindings, Sequence) and not isinstance(bindings, str | bytes):
+        for binding in bindings:
+            if not isinstance(binding, Mapping):
+                continue
+            evidence_ids = binding.get("evidence_ids", ())
+            if isinstance(evidence_ids, Sequence) and not isinstance(evidence_ids, str | bytes):
+                result.update(str(evidence_id) for evidence_id in evidence_ids)
+    return tuple(sorted(result))
+
+
+def _risk_summary(risks: Sequence[Mapping[str, object]]) -> str:
+    summaries: list[str] = []
+    for risk in risks:
+        parts = [str(risk["assessment_id"]), str(risk["status"])]
+        derived = risk.get("derived")
+        if isinstance(derived, Mapping):
+            for key in ("rpn", "priority"):
+                if key in derived:
+                    parts.append(f"{key}={_human_text(derived[key])}")
+        summaries.append("；".join(parts))
+    return " | ".join(summaries)
+
+
+def _append_readable_main(worksheet, view) -> None:
+    columns = _readable_columns(view)
+    headers = ["逻辑行", "分段", "续字段", *[column.label for column in columns], *_READABLE_MAIN_EXTRA_HEADERS]
+    if len(headers) > _MAX_COLUMNS:
+        _invalid()
+    widths = _main_column_widths(len(headers))
+    _set_readable_widths(worksheet, widths)
+    for column_index, header in enumerate(headers, start=1):
+        _set_string_cell(worksheet.cell(1, column_index), str(header))
+    for logical_row, values in enumerate(view.rows, start=1):
+        detail = view.details[logical_row - 1] if logical_row - 1 < len(view.details) else {}
+        row = _detail_row(detail) if isinstance(detail, Mapping) else {}
+        risks = _detail_risks(detail, row) if isinstance(detail, Mapping) else ()
+        display_values = [_human_text(values[column.field_key]) for column in columns]
+        display_values.extend((
+            _risk_summary(risks),
+            _human_text(row.get("review_status")),
+            "、".join(_detail_evidence_ids(row)),
+        ))
+        display_fields = [column.field_key for column in columns] + ["risk_summary", "review_status", "evidence_ids"]
+        parts = [
+            _readable_text_parts(value, width)
+            for value, width in zip(display_values, widths[3:], strict=True)
+        ]
+        part_count = max(map(len, parts), default=1)
+        continued_fields = [field for field, field_parts in zip(display_fields, parts, strict=True) if len(field_parts) > 1]
+        for part_index in range(part_count):
+            row_values = (
+                f"第{logical_row}行",
+                f"{part_index + 1}/{part_count}",
+                "、".join(continued_fields),
+                *(
+                    field_parts[part_index] if part_index < len(field_parts) else ""
+                    for field_parts in parts
+                ),
+            )
+            row_index = worksheet.max_row + 1
+            for column_index, value in enumerate(row_values, start=1):
+                _set_string_cell(worksheet.cell(row_index, column_index), value)
+
+
+def _append_detail_record(
+    worksheet,
+    row_id: str,
+    record_version: object,
+    detail_type: str,
+    field: str,
+    value: object,
+) -> None:
+    text = _human_text(value)
+    parts = _readable_text_parts(text, _READABLE_DETAIL_COLUMN_WIDTHS[-1])
+    for part_index, part in enumerate(parts, start=1):
+        field_name = field if len(parts) == 1 else f"{field} [part {part_index}/{len(parts)}]"
+        values = (row_id, _human_text(record_version), detail_type, field_name, part)
+        row_index = worksheet.max_row + 1
+        for column_index, item in enumerate(values, start=1):
+            _set_string_cell(worksheet.cell(row_index, column_index), item)
+
+
+def _append_mapping_fields(
+    worksheet,
+    row_id: str,
+    record_version: object,
+    detail_type: str,
+    prefix: str,
+    value: object,
+) -> None:
+    if isinstance(value, Mapping):
+        if not value:
+            _append_detail_record(worksheet, row_id, record_version, detail_type, prefix, value)
+            return
+        for key, item in value.items():
+            field = f"{prefix}.{key}" if prefix else str(key)
+            _append_mapping_fields(worksheet, row_id, record_version, detail_type, field, item)
+        return
+    if (
+        isinstance(value, Sequence)
+        and not isinstance(value, str | bytes)
+        and value
+        and all(isinstance(item, Mapping) for item in value)
+    ):
+        for index, item in enumerate(value, start=1):
+            _append_mapping_fields(worksheet, row_id, record_version, detail_type, f"{prefix}[{index}]", item)
+        return
+    _append_detail_record(worksheet, row_id, record_version, detail_type, prefix, value)
+
+
+def _append_readable_details(worksheet, view, projection: Mapping[str, object]) -> None:  # noqa: C901
+    headers = ("行ID", "记录版本", "详情类型", "字段", "内容")
+    _set_readable_widths(worksheet, _READABLE_DETAIL_COLUMN_WIDTHS)
+    for column_index, header in enumerate(headers, start=1):
+        _set_string_cell(worksheet.cell(1, column_index), header)
+
+    for detail in view.details:
+        row = _detail_row(detail)
+        row_id = _human_text(row.get("row_id"))
+        record_version = row.get("record_version")
+        for key, value in row.items():
+            if key in {"extension_values", "field_evidence", "field_support", "field_claims"}:
+                continue
+            _append_detail_record(worksheet, row_id, record_version, "正文", str(key), value)
+        extension_values = row.get("extension_values", ())
+        if isinstance(extension_values, Sequence) and not isinstance(extension_values, str | bytes):
+            for extension in extension_values:
+                if isinstance(extension, Mapping):
+                    _append_detail_record(
+                        worksheet,
+                        row_id,
+                        record_version,
+                        "扩展字段",
+                        _human_text(extension.get("field_key")),
+                        extension.get("value"),
+                    )
+        for field_name, detail_type in (
+            ("field_evidence", "证据绑定"),
+            ("field_support", "字段支持"),
+            ("field_claims", "字段声明"),
+        ):
+            value = row.get(field_name)
+            if value:
+                _append_detail_record(worksheet, row_id, record_version, detail_type, field_name, value)
+        for risk in _detail_risks(detail, row):
+            _append_mapping_fields(
+                worksheet,
+                row_id,
+                record_version,
+                "评分",
+                _human_text(risk.get("assessment_id")),
+                risk,
+            )
+        for decision in detail.get("decision_summary", ()):
+            if isinstance(decision, Mapping):
+                _append_mapping_fields(
+                    worksheet,
+                    row_id,
+                    record_version,
+                    "复核",
+                    _human_text(decision.get("decision_id")),
+                    decision,
+                )
+
+    seen_packs: set[str] = set()
+    seen_evidence: set[object] = set()
+    summaries = [detail.get("evidence_summary", ()) for detail in view.details]
+    if not summaries:
+        summaries = [projection["evidence_summary"]]
+    for summary in summaries:
+        if not isinstance(summary, Sequence) or isinstance(summary, str | bytes):
+            continue
+        for pack in summary:
+            if not isinstance(pack, Mapping):
+                continue
+            pack_id = _human_text(pack.get("pack_id"))
+            if pack_id not in seen_packs:
+                seen_packs.add(pack_id)
+                pack_without_refs = {key: value for key, value in pack.items() if key != "refs"}
+                _append_mapping_fields(worksheet, "", "", "共享证据包", f"pack.{pack_id}", pack_without_refs)
+            refs = pack.get("refs", ())
+            if not isinstance(refs, Sequence) or isinstance(refs, str | bytes):
+                continue
+            for reference in refs:
+                if not isinstance(reference, Mapping):
+                    continue
+                identity = reference.get("evidence_id")
+                if not isinstance(identity, str):
+                    identity = _json_text(_plain_value(reference))
+                if identity in seen_evidence:
+                    continue
+                seen_evidence.add(identity)
+                _append_mapping_fields(worksheet, "", "", "证据", identity, reference)
+
+    for decision in () if view.details else projection["decision_summary"]:
+        if isinstance(decision, Mapping):
+            _append_mapping_fields(worksheet, "", "", "复核", "decision", decision)
+    if projection["propagation"] is not None:
+        _append_mapping_fields(worksheet, "", "", "传播", "propagation", projection["propagation"])
+
+
+def _style_readable_sheet(worksheet) -> None:
+    _style_sheet(worksheet)
+    widths = (
+        _main_column_widths(worksheet.max_column)
+        if worksheet.title == "正文"
+        else _READABLE_DETAIL_COLUMN_WIDTHS
+    )
+    _set_readable_widths(worksheet, widths)
+    for row_index in range(2, worksheet.max_row + 1):
+        line_counts = [
+            _visual_line_count(
+                "" if (value := worksheet.cell(row_index, column).value) is None else str(value),
+                widths[column - 1],
+            )
+            for column in range(1, worksheet.max_column + 1)
+        ]
+        lines = max(line_counts, default=1)
+        if lines > _READABLE_ROW_LINE_BUDGET:
+            _invalid()
+        worksheet.row_dimensions[row_index].height = max(36, 15 * lines)
+
+
+def _validate_package_xml(name: str, raw: bytes) -> None:
+    folded_name = name.casefold()
+    if not folded_name.endswith((".xml", ".rels")):
+        return
+    root = safe_xml_fromstring(raw, forbid_dtd=True, forbid_entities=True, forbid_external=True)
+    if folded_name.endswith(".rels"):
+        for relationship in root.iter("{http://schemas.openxmlformats.org/package/2006/relationships}Relationship"):
+            target = relationship.attrib.get("Target", "")
+            if relationship.attrib.get("TargetMode", "").casefold() == "external" or target.casefold().startswith((
+                "http:",
+                "https:",
+                "file:",
+                "ftp:",
+            )):
+                _invalid()
+    if folded_name.endswith(".xml"):
+        for element in root.iter():
+            if element.tag.rsplit("}", 1)[-1].casefold() == "f":
+                _invalid()
+
+
+def _validate_package(payload: bytes) -> None:
+    try:
+        with ZipFile(io.BytesIO(payload)) as archive:
+            names = tuple(archive.namelist())
+            folded = {name.casefold() for name in names}
+            if any(".." in name.split("/") or "\\" in name or name.startswith("/") for name in names):
+                _invalid()
+            if any(name.startswith("xl/externallinks/") for name in folded):
+                _invalid()
+            if any(name.endswith((".xlsm", ".xlam", ".bin")) or "vbaproject" in name for name in folded):
+                _invalid()
+            for name in names:
+                _validate_package_xml(name, archive.read(name))
+    except (BadZipFile, OSError, ValueError, ParseError):
+        _invalid()
+
+
+class XlsxFmeaExporter:
+    """Render a normalized snapshot to an in-memory, presentation-only XLSX."""
+
+    format = "xlsx"
+    media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+    def __init__(self, draft_preview: bool = False) -> None:
+        if type(draft_preview) is not bool:
+            raise _error("FMEA_EXPORT_XLSX_INVALID", "draft_preview must be a boolean")
+        self._draft_preview = draft_preview
+
+    def render(self, snapshot: NormalizedFmeaSnapshot, *, draft_preview: bool | None = None) -> bytes:
+        if type(snapshot) is not NormalizedFmeaSnapshot:
+            raise _error("FMEA_EXPORT_SNAPSHOT_INVALID", "snapshot must be a NormalizedFmeaSnapshot")
+        if draft_preview is not None and type(draft_preview) is not bool:
+            raise _error("FMEA_EXPORT_XLSX_INVALID", "draft_preview must be a boolean or None")
+        try:
+            resolved_preview = self._draft_preview if draft_preview is None else draft_preview
+            snapshot = revalidate_normalized_snapshot(snapshot)
+            projection = _snapshot_projection(
+                snapshot,
+                draft_preview=resolved_preview,
+                export_format=self.format,
+                media_type=self.media_type,
+            )
+            _validate_export_value(projection)
+            _validate_office_value(projection)
+            report_view = build_report_view(snapshot)
+            workbook = openpyxl.Workbook()
+            readable = workbook.active
+            readable.title = "正文"
+            readable_details = workbook.create_sheet("正文详情")
+            manifest = workbook.create_sheet("Manifest")
+            for sheet_name in ("FMEA", "Risk", "Propagation", "Evidence", "Decisions", "Unresolved"):
+                workbook.create_sheet(sheet_name)
+            _append_readable_main(readable, report_view)
+            _append_readable_details(readable_details, report_view, projection)
+            _append_manifest(manifest, projection)
+            _append_typed_table(workbook["FMEA"], projection["rows"], identity_field="row_id")
+            _append_typed_table(workbook["Risk"], projection["risk_records"], identity_field="assessment_id")
+            propagation = () if projection["propagation"] is None else (projection["propagation"],)
+            _append_typed_table(workbook["Propagation"], propagation, identity_field=None)
+            _append_typed_table(workbook["Evidence"], projection["evidence_summary"], identity_field="pack_id")
+            _append_typed_table(workbook["Decisions"], projection["decision_summary"], identity_field="decision_id")
+            _append_typed_table(workbook["Unresolved"], projection["unresolved_items"], identity_field=None)
+            _style_readable_sheet(readable)
+            _style_readable_sheet(readable_details)
+            for worksheet in workbook.worksheets[2:]:
+                _style_sheet(worksheet)
+            buffer = io.BytesIO()
+            workbook.save(buffer)
+            payload = buffer.getvalue()
+            _validate_package(payload)
+        except XlsxExportError:
+            raise
+        except Exception:
+            raise _error("FMEA_EXPORT_XLSX_INVALID", "snapshot cannot be rendered as XLSX") from None
+        else:
+            return payload
+
+
+__all__ = ["XlsxExportError", "XlsxFmeaExporter"]

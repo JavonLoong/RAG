@@ -31,6 +31,10 @@ from core_domain.fmea.propagation import (
     TopologySnapshot,
 )
 from core_domain.fmea.scoring import RiskAssessmentRecord, RiskProposal, ScoringRulePack
+from core_domain.fmea.template_migration import (
+    MigrationReport,
+    TemplateDraft,
+)
 from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
 
 from .assistance_contracts import (
@@ -87,10 +91,20 @@ from .risk_contracts import (
     RiskConfirmationResult,
     RiskModelRequest,
 )
+from .template_patch_contracts import TemplatePatchDecision, TemplatePatchSuggestion
 
 if TYPE_CHECKING:
+    from fmea_application.publication_body import PublicationBody, PublicationReviewRecord
     from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
 
+    from .delivery_contracts import ExportArtifactManifest, ExportRun, VerifiedExportArtifact
+    from .export_service import ExportNarrativeGenerationResult, ExportNarrativeRequest, StartExportCommand
+    from .migration_service import (
+        MigrationCandidate,
+        MigrationCommand,
+        MigrationResult,
+        PreparedMigration,
+    )
     from .propagation_service import (
         PreparedPropagationInvalidation,
         PreparedPropagationProposal,
@@ -234,6 +248,41 @@ class DomainPackRegistry(Protocol):
     def get_source_bytes(self, pack_id: str, version: str) -> bytes: ...
 
 
+class MigrationAdapter(Protocol):
+    """One explicitly registered, deterministic domain-pack migration edge."""
+
+    source_identity: tuple[str, str]
+    target_identity: tuple[str, str]
+
+    def migrate(self, source: FmeaRevision) -> MigrationCandidate: ...
+
+
+class MigrationReportRequestConflict(ValueError):
+    """The stored dry run is bound to a different canonical request."""
+
+
+class MigrationRepository(Protocol):
+    """Provider-neutral persistence boundary for durable migration delivery."""
+
+    def get_revision(self, revision_id: str, workspace_id: str) -> FmeaRevision | None: ...
+
+    def get_revision_record_version(self, revision_id: str, workspace_id: str) -> int | None: ...
+
+    def save_migration_report(
+        self, report: MigrationReport, *, command: MigrationCommand, actor: ActorContext
+    ) -> MigrationReport: ...
+
+    def get_migration_report(
+        self,
+        migration_id: str,
+        workspace_id: str,
+        *,
+        command: MigrationCommand,
+    ) -> MigrationReport | None: ...
+
+    def commit_migration(self, prepared: PreparedMigration) -> MigrationResult: ...
+
+
 class ScoringRuleRegistry(Protocol):
     def register(self, rule_pack: ScoringRulePack, source_bytes: bytes) -> ScoringRulePack: ...
 
@@ -375,10 +424,169 @@ class RiskSuggestionGenerator(Protocol):
     def generate(self, request: RiskModelRequest) -> AssistanceSuggestion[object]: ...
 
 
+class TemplateImporter(Protocol):
+    """Safe, bounded source-to-draft boundary for one office format."""
+
+    def parse(self, raw_bytes: bytes, filename: str, *, workspace_id: str) -> TemplateDraft: ...
+
+
+class TemplateEvidenceProvider(Protocol):
+    """Resolve the exact server-owned EvidencePack used for mapping assistance."""
+
+    def load_pack(self, workspace_id: str, pack_id: str) -> EvidencePack: ...
+
+
+@dataclass(frozen=True, slots=True)
+class TemplatePatchRequest:
+    """Bounded application request passed to a provider-neutral patch port."""
+
+    patch_id: str
+    draft: TemplateDraft
+    evidence_pack: EvidencePack
+    input_template_version: str
+    target_template_id: str
+    target_template_version: str
+    target_template_hash: str
+    domain_pack_id: str
+    domain_pack_version: str
+    domain_pack_hash: str
+    evidence_pack_id: str
+    evidence_pack_hash: str
+    run_id: str
+    trace_id: str
+    model_version: str
+    prompt_version: str
+    created_at: str = ""
+    target_record_version: int = 1
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.draft, TemplateDraft):
+            raise TypeError("draft must be a TemplateDraft")  # noqa: TRY003
+        if not isinstance(self.evidence_pack, EvidencePack):
+            raise TypeError("evidence_pack must be an EvidencePack")  # noqa: TRY003
+        for field_name in (
+            "patch_id",
+            "input_template_version",
+            "target_template_id",
+            "target_template_version",
+            "target_template_hash",
+            "domain_pack_id",
+            "domain_pack_version",
+            "domain_pack_hash",
+            "evidence_pack_id",
+            "evidence_pack_hash",
+            "run_id",
+            "trace_id",
+            "model_version",
+            "prompt_version",
+        ):
+            value = getattr(self, field_name)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{field_name} must be non-empty")  # noqa: TRY003
+        if self.created_at and not isinstance(self.created_at, str):
+            raise TypeError("created_at must be a string when supplied")  # noqa: TRY003
+        if isinstance(self.target_record_version, bool) or not isinstance(self.target_record_version, int):
+            raise TypeError("target_record_version must be an integer")  # noqa: TRY003
+        if self.target_record_version < 1:
+            raise ValueError("target_record_version must be positive")  # noqa: TRY003
+        if (
+            self.evidence_pack.workspace_id != self.draft.workspace_id
+            or self.evidence_pack.pack_id != self.evidence_pack_id
+            or self.evidence_pack.pack_hash != self.evidence_pack_hash.removeprefix("sha256:")
+        ):
+            raise ValueError("evidence_pack identity does not match the template patch request")  # noqa: TRY003
+
+
+class TemplatePatchGenerator(Protocol):
+    """Provider-neutral mapping suggestions; never a template authority."""
+
+    def suggest(self, request: object) -> TemplatePatchSuggestion: ...
+
+
+class TemplateCompilerPort(Protocol):
+    """The existing structured-output compiler behind the FMEA service."""
+
+    def compile(self, source: Mapping[str, object]) -> object: ...
+
+
+class TemplateRegistryPort(Protocol):
+    """Immutable template registry boundary."""
+
+    def register(self, template: object, source_bytes: bytes, source_suffix: str) -> object: ...
+
+    def get(self, template_id: str, version: str) -> object: ...
+
+
+class TemplateWorkflowRepository(Protocol):
+    """Durable workspace-scoped template draft and patch lifecycle."""
+
+    def save_template_draft(
+        self, draft: TemplateDraft, scope: IdempotencyScope, payload_hash: str, *, actor_type: ActorType
+    ) -> tuple[TemplateDraft, int, bool]: ...
+
+    def get_template_draft(self, draft_id: str, workspace_id: str) -> tuple[TemplateDraft, int] | None: ...
+
+    def reserve_template_patch_generation(
+        self, patch_id: str, scope: IdempotencyScope, payload_hash: str, *, created_at: str
+    ) -> TemplatePatchSuggestion | None: ...
+
+    def replay_template_patch(
+        self, patch_id: str, scope: IdempotencyScope, payload_hash: str
+    ) -> TemplatePatchSuggestion | None: ...
+
+    def save_template_patch(
+        self,
+        suggestion: TemplatePatchSuggestion,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        *,
+        expected_draft_version: int,
+        actor_type: ActorType,
+    ) -> tuple[TemplatePatchSuggestion, int, bool]: ...
+
+    def reserve_template_patch_decision(
+        self,
+        decision: TemplatePatchDecision,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        *,
+        expected_patch_version: int,
+    ) -> tuple[TemplatePatchDecision, bool]: ...
+
+    def get_template_patch(
+        self, patch_id: str, workspace_id: str
+    ) -> tuple[TemplatePatchSuggestion | TemplatePatchDecision, int] | None: ...
+
+    def save_template_patch_decision(
+        self,
+        decision: TemplatePatchDecision,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        *,
+        expected_patch_version: int,
+    ) -> tuple[TemplatePatchDecision, int, bool]: ...
+
+
+class TemplateSourceBuilder(Protocol):
+    """Build a declarative compiler input from an accepted immutable draft."""
+
+    def build(
+        self,
+        base_source: Mapping[str, object],
+        draft: TemplateDraft,
+        patch: object,
+        new_template_version: str,
+    ) -> Mapping[str, object]: ...
+
+
 class GovernanceSourcePort(Protocol):
     """Read server-owned accepted/confirmed governance state for one scope."""
 
     def load_inputs(self, analysis_id: str, workspace_id: str) -> GovernanceInputs: ...
+
+    def build_publication_body(self, revision: FmeaRevision, inputs: GovernanceInputs) -> PublicationBody: ...
+
+    def get_publication_templates(self, revision: FmeaRevision, inputs: GovernanceInputs) -> tuple[str, ...]: ...
 
 
 class GovernanceAnalysisQueryPort(Protocol):
@@ -387,6 +595,10 @@ class GovernanceAnalysisQueryPort(Protocol):
 
 class GovernanceReviewQueryPort(Protocol):
     def list_rows(self, analysis_id: str, workspace_id: str) -> tuple[FmeaRow, ...]: ...
+
+
+class GovernancePublicationReviewQueryPort(Protocol):
+    def load_publication_reviews(self, revision: FmeaRevision) -> tuple[PublicationReviewRecord, ...]: ...
 
 
 class GovernanceRiskQueryPort(Protocol):
@@ -406,6 +618,8 @@ class GovernanceParentRevisionQueryPort(Protocol):
 
 
 class GovernanceArtifactQueryPort(Protocol):
+    def get_report_template(self, template_id: str, version: str) -> str: ...
+
     def get_artifacts(
         self, analysis_id: str, workspace_id: str, analysis: ResolvedAnalysisRecord
     ) -> GovernanceArtifactSet: ...
@@ -444,6 +658,7 @@ class GovernanceRepositoryProviders:
     acknowledgements: GovernanceAcknowledgementQueryPort
     retrieval: RetrievalProvenanceQueryPort
     parent: GovernanceParentRevisionQueryPort | None = None
+    publication_reviews: GovernancePublicationReviewQueryPort | None = None
 
     def __post_init__(self) -> None:
         required_methods = {
@@ -463,6 +678,10 @@ class GovernanceRepositoryProviders:
                 raise TypeError(f"{provider_name} provider does not implement its typed query port")  # noqa: TRY003
         if self.parent is not None and not callable(getattr(self.parent, "get_parent_revision", None)):
             raise TypeError("parent provider does not implement its typed query port")  # noqa: TRY003
+        if self.publication_reviews is not None and not callable(
+            getattr(self.publication_reviews, "load_publication_reviews", None)
+        ):
+            raise TypeError("publication review provider does not implement its typed query port")  # noqa: TRY003
 
 
 class GovernanceAssistanceGenerator(Protocol):
@@ -647,11 +866,81 @@ class GovernanceRepository(Protocol):
 
     def get_snapshot(self, publication_id: str, workspace_id: str) -> NormalizedFmeaSnapshot | None: ...
 
+    def get_snapshot_for_revision(
+        self, revision_id: str, workspace_id: str
+    ) -> NormalizedFmeaSnapshot | None: ...
+
     def get_export_eligibility(self, publication_id: str, workspace_id: str) -> ExportEligibilityRecord | None: ...
 
     def list_approval_events(self, query: GovernanceHistoryQuery) -> GovernanceHistoryPage: ...
 
     def list_publication_events(self, query: GovernanceHistoryQuery) -> GovernanceHistoryPage: ...
+
+
+class SnapshotExporter(Protocol):
+    """Provider-neutral renderer for one normalized snapshot format."""
+
+    format: str
+    media_type: str
+
+    def render(self, snapshot: NormalizedFmeaSnapshot, *, draft_preview: bool | None = None) -> bytes: ...
+
+
+class ExportNarrativeGenerator(Protocol):
+    """Provider-neutral, review-only narrative assistance boundary."""
+
+    def generate(self, request: ExportNarrativeRequest) -> ExportNarrativeGenerationResult: ...
+
+
+class ArtifactStore(Protocol):
+    """Immutable artifact publication and verification boundary."""
+
+    def publish(
+        self, run_id: str, filename: str, payload: bytes, manifest: ExportArtifactManifest
+    ) -> VerifiedExportArtifact: ...
+
+    def get(self, artifact_id: str, workspace_id: str) -> VerifiedExportArtifact: ...
+
+    def latest(self, run_id: str) -> VerifiedExportArtifact | None: ...
+
+
+class ExportRepository(Protocol):
+    """Durable export-run and manifest lifecycle boundary."""
+
+    def get_export_run(self, export_run_id: str, workspace_id: str) -> ExportRun | None: ...
+
+    def get_export_artifact(self, artifact_id: str, workspace_id: str) -> ExportArtifactManifest | None: ...
+
+    def verify_export_delivery(
+        self, export_run_id: str, workspace_id: str
+    ) -> tuple[ExportRun, ExportArtifactManifest]: ...
+
+    def reserve_export_run(
+        self,
+        command: StartExportCommand,
+        actor: ActorContext,
+        request_json: str,
+        request_hash: str,
+        created_at: str,
+    ) -> ExportRun: ...
+
+    def mark_export_running(self, export_run_id: str, workspace_id: str, started_at: str) -> ExportRun: ...
+
+    def request_export_cancellation(self, export_run_id: str, workspace_id: str, requested_at: str) -> ExportRun: ...
+
+    def complete_export_cancellation(self, export_run_id: str, workspace_id: str, finished_at: str) -> ExportRun: ...
+
+    def complete_export(
+        self,
+        run: ExportRun,
+        manifest: ExportArtifactManifest,
+        actor: ActorContext,
+        request_json: str,
+        request_hash: str,
+        finished_at: str,
+    ) -> ExportRun: ...
+
+    def fail_export(self, export_run_id: str, workspace_id: str, error: str, finished_at: str) -> ExportRun: ...
 
 
 class ReviewRunExecutor(Protocol):
@@ -663,11 +952,14 @@ class ReviewRunExecutor(Protocol):
 __all__ = [
     "AnalysisAssistanceGenerator",
     "ApprovalWithdrawalResult",
+    "ArtifactStore",
     "AssistanceRepository",
     "DomainPackRegistry",
     "EvidenceProvider",
     "EvidenceRequest",
     "EvidenceSnapshot",
+    "ExportNarrativeGenerator",
+    "ExportRepository",
     "FmeaRepository",
     "GovernanceAcknowledgementQueryPort",
     "GovernanceAnalysisQueryPort",
@@ -676,12 +968,16 @@ __all__ = [
     "GovernanceEvidenceQueryPort",
     "GovernanceHistoryPage",
     "GovernancePropagationQueryPort",
+    "GovernancePublicationReviewQueryPort",
     "GovernanceRepository",
     "GovernanceRepositoryProviders",
     "GovernanceReviewQueryPort",
     "GovernanceRiskQueryPort",
     "GovernanceRunQueryPort",
     "GovernanceSourcePort",
+    "MigrationAdapter",
+    "MigrationReportRequestConflict",
+    "MigrationRepository",
     "PropagationEvidenceProvider",
     "PropagationRepository",
     "PropagationRequest",
@@ -693,5 +989,14 @@ __all__ = [
     "RiskRepository",
     "RiskSuggestionGenerator",
     "ScoringRuleRegistry",
+    "SnapshotExporter",
     "SystemTopologyPort",
+    "TemplateCompilerPort",
+    "TemplateEvidenceProvider",
+    "TemplateImporter",
+    "TemplatePatchGenerator",
+    "TemplatePatchRequest",
+    "TemplateRegistryPort",
+    "TemplateSourceBuilder",
+    "TemplateWorkflowRepository",
 ]

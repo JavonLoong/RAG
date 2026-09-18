@@ -1123,7 +1123,9 @@ class SqliteRiskRepository:
         ).fetchone()
         if row is None:
             raise _safe_error("FMEA_ROW_NOT_FOUND", "FMEA row was not found.")
-        if require_current_version and row["record_version"] != proposal.source_record_version:
+        if proposal.source_record_version > row["record_version"] or (
+            require_current_version and row["record_version"] != proposal.source_record_version
+        ):
             raise _safe_error("FMEA_RISK_VERSION_CONFLICT", "Risk source row version is stale.")
         try:
             source_row = decode_row(str(row["row_json"]))
@@ -1149,7 +1151,11 @@ class SqliteRiskRepository:
             source_snapshot = decode_review_source_snapshot(str(source_snapshot_row["snapshot_json"]))
             if (
                 source_snapshot.row_id != proposal.row_id
-                or source_snapshot.source_record_version != proposal.source_record_version
+                # This snapshot records immutable generation provenance. Human
+                # review advances the row/proposal version, not its origin.
+                # The current row CAS above remains authoritative for scoring.
+                or source_snapshot.source_record_version != source_snapshot_row["source_record_version"]
+                or source_snapshot.source_record_version > proposal.source_record_version
                 or source_snapshot.source_hash != source_snapshot_row["source_hash"]
                 or source_snapshot_row["workspace_id"] != proposal.workspace_id
                 or encode_review_json(source_snapshot) != source_snapshot_row["snapshot_json"]

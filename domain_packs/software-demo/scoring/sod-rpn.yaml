@@ -1,0 +1,72 @@
+rule_pack:
+  id: software-sod-rpn
+  version: 1.0.0
+  applicable_analysis_types:
+    - design_fmea
+    - process_fmea
+    - system_fmea
+  score_range:
+    min: 1
+    max: 10
+  dimensions:
+    severity:
+      anchors:
+        1: No observable user or control-flow impact.
+        2: Cosmetic or recoverable behavior with no material effect.
+        3: Limited feature degradation with a safe workaround.
+        4: Noticeable workflow disruption needing operator correction.
+        5: Partial service denial or bounded incorrect behavior.
+        6: Important function failure requiring incident handling.
+        7: Major service or data-integrity consequence across a bounded scope.
+        8: Severe authorization, availability, or integrity consequence.
+        9: Serious safety, financial, privacy, or operational consequence.
+        10: Catastrophic software-mediated harm or loss of critical control.
+    occurrence:
+      anchors:
+        1: No comparable executions have produced the behavior.
+        2: Exceptional behavior below one event per million executions.
+        3: Rare behavior seen in isolated input or deployment conditions.
+        4: Low-frequency behavior in a narrow workload class.
+        5: Intermittent behavior under repeated normal workflows.
+        6: Moderate recurrence across ordinary execution paths.
+        7: Frequent recurrence in a known input or state combination.
+        8: High recurrence across several supported execution paths.
+        9: Very frequent behavior in most matching executions.
+        10: Behavior is deterministic whenever its trigger is present.
+    detection:
+      anchors:
+        1: Automated tests, runtime telemetry, and operators detect it early.
+        2: Runtime monitoring normally detects it before material consequence.
+        3: A deterministic assertion or alert gives an early signal.
+        4: Logs or traces expose a trend requiring engineering interpretation.
+        5: Detection depends on selected tests, flags, or workloads.
+        6: Incident review is needed and the early signal is ambiguous.
+        7: Regression testing or manual reproduction is the main detector.
+        8: The behavior is found after user-visible failure or rollback.
+        9: No reliable pre-consequence detection exists in normal operation.
+        10: Only post-incident analysis can establish that the behavior occurred.
+  occurrence:
+    window: executions
+    denominator: 1000000_executions
+  detection:
+    positions:
+      - telemetry
+      - test
+      - operator
+  decision_severity:
+    aggregation: max_consequence
+  rpn:
+    formula: S*O*D
+    version: software-S*O*D-1
+  risk_matrix:
+    version: software-risk-matrix-1
+  priority:
+    version: software-priority-1
+    high_rpn: 200
+    critical_severity: 9
+    medium_rpn: 100
+  uncertainty:
+    missing_score_policy: unknown_no_zero
+    conflict_score_policy: block_rpn
+    uncertainty_policy: preserve_require_review
+  policy_basis: project_default_non_certification

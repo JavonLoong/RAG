@@ -25,8 +25,10 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from core_domain.fmea.governance import canonical_hash, canonical_json_bytes
+from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
 
 SCHEMA_VERSION = "graphrag.fmea.governance.acceptance.v1"
+PUBLICATION_BODY_SCHEMA_VERSION = "graphrag.fmea.body.v1"
 ARTIFACT_NAMES = (
     "revisions.json",
     "readiness.json",
@@ -290,8 +292,10 @@ def _identity(value: object) -> list[object]:
     return [value[0], value[1], _export_hash(value[2])]
 
 
-def _expected_snapshot_version_manifest(revision: dict[str, object]) -> dict[str, object]:
-    return {
+def _expected_snapshot_version_manifest(
+    revision: dict[str, object], *, body_schema_version: str | None
+) -> dict[str, object]:
+    expected = {
         "analysis_hash": _export_hash(revision.get("analysis_hash")),
         "domain_pack_identity": _identity(revision.get("domain_pack_identity")),
         "template_identities": [_identity(item) for item in revision.get("template_identities", [])],
@@ -303,20 +307,153 @@ def _expected_snapshot_version_manifest(revision: dict[str, object]) -> dict[str
         ),
         "retrieval_provenance": revision.get("retrieval_provenance"),
     }
+    if body_schema_version is not None:
+        expected["body_schema_version"] = body_schema_version
+    return expected
 
 
-def _expected_manifest_version_hash(revision: dict[str, object]) -> str:
-    return canonical_hash(
-        {
-            "revision_hash": revision.get("revision_hash"),
-            "analysis_hash": revision.get("analysis_hash"),
-            "domain_pack_identity": revision.get("domain_pack_identity"),
-            "template_identities": revision.get("template_identities"),
-            "scoring_rule_identities": revision.get("scoring_rule_identities"),
-            "propagation_rule_identity": revision.get("propagation_rule_identity"),
-        },
-        prefixed=True,
-    )
+def _expected_manifest_version_hash(revision: dict[str, object], *, body_schema_version: str | None) -> str:
+    expected = {
+        "revision_hash": revision.get("revision_hash"),
+        "analysis_hash": revision.get("analysis_hash"),
+        "domain_pack_identity": revision.get("domain_pack_identity"),
+        "template_identities": revision.get("template_identities"),
+        "scoring_rule_identities": revision.get("scoring_rule_identities"),
+        "propagation_rule_identity": revision.get("propagation_rule_identity"),
+    }
+    if body_schema_version is not None:
+        expected["body_schema_version"] = body_schema_version
+    return canonical_hash(expected, prefixed=True)
+
+
+def _verify_new_publication_body(
+    snapshot: dict[str, object], revision: dict[str, object]
+) -> None:
+    try:
+        NormalizedFmeaSnapshot(**snapshot)  # type: ignore[arg-type]
+    except Exception:
+        raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID") from None
+
+    def revision_versions(value: object) -> dict[str, tuple[object, object]]:
+        if not isinstance(value, list):
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+        result: dict[str, tuple[object, object]] = {}
+        for item in value:
+            if not isinstance(item, list) or len(item) != 3 or not isinstance(item[0], str):
+                raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+            if item[0] in result:
+                raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+            result[item[0]] = (item[1], item[2])
+        return result
+
+    def revision_hashes(value: object) -> dict[str, object]:
+        if not isinstance(value, list):
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+        result: dict[str, object] = {}
+        for item in value:
+            if not isinstance(item, list) or len(item) != 2 or not isinstance(item[0], str):
+                raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+            if item[0] in result:
+                raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+            result[item[0]] = item[1]
+        return result
+
+    rows = snapshot.get("rows")
+    risks = snapshot.get("risk_records")
+    evidence = snapshot.get("evidence_summary")
+    propagation = snapshot.get("propagation")
+    decisions = snapshot.get("decision_summary")
+    if (
+        not isinstance(rows, list)
+        or not isinstance(risks, list)
+        or not isinstance(evidence, list)
+        or (propagation is not None and not isinstance(propagation, dict))
+        or not isinstance(decisions, list)
+        or snapshot.get("row_count") != len(rows)
+    ):
+        raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+
+    expected_rows = revision_versions(revision.get("row_versions"))
+    row_ids = {item.get("row_id") for item in rows if isinstance(item, dict)}
+    if len(row_ids) != len(rows) or row_ids != set(expected_rows):
+        raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+    for row in rows:
+        if not isinstance(row, dict):
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+        row_id = row.get("row_id")
+        expected = expected_rows.get(row_id) if isinstance(row_id, str) else None
+        if expected is None or row.get("record_version") != expected[0] or not _same_hash(row.get("row_hash"), expected[1]):
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+
+    expected_risks = revision_versions(revision.get("risk_versions"))
+    risk_ids = {item.get("assessment_id") for item in risks if isinstance(item, dict)}
+    if len(risk_ids) != len(risks) or risk_ids != set(expected_risks):
+        raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+    for risk in risks:
+        if not isinstance(risk, dict):
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+        assessment_id = risk.get("assessment_id")
+        expected = expected_risks.get(assessment_id) if isinstance(assessment_id, str) else None
+        if expected is None or risk.get("record_version") != expected[0] or not _same_hash(
+            risk.get("assessment_hash"), expected[1]
+        ):
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+
+    expected_evidence = revision_hashes(revision.get("evidence_pack_hashes"))
+    evidence_ids = {item.get("pack_id") for item in evidence if isinstance(item, dict)}
+    if len(evidence_ids) != len(evidence) or evidence_ids != set(expected_evidence):
+        raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+    for pack in evidence:
+        if not isinstance(pack, dict):
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+        pack_id = pack.get("pack_id")
+        expected = expected_evidence.get(pack_id) if isinstance(pack_id, str) else None
+        if expected is None or not _same_hash(pack.get("pack_hash"), expected) or not isinstance(pack.get("refs"), list):
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+        for ref in pack["refs"]:
+            if not isinstance(ref, dict) or not all(
+                isinstance(ref.get(key), str) and ref.get(key) for key in ("evidence_id", "evidence_hash", "content_hash")
+            ):
+                raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+
+    graph_revision_id = revision.get("propagation_graph_revision_id")
+    if graph_revision_id is None:
+        if propagation is not None:
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+    else:
+        if (
+            not isinstance(propagation, dict)
+            or propagation.get("graph_revision_id") != graph_revision_id
+            or not isinstance(propagation.get("topology_hash"), str)
+        ):
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+        _normal_hash(propagation["topology_hash"])
+
+    decision_ids: set[str] = set()
+    decision_row_ids: set[str] = set()
+    for decision in decisions:
+        if not isinstance(decision, dict):
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+        decision_id = decision.get("decision_id")
+        row_id = decision.get("row_id")
+        expected = expected_rows.get(row_id) if isinstance(row_id, str) else None
+        if (
+            not isinstance(decision_id, str)
+            or decision_id in decision_ids
+            or not isinstance(row_id, str)
+            or row_id in decision_row_ids
+            or expected is None
+            or decision.get("record_type") != "row_review"
+            or decision.get("record_version") != expected[0]
+            or not _same_hash(decision.get("row_hash"), expected[1])
+            or decision.get("decision") != "accepted"
+            or decision.get("role_category") != "human_reviewer"
+        ):
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+        decision_ids.add(decision_id)
+        decision_row_ids.add(row_id)
+    if decision_row_ids != set(expected_rows):
+        raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
 
 
 def _expected_audit_chain_head(
@@ -367,6 +504,12 @@ def _require_hash_equal(actual: object, expected: object, code: str) -> None:
 
 
 def _verify_bindings_complete(payloads: dict[str, dict[str, object]], summary: dict[str, object]) -> None:
+    if "publication_body_schema_version" not in summary:
+        body_schema_version: str | None = None
+    else:
+        body_schema_version = summary.get("publication_body_schema_version")
+        if body_schema_version != PUBLICATION_BODY_SCHEMA_VERSION:
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
     revisions = _exact_map(payloads, "revisions.json", 2, "revision_id")
     readiness = _exact_map(payloads, "readiness.json", 2, "revision_id")
     submissions = _exact_map(payloads, "approval-submissions.json", 2, "submission_id")
@@ -485,7 +628,7 @@ def _verify_bindings_complete(payloads: dict[str, dict[str, object]], summary: d
             raise _VerificationFailure("FMEA_MANIFEST_BINDING_INVALID")
         _require_hash_equal(
             manifest.get("version_manifest_hash"),
-            _expected_manifest_version_hash(revision),
+            _expected_manifest_version_hash(revision, body_schema_version=body_schema_version),
             "FMEA_MANIFEST_BINDING_INVALID",
         )
         manifests_by_revision[str(manifest["revision_id"])] = manifest
@@ -596,14 +739,33 @@ def _verify_bindings_complete(payloads: dict[str, dict[str, object]], summary: d
         ]
         audit_summary = _mapping(snapshot.get("audit_summary"), "FMEA_SNAPSHOT_BINDING_INVALID")
         decision_summary = snapshot.get("decision_summary")
+        version_manifest = _mapping(snapshot.get("version_manifest"), "FMEA_SNAPSHOT_BINDING_INVALID")
+        if version_manifest.get("body_schema_version") != body_schema_version:
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+        if body_schema_version is None:
+            snapshot_body_valid = (
+                snapshot.get("row_count") == len(expected_rows)
+                and snapshot.get("rows") == expected_rows
+                and snapshot.get("risk_records") == expected_risks
+                and snapshot.get("evidence_summary") == expected_evidence
+                and snapshot.get("propagation") == expected_propagation
+                and snapshot.get("decision_summary") == expected_decision
+            )
+        else:
+            _verify_new_publication_body(snapshot, revision)
+            snapshot_body_valid = True
+        expected_version_manifest = _expected_snapshot_version_manifest(revision, body_schema_version=body_schema_version)
+        if "report_layout" in version_manifest:
+            if body_schema_version is None:
+                raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+            # _verify_new_publication_body validated the safe layout and approved
+            # template identity. Full native-template reconstruction belongs to
+            # the full acceptance verifier, not this legacy lifecycle verifier.
+            expected_version_manifest["report_layout"] = version_manifest["report_layout"]
         if (
-            snapshot.get("row_count") != len(expected_rows)
-            or snapshot.get("rows") != expected_rows
-            or snapshot.get("risk_records") != expected_risks
-            or snapshot.get("evidence_summary") != expected_evidence
-            or snapshot.get("propagation") != expected_propagation
-            or snapshot.get("decision_summary") != expected_decision
-            or snapshot.get("version_manifest") != _expected_snapshot_version_manifest(revision)
+            not snapshot_body_valid
+            or snapshot.get("version_manifest")
+            != expected_version_manifest
             or snapshot.get("unresolved_items") != revision.get("unresolved_items")
             or audit_summary.get("approval_id") != approval.get("approval_id")
             or not _same_hash(audit_summary.get("approval_hash"), canonical_hash(approval, prefixed=True))

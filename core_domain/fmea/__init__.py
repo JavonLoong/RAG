@@ -1,5 +1,6 @@
 from .domain_pack import DomainPackManifest
 from .entities import FieldClaim, FieldValue, FmeaAnalysis, FmeaRow, validate_extension_values
+from .filename_policy import validate_filename
 from .governance import (
     ApprovalDecision,
     ApprovalStatus,
@@ -59,6 +60,20 @@ from .states import (
     RiskStatus,
     RunStatus,
 )
+from .template_migration import (
+    CompatibilityReport,
+    MigrationEdge,
+    MigrationPlan,
+    MigrationReport,
+    MigrationReportStatus,
+    MigrationStep,
+    ProposedFieldMapping,
+    SourceStructureItem,
+    TemplateDraft,
+    TemplateDraftStatus,
+    TemplatePatchCandidate,
+    TemplatePatchStatus,
+)
 from .value_objects import (
     EVIDENCE_LINEAGE_SCHEMA,
     EvidencePack,
@@ -76,6 +91,7 @@ __all__ = [
     "ApprovalSubmission",
     "ApprovalWithdrawalRecord",
     "ClaimStatus",
+    "CompatibilityReport",
     "DomainPackManifest",
     "EvidencePack",
     "EvidenceRef",
@@ -85,6 +101,11 @@ __all__ = [
     "FmeaAnalysis",
     "FmeaRevision",
     "FmeaRow",
+    "MigrationEdge",
+    "MigrationPlan",
+    "MigrationReport",
+    "MigrationReportStatus",
+    "MigrationStep",
     "PropagationEdge",
     "PropagationEvidenceResolution",
     "PropagationGraphRevision",
@@ -92,6 +113,7 @@ __all__ = [
     "PropagationRelation",
     "PropagationRulePack",
     "PropagationStatus",
+    "ProposedFieldMapping",
     "PublicationLifecycleView",
     "PublicationManifest",
     "PublicationStatus",
@@ -108,7 +130,12 @@ __all__ = [
     "RunStatus",
     "ScoreDimension",
     "ScoringRulePack",
+    "SourceStructureItem",
     "SupersessionRecord",
+    "TemplateDraft",
+    "TemplateDraftStatus",
+    "TemplatePatchCandidate",
+    "TemplatePatchStatus",
     "TopologyInterface",
     "TopologyNode",
     "TopologySnapshot",
@@ -123,6 +150,7 @@ __all__ = [
     "validate_approval_binding",
     "validate_evidence_lineage",
     "validate_extension_values",
+    "validate_filename",
     "validate_graph_revision",
     "validate_path",
     "validate_propagation_edge",

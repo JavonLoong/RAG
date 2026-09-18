@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>FMEA 证据与复核工作台</title>
+  <link rel="stylesheet" href="./fmea/styles.css">
+  <script type="module" src="./fmea/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#workbench-main">跳转到工作区</a>
+  <header class="topbar"><span class="brand">FMEA <span>WORKBENCH</span></span><span>证据 · 复核 · 交付</span></header>
+  <div class="shell">
+    <aside class="sidebar">
+      <h1>分析工作台</h1>
+      <nav aria-label="FMEA 工作台导航">
+        <a href="#analysis" aria-label="分析">01　分析</a>
+        <a href="#evidence" aria-label="证据">02　证据</a>
+        <a href="#review" aria-label="字段复核">03　字段复核</a>
+        <a href="#risk" aria-label="风险评分">04　风险评分</a>
+        <a href="#propagation" aria-label="传播分析">05　传播分析</a>
+        <a href="#governance" aria-label="批准发布">06　批准发布</a>
+        <a href="#templates" aria-label="模板与迁移">07　模板与迁移</a>
+        <a href="#exports" aria-label="成果导出">08　成果导出</a>
+      </nav>
+      <p class="boundary">模型提出建议，人工确认结论。所有权威状态以服务端返回为准。</p>
+    </aside>
+    <section class="workspace">
+      <details class="connection" open>
+        <summary>连接已有分析</summary>
+        <form id="connection-form" novalidate>
+          <label>分析 ID<input name="analysisId" required maxlength="256" autocomplete="off"></label>
+          <label>行 ID<input name="rowId" required maxlength="256" autocomplete="off"></label>
+          <label>修订 ID<input name="revisionId" required maxlength="256" autocomplete="off"></label>
+          <label>访问令牌（仅当前页面内存）<input name="token" type="password" autocomplete="off" required></label>
+          <button type="submit">载入工作台</button>
+          <button type="button" id="disconnect" class="secondary">清除连接</button>
+        </form>
+        <p>资源 ID 来自已有分析或上游交接；本页不创建检索库，也不改变 RAG / GraphRAG 模式。</p>
+      </details>
+      <p id="error" role="alert" hidden></p>
+      <div class="request-status"><p id="request-status" role="status" aria-live="polite">请载入已有资源。</p><button id="cancel-request" class="secondary" hidden>停止等待</button><button id="retry-request" class="secondary" hidden>重试原请求</button><button id="retry-refresh" class="secondary" hidden>仅重试读取状态</button></div>
+      <main id="workbench-main" tabindex="-1"><p class="empty">输入资源 ID 与本地访问令牌后，查看逐字段证据与复核状态。</p></main>
+    </section>
+  </div>
+  <dialog id="confirmation" aria-labelledby="confirmation-title">
+    <form method="dialog">
+      <h2 id="confirmation-title">确认操作</h2><p id="confirmation-description"></p>
+      <pre id="confirmation-payload"></pre>
+      <label class="check"><input id="confirmation-check" type="checkbox">我已核对资源与内容，明确确认此操作</label>
+      <div class="actions"><button value="cancel" class="secondary">返回检查</button><button id="confirmation-submit" value="confirm" disabled>确认提交</button></div>
+    </form>
+  </dialog>
+</body>
+</html>

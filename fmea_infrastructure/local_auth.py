@@ -98,7 +98,17 @@ class LocalReviewAuthProvider:
         return ActorContext(
             actor_id=self._actor_id,
             actor_type=ActorType.HUMAN,
-            roles=frozenset({"reviewer", "risk_reviewer", "propagation_reviewer", "approver", "publisher"}),
+            roles=frozenset(
+                {
+                    "reviewer",
+                    "risk_reviewer",
+                    "propagation_reviewer",
+                    "approver",
+                    "publisher",
+                    "template_admin",
+                    "exporter",
+                }
+            ),
             workspace_id=self._workspace_id,
         )
 

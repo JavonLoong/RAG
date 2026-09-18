@@ -1,0 +1,30 @@
+template:
+  id: fmea-template-patch
+  version: 1.0.0
+  title: Bounded FMEA template mapping patch
+  description: Suggest declarative field and source-header mappings; a human administrator owns acceptance.
+  domain_tags: [fmea, template, mapping]
+  schema_dialect: https://json-schema.org/draft/2020-12/schema
+output_schema:
+  type: object
+  additionalProperties: false
+  required: [diff, evidence_ids]
+  properties:
+    diff:
+      type: array
+      maxItems: 64
+      uniqueItems: true
+      items:
+        type: object
+        additionalProperties: false
+        required: [op, path]
+        properties:
+          op: {type: string, enum: [add, replace, remove]}
+          path: {type: string, pattern: '^/(fields|mappings)/[a-z][a-z0-9_.-]{0,127}$'}
+          value: {}
+    evidence_ids:
+      type: array
+      maxItems: 128
+      uniqueItems: true
+      items: {type: string, minLength: 1, maxLength: 256}
+evidence_bindings: []
