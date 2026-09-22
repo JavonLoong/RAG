@@ -1,19 +1,17 @@
 # PowerRAG
 
-Local-first RAG / GraphRAG workbench for document ingestion, hybrid retrieval, graph construction, global search, evidence-grounded answers, evaluation, and Electron desktop use.
+Local-first RAG / GraphRAG workbench for document ingestion, hybrid retrieval, graph construction, global search, evidence-grounded answers, and evaluation.
 
-The current runnable product is the console under `api_server/current_console/` with the frontend in `frontend_app/current_console/`. The repository also keeps supporting modules for graph storage, orchestration, retrieval, evaluation, experiments, and desktop packaging.
+The current runnable product is the web console: backend in `api_server/current_console/`, frontend in `frontend_app/current_console/`. Customer delivery notes are in `客户交付_先看这里.md`.
 
 ## Quick Start
 
 ```powershell
 cd "<repo>"
-npm install
-npm run check
-npm run desktop
+python api_server/current_console/server.py
 ```
 
-Open `http://127.0.0.1:8000` for the web console, or use the Electron window started by `npm run desktop`.
+Open `http://127.0.0.1:8000`. Do not start the Electron desktop shell for delivery or demo.
 
 ## What Works
 
