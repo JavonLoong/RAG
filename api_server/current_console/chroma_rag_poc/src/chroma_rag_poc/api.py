@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import io
 import base64
@@ -1224,6 +1224,15 @@ def _build_text_retrieval_fallback_response(
     }
 
 
+def _mark_query_level_graphrag_fallback(payload: dict[str, Any] | None) -> dict[str, Any]:
+    marked = dict(payload or {})
+    marked["graphrag_effect_fallback"] = True
+    marked["effective_mode"] = "ordinary_rag"
+    marked["fallback_from"] = "graphrag"
+    marked["fallback_to"] = "ordinary_rag"
+    return marked
+
+
 def _build_graph_quality_fallback_response(
     *,
     question: str,
@@ -1231,6 +1240,7 @@ def _build_graph_quality_fallback_response(
     top_k: int,
     graph_quality: dict | None,
     gate_message: str,
+    llm: Any | None = None,
 ) -> dict[str, Any]:
     retrieval_error = None
     try:
@@ -1245,10 +1255,18 @@ def _build_graph_quality_fallback_response(
         for item in ((graph_quality or {}).get("quality_gate") or {}).get("failures", [])
         if str(item.get("metric") or "").strip()
     ]
+    ordinary_answer = ""
+    if llm is not None:
+        try:
+            ordinary_answer = str(llm.generate(question) or "").strip()
+        except Exception as exc:
+            retrieval_error = retrieval_error or str(exc)
     lines = [
         "Result: the graph was not used for this answer because its evidence quality check failed. I switched to text retrieval so the response still gives a concrete result.",
         "",
     ]
+    if ordinary_answer:
+        lines.extend(["Ordinary RAG answer", ordinary_answer, ""])
     if citations:
         lines.append(f"Text retrieval result: found {len(citations)} evidence item(s).")
         lines.append("")
@@ -1274,7 +1292,7 @@ def _build_graph_quality_fallback_response(
         "## Graph quality gate",
         gate_message,
     ]
-    return {
+    return _mark_query_level_graphrag_fallback({
         "question": question,
         "answer": "\n".join(lines),
         "context": "\n\n".join(context_parts),
@@ -1284,7 +1302,8 @@ def _build_graph_quality_fallback_response(
         "prompt": None,
         "graph_quality_blocked": True,
         "graph_quality_blocked_reason": gate_message,
-    }
+        "ordinary_rag_answer_generated": bool(ordinary_answer or citations),
+    })
 
 
 def _build_resilient_query_failure_response(

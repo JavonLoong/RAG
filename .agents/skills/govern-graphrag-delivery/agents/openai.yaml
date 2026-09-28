@@ -1,0 +1,4 @@
+interface:
+  display_name: "Governed GraphRAG Delivery"
+  short_description: "Run and audit evidence-governed GraphRAG delivery"
+  default_prompt: "Use $govern-graphrag-delivery to run or audit an evidence-governed M2-M5 GraphRAG delivery workflow. Fill model-shaped API slots with the agent's own tokens; persist through local /api/delivery."

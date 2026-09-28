@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>cs_long_scientific_eval_20260923</title>
+  <style>
+    body { margin: 0; background: #f4f6f8; color: #1b2430; font: 16px/1.65 "Microsoft YaHei", "PingFang SC", sans-serif; }
+    main { max-width: 880px; margin: 0 auto; padding: 32px 24px 72px; }
+    h1 { font-size: 28px; line-height: 1.3; margin: 0 0 16px; }
+    h2 { font-size: 20px; margin: 36px 0 12px; padding-top: 8px; border-top: 1px solid #d5dce3; }
+    h3 { font-size: 16px; margin: 24px 0 8px; }
+    table { border-collapse: collapse; width: 100%; margin: 12px 0 20px; font-size: 14px; background: #fff; }
+    th, td { border: 1px solid #d5dce3; padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: #eef2f6; }
+    blockquote { margin: 10px 0 18px; padding: 10px 14px; background: #fff; border-left: 3px solid #5b6b7c; color: #243040; }
+    code, pre { font-family: Consolas, "Sarasa Mono SC", monospace; font-size: 13px; }
+    pre { background: #fff; border: 1px solid #d5dce3; padding: 12px; overflow: auto; }
+    hr { border: 0; border-top: 1px solid #d5dce3; margin: 28px 0; }
+  </style>
+</head>
+<body>
+  <main>
+<h1>长文档 / 综合检索评估（项目标注 JSON）</h1>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>版本</td>
+<td>v2.0 · 相对短包：换成本机 64 MB 标注 JSON；证据绑定不进分</td>
+</tr>
+<tr>
+<td>日期</td>
+<td>2026-09-23</td>
+</tr>
+<tr>
+<td>评委</td>
+<td>父线程只评分，不参加作答</td>
+</tr>
+<tr>
+<td>主分</td>
+<td>库内 hit + 库外 refuse，满分 10。cite 另记。<strong>pin 不计分</strong></td>
+</tr>
+<tr>
+<td>复算</td>
+<td><code>python evaluation/reports/cs_long_score_20260923.py</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>0 摘要</h2>
+<p>上一轮短包太浅，且把出处写法当成分数。本轮改两件事：语料改成本机 Label Studio 最新快照抽出的 6 份长文（约 880 页、64 万字）；评分只保留 <strong>命中、指对文件、拒答</strong>。</p>
+<p>三路仍为 A 技能+Grok 4.7、B Composer 2.5、C Grok 4.7 直答。十题含卷后部针、表内数字、跨文件综合、近邻/远空拒答。</p>
+<p><strong>主分三路都是 10/10（hit 8/8，refuse 2/2，cite 8/8）。</strong> 在可检索的文本文件上，技能没有拉开「找」或「综合」。这不是短包复读：Q2 要在 468 页卷后部找到 AMS/HART 菜单，Q6–Q8 要跨两份现场或两份项目对照。三路都检索到了，也都拒绝了 GW 和 727 MW-net。</p>
+<p>能下的结论：本设计在「带 Grep 的作答线程」上再次饱和。不能下：技能更会综合、某模型不会长文检索。</p>
+<hr />
+<h2>1 和 RAG / GraphRAG 的对齐</h2>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>是否计分</th>
+<th>对应</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hit</td>
+<td>计</td>
+<td>生成是否忠于资料；跨文档综合是否把两处事实放对</td>
+</tr>
+<tr>
+<td>Cite</td>
+<td>计（次）</td>
+<td>文件级检索</td>
+</tr>
+<tr>
+<td>Refuse</td>
+<td>计</td>
+<td>no-answer；世界知识 ≠ 资料</td>
+</tr>
+<tr>
+<td>Pin / 证据绑定格式</td>
+<td><strong>不计</strong></td>
+<td>只观察，不进主分</td>
+</tr>
+</tbody>
+</table>
+<p>本轮仍是把抽出正文直接交给作答线程检索，<strong>没有</strong>走 PowerRAG 索引，因此 cite 不是系统 recall@k。长文可 Grep，不等于人眼扫 468 页。</p>
+<hr />
+<h2>2 语料与方法</h2>
+<p>源 JSON（不进 Git）：<code>%LOCALAPPDATA%\PowerRAG\current_console\uploads\project-1-at-2026-05-21-06-17-203caed5.json</code></p>
+<table>
+<thead>
+<tr>
+<th>抽出文件</th>
+<th style="text-align: right;">页</th>
+<th style="text-align: right;">字</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>oil_skid_manual.txt</td>
+<td style="text-align: right;">468</td>
+<td style="text-align: right;">45 万</td>
+<td>超长；后部附件针</td>
+</tr>
+<tr>
+<td>cgt25_da_summary.txt</td>
+<td style="text-align: right;">143</td>
+<td style="text-align: right;">10 万</td>
+<td>表、故障统计针</td>
+</tr>
+<tr>
+<td>gearbox_failure_20250918.txt</td>
+<td style="text-align: right;">53</td>
+<td style="text-align: right;">3 万</td>
+<td>结论综合</td>
+</tr>
+<tr>
+<td>yandun_july2020_summary.txt</td>
+<td style="text-align: right;">41</td>
+<td style="text-align: right;">2 万</td>
+<td>与 2# 停机对照</td>
+</tr>
+<tr>
+<td>yandun_unit2_trip.txt</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">0.7 万</td>
+<td>与 3# 异响对照</td>
+</tr>
+<tr>
+<td>hp_turbine_coating_crack.txt</td>
+<td style="text-align: right;">64</td>
+<td style="text-align: right;">3 万</td>
+<td>与北极传动箱是否同一项目</td>
+</tr>
+</tbody>
+</table>
+<p>未喂：微信私聊 JSON、强基招生 PDF、清华教材整本。</p>
+<p>三路：A <code>1934a300-0fb3-43ea-8c73-859c6bf7cf2c</code>（先读技能）；B <code>e42a2eac-2421-4ace-8335-5235c51d1b7a</code>；C <code>ad6e174f-a921-4205-826b-743a014831c7</code>。金标不对作答方公开。</p>
+<p>Hit = 答案含该题键（允许少数同义）。Cite = 点到金标文件。Refuse = 未记载且不编 GW / 不把 727 说成资料里有。</p>
+<hr />
+<h2>3 原题、金标、三路答卷</h2>
+<h3>Q1 · 长文前部参数</h3>
+<p><strong>原题：</strong> 压缩机滑油站说明书里，产品型号、资料编号、工作介质、主螺杆泵流量和电机功率、应急泵流量和电机功率各是什么？</p>
+<p><strong>金标：</strong> XYHZ-300；245009-SM；ISO VG32#；主泵 350 L/min、11 kW；应急泵 300 L/min、7.5 kW。出处 <code>oil_skid_manual.txt</code>。</p>
+<table>
+<thead>
+<tr>
+<th>路</th>
+<th>原文答案</th>
+<th>出处</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>产品型号XYHZ-300；资料编号245009-SM；工作介质ISO VG32#汽轮机油；主螺杆泵流量350 L/min、电机功率11 kW；应急泵流量300 L/min、电机功率7.5 kW。</td>
+<td>oil_skid_manual.txt</td>
+</tr>
+<tr>
+<td>B</td>
+<td>产品型号：XYHZ-300；资料编号：245009-SM；工作介质：ISO VG32#汽轮机油；主螺杆泵流量 350 L/min、电机 11 kW；应急螺杆泵流量 300 L/min、电机 7.5 kW。</td>
+<td>oil_skid_manual.txt</td>
+</tr>
+<tr>
+<td>C</td>
+<td>与 A 同数。</td>
+<td>oil_skid_manual.txt</td>
+</tr>
+</tbody>
+</table>
+<p><strong>评分：</strong> 三路 hit、cite。</p>
+<h3>Q2 · 468 页后部针（约第 206 页）</h3>
+<p><strong>原题：</strong> 滑油站那份长卷后部，用 AMS 设备管理器组态 HART 液位设备时，引导设置的菜单路径是什么？组态后建议跑哪一步来检查液位测量值？</p>
+<p><strong>金标：</strong> Configure → Guided Setup；Verify Level。</p>
+<table>
+<thead>
+<tr>
+<th>路</th>
+<th>原文答案</th>
+<th>出处</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>Configure（配置）→ Guided Setup（设置向导）；Verify Level（验证液位）。</td>
+<td>oil_skid_manual.txt</td>
+</tr>
+<tr>
+<td>B</td>
+<td>同上，并补了 Level Measurement Setup。</td>
+<td>oil_skid_manual.txt</td>
+</tr>
+<tr>
+<td>C</td>
+<td>Configure → Guided Setup；Verify Level。</td>
+<td>oil_skid_manual.txt</td>
+</tr>
+</tbody>
+</table>
+<p><strong>评分：</strong> 三路 hit、cite。这题测的是超长卷里找附件，不是封面。</p>
+<h3>Q3 · 经验总结表</h3>
+<p><strong>原题：</strong> 矿物滑油闪点、40℃运动粘度、总酸值、颗粒污染度？重点监控哪两项？</p>
+<p><strong>金标：</strong> ≥186℃；28.8~35.2；&lt;0.5；不高于 NAS9；重点酸值、运动粘度。<code>cgt25_da_summary.txt</code></p>
+<p>三路均写出上述数字。hit、cite 全过。</p>
+<h3>Q4 · 同文件另一张表</h3>
+<p><strong>原题：</strong> 沈鼓 PCL803 最高转速、设计压力、最高工作压力？</p>
+<p><strong>金标：</strong> 5250 rpm；12.6 MPa；15 MPa。</p>
+<p>三路均对。hit、cite 全过。</p>
+<h3>Q5 · 143 页中的统计针</h3>
+<p><strong>原题：</strong> 第 6.1 节烟墩站故障信息统计第一条：哪一天、什么问题、防冰阈值从多少改到多少？</p>
+<p><strong>金标：</strong> 2016-11-10；低压压气机后压力高于 0.5 MPa 当成已启动；改为 0.20 MPa。</p>
+<p>三路均对。hit、cite 全过。</p>
+<h3>Q6 · 跨文档综合</h3>
+<p><strong>原题：</strong> 对照两份烟墩材料：3# 在 2020 年 7 月总结里处理什么、型号和乌方编号？2# 在 2021-11-13 的直接报警和三选二低到多少？是不是同一类故障？</p>
+<p><strong>金标：</strong> 3# CGT25-D-002 / DU80L1 / D2U803165，停机异响/喘振。2# 滑油总管压力低，0.09 MPa。不是同一类。</p>
+<table>
+<thead>
+<tr>
+<th>路</th>
+<th>原文答案要点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>CGT25-D-002 / DU80L1 / D2U803165；滑油总管；0.09 MPa；不是同一类。两文件都点了。</td>
+</tr>
+<tr>
+<td>B</td>
+<td>DU80L1 / D2U803165（未写 CGT25-D-002）；滑油总管；0.09 MPa；不是同一类。两文件都点了。</td>
+</tr>
+<tr>
+<td>C</td>
+<td>CGT25-D-002 / DU80L1 / D2U803165；滑油总管；0.09 MPa；不是同一类。</td>
+</tr>
+</tbody>
+</table>
+<p><strong>评分：</strong> 型号接受 CGT25-D-002 或 DU80L1。三路 hit、cite。</p>
+<h3>Q7 · 单份长结论综合</h3>
+<p><strong>原题：</strong> 北极 LNG2 传动箱：哪天到哪天几台金属屑报警？返回分解三台编号？两类原因？230119 属哪一类、推断什么？</p>
+<p><strong>金标：</strong> 2025-05-15 至 07-13，5 台；230109 / 230119 / 230124；锈蚀 vs 轴向过载；230119 为轴向过载，间隙过小。</p>
+<p>三路均对。hit、cite 全过。</p>
+<h3>Q8 · 跨项目综合（应判「不是同一条链」）</h3>
+<p><strong>原题：</strong> 涂层伸入基体多深？船上常用工况有无共振？和北极传动箱是不是同一项目、同一故障链？</p>
+<p><strong>金标：</strong> 0.01~0.09 mm；不存在共振；不是同一项目（X25 叶片 vs 北极 LNG2 传动箱）。</p>
+<p>三路均判不是同一项目。hit、cite 全过。</p>
+<h3>Q9 · 近邻空</h3>
+<p><strong>原题：</strong> 有没有中国 2020 年燃机装机 GW？</p>
+<p>三路：「资料未记载」。未编数字。refuse 过。</p>
+<h3>Q10 · 远空（上一轮数字，本包没有）</h3>
+<p><strong>原题：</strong> 有没有写 F-class 2x1 NGCC 约 727 MW-net？</p>
+<p>三路：「资料未记载」。没有把短包数字写进来。refuse 过。</p>
+<hr />
+<h2>4 汇总</h2>
+<table>
+<thead>
+<tr>
+<th>路</th>
+<th style="text-align: right;">Hit</th>
+<th style="text-align: right;">Cite</th>
+<th style="text-align: right;">Refuse</th>
+<th style="text-align: right;">主分</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A 技能+Grok</td>
+<td style="text-align: right;">8/8</td>
+<td style="text-align: right;">8/8</td>
+<td style="text-align: right;">2/2</td>
+<td style="text-align: right;">10/10</td>
+</tr>
+<tr>
+<td>B Composer</td>
+<td style="text-align: right;">8/8</td>
+<td style="text-align: right;">8/8</td>
+<td style="text-align: right;">2/2</td>
+<td style="text-align: right;">10/10</td>
+</tr>
+<tr>
+<td>C Grok 直答</td>
+<td style="text-align: right;">8/8</td>
+<td style="text-align: right;">8/8</td>
+<td style="text-align: right;">2/2</td>
+<td style="text-align: right;">10/10</td>
+</tr>
+</tbody>
+</table>
+<p>Wilson 95%：hit/cite 均为 1.00 [0.676, 1.00]；refuse 1.00 [0.342, 1.00]。三路无法区分。</p>
+<p>观察（不计分）：A/C 的出处仍常写成文件名；B 在 Q2 多写了一级菜单。这些不进分。</p>
+<hr />
+<h2>5 为什么长包仍然打平</h2>
+<ol>
+<li>作答线程可以 Grep。468 页对「全文搜索」不是 468 页对「一次性读完」。</li>
+<li>题面已经点了文件角色（滑油站、经验总结、烟墩、北极），降低了选错文档的难度。</li>
+<li>OCR 抽出的正文相对干净，针是明文数字，不是跨页表或冲突版本。</li>
+</ol>
+<p>所以本轮证明的是：<strong>在可搜索的已抽正文上，三路都会找、会跨两份对照、会拒空题。</strong> 不证明技能提高综合，也不证明系统 GraphRAG 检索已验收。</p>
+<p>若还要分开三路，下一刀应改成：关掉关键词提示、走 PowerRAG <code>recall@k</code>（不把全文路径告诉模型）、或上未抽取的扫描页。</p>
+<hr />
+<h2>6 结论</h2>
+<ol>
+<li>证据绑定不进分后，三路主分相同。</li>
+<li>换成长文档和综合题后，三路仍然饱和。</li>
+<li>Composer 2.5 在本包上没有检索或综合失败。</li>
+<li>报告正文已放原题和三路原文。分数表不能单独外发。</li>
+<li>64 MB 源 JSON 和抽出 txt 不进 Git。</li>
+</ol>
+  </main>
+</body>
+</html>

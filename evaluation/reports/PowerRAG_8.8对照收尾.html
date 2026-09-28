@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PowerRAG 对照 8.8 收尾</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #f3f3f3; color: #000; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; }
+    .stage { height: 100%; display: flex; align-items: center; justify-content: center; }
+    .deck { width: min(100vw, calc(100vh * 16 / 9)); height: min(100vh, calc(100vw * 9 / 16)); background: #fff; position: relative; }
+    .slide {
+      display: none;
+      box-sizing: border-box;
+      position: absolute; inset: 0;
+      padding: 5.2% 5.6% 6%;
+      flex-direction: column;
+    }
+    .slide.on { display: flex; }
+    h1 { font-size: 28px; font-weight: 400; margin: 0 0 4.6%; }
+    .body { font-size: 22px; line-height: 1.7; white-space: pre-line; flex: 1; }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 6%; flex: 1; }
+    .col h2 { font-size: 18px; font-weight: 400; margin: 0 0 10px; }
+    .col p { font-size: 20px; line-height: 1.65; margin: 0; white-space: pre-line; }
+    .foot { font-size: 18px; }
+    .bar { position: fixed; right: 20px; bottom: 16px; font-size: 13px; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="stage"><div class="deck" id="deck"></div></div>
+  <div class="bar" id="bar"></div>
+  <script>
+    const slides = [
+      {
+        t: "这些工作在干什么",
+        b: "把燃机资料收进来，读懂，做成可检索的库。\n再做成可追问的图，最后吐出可审核的 FMEA。\n\n收文件 → 解析标注 → 正式入库 → 图谱 → FMEA",
+        f: "8.8 是代码连上。现在是一条工作台，可以演示、可以审计。"
+      },
+      {
+        t: "8.8 / 8.15 停在哪",
+        b: "8 月 8 日：M2 到 M5 核心代码已连接。\n40 项自动化测试通过。真实资料验收尚未启动。\n\n8 月 15 日：对照的还是 1.0 分工清单。\n模块能跑通各自的接口，没有一条客户能点开做完的界面。",
+        f: "当时证明的是路径可以运行，不能代替真实验收。"
+      },
+      {
+        t: "现在交出去的是什么",
+        b: "一条本地工作台。浏览器打开，或双击 exe。\n\n上传 → 解析审核发布 → 检索 → 图谱 → FMEA → 验收台\n\nGitHub 十条分支收进同一条产品线。\n不要用仓库里的 Electron。",
+        f: "客户拿到的是可运行交付，不是又一份模块说明。"
+      },
+      {
+        t: "对照：解析到入库",
+        L: ["8.8", "解析和 OCR 能进交付接口。\n审核记录、改内容出新版本。\n正式资料按版本入库、能检索。\n测的是合成文件和夹具。"],
+        R: ["现在", "原页对照、页级重试在同一界面。\n发布、关键词 / 向量 / 混合检索接通。\n版本比较、回滚、备份能演示。\n正式 embedding 仍要在目标机配置。"],
+        f: "模块从「接口能跑」收到「人能在台上走一遍」。"
+      },
+      {
+        t: "对照：图谱到 FMEA",
+        L: ["8.8", "规则抽图，关系绑原文。\n路径查询，图不够回退普通检索。\nFMEA 字段带来源，能导出检查。"],
+        R: ["现在", "受控图谱、审核发布在工作台里。\n逐字段证据，冲突不自动裁掉。\n人审后导出 JSON / CSV / DOCX。"],
+        f: "没有批准的评分政策，不算、不编 S/O/D、RPN。"
+      },
+      {
+        t: "界面怎么收尾",
+        b: "当时：分页面、右侧大块空白、入口散在各处。\n\n现在：一条工业工作台。空栏折叠，设置在齿轮里。\n要侧栏再打开。不要单独做一套 RAG 页。",
+        f: "界面收的是干活的地方，不是再做一个演示壳。"
+      },
+      {
+        t: "不能对外说成什么",
+        b: "可以演示，可以审计。\n\n不是已经用客户全量语料验收过的自动抽图。\n不是已经能现场打分的 FMEA。\n单元测试通过，不等于现场已验收。",
+        f: "8.8 那句边界现在还成立，只是代码面和界面更完整。"
+      },
+      {
+        t: "下一棒",
+        b: "选定可外发的真实资料。\n解析抽检、检索、图谱、FMEA 各有人签字。\n目标机配好正式嵌入模型。\n\n编排上的中断恢复和角色签字，正式试点再做。",
+        f: "收尾停在可交付演示。下一棒才是真实验收。"
+      }
+    ];
+    const deck = document.getElementById("deck");
+    slides.forEach((s) => {
+      const el = document.createElement("section");
+      el.className = "slide";
+      el.innerHTML = `<h1>${s.t}</h1>` +
+        (s.L
+          ? `<div class="cols"><div class="col"><h2>${s.L[0]}</h2><p>${s.L[1]}</p></div><div class="col"><h2>${s.R[0]}</h2><p>${s.R[1]}</p></div></div>`
+          : `<div class="body">${s.b}</div>`) +
+        `<div class="foot">${s.f}</div>`;
+      deck.appendChild(el);
+    });
+    let i = 0;
+    const pages = [...deck.children];
+    const bar = document.getElementById("bar");
+    function show(n) {
+      i = (n + pages.length) % pages.length;
+      pages.forEach((p, k) => p.classList.toggle("on", k === i));
+      bar.textContent = `${String(i + 1).padStart(2, "0")} / ${String(pages.length).padStart(2, "0")}  ·  ← →`;
+    }
+    show(0);
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") show(i + 1);
+      if (e.key === "ArrowLeft" || e.key === "PageUp") show(i - 1);
+    });
+  </script>
+</body>
+</html>

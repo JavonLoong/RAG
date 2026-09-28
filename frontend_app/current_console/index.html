@@ -54,7 +54,8 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="styles/console.css">
+  <link rel="stylesheet" href="styles/console.css?v=20260922-industrial">
+  <link rel="stylesheet" href="styles/industrial-ops.css?v=20260922-fill">
 
 
   <!-- ── Dependencies: local libs/ first, CDN fallback ── -->
@@ -117,11 +118,11 @@
   <script src="modules/pages/kg-data-page.js"></script>
   <script src="modules/pages/kg-search-page.js"></script>
 
-  <script src="modules/console-app.js?v=20260902-task-render-fix" defer></script>
+  <script src="modules/console-app.js?v=20260922-fill" defer></script>
 
 </head>
 
-<body>
+<body class="industrial-console">
 
   <div class="app-shell">
 
@@ -131,45 +132,35 @@
 
         <div class="brand-mark" aria-hidden="true">
 
-          <iconify-icon icon="lucide:database"></iconify-icon>
+          <iconify-icon icon="ph:database-fill"></iconify-icon>
 
         </div>
 
-        <strong>PowerRAG</strong>
+        <div class="brand-copy">
 
-        <div class="segment-group" id="globalModeToggle" style="margin-left: 16px;">
+          <strong>PowerRAG</strong>
 
-          <button class="segment-btn active" type="button" data-mode="rag">标准 RAG</button>
-
-          <button class="segment-btn" type="button" data-mode="graphrag">GraphRAG</button>
+          <span class="brand-sub">动力装备知识组织 · GraphRAG</span>
 
         </div>
+
+        <span class="plant-tag" title="本机值班席">SITE-LOCAL · OP</span>
 
       </div>
 
 
 
-      <nav class="appbar-nav" id="navList">
+      <nav class="appbar-nav pipeline-nav" id="navList" aria-label="交付流水线">
 
-        <button class="nav-item active" data-page="overview" type="button" data-mode-tag="rag"><iconify-icon icon="lucide:layout-dashboard"></iconify-icon><span>系统总览</span></button>
+        <button class="nav-item" data-page="data" type="button" data-mode-tag="graphrag"><span class="nav-step">M1</span><span class="nav-icon" aria-hidden="true"><iconify-icon icon="ph:folder-open-fill"></iconify-icon></span><span>资料接入</span></button>
 
-        <button class="nav-item" data-page="delivery" type="button" data-mode-tag="rag"><iconify-icon icon="lucide:workflow"></iconify-icon><span>可信交付</span></button>
+        <button class="nav-item" data-page="kg_data" type="button" data-mode-tag="graphrag"><span class="nav-step">M2</span><span class="nav-icon" aria-hidden="true"><iconify-icon icon="ph:graph-fill"></iconify-icon></span><span>知识组织</span></button>
 
-        <button class="nav-item" data-page="data" type="button" data-mode-tag="rag"><img class="nav-img-icon" src="assets/nav-icons/data-ingest.png" alt="" aria-hidden="true"><span>数据接入</span></button>
+        <button class="nav-item" data-page="kg_search" type="button" data-mode-tag="graphrag"><span class="nav-step">M3</span><span class="nav-icon" aria-hidden="true"><iconify-icon icon="ph:chat-circle-dots-fill"></iconify-icon></span><span>图谱问答</span></button>
 
-        <button class="nav-item" data-page="search" type="button" data-mode-tag="rag"><img class="nav-img-icon" src="assets/nav-icons/semantic-search.png" alt="" aria-hidden="true"><span>语义检索</span></button>
+        <button class="nav-item" data-page="delivery" type="button" data-mode-tag="graphrag"><span class="nav-step">M4</span><span class="nav-icon" aria-hidden="true"><iconify-icon icon="ph:tree-structure-fill"></iconify-icon></span><span>可信交付</span></button>
 
-        <button class="nav-item" data-page="admin" type="button" data-mode-tag="rag"><img class="nav-img-icon" src="assets/nav-icons/system-admin.png" alt="" aria-hidden="true"><span>系统管理</span></button>
-
-        <button class="nav-item" data-page="acceptance" type="button" data-mode-tag="rag"><iconify-icon icon="lucide:clipboard-check"></iconify-icon><span>验收工作台</span></button>
-
-
-
-        <button class="nav-item is-hidden" data-page="kg" type="button" data-mode-tag="graphrag"><iconify-icon icon="lucide:network"></iconify-icon><span>图谱概览</span></button>
-
-        <button class="nav-item is-hidden" data-page="kg_data" type="button" data-mode-tag="graphrag"><iconify-icon icon="lucide:database-zap"></iconify-icon><span>图谱构建</span></button>
-
-        <button class="nav-item is-hidden" data-page="kg_search" type="button" data-mode-tag="graphrag"><iconify-icon icon="lucide:message-square-dashed"></iconify-icon><span>图谱问答</span></button>
+        <button class="nav-item" data-page="acceptance" type="button" data-mode-tag="graphrag"><span class="nav-step">M5</span><span class="nav-icon" aria-hidden="true"><iconify-icon icon="ph:check-square-fill"></iconify-icon></span><span>验收</span></button>
 
       </nav>
 
@@ -187,9 +178,13 @@
 
         </div>
 
-        <button class="icon-btn" id="refreshBtn" type="button" aria-label="刷新数据" title="刷新数据"><iconify-icon icon="lucide:refresh-cw"></iconify-icon></button>
+        <button class="icon-btn" id="btnOpenOverview" type="button" data-jump="overview" aria-label="运行总览" title="运行总览"><iconify-icon icon="ph:squares-four-fill"></iconify-icon></button>
 
-        <div class="user-chip"><iconify-icon icon="lucide:user"></iconify-icon><strong>运维</strong></div>
+        <button class="icon-btn" id="btnOpenSettings" type="button" aria-label="系统设置" title="系统设置"><iconify-icon icon="ph:gear-six-fill"></iconify-icon></button>
+
+        <button class="icon-btn" id="refreshBtn" type="button" aria-label="刷新数据" title="刷新数据"><iconify-icon icon="ph:arrows-clockwise-bold"></iconify-icon></button>
+
+        <div class="user-chip"><iconify-icon icon="ph:user-fill"></iconify-icon><strong>运维</strong></div>
 
       </div>
 
@@ -201,7 +196,7 @@
 
 
 
-      <main class="page-stack">
+      <main class="page-stack workbench-host" id="workbenchHost">
 
         <section class="page active" id="page-overview">
 
@@ -211,7 +206,7 @@
 
               <div class="hero-copy">
 
-                <div class="hero-chip"><iconify-icon icon="lucide:database"></iconify-icon><span>PowerRAG</span></div>
+                <div class="hero-chip"><iconify-icon icon="ph:database-fill"></iconify-icon><span>PowerRAG</span></div>
 
                 <h3>PowerRAG 知识库控制台</h3>
 
@@ -219,23 +214,23 @@
 
                 <div class="hero-proof-row" aria-label="项目能力摘要">
 
-                  <span class="proof-pill"><iconify-icon icon="lucide:file-search"></iconify-icon><span>多格式资料解析</span></span>
+                  <span class="proof-pill"><iconify-icon icon="ph:file-magnifying-glass-fill"></iconify-icon><span>多格式资料解析</span></span>
 
-                  <span class="proof-pill"><iconify-icon icon="lucide:database-zap"></iconify-icon><span>Chroma 向量索引</span></span>
+                  <span class="proof-pill"><iconify-icon icon="ph:database-fill"></iconify-icon><span>Chroma 向量索引</span></span>
 
-                  <span class="proof-pill"><iconify-icon icon="lucide:network"></iconify-icon><span>GraphRAG 流程</span></span>
+                  <span class="proof-pill"><iconify-icon icon="ph:graph-fill"></iconify-icon><span>GraphRAG 流程</span></span>
 
-                  <span class="proof-pill"><iconify-icon icon="lucide:gauge"></iconify-icon><span>运行状态观测</span></span>
+                  <span class="proof-pill"><iconify-icon icon="ph:gauge-fill"></iconify-icon><span>运行状态观测</span></span>
 
                 </div>
 
                 <div class="hero-actions">
 
-                  <button class="btn" data-jump="data" type="button"><iconify-icon icon="lucide:upload"></iconify-icon><span>上传并入库</span></button>
+                  <button class="btn" data-jump="data" type="button"><iconify-icon icon="ph:upload-simple-fill"></iconify-icon><span>上传并入库</span></button>
 
-                  <button class="ghost-btn" data-jump="search" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
+                  <button class="ghost-btn" data-jump="search" type="button"><iconify-icon icon="ph:magnifying-glass-fill"></iconify-icon><span>开始检索</span></button>
 
-                  <button class="ghost-btn" data-jump="kg" type="button"><iconify-icon icon="lucide:network"></iconify-icon><span>查看KG流程</span></button>
+                  <button class="ghost-btn" data-jump="kg" type="button"><iconify-icon icon="ph:graph-fill"></iconify-icon><span>查看KG流程</span></button>
 
                 </div>
 
@@ -279,13 +274,13 @@
 
             <div class="project-snapshot" aria-label="项目模块摘要">
 
-              <article class="snapshot-card"><iconify-icon icon="lucide:files"></iconify-icon><h4>PowerRAG 资料接入</h4><p>支持批量文件和文件夹导入，统一展示待处理、已处理、失败和导出状态。</p></article>
+              <article class="snapshot-card"><iconify-icon icon="ph:files-fill"></iconify-icon><h4>PowerRAG 资料接入</h4><p>支持批量文件和文件夹导入，统一展示待处理、已处理、失败和导出状态。</p></article>
 
-              <article class="snapshot-card"><iconify-icon icon="lucide:search-check"></iconify-icon><h4>可信语义检索</h4><p>用向量召回连接本地问题和原始资料片段，适合检索问答与演示。</p></article>
+              <article class="snapshot-card"><iconify-icon icon="ph:magnifying-glass-fill"></iconify-icon><h4>可信语义检索</h4><p>用向量召回连接本地问题和原始资料片段，适合检索问答与演示。</p></article>
 
-              <article class="snapshot-card"><iconify-icon icon="lucide:share-2"></iconify-icon><h4>GraphRAG 扩展</h4><p>保留实体关系抽取、图谱问答和图谱质量观察入口，便于展示后续增强路线。</p></article>
+              <article class="snapshot-card"><iconify-icon icon="ph:share-network-fill"></iconify-icon><h4>GraphRAG 扩展</h4><p>保留实体关系抽取、图谱问答和图谱质量观察入口，便于展示后续增强路线。</p></article>
 
-              <article class="snapshot-card"><iconify-icon icon="lucide:bar-chart-3"></iconify-icon><h4>性能与质量指标</h4><p>集中呈现集合规模、Token、延迟、吞吐和处理质量，方便汇报系统能力。</p></article>
+              <article class="snapshot-card"><iconify-icon icon="ph:chart-bar-fill"></iconify-icon><h4>性能与质量指标</h4><p>集中呈现集合规模、Token、延迟、吞吐和处理质量，方便汇报系统能力。</p></article>
 
             </div>
 
@@ -311,7 +306,7 @@
 
                       <span class="pill" id="collectionSummaryPill">实时结构</span>
 
-                      <button class="ghost-btn" id="btnExportAll" type="button"><iconify-icon icon="lucide:hard-drive-download"></iconify-icon><span>导出整库 ZIP</span></button>
+                      <button class="ghost-btn" id="btnExportAll" type="button"><iconify-icon icon="ph:hard-drives-fill"></iconify-icon><span>导出整库 ZIP</span></button>
 
                     </div>
 
@@ -564,8 +559,8 @@
             <article class="panel">
               <div class="panel-head">
                 <div>
-                  <p class="card-kicker">P0 交付主链</p>
-                  <h3>可信知识交付工作台</h3>
+                  <p class="card-kicker">M4 可信交付</p>
+                  <h3>治理交付工作台</h3>
                   <p>按项目隔离源资料、正式版本、任务、图谱和 FMEA；所有发布动作保留审核、版本和审计证据。</p>
                 </div>
                 <span class="delivery-status" id="deliveryHealth" data-status="warning">等待检查</span>
@@ -579,8 +574,9 @@
                   <label for="deliveryActor">后端认证身份</label>
                   <input class="form-control" id="deliveryActor" type="text" value="local-user" autocomplete="off" readonly>
                 </div>
-                <button class="ghost-btn" id="btnDeliveryRefresh" type="button"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新项目</span></button>
-                <button class="ghost-btn" type="button" data-jump="admin"><iconify-icon icon="lucide:shield-check"></iconify-icon><span>认证设置</span></button>
+                <button class="ghost-btn" type="button" data-sidebar-toggle="deliveryInspectSidebar" aria-expanded="false"><iconify-icon icon="ph:sidebar-simple-fill"></iconify-icon><span>打开任务台</span></button>
+                <button class="ghost-btn" id="btnDeliveryRefresh" type="button"><iconify-icon icon="ph:arrows-clockwise-bold"></iconify-icon><span>刷新项目</span></button>
+                <button class="ghost-btn" type="button" data-jump="admin"><iconify-icon icon="ph:shield-check-fill"></iconify-icon><span>认证设置</span></button>
               </div>
             </article>
 
@@ -592,7 +588,7 @@
               <div class="delivery-metric"><span>FMEA 任务</span><strong id="deliveryMetricFmea">0</strong></div>
             </div>
 
-            <div class="delivery-grid">
+            <div class="delivery-grid duty-split" data-sidebar="deliveryInspectSidebar">
               <div class="stack">
                 <article class="panel">
                   <div class="panel-head">
@@ -601,43 +597,50 @@
                   <div class="llm-form">
                     <div class="field"><label for="deliveryProjectId">项目 ID</label><input class="form-control" id="deliveryProjectId" placeholder="gt-pilot-01"></div>
                     <div class="field field--wide"><label for="deliveryProjectName">项目名称</label><input class="form-control" id="deliveryProjectName" placeholder="燃气轮机试点"></div>
-                    <button class="btn" id="btnDeliveryCreateProject" type="button"><iconify-icon icon="lucide:folder-plus"></iconify-icon><span>创建项目</span></button>
-                    <button class="ghost-btn" id="btnDeliveryCopyProjectTemplate" type="button"><iconify-icon icon="lucide:copy-plus"></iconify-icon><span>从当前项目复制模板</span></button>
+                    <button class="btn" id="btnDeliveryCreateProject" type="button"><iconify-icon icon="ph:folder-plus-fill"></iconify-icon><span>创建项目</span></button>
+                    <button class="ghost-btn" id="btnDeliveryCopyProjectTemplate" type="button"><iconify-icon icon="ph:copy-fill"></iconify-icon><span>从当前项目复制模板</span></button>
                   </div>
                 </article>
 
                 <article class="panel">
                   <div class="panel-head">
                     <div><h3>项目备份与恢复</h3><p>导出包含资料、治理库、检索、图谱、清单与哈希清单的完整包；恢复前校验文件大小、SHA-256 和路径安全。</p></div>
-                    <button class="ghost-btn" id="btnDeliveryExportProject" type="button"><iconify-icon icon="lucide:archive"></iconify-icon><span>备份当前项目</span></button>
+                    <button class="ghost-btn" id="btnDeliveryExportProject" type="button"><iconify-icon icon="ph:archive-fill"></iconify-icon><span>备份当前项目</span></button>
                   </div>
                   <div class="llm-form">
                     <div class="field field--wide"><label for="deliveryRestoreFile">项目备份包</label><input class="form-control" id="deliveryRestoreFile" type="file" accept=".zip,application/zip"></div>
                     <div class="field"><label for="deliveryRestoreProjectId">恢复为项目 ID</label><input class="form-control" id="deliveryRestoreProjectId" placeholder="gt-pilot-restored"></div>
                     <div class="field"><label for="deliveryRestoreProjectName">恢复后名称</label><input class="form-control" id="deliveryRestoreProjectName" placeholder="燃气轮机试点（恢复）"></div>
-                    <button class="btn" id="btnDeliveryRestoreProject" type="button"><iconify-icon icon="lucide:archive-restore"></iconify-icon><span>校验并恢复</span></button>
+                    <button class="btn" id="btnDeliveryRestoreProject" type="button"><iconify-icon icon="ph:archive-fill"></iconify-icon><span>校验并恢复</span></button>
                   </div>
                 </article>
 
                 <article class="panel">
                   <div class="panel-head">
-                    <div><h3>资料接入与解析任务</h3><p>使用 multipart 直接上传，不再把大文件编码进 Base64 JSON；处理在任务中心留存状态。</p></div>
+                    <div><h3>M2 解析与标注</h3><p>使用 multipart 直接上传，不再把大文件编码进 Base64 JSON；处理在任务中心留存状态。</p></div>
+                    <div class="gear-settings" data-gear="delivery-parse">
+                      <span class="gear-summary" id="deliveryParseSettingsSummary">自动路由 · OCR 自动 · 重复则停</span>
+                      <button type="button" class="icon-btn gear-toggle" aria-expanded="false" aria-label="解析设置" title="解析设置"><iconify-icon icon="ph:gear-six-fill"></iconify-icon></button>
+                      <div class="gear-panel" hidden>
+                        <div class="gear-panel-head"><strong>解析参数</strong><span>默认自动路由</span></div>
+                        <div class="field"><label for="deliveryParserBackend">解析器</label><select class="form-control" id="deliveryParserBackend"><option value="auto">自动路由</option><option value="native">原生解析</option><option value="docling">Docling</option><option value="mineru">MinerU</option><option value="unstructured">Unstructured</option></select></div>
+                        <div class="field"><label for="deliveryUseOcr">OCR</label><select class="form-control" id="deliveryUseOcr"><option value="auto">自动判断</option><option value="always">始终 OCR</option><option value="never">不使用 OCR</option></select></div>
+                        <div class="field"><label for="deliveryAllowDuplicate">重复文件</label><select class="form-control" id="deliveryAllowDuplicate"><option value="false">提示并停止</option><option value="true">确认重新处理</option></select></div>
+                      </div>
+                    </div>
                     <span class="pill">PDF / DOCX / 图片 / TXT</span>
                   </div>
                   <div class="llm-form">
                     <div class="field field--wide"><label for="deliveryUploadFile">源文件</label><input class="form-control" id="deliveryUploadFile" type="file" accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.tif,.tiff"></div>
                     <div class="field"><label for="deliveryDocumentId">资料 ID</label><input class="form-control" id="deliveryDocumentId" placeholder="manual-001"></div>
-                    <div class="field"><label for="deliveryParserBackend">解析器</label><select class="form-control" id="deliveryParserBackend"><option value="auto">自动路由</option><option value="native">原生解析</option><option value="docling">Docling</option><option value="mineru">MinerU</option><option value="unstructured">Unstructured</option></select></div>
-                    <div class="field"><label for="deliveryUseOcr">OCR</label><select class="form-control" id="deliveryUseOcr"><option value="auto">自动判断</option><option value="always">始终 OCR</option><option value="never">不使用 OCR</option></select></div>
-                    <div class="field"><label for="deliveryAllowDuplicate">重复文件</label><select class="form-control" id="deliveryAllowDuplicate"><option value="false">提示并停止</option><option value="true">确认重新处理</option></select></div>
-                    <button class="btn" id="btnDeliveryUpload" type="button"><iconify-icon icon="lucide:upload-cloud"></iconify-icon><span>上传并创建任务</span></button>
+                    <button class="btn" id="btnDeliveryUpload" type="button"><iconify-icon icon="ph:cloud-arrow-up-fill"></iconify-icon><span>上传并创建任务</span></button>
                   </div>
                 </article>
 
                 <article class="panel">
                   <div class="panel-head">
-                    <div><h3>正式资料台账</h3><p>候选资料先审核，批准后再发布并同步正式检索索引。</p></div>
-                    <button class="ghost-btn" id="btnDeliveryBatchApproveDocuments" type="button"><iconify-icon icon="lucide:list-checks"></iconify-icon><span>批量审核通过所选</span></button>
+                    <div><h3>M3 正式资料库</h3><p>候选资料先审核，批准后再发布并同步正式检索索引。</p></div>
+                    <button class="ghost-btn" id="btnDeliveryBatchApproveDocuments" type="button"><iconify-icon icon="ph:list-checks-fill"></iconify-icon><span>批量审核通过所选</span></button>
                   </div>
                   <div class="delivery-list" id="deliveryDocumentList"></div>
                 </article>
@@ -649,30 +652,30 @@
                   <div class="export-bar">
                     <input class="form-control" id="deliverySearchInput" type="search" placeholder="输入设备、故障或检索问题" style="min-width:280px">
                     <select class="form-control" id="deliverySearchMode" style="max-width:160px"><option value="hybrid">混合检索</option><option value="keyword">关键词</option><option value="semantic">语义</option></select>
-                    <button class="btn" id="btnDeliverySearch" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>检索正式资料</span></button>
+                    <button class="btn" id="btnDeliverySearch" type="button"><iconify-icon icon="ph:magnifying-glass-fill"></iconify-icon><span>检索正式资料</span></button>
                   </div>
                   <div class="delivery-list" id="deliverySearchResults"><div class="empty-state">发布资料并建立索引后开始检索。</div></div>
                 </article>
 
                 <article class="panel">
                   <div class="panel-head">
-                    <div><h3>图谱构建与发布</h3><p>只从已发布资料选择来源；逐个审核候选语句后才允许发布并同步 GraphStore。</p></div>
+                    <div><h3>M4 治理图谱</h3><p>只从已发布资料选择来源；逐个审核候选语句后才允许发布并同步 GraphStore。</p></div>
                   </div>
                   <div class="delivery-check-list" id="deliveryPublishedDocuments"></div>
                   <div class="export-bar">
                     <select class="form-control" id="deliveryGraphBackend" style="max-width:220px"><option value="rules">Rules 可审计基线</option><option value="small-model">Small model</option><option value="llm">LLM</option></select>
                     <select class="form-control" id="deliveryGraphProvider" style="max-width:260px"></select>
-                    <button class="btn" id="btnDeliveryExtractGraph" type="button"><iconify-icon icon="lucide:git-branch-plus"></iconify-icon><span>生成图谱候选</span></button>
+                    <button class="btn" id="btnDeliveryExtractGraph" type="button"><iconify-icon icon="ph:git-branch-fill"></iconify-icon><span>生成图谱候选</span></button>
                   </div>
                   <div class="delivery-list" id="deliveryGraphList"></div>
                 </article>
 
                 <article class="panel">
-                  <div class="panel-head"><div><h3>FMEA 生成与交付</h3><p>从已发布图谱继承资料版本；字段级证据未通过时不能发布。</p></div></div>
+                  <div class="panel-head"><div><h3>M5 FMEA 交付</h3><p>从已发布图谱继承资料版本；字段级证据未通过时不能发布。</p></div></div>
                   <div class="export-bar">
                     <select class="form-control" id="deliveryFmeaGraph" style="max-width:520px"></select>
                     <select class="form-control" id="deliveryFmeaTemplate" style="max-width:360px"></select>
-                    <button class="btn" id="btnDeliveryRunFmea" type="button"><iconify-icon icon="lucide:table-properties"></iconify-icon><span>生成 FMEA</span></button>
+                    <button class="btn" id="btnDeliveryRunFmea" type="button"><iconify-icon icon="ph:table-fill"></iconify-icon><span>生成 FMEA</span></button>
                   </div>
                   <details style="margin-top:12px">
                     <summary>项目级 FMEA 模板版本管理</summary>
@@ -680,21 +683,21 @@
                       <div class="field"><label for="deliveryFmeaTemplateId">模板 ID</label><input class="form-control" id="deliveryFmeaTemplateId" placeholder="pilot_fmea_v2"></div>
                       <div class="field"><label for="deliveryFmeaTemplateVersion">版本</label><input class="form-control" id="deliveryFmeaTemplateVersion" placeholder="1.0.0"></div>
                       <div class="field field--wide"><label for="deliveryFmeaTemplateDefinition">模板定义 JSON</label><textarea class="form-control" id="deliveryFmeaTemplateDefinition" rows="8" placeholder='{"template":"pilot_fmea_v2","version":"1.0.0",...}'></textarea></div>
-                      <button class="ghost-btn" id="btnDeliveryRegisterFmeaTemplate" type="button"><iconify-icon icon="lucide:file-plus-2"></iconify-icon><span>登记草稿版本</span></button>
-                      <button class="ghost-btn" id="btnDeliveryApproveFmeaTemplate" type="button"><iconify-icon icon="lucide:badge-check"></iconify-icon><span>批准所选版本</span></button>
+                      <button class="ghost-btn" id="btnDeliveryRegisterFmeaTemplate" type="button"><iconify-icon icon="ph:file-plus-fill"></iconify-icon><span>登记草稿版本</span></button>
+                      <button class="ghost-btn" id="btnDeliveryApproveFmeaTemplate" type="button"><iconify-icon icon="ph:seal-check-fill"></iconify-icon><span>批准所选版本</span></button>
                     </div>
                   </details>
                   <div class="delivery-list" id="deliveryFmeaList"></div>
                 </article>
               </div>
 
-              <div class="stack">
+              <aside class="duty-sidebar" id="deliveryInspectSidebar" hidden>
                 <article class="panel">
                   <div class="panel-head">
                     <div><h3>任务中心</h3><p>统一查看 queued、running、needs_review、completed、failed 和 cancelled。</p></div>
                     <div class="export-bar">
-                      <button class="ghost-btn" id="btnDeliveryRebuildIndex" type="button"><iconify-icon icon="lucide:refresh-ccw-dot"></iconify-icon><span>重建正式索引</span></button>
-                      <button class="ghost-btn" id="btnDeliveryBatchRetry" type="button"><iconify-icon icon="lucide:rotate-ccw"></iconify-icon><span>批量重试所选失败任务</span></button>
+                      <button class="ghost-btn" id="btnDeliveryRebuildIndex" type="button"><iconify-icon icon="ph:arrows-clockwise-bold"></iconify-icon><span>重建正式索引</span></button>
+                      <button class="ghost-btn" id="btnDeliveryBatchRetry" type="button"><iconify-icon icon="ph:arrow-counter-clockwise-bold"></iconify-icon><span>批量重试所选失败任务</span></button>
                       <select class="form-control" id="deliveryTaskFilter" style="max-width:180px"><option value="">全部状态</option><option value="queued">queued</option><option value="running">running</option><option value="needs_review">needs_review</option><option value="completed">completed</option><option value="failed">failed</option><option value="cancelled">cancelled</option></select>
                     </div>
                   </div>
@@ -715,7 +718,7 @@
                   <div class="panel-head"><div><h3>原页与证据预览</h3><p>从资料台账打开指定版本，核对源页、解析块和质量问题。</p></div></div>
                   <div class="delivery-preview" id="deliveryEvidencePreview"><div class="empty-state">选择“核对证据”后显示原页和解析结果。</div></div>
                 </article>
-              </div>
+              </aside>
             </div>
           </div>
 
@@ -733,15 +736,73 @@
 
                   <div class="panel-head">
 
-                    <div>
+                    <div class="page-lead">
 
-                      <h3>文件接入与入</h3>
+                      <span class="page-lead-icon" aria-hidden="true"><iconify-icon icon="ph:folder-open-fill"></iconify-icon></span>
 
-                      <p>拖入文件或文件夹，自动识别类型并递归扫描目录中的可用文件，然后配置参数入库</p>
+                      <div>
+
+                        <p class="card-kicker">M1 资料接入</p>
+
+                        <h3>GraphRAG 语料接入</h3>
+
+                        <p>拖入文件或文件夹，自动识别类型并递归扫描目录中的可用文件，然后配置参数入库。</p>
+
+                      </div>
 
                     </div>
 
-                    <span class="pill">json pdf docx txt md csv tsv log + code</span>
+                    <div class="gear-settings" data-gear="processed">
+                      <span class="gear-summary" id="processedSettingsSummary">0 个已处理</span>
+                      <button type="button" class="icon-btn gear-toggle" aria-expanded="false" aria-label="已处理文件" title="已处理文件"><iconify-icon icon="ph:files-fill"></iconify-icon></button>
+                      <div class="gear-panel gear-panel--wide" hidden>
+                        <div class="gear-panel-head"><strong>已处理文件</strong><span id="processedMeta">处理完成后在这里查看</span></div>
+                        <div class="queue-toolbar">
+                          <span class="pill" id="processedCountPill">0 个文件</span>
+                          <div class="split-action">
+                            <button class="ghost-btn" id="processedEditButton" type="button"><iconify-icon icon="ph:pencil-simple-fill"></iconify-icon><span>编辑</span></button>
+                            <button class="ghost-btn split-caret" type="button" data-split-toggle aria-label="台账操作">▾</button>
+                            <div class="split-menu" hidden>
+                              <button type="button" id="processedDeleteButton">删除所选</button>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="queue-list" id="processedList"></div>
+                        <article class="processed-quality" id="qualityCard">
+                          <h3>分块与质量摘要</h3>
+                          <div class="quality-report" id="qualityReport"></div>
+                        </article>
+                      </div>
+                    </div>
+                    <div class="gear-settings" data-gear="ingest">
+                      <span class="gear-summary" id="ingestSettingsSummary">power_equipment_demo · 追加 · 900/120</span>
+                      <button type="button" class="icon-btn gear-toggle" aria-expanded="false" aria-label="入库设置" title="入库设置"><iconify-icon icon="ph:gear-six-fill"></iconify-icon></button>
+                      <div class="gear-panel" hidden>
+                        <div class="gear-panel-head"><strong>入库参数</strong><span>默认可用，需要时再改</span></div>
+                        <div class="llm-form">
+                          <div class="field field--wide">
+                            <label for="publicBooksJsonCollection">向量库集合名称</label>
+                            <input class="form-control" id="publicBooksJsonCollection" type="text" value="power_equipment_demo">
+                          </div>
+                          <div class="field">
+                            <label for="publicBooksJsonMode">写入方式</label>
+                            <select class="form-control" id="publicBooksJsonMode">
+                              <option value="append">追加到已有集合</option>
+                              <option value="create">新建/重建集合</option>
+                            </select>
+                          </div>
+                          <div class="field">
+                            <label for="publicBooksJsonChunkSize">Chunk 长度</label>
+                            <input class="form-control" id="publicBooksJsonChunkSize" type="number" min="100" max="4000" value="900">
+                          </div>
+                          <div class="field">
+                            <label for="publicBooksJsonOverlap">Overlap</label>
+                            <input class="form-control" id="publicBooksJsonOverlap" type="number" min="0" max="1000" value="120">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <span class="pill">PDF / DOCX / TXT / JSON / MD</span>
 
                   </div>
 
@@ -749,20 +810,33 @@
 
                     <div>
 
-                      <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:folder-input"></iconify-icon></div>
+                      <div class="surface-icon" aria-hidden="true"><iconify-icon icon="ph:folder-open-fill"></iconify-icon></div>
 
-                      <h3>拖入文件或文件夹</h3>
+                      <h3>拖入资料，或添加后入库</h3>
 
-                      <p class="muted">自动识别文件类型，递归扫描文件夹中的可用文件</p>
-
-                      <div class="queue-actions">
-
-                        <button class="btn" id="pickFilesButton" type="button"><iconify-icon icon="lucide:file-plus"></iconify-icon><span>选择文件</span></button>
-
-                        <button class="ghost-btn" id="pickFolderButton" type="button"><iconify-icon icon="lucide:folder-plus"></iconify-icon><span>选择文件夹</span></button>
-
-                        <button class="ghost-btn" id="btnLoadDemoDataset" type="button"><iconify-icon icon="lucide:database"></iconify-icon><span>载入演示数据</span></button>
-
+                      <div class="duty-actions">
+                        <div class="split-action">
+                          <button class="btn" id="pickFilesButton" type="button"><iconify-icon icon="ph:plus-bold"></iconify-icon><span>添加资料</span></button>
+                          <button class="btn split-caret" type="button" data-split-toggle aria-label="其他添加方式">▾</button>
+                          <div class="split-menu" hidden>
+                            <button type="button" id="pickFolderButton">选择文件夹</button>
+                            <button type="button" id="btnLoadDemoDataset">载入演示数据</button>
+                          </div>
+                        </div>
+                        <button class="btn primary" id="btnPublicBooksJsonIngest" type="button"><iconify-icon icon="ph:database-fill"></iconify-icon><span>入库</span></button>
+                        <div class="split-action">
+                          <button class="ghost-btn" type="button" data-split-toggle>更多</button>
+                          <div class="split-menu" hidden>
+                            <button type="button" id="btnExportOcrResults" onclick="exportOcrResultsFromStandard()">导出 OCR</button>
+                            <button type="button" id="btnPublicBooksExportChroma">导出向量库</button>
+                            <button type="button" id="btnExportAllData">导出整库 ZIP</button>
+                            <button type="button" id="btnExportJson">导出集合 JSON</button>
+                            <button type="button" id="reloadQueueButton">刷新目录</button>
+                            <button type="button" id="selectAllUploads">全选待处理</button>
+                            <button type="button" id="clearUploadSelection">清空选择</button>
+                            <button type="button" id="processedShowAllButton">显示本机全部</button>
+                          </div>
+                        </div>
                       </div>
 
                     </div>
@@ -778,58 +852,6 @@
                   <input class="hidden-input" id="jsonIngestFolderInput" type="file" multiple webkitdirectory directory aria-label="选择 JSON 入库文件夹">
 
                   <div id="jsonIngestFileList" class="queue-list"></div>
-
-                  <div class="llm-form" style="margin-top:12px">
-
-                    <div class="field field--wide">
-
-                      <label for="publicBooksJsonCollection">向量库集合名称</label>
-
-                      <input class="form-control" id="publicBooksJsonCollection" type="text" value="power_equipment_demo">
-
-                    </div>
-
-                    <div class="field">
-
-                      <label for="publicBooksJsonMode">写入方式</label>
-
-                      <select class="form-control" id="publicBooksJsonMode">
-
-                        <option value="append">追加到已有集合</option>
-
-                        <option value="create">新建/重建集合</option>
-
-                      </select>
-
-                    </div>
-
-                    <div class="field">
-
-                      <label for="publicBooksJsonChunkSize">Chunk 长度</label>
-
-                      <input class="form-control" id="publicBooksJsonChunkSize" type="number" min="100" max="4000" value="900">
-
-                    </div>
-
-                    <div class="field">
-
-                      <label for="publicBooksJsonOverlap">Overlap</label>
-
-                      <input class="form-control" id="publicBooksJsonOverlap" type="number" min="0" max="1000" value="120">
-
-                    </div>
-
-                  </div>
-
-                  <div class="export-bar">
-
-                    <button class="btn" id="btnPublicBooksJsonIngest" type="button"><iconify-icon icon="lucide:database-zap"></iconify-icon><span>检测并入库</span></button>
-
-                    <button class="ghost-btn" id="btnExportOcrResults" type="button" onclick="exportOcrResultsFromStandard()" title="导出已完成 OCR 的 PDF 文本结果（无需入库）"><iconify-icon icon="lucide:file-down"></iconify-icon><span>导出OCR结果</span></button>
-
-                    <button class="ghost-btn" id="btnPublicBooksExportChroma" type="button"><iconify-icon icon="lucide:hard-drive-download"></iconify-icon><span>导出向量库</span></button>
-
-                  </div>
 
                   <div class="queue-list" id="publicBooksJsonSummary"></div>
 
@@ -853,13 +875,7 @@
 
                       <span class="pill" id="queueCountPill">0 个文件</span>
 
-                      <button class="ghost-btn" id="reloadQueueButton" type="button"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新目录</span></button>
-
-                      <button class="ghost-btn" id="selectAllUploads" type="button"><iconify-icon icon="lucide:check-check"></iconify-icon><span>全选待处理</span></button>
-
-                      <button class="ghost-btn" id="clearUploadSelection" type="button"><iconify-icon icon="lucide:eraser"></iconify-icon><span>清空选择</span></button>
-
-                      <button class="btn" id="btnProcess" type="button"><iconify-icon icon="lucide:square-play"></iconify-icon><span>处理选中文件</span></button>
+                      <button class="btn" id="btnProcess" type="button"><iconify-icon icon="ph:play-fill"></iconify-icon><span>入库选中</span></button>
 
                     </div>
 
@@ -893,90 +909,6 @@
 
               </div>
 
-
-
-              <div class="stack">
-
-                <article class="panel">
-
-                  <div class="panel-head">
-
-                    <div>
-
-                      <h3>已处理文件</h3>
-
-                      <p id="processedMeta">处理完成后，会自动进入这里</p>
-
-                    </div>
-
-                    <div class="queue-toolbar">
-
-                      <span class="pill" id="processedCountPill">0 个文件</span>
-
-                      <button class="ghost-btn" id="processedEditButton" type="button"><iconify-icon icon="lucide:pencil-line"></iconify-icon><span>编辑</span></button>
-
-                      <button class="ghost-btn" id="processedDeleteButton" type="button" hidden><iconify-icon icon="lucide:trash-2"></iconify-icon><span>删除所选</span></button>
-
-                    </div>
-
-                  </div>
-
-                  <div class="queue-list" id="processedList"></div>
-
-                </article>
-
-
-
-                <article class="panel" id="qualityCard">
-
-                  <div class="panel-head">
-
-                    <div>
-
-                      <h3>分块与质量摘要</h3>
-
-                    </div>
-
-                    <span class="pill">处理后</span>
-
-                  </div>
-
-                  <div class="quality-report" id="qualityReport"></div>
-
-                </article>
-
-
-
-                <article class="panel">
-
-                  <div class="panel-head">
-
-                    <div>
-
-                      <h3>导出与备份</h3>
-
-                      <p>将当前向量数据库导出为文件，便于备份、迁移或离线分析</p>
-
-                    </div>
-
-                    <span class="pill">数据管理</span>
-
-                  </div>
-
-                  <div class="export-bar">
-
-                    <button class="btn" id="btnExportAllData" type="button"><iconify-icon icon="lucide:hard-drive-download"></iconify-icon><span>导出整库 ZIP</span></button>
-
-                    <button class="ghost-btn" id="btnExportJson" type="button"><iconify-icon icon="lucide:file-json"></iconify-icon><span>导出当前集合 JSON</span></button>
-
-                  </div>
-
-                  <div class="queue-hint">整库 ZIP 包含 ChromaDB 全部持久化文件；集合 JSON 只含文本和元数据，不含向量</div>
-
-                </article>
-
-              </div>
-
             </div>
 
           </div>
@@ -997,10 +929,32 @@
 
                   <div class="panel-head">
 
-                    <div>
+                    <div class="page-lead">
 
-                      <h3>检索配置</h3>
+                      <span class="page-lead-icon" aria-hidden="true"><iconify-icon icon="ph:magnifying-glass-fill"></iconify-icon></span>
 
+                      <div>
+
+                        <p class="card-kicker">语义检索</p>
+
+                        <h3>检索配置</h3>
+
+                        <p>输入工程问题，查看证据片段、来源、相似度和可选回答。</p>
+
+                      </div>
+
+                    </div>
+
+                    <div class="gear-settings" data-gear="search">
+                      <span class="gear-summary" id="searchSettingsSummary">TopK 20</span>
+                      <button type="button" class="icon-btn gear-toggle" aria-expanded="false" aria-label="检索设置" title="检索设置"><iconify-icon icon="ph:gear-six-fill"></iconify-icon></button>
+                      <div class="gear-panel" hidden>
+                        <div class="gear-panel-head"><strong>检索参数</strong><span>默认 TopK 20</span></div>
+                        <div class="field">
+                          <label for="searchTopK">返回片段数 TopK</label>
+                          <input class="form-control" id="searchTopK" type="number" min="1" max="100" value="20" aria-label="返回片段数 TopK">
+                        </div>
+                      </div>
                     </div>
 
                   </div>
@@ -1010,10 +964,7 @@
                     <label class="sr-only" for="searchInput">检索问题</label>
                     <input class="search-input" id="searchInput" type="search" aria-label="检索问题" placeholder="例如：燃气轮机异常振动诊断流程">
 
-                    <label class="sr-only" for="searchTopK">返回片段数 TopK</label>
-                    <input class="search-select" id="searchTopK" type="number" min="1" max="100" value="20" aria-label="返回片段数 TopK">
-
-                    <button class="btn" id="btnSearch" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
+                    <button class="btn" id="btnSearch" type="button"><iconify-icon icon="ph:magnifying-glass-fill"></iconify-icon><span>开始检索</span></button>
 
                   </div>
 
@@ -1679,32 +1630,32 @@
 
                   <div class="queue-actions" style="justify-content:flex-start;margin-top:14px">
 
-                    <button class="btn btn--secondary" id="btnUpsertRetrievalPolicyRole" type="button"><iconify-icon icon="lucide:user-cog"></iconify-icon><span>Save Role</span></button>
-                    <button class="btn btn--secondary" id="btnUpsertRetrievalPolicyRecipient" type="button"><iconify-icon icon="lucide:contact"></iconify-icon><span>Save Recipient</span></button>
-                    <button class="btn btn--secondary" id="btnLoadRetrievalPolicyRecipients" type="button"><iconify-icon icon="lucide:contact-round"></iconify-icon><span>Load Recipients</span></button>
-                    <button class="btn btn--secondary" id="btnSyncRetrievalPolicyDirectory" type="button"><iconify-icon icon="lucide:users-round"></iconify-icon><span>Sync Directory</span></button>
-                    <button class="btn btn--secondary" id="btnSaveRetrievalPolicyIdp" type="button"><iconify-icon icon="lucide:key-round"></iconify-icon><span>Save IdP</span></button>
-                    <button class="btn btn--secondary" id="btnLoadRetrievalPolicyIdp" type="button"><iconify-icon icon="lucide:shield-user"></iconify-icon><span>Load IdP</span></button>
-                    <button class="btn btn--secondary" id="btnBuildRetrievalPolicyOidcLoginUrl" type="button"><iconify-icon icon="lucide:external-link"></iconify-icon><span>Login URL</span></button>
-                    <button class="btn btn--secondary" id="btnOpenRetrievalPolicyOidcLoginUrl" type="button"><iconify-icon icon="lucide:arrow-up-right"></iconify-icon><span>Open Login</span></button>
-                    <button class="btn btn--secondary" id="btnExchangeRetrievalPolicyOidcCode" type="button"><iconify-icon icon="lucide:key-square"></iconify-icon><span>Exchange Code</span></button>
-                    <button class="btn btn--secondary" id="btnStartRetrievalPolicyOidcSession" type="button"><iconify-icon icon="lucide:cookie"></iconify-icon><span>Start Session</span></button>
-                    <button class="btn btn--secondary" id="btnRefreshRetrievalPolicyOidcSession" type="button"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>Refresh Session</span></button>
-                    <button class="btn btn--secondary" id="btnLoadRetrievalPolicyOidcSessions" type="button"><iconify-icon icon="lucide:list-checks"></iconify-icon><span>Load Sessions</span></button>
-                    <button class="btn btn--secondary" id="btnRevokeRetrievalPolicyOidcSession" type="button"><iconify-icon icon="lucide:ban"></iconify-icon><span>Revoke Session</span></button>
-                    <button class="btn btn--secondary" id="btnRotateRetrievalPolicyOidcSessionKeys" type="button"><iconify-icon icon="lucide:key-round"></iconify-icon><span>Rotate Keys</span></button>
-                    <button class="btn btn--secondary" id="btnLoadRetrievalPolicyOidcSessionKeyStatus" type="button"><iconify-icon icon="lucide:gauge"></iconify-icon><span>Key Status</span></button>
-                    <button class="btn btn--secondary" id="btnLogoutRetrievalPolicyOidcSession" type="button"><iconify-icon icon="lucide:eraser"></iconify-icon><span>Logout Session</span></button>
-                    <button class="btn btn--secondary" id="btnSaveRetrievalPolicyBearerToken" type="button"><iconify-icon icon="lucide:log-in"></iconify-icon><span>Use Token</span></button>
-                    <button class="btn btn--secondary" id="btnClearRetrievalPolicyBearerToken" type="button"><iconify-icon icon="lucide:log-out"></iconify-icon><span>Clear Token</span></button>
-                    <button class="btn" id="btnProposeRetrievalPolicy" type="button"><iconify-icon icon="lucide:file-plus-2"></iconify-icon><span>Propose Policy</span></button>
-                    <button class="btn" id="btnApproveRetrievalPolicy" type="button"><iconify-icon icon="lucide:shield-check"></iconify-icon><span>Approve Proposal</span></button>
-                    <button class="btn btn--secondary" id="btnRejectRetrievalPolicy" type="button"><iconify-icon icon="lucide:shield-x"></iconify-icon><span>Reject Proposal</span></button>
-                    <button class="btn" id="btnPromoteRetrievalPolicy" type="button"><iconify-icon icon="lucide:badge-check"></iconify-icon><span>Promote Policy</span></button>
-                    <button class="btn btn--secondary" id="btnRollbackRetrievalPolicy" type="button"><iconify-icon icon="lucide:rotate-ccw"></iconify-icon><span>Rollback Policy</span></button>
-                    <button class="btn btn--secondary" id="btnLoadRetrievalPolicyHistory" type="button"><iconify-icon icon="lucide:history"></iconify-icon><span>View History</span></button>
-                    <button class="btn btn--secondary" id="btnLoadRetrievalPolicyNotifications" type="button"><iconify-icon icon="lucide:inbox"></iconify-icon><span>Load Notifications</span></button>
-                    <button class="btn btn--secondary" id="btnDispatchRetrievalPolicyNotifications" type="button"><iconify-icon icon="lucide:send"></iconify-icon><span>Dispatch Notifications</span></button>
+                    <button class="btn btn--secondary" id="btnUpsertRetrievalPolicyRole" type="button"><iconify-icon icon="ph:user-gear-fill"></iconify-icon><span>Save Role</span></button>
+                    <button class="btn btn--secondary" id="btnUpsertRetrievalPolicyRecipient" type="button"><iconify-icon icon="ph:address-book-fill"></iconify-icon><span>Save Recipient</span></button>
+                    <button class="btn btn--secondary" id="btnLoadRetrievalPolicyRecipients" type="button"><iconify-icon icon="ph:address-book-fill"></iconify-icon><span>Load Recipients</span></button>
+                    <button class="btn btn--secondary" id="btnSyncRetrievalPolicyDirectory" type="button"><iconify-icon icon="ph:users-fill"></iconify-icon><span>Sync Directory</span></button>
+                    <button class="btn btn--secondary" id="btnSaveRetrievalPolicyIdp" type="button"><iconify-icon icon="ph:key-fill"></iconify-icon><span>Save IdP</span></button>
+                    <button class="btn btn--secondary" id="btnLoadRetrievalPolicyIdp" type="button"><iconify-icon icon="ph:shield-fill"></iconify-icon><span>Load IdP</span></button>
+                    <button class="btn btn--secondary" id="btnBuildRetrievalPolicyOidcLoginUrl" type="button"><iconify-icon icon="ph:arrow-square-out-fill"></iconify-icon><span>Login URL</span></button>
+                    <button class="btn btn--secondary" id="btnOpenRetrievalPolicyOidcLoginUrl" type="button"><iconify-icon icon="ph:arrow-up-right-bold"></iconify-icon><span>Open Login</span></button>
+                    <button class="btn btn--secondary" id="btnExchangeRetrievalPolicyOidcCode" type="button"><iconify-icon icon="ph:key-fill"></iconify-icon><span>Exchange Code</span></button>
+                    <button class="btn btn--secondary" id="btnStartRetrievalPolicyOidcSession" type="button"><iconify-icon icon="ph:cookie-fill"></iconify-icon><span>Start Session</span></button>
+                    <button class="btn btn--secondary" id="btnRefreshRetrievalPolicyOidcSession" type="button"><iconify-icon icon="ph:arrows-clockwise-bold"></iconify-icon><span>Refresh Session</span></button>
+                    <button class="btn btn--secondary" id="btnLoadRetrievalPolicyOidcSessions" type="button"><iconify-icon icon="ph:list-checks-fill"></iconify-icon><span>Load Sessions</span></button>
+                    <button class="btn btn--secondary" id="btnRevokeRetrievalPolicyOidcSession" type="button"><iconify-icon icon="ph:prohibit-fill"></iconify-icon><span>Revoke Session</span></button>
+                    <button class="btn btn--secondary" id="btnRotateRetrievalPolicyOidcSessionKeys" type="button"><iconify-icon icon="ph:key-fill"></iconify-icon><span>Rotate Keys</span></button>
+                    <button class="btn btn--secondary" id="btnLoadRetrievalPolicyOidcSessionKeyStatus" type="button"><iconify-icon icon="ph:gauge-fill"></iconify-icon><span>Key Status</span></button>
+                    <button class="btn btn--secondary" id="btnLogoutRetrievalPolicyOidcSession" type="button"><iconify-icon icon="ph:eraser-fill"></iconify-icon><span>Logout Session</span></button>
+                    <button class="btn btn--secondary" id="btnSaveRetrievalPolicyBearerToken" type="button"><iconify-icon icon="ph:sign-in-fill"></iconify-icon><span>Use Token</span></button>
+                    <button class="btn btn--secondary" id="btnClearRetrievalPolicyBearerToken" type="button"><iconify-icon icon="ph:sign-out-fill"></iconify-icon><span>Clear Token</span></button>
+                    <button class="btn" id="btnProposeRetrievalPolicy" type="button"><iconify-icon icon="ph:file-plus-fill"></iconify-icon><span>Propose Policy</span></button>
+                    <button class="btn" id="btnApproveRetrievalPolicy" type="button"><iconify-icon icon="ph:shield-check-fill"></iconify-icon><span>Approve Proposal</span></button>
+                    <button class="btn btn--secondary" id="btnRejectRetrievalPolicy" type="button"><iconify-icon icon="ph:shield-slash-fill"></iconify-icon><span>Reject Proposal</span></button>
+                    <button class="btn" id="btnPromoteRetrievalPolicy" type="button"><iconify-icon icon="ph:seal-check-fill"></iconify-icon><span>Promote Policy</span></button>
+                    <button class="btn btn--secondary" id="btnRollbackRetrievalPolicy" type="button"><iconify-icon icon="ph:arrow-counter-clockwise-bold"></iconify-icon><span>Rollback Policy</span></button>
+                    <button class="btn btn--secondary" id="btnLoadRetrievalPolicyHistory" type="button"><iconify-icon icon="ph:clock-counter-clockwise-fill"></iconify-icon><span>View History</span></button>
+                    <button class="btn btn--secondary" id="btnLoadRetrievalPolicyNotifications" type="button"><iconify-icon icon="ph:tray-fill"></iconify-icon><span>Load Notifications</span></button>
+                    <button class="btn btn--secondary" id="btnDispatchRetrievalPolicyNotifications" type="button"><iconify-icon icon="ph:paper-plane-tilt-fill"></iconify-icon><span>Dispatch Notifications</span></button>
 
                   </div>
 
@@ -1715,7 +1666,7 @@
 
 
 
-                <article class="panel">
+                <article class="panel gear-sheet" id="llmConfigPanel" hidden>
 
                   <div class="panel-head">
 
@@ -1729,7 +1680,7 @@
 
                     <div class="panel-tools">
 
-                      <button class="ghost-btn" id="btnRefreshLlm" type="button" title="重新加载已保存的 LLM 配置"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新</span></button>
+                      <button class="ghost-btn" id="btnRefreshLlm" type="button" title="重新加载已保存的 LLM 配置"><iconify-icon icon="ph:arrows-clockwise-bold"></iconify-icon><span>刷新</span></button>
 
                     </div>
 
@@ -1739,13 +1690,13 @@
 
                     <div class="field field--wide" style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06)">
 
-                      <label style="display:flex;align-items:center;gap:6px"><iconify-icon icon="lucide:sparkles" style="color:var(--accent)"></iconify-icon> 一键配置 <span style="font-size:10px;color:var(--muted);font-weight:400">粘贴包含 URL、Key、Model 的文本，自动识别填入</span></label>
+                      <label style="display:flex;align-items:center;gap:6px"><iconify-icon icon="ph:sparkle-fill" style="color:var(--accent)"></iconify-icon> 一键配置 <span style="font-size:10px;color:var(--muted);font-weight:400">粘贴包含 URL、Key、Model 的文本，自动识别填入</span></label>
 
                       <div class="input-with-action">
 
                         <input class="form-control" id="llmSmartPaste" type="text" aria-label="一键配置 LLM" placeholder="粘贴如：https://api.openai.com/v1 sk-xxx gpt-4o，或任意顺序组合" autocomplete="off" style="font-size:12px">
 
-                        <button class="btn" id="btnSmartPaste" type="button" style="white-space:nowrap"><iconify-icon icon="lucide:scan-text"></iconify-icon><span>识别</span></button>
+                        <button class="btn" id="btnSmartPaste" type="button" style="white-space:nowrap"><iconify-icon icon="ph:scan-fill"></iconify-icon><span>识别</span></button>
 
                       </div>
 
@@ -1779,7 +1730,7 @@
 
                         </div>
 
-                        <button class="ghost-btn" id="btnClearLlm" type="button" aria-label="清空 LLM 配置" title="清空 LLM 配置"><iconify-icon icon="lucide:eraser"></iconify-icon></button>
+                        <button class="ghost-btn" id="btnClearLlm" type="button" aria-label="清空 LLM 配置" title="清空 LLM 配置"><iconify-icon icon="ph:eraser-fill"></iconify-icon></button>
 
                       </div>
 
@@ -1813,7 +1764,7 @@
 
                         </div>
 
-                        <button class="ghost-btn" id="btnModelCatalog" type="button"><iconify-icon icon="lucide:book-open"></iconify-icon><span>常用模型</span></button>
+                        <button class="ghost-btn" id="btnModelCatalog" type="button"><iconify-icon icon="ph:book-open-fill"></iconify-icon><span>常用模型</span></button>
 
                       </div>
 
@@ -1861,7 +1812,12 @@
 
                     <div class="panel-tools">
 
-                      <button class="ghost-btn" id="btnClearAnswer" type="button"><iconify-icon icon="lucide:trash-2"></iconify-icon><span>清空</span></button>
+                      <div class="gear-settings" data-gear="llm">
+                        <span class="gear-summary" id="llmSettingsSummary">模型默认未改</span>
+                        <button type="button" class="icon-btn gear-toggle" data-gear-sheet="llmConfigPanel" aria-expanded="false" aria-label="模型设置" title="模型设置"><iconify-icon icon="ph:gear-six-fill"></iconify-icon></button>
+                      </div>
+
+                      <button class="icon-btn" id="btnClearAnswer" type="button" aria-label="清空回答" title="清空回答"><iconify-icon icon="ph:trash-fill"></iconify-icon></button>
 
                     </div>
 
@@ -1871,7 +1827,7 @@
 
                     <textarea class="form-control" id="askInput" rows="2" aria-label="LLM 问答问题" placeholder="输入问题，Enter 发送，Shift+Enter 换行"></textarea>
 
-                    <button class="btn" id="btnAsk" type="button"><iconify-icon icon="lucide:sparkles"></iconify-icon><span>询问</span></button>
+                    <button class="btn" id="btnAsk" type="button"><iconify-icon icon="ph:sparkle-fill"></iconify-icon><span>询问</span></button>
 
                   </div>
 
@@ -1915,13 +1871,19 @@
 
               <div class="panel-head">
 
-                <div>
+                <div class="page-lead">
 
-                  <p class="card-kicker">系统管理</p>
+                  <span class="page-lead-icon" aria-hidden="true"><iconify-icon icon="ph:gear-six-fill"></iconify-icon></span>
 
-                  <h3>管理员配置与审计</h3>
+                  <div>
 
-                  <p>这里集中放置低频管理能力，避免干扰资料接入、语义检索和 GraphRAG 问答三条主流程。</p>
+                    <p class="card-kicker">系统管理</p>
+
+                    <h3>管理员配置与审计</h3>
+
+                    <p>这里集中放置低频管理能力，避免干扰资料接入、语义检索和 GraphRAG 问答三条主流程。</p>
+
+                  </div>
 
                 </div>
 
@@ -1971,9 +1933,15 @@
 
                   <span class="pill" id="acceptanceOverallStatus">尚未加载</span>
 
-                  <button class="ghost-btn" id="btnAcceptanceRefresh" type="button"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新</span></button>
+                  <button class="btn" id="btnAcceptanceBuild" type="button"><iconify-icon icon="ph:package-fill"></iconify-icon><span>生成验收包</span></button>
 
-                  <button class="btn" id="btnAcceptanceBuild" type="button"><iconify-icon icon="lucide:package-check"></iconify-icon><span>生成验收包</span></button>
+                  <div class="split-action">
+                    <button class="ghost-btn" type="button" data-split-toggle>更多</button>
+                    <div class="split-menu" hidden>
+                      <button type="button" id="btnAcceptanceRefresh">刷新</button>
+                      <button type="button" id="btnAcceptanceDownloadQueue">导出工作队列</button>
+                    </div>
+                  </div>
 
                 </div>
 
@@ -1990,8 +1958,6 @@
                 <div class="panel-head">
 
                   <div><h3>未关闭验收项</h3><p>每项显示责任角色、应交文件和当前指标。</p></div>
-
-                  <button class="ghost-btn" id="btnAcceptanceDownloadQueue" type="button"><iconify-icon icon="lucide:download"></iconify-icon><span>导出工作队列</span></button>
 
                 </div>
 
@@ -2023,7 +1989,7 @@
 
                     </div>
 
-                    <button class="btn" id="btnAcceptanceUploadEvidence" type="button"><iconify-icon icon="lucide:upload-cloud"></iconify-icon><span>上传并计算哈希</span></button>
+                    <button class="btn" id="btnAcceptanceUploadEvidence" type="button"><iconify-icon icon="ph:cloud-arrow-up-fill"></iconify-icon><span>上传并计算哈希</span></button>
 
                   </div>
 
@@ -2051,9 +2017,9 @@
 
                     </div>
 
-                    <button class="ghost-btn" id="btnAcceptanceLoadTemplate" type="button"><iconify-icon icon="lucide:file-plus-2"></iconify-icon><span>载入模板</span></button>
+                    <button class="ghost-btn" id="btnAcceptanceLoadTemplate" type="button"><iconify-icon icon="ph:file-plus-fill"></iconify-icon><span>载入模板</span></button>
 
-                    <button class="btn" id="btnAcceptanceSaveArtifact" type="button"><iconify-icon icon="lucide:save"></iconify-icon><span>校验并保存</span></button>
+                    <button class="btn" id="btnAcceptanceSaveArtifact" type="button"><iconify-icon icon="ph:floppy-disk-fill"></iconify-icon><span>校验并保存</span></button>
 
                   </div>
 
@@ -2075,11 +2041,15 @@
 
                 <div class="panel-tools">
 
-                  <button class="ghost-btn" id="btnAcceptanceLoadHandoff" type="button"><iconify-icon icon="lucide:file-search"></iconify-icon><span>预览交接包</span></button>
+                  <button class="btn" id="btnAcceptanceDownloadHandoff" type="button"><iconify-icon icon="ph:download-simple-fill"></iconify-icon><span>下载</span></button>
 
-                  <button class="ghost-btn" id="btnAcceptanceCopyHandoff" type="button"><iconify-icon icon="lucide:copy"></iconify-icon><span>复制</span></button>
-
-                  <button class="btn" id="btnAcceptanceDownloadHandoff" type="button"><iconify-icon icon="lucide:download"></iconify-icon><span>下载</span></button>
+                  <div class="split-action">
+                    <button class="ghost-btn" type="button" data-split-toggle>更多</button>
+                    <div class="split-menu" hidden>
+                      <button type="button" id="btnAcceptanceLoadHandoff">预览交接包</button>
+                      <button type="button" id="btnAcceptanceCopyHandoff">复制</button>
+                    </div>
+                  </div>
 
                 </div>
 
@@ -2103,19 +2073,12 @@
 
             <article class="panel hero-card">
 
-              <div class="hero-chip"><iconify-icon icon="lucide:network"></iconify-icon><span>GraphRAG Workspace</span></div>
+              <div class="hero-chip"><iconify-icon icon="ph:graph-fill"></iconify-icon><span>GraphRAG Workspace</span></div>
 
               <h3>尚未构建知识图谱</h3>
 
               <p>当前没有已加载的图谱数据。可以从“图谱构建”导入资料并生成实体、关系和可视化结果</p>
 
-              <div class="hero-actions">
-
-                <button class="btn" data-jump="kg_data" type="button"><iconify-icon icon="lucide:database-zap"></iconify-icon><span>进入图谱构建</span></button>
-
-                <button class="ghost-btn" data-jump="kg_search" type="button"><iconify-icon icon="lucide:message-square-dashed"></iconify-icon><span>查看图谱问答</span></button>
-
-              </div>
 
             </article>
 
@@ -2131,41 +2094,7 @@
 
           <div class="page-stack">
 
-            <article class="panel kg-one-click-runner" id="kgPowerRagOneClickPanel">
-
-              <div class="panel-head">
-
-                <div>
-
-                  <h3>PowerRAG 一键检测</h3>
-
-                  <p>自动切到 GraphRAG，加载 RAG JSON，重建集合，套用通用知识 schema，构建图谱，并跳转到图谱问答发起综合分析。</p>
-
-                </div>
-
-                <div class="panel-tools kg-runner-status">
-
-                  <span class="pill" id="kgPowerRagOneClickStatus">等待开始</span>
-
-                  <button class="ghost-btn" id="btnKgPowerRagPickCorpus" type="button"><iconify-icon icon="lucide:file-json"></iconify-icon><span>选择语料</span></button>
-
-                  <button class="ghost-btn" id="btnKgLoadDemoCorpus" type="button"><iconify-icon icon="lucide:database"></iconify-icon><span>载入演示语料</span></button>
-
-
-                  <button class="btn" id="btnKgPowerRagOneClick" type="button"><iconify-icon icon="lucide:play"></iconify-icon><span>构建并问答</span></button>
-
-
-                </div>
-
-              </div>
-
-              <div class="kg-runner-log" id="kgPowerRagOneClickLog" aria-live="polite"></div>
-
-            </article>
-
-
-
-            <div class="data-grid">
+            <div class="data-grid duty-split" data-sidebar="kgInspectSidebar">
 
               <div class="stack">
 
@@ -2175,12 +2104,41 @@
 
                     <div>
 
-                      <h3>图谱语料接入与构建</h3>
+                      <h3>M2 知识组织与图谱构建</h3>
 
                       <p>拖入文件或文件夹，自动识别格式并递归扫描可用文件。支持 JSON / PDF / TXT / DOCX 等。</p>
 
                     </div>
 
+                    <button class="ghost-btn" type="button" data-sidebar-toggle="kgInspectSidebar" aria-expanded="false"><iconify-icon icon="ph:sidebar-simple-fill"></iconify-icon><span>打开图谱</span></button>
+                    <div class="gear-settings" data-gear="kg-ingest">
+                      <span class="gear-summary" id="kgIngestSettingsSummary">power_equipment_demo · 追加 · 900/120</span>
+                      <button type="button" class="icon-btn gear-toggle" aria-expanded="false" aria-label="图谱入库设置" title="图谱入库设置"><iconify-icon icon="ph:gear-six-fill"></iconify-icon></button>
+                      <div class="gear-panel" hidden>
+                        <div class="gear-panel-head"><strong>入库参数</strong><span>默认可用，需要时再改</span></div>
+                        <div class="llm-form">
+                          <div class="field field--wide">
+                            <label for="kgPublicBooksJsonCollection">混合检索集</label>
+                            <input class="form-control" id="kgPublicBooksJsonCollection" type="text" value="power_equipment_demo">
+                          </div>
+                          <div class="field">
+                            <label for="kgPublicBooksJsonMode">写入方式</label>
+                            <select class="form-control" id="kgPublicBooksJsonMode">
+                              <option value="append">追加到已有集</option>
+                              <option value="create">新建/重建集合</option>
+                            </select>
+                          </div>
+                          <div class="field">
+                            <label for="kgPublicBooksJsonChunkSize">Chunk 长度</label>
+                            <input class="form-control" id="kgPublicBooksJsonChunkSize" type="number" min="100" max="4000" value="900">
+                          </div>
+                          <div class="field">
+                            <label for="kgPublicBooksJsonOverlap">Overlap</label>
+                            <input class="form-control" id="kgPublicBooksJsonOverlap" type="number" min="0" max="1000" value="120">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                     <span class="pill">基于 Schema 自动抽取实体与关系</span>
 
                   </div>
@@ -2189,18 +2147,31 @@
 
                     <div>
 
-                      <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:network"></iconify-icon></div>
+                      <div class="surface-icon" aria-hidden="true"><iconify-icon icon="ph:graph-fill"></iconify-icon></div>
 
                       <h3>拖入文件或文件夹开始知识抽取</h3>
 
                       <p class="muted">自动识别文件类型，递归扫描文件夹中的可用文件</p>
 
-                      <div class="queue-actions">
-
-                        <button class="btn" id="btnKgPickFiles" type="button"><iconify-icon icon="lucide:file-plus"></iconify-icon><span>选择文件</span></button>
-
-                        <button class="ghost-btn" id="btnKgPickFolder" type="button"><iconify-icon icon="lucide:folder-plus"></iconify-icon><span>选择文件夹</span></button>
-
+                      <div class="duty-actions">
+                        <div class="split-action">
+                          <button class="btn" id="btnKgPickFiles" type="button"><iconify-icon icon="ph:plus-bold"></iconify-icon><span>添加语料</span></button>
+                          <button class="btn split-caret" type="button" data-split-toggle aria-label="其他添加方式">▾</button>
+                          <div class="split-menu" hidden>
+                            <button type="button" id="btnKgPickFolder">选择文件夹</button>
+                            <button type="button" id="btnKgPowerRagPickCorpus">选择语料</button>
+                            <button type="button" id="btnKgLoadDemoCorpus">载入演示语料</button>
+                          </div>
+                        </div>
+                        <button class="btn primary" id="btnKgPublicBooksJsonIngest" type="button"><iconify-icon icon="ph:database-fill"></iconify-icon><span>入库</span></button>
+                        <button class="btn" id="btnKgPowerRagOneClick" type="button"><iconify-icon icon="ph:play-fill"></iconify-icon><span>一键构建</span></button>
+                        <div class="split-action">
+                          <button class="ghost-btn" type="button" data-split-toggle>更多</button>
+                          <div class="split-menu" hidden>
+                            <button type="button" id="btnKgExportPdfText" onclick="exportKgPdfTexts()">导出 OCR</button>
+                            <button type="button" id="btnKgExportGraph">导出图谱 JSON</button>
+                          </div>
+                        </div>
                       </div>
 
                       <input class="hidden-input" id="kgFileInput" type="file" multiple aria-label="选择图谱语料文件">
@@ -2211,57 +2182,13 @@
 
                   </div>
 
+                  <div class="kg-runner-status" id="kgPowerRagOneClickPanel">
+                    <span class="pill" id="kgPowerRagOneClickStatus">等待开始</span>
+                    <div class="kg-runner-log" id="kgPowerRagOneClickLog" aria-live="polite"></div>
+                  </div>
+
                   <div id="kgFileList" class="queue-list"></div>
 
-                  <div class="llm-form" style="margin-top:12px">
-
-                    <div class="field field--wide">
-
-                      <label for="kgPublicBooksJsonCollection">混合检索集</label>
-
-                      <input class="form-control" id="kgPublicBooksJsonCollection" type="text" value="power_equipment_demo">
-
-                    </div>
-
-                    <div class="field">
-
-                      <label for="kgPublicBooksJsonMode">写入方式</label>
-
-                      <select class="form-control" id="kgPublicBooksJsonMode">
-
-                        <option value="append">追加到已有集</option>
-
-                        <option value="create">新建/重建集合</option>
-
-                      </select>
-
-                    </div>
-
-                    <div class="field">
-
-                      <label for="kgPublicBooksJsonChunkSize">Chunk 长度</label>
-
-                      <input class="form-control" id="kgPublicBooksJsonChunkSize" type="number" min="100" max="4000" value="900">
-
-                    </div>
-
-                    <div class="field">
-
-                      <label for="kgPublicBooksJsonOverlap">Overlap</label>
-
-                      <input class="form-control" id="kgPublicBooksJsonOverlap" type="number" min="0" max="1000" value="120">
-
-                    </div>
-
-                  </div>
-
-                  <div class="export-bar">
-
-                    <button class="btn" id="btnKgPublicBooksJsonIngest" type="button"><iconify-icon icon="lucide:database-zap"></iconify-icon><span>检测并入库</span></button>
-
-                    <button class="btn" id="btnKgExportPdfText" type="button" onclick="exportKgPdfTexts()" style="background:linear-gradient(135deg,#1e88e5,#1565c0);" title="导出 OCR 识别结果为 .txt 文件"><iconify-icon icon="lucide:file-down"></iconify-icon><span>导出OCR结果</span></button>
-
-                  </div>
 
                   <div class="queue-list" id="kgPublicBooksJsonSummary"></div>
 
@@ -2283,13 +2210,13 @@
 
                     <div class="queue-actions">
 
-                      <button class="ghost-btn" id="btnKgRecommendSchema" type="button"><iconify-icon icon="lucide:sparkles"></iconify-icon><span>AI 推荐配置</span></button>
-
-                    </div>
-
-                  </div>
-
-                  <div class="form-grid">
+                      <div class="gear-settings" data-gear="kg-schema">
+                        <span class="gear-summary" id="kgSchemaSettingsSummary">Schema 约束 · Leiden</span>
+                        <button type="button" class="icon-btn gear-toggle" aria-expanded="false" aria-label="抽取设置" title="抽取设置"><iconify-icon icon="ph:gear-six-fill"></iconify-icon></button>
+                        <div class="gear-panel gear-panel--wide" hidden>
+                          <div class="gear-panel-head"><strong>抽取参数</strong><span>已带动力装备默认类型</span></div>
+                          <button class="ghost-btn" id="btnKgRecommendSchema" type="button"><iconify-icon icon="ph:sparkle-fill"></iconify-icon><span>AI 推荐配置</span></button>
+                          <div class="form-grid" id="kgSchemaFormGrid">
 
                     <div class="field">
 
@@ -2369,6 +2296,12 @@
 
                     </div>
 
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+
                   </div>
 
                   <div class="schema-advisor-card" id="kgSchemaAdvisor" hidden>
@@ -2385,9 +2318,9 @@
 
                       <div class="queue-actions">
 
-                        <button class="ghost-btn" id="btnKgCopySchema" type="button" disabled><iconify-icon icon="lucide:copy"></iconify-icon><span>复制 JSON</span></button>
+                        <button class="ghost-btn" id="btnKgCopySchema" type="button" disabled><iconify-icon icon="ph:copy-fill"></iconify-icon><span>复制 JSON</span></button>
 
-                        <button class="btn" id="btnKgApplySchema" type="button" disabled><iconify-icon icon="lucide:check"></iconify-icon><span>应用推荐</span></button>
+                        <button class="btn" id="btnKgApplySchema" type="button" disabled><iconify-icon icon="ph:check-bold"></iconify-icon><span>应用推荐</span></button>
 
                       </div>
 
@@ -2399,7 +2332,7 @@
 
                   <div class="queue-actions" style="justify-content: flex-start; margin-top: 18px;">
 
-                    <button class="btn" id="btnKgBuild" type="button"><iconify-icon icon="lucide:cpu"></iconify-icon><span>开始构建知识图谱</span></button>
+                    <button class="btn" id="btnKgBuild" type="button"><iconify-icon icon="ph:cpu-fill"></iconify-icon><span>开始构建知识图谱</span></button>
 
                   </div>
 
@@ -2409,7 +2342,7 @@
 
 
 
-              <div class="stack">
+              <aside class="duty-sidebar" id="kgInspectSidebar" hidden>
 
                 <article class="panel">
 
@@ -2427,9 +2360,7 @@
 
                       <span class="pill" id="kgGraphStats">节点: 0 · 边: 0</span>
 
-                      <button class="btn btn-xs" id="btnKgExportGraph" title="导出当前知识图谱 JSON" style="font-size:12px;padding:2px 10px;border-radius:var(--radius);background:var(--surface-3);color:var(--text);border:1px solid var(--line);cursor:pointer;"><iconify-icon icon="lucide:download"></iconify-icon><span>导出</span></button>
-
-                      <button class="btn btn-xs" id="btnKgLongestPath" title="查找并高亮知识图谱中的最长路径" style="font-size:12px;padding:2px 10px;border-radius:var(--radius);background:linear-gradient(135deg,#f59e42,#e67e22);color:#fff;border:none;cursor:pointer;display:none;">🔗 最长路径</button>
+                      <button class="btn btn-xs" id="btnKgLongestPath" title="查找并高亮知识图谱中的最长路径" style="font-size:12px;padding:2px 10px;border-radius:var(--radius);background:#2c5f8a;color:#fff;border:none;cursor:pointer;display:none;">最长路径</button>
 
                       <button class="btn btn-xs" id="btnKgClearPath" title="清除高亮" style="font-size:12px;padding:2px 10px;border-radius:var(--radius);background:var(--surface-3);color:var(--muted);border:none;cursor:pointer;display:none;">清除</button>
 
@@ -2437,7 +2368,7 @@
 
                   </div>
 
-                  <div id="kgGraphContainer" style="width:100%;height:480px;background:var(--surface-2);border-radius:var(--radius);overflow:hidden;position:relative;">
+                  <div id="kgGraphContainer">
 
                     <div class="empty-state" id="kgGraphEmpty" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">选择语料并点击“开始构建知识图谱”后，图谱将在此渲染。</div>
 
@@ -2470,7 +2401,7 @@
 
                 </article>
 
-              </div>
+              </aside>
 
             </div>
 
@@ -2494,10 +2425,43 @@
 
                   <div class="panel-head">
 
-                    <div>
+                    <div class="page-lead">
 
-                      <h3>检索配置</h3>
+                      <span class="page-lead-icon" aria-hidden="true"><iconify-icon icon="ph:chat-circle-dots-fill"></iconify-icon></span>
 
+                      <div>
+
+                        <p class="card-kicker">图谱问答</p>
+
+                        <h3>图谱检索</h3>
+
+                        <p>用图谱路径和证据片段回答工程问题，并保留普通检索兜底。</p>
+
+                      </div>
+
+                    </div>
+
+                    <div class="gear-settings" data-gear="kg-search">
+                      <span class="gear-summary" id="kgSearchSettingsSummary">Global · TopK 20 · 2 hops</span>
+                      <button type="button" class="icon-btn gear-toggle" aria-expanded="false" aria-label="图谱检索设置" title="图谱检索设置"><iconify-icon icon="ph:gear-six-fill"></iconify-icon></button>
+                      <div class="gear-panel" hidden>
+                        <div class="gear-panel-head"><strong>检索参数</strong><span>默认 Global / TopK 20 / 2 hops</span></div>
+                        <div class="field">
+                          <label for="kgSearchTopK">返回片段数 TopK</label>
+                          <input class="form-control" id="kgSearchTopK" type="number" min="1" max="100" value="20" aria-label="GraphRAG 返回片段数 TopK">
+                        </div>
+                        <div class="field">
+                          <label for="kgSearchMode">GraphRAG 检索模式</label>
+                          <select class="form-control" id="kgSearchMode">
+                            <option value="global" selected>Global Search（跨社区汇总）</option>
+                            <option value="local">Local Search（实体邻域）</option>
+                          </select>
+                        </div>
+                        <div class="field">
+                          <label for="kgMaxHops">路径推理深度</label>
+                          <input class="form-control" id="kgMaxHops" type="number" value="2" min="1" max="4">
+                        </div>
+                      </div>
                     </div>
 
                   </div>
@@ -2507,46 +2471,17 @@
                     <label class="sr-only" for="kgSearchInput">GraphRAG 检索问题</label>
                     <input class="search-input" id="kgSearchInput" type="search" aria-label="GraphRAG 检索问题" placeholder="例如：燃气轮机压气机出口温度偏高的所有常见原因">
 
-                    <label class="sr-only" for="kgSearchTopK">GraphRAG 返回片段数 TopK</label>
-                    <input class="search-select" id="kgSearchTopK" type="number" min="1" max="100" value="20" aria-label="GraphRAG 返回片段数 TopK">
-
-                    <button class="btn" id="btnKgSearch" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
+                    <button class="btn" id="btnKgSearch" type="button"><iconify-icon icon="ph:magnifying-glass-fill"></iconify-icon><span>开始检索</span></button>
 
                   </div>
 
                   <div class="search-meta" id="kgSearchMeta">等待检索输入</div>
 
-                  <div class="form-grid" style="margin-top: 14px; grid-template-columns: 1fr 1fr;">
-
-                    <div class="field">
-
-                      <label for="kgSearchMode">GraphRAG 检索模式</label>
-
-                      <select class="form-control" id="kgSearchMode">
-
-                        <option value="global" selected>Global Search (跨社区聚合摘要，适合宏观总结)</option>
-
-                        <option value="local">Local Search (特定实体邻居子图扩展，适合精准定位)</option>
-
-                      </select>
-
-                    </div>
-
-                    <div class="field">
-
-                      <label for="kgMaxHops">路径推理深度 (Max Hops)</label>
-
-                      <input class="form-control" id="kgMaxHops" type="number" value="2" min="1" max="4">
-
-                    </div>
-
-                  </div>
-
                 </article>
 
 
 
-                <article class="panel">
+                <article class="panel gear-sheet" id="kgLlmConfigPanel" hidden>
 
                   <div class="panel-head">
 
@@ -2560,7 +2495,7 @@
 
                     <div class="panel-tools">
 
-                      <button class="ghost-btn" id="btnRefreshKgLlm" type="button" title="重新加载已保存的 LLM 配置"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新</span></button>
+                      <button class="ghost-btn" id="btnRefreshKgLlm" type="button" title="重新加载已保存的 LLM 配置"><iconify-icon icon="ph:arrows-clockwise-bold"></iconify-icon><span>刷新</span></button>
 
                     </div>
 
@@ -2570,13 +2505,13 @@
 
                     <div class="field field--wide" style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06)">
 
-                      <label style="display:flex;align-items:center;gap:6px"><iconify-icon icon="lucide:sparkles" style="color:var(--accent)"></iconify-icon> 一键配置 <span style="font-size:10px;color:var(--muted);font-weight:400">粘贴包含 URL、Key、Model 的文本，自动识别填入</span></label>
+                      <label style="display:flex;align-items:center;gap:6px"><iconify-icon icon="ph:sparkle-fill" style="color:var(--accent)"></iconify-icon> 一键配置 <span style="font-size:10px;color:var(--muted);font-weight:400">粘贴包含 URL、Key、Model 的文本，自动识别填入</span></label>
 
                       <div class="input-with-action">
 
                         <input class="form-control" id="kgLlmSmartPaste" type="text" aria-label="GraphRAG 一键配置 LLM" placeholder="粘贴如：https://api.openai.com/v1 sk-xxx gpt-4o 0.7 131072" autocomplete="off" style="font-size:12px">
 
-                        <button class="btn" id="btnKgSmartPaste" type="button" style="white-space:nowrap"><iconify-icon icon="lucide:scan-text"></iconify-icon><span>识别</span></button>
+                        <button class="btn" id="btnKgSmartPaste" type="button" style="white-space:nowrap"><iconify-icon icon="ph:scan-fill"></iconify-icon><span>识别</span></button>
 
                       </div>
 
@@ -2602,7 +2537,7 @@
 
                         <input class="form-control" id="kgLlmBaseUrl" type="text" placeholder="不填则自动使用对应服务商地址" autocomplete="off">
 
-                        <button class="ghost-btn" id="btnClearKgLlm" type="button" aria-label="清空 GraphRAG LLM 配置" title="清空 GraphRAG LLM 配置"><iconify-icon icon="lucide:eraser"></iconify-icon></button>
+                        <button class="ghost-btn" id="btnClearKgLlm" type="button" aria-label="清空 GraphRAG LLM 配置" title="清空 GraphRAG LLM 配置"><iconify-icon icon="ph:eraser-fill"></iconify-icon></button>
 
                       </div>
 
@@ -2624,7 +2559,7 @@
 
                         <input class="form-control" id="kgLlmModel" type="text" placeholder="例如 gpt-4o 或 claude-3-opus-20240229" autocomplete="off">
 
-                        <button class="ghost-btn" id="btnKgModelCatalog" type="button"><iconify-icon icon="lucide:book-open"></iconify-icon><span>常用模型</span></button>
+                        <button class="ghost-btn" id="btnKgModelCatalog" type="button"><iconify-icon icon="ph:book-open-fill"></iconify-icon><span>常用模型</span></button>
 
                       </div>
 
@@ -2666,15 +2601,20 @@
 
                     <div>
 
-                      <h3>RAG 问答</h3>
+                      <h3>图谱问答</h3>
 
-                      <p>提问时会先自动检索本地 chunk / 知识库证据，再调用已配置的 LLM 回答。</p>
+                      <p>提问时会先走 GraphRAG 检索证据，再调用已配置的 LLM 回答。</p>
 
                     </div>
 
                     <div class="panel-tools">
 
-                      <button class="ghost-btn" id="btnClearKgAnswer" type="button"><iconify-icon icon="lucide:trash-2"></iconify-icon><span>清空</span></button>
+                      <div class="gear-settings" data-gear="kg-llm">
+                        <span class="gear-summary" id="kgLlmSettingsSummary">模型默认未改</span>
+                        <button type="button" class="icon-btn gear-toggle" data-gear-sheet="kgLlmConfigPanel" aria-expanded="false" aria-label="模型设置" title="模型设置"><iconify-icon icon="ph:gear-six-fill"></iconify-icon></button>
+                      </div>
+
+                      <button class="icon-btn" id="btnClearKgAnswer" type="button" aria-label="清空回答" title="清空回答"><iconify-icon icon="ph:trash-fill"></iconify-icon></button>
 
                     </div>
 
@@ -2684,7 +2624,7 @@
 
                     <textarea class="form-control" id="kgAskInput" rows="2" aria-label="GraphRAG 问答问题" placeholder="输入问题，Enter 发送，Shift+Enter 换行"></textarea>
 
-                    <button class="btn" id="btnKgAsk" type="button"><iconify-icon icon="lucide:sparkles"></iconify-icon><span>询问</span></button>
+                    <button class="btn" id="btnKgAsk" type="button"><iconify-icon icon="ph:sparkle-fill"></iconify-icon><span>询问</span></button>
 
                   </div>
 
@@ -2758,9 +2698,9 @@
 
                       </select>
 
-                      <button class="ghost-btn" id="btnExportKgTriage" type="button"><iconify-icon icon="lucide:download"></iconify-icon><span>导出</span></button>
+                      <button class="ghost-btn" id="btnExportKgTriage" type="button"><iconify-icon icon="ph:download-simple-fill"></iconify-icon><span>导出</span></button>
 
-                      <button class="ghost-btn" id="btnRefreshKgTriage" type="button"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新</span></button>
+                      <button class="ghost-btn" id="btnRefreshKgTriage" type="button"><iconify-icon icon="ph:arrows-clockwise-bold"></iconify-icon><span>刷新</span></button>
 
                     </div>
 
@@ -2904,7 +2844,7 @@
 
               </div>
 
-              <button class="icon-btn" data-modal-close type="button" aria-label="关闭" title="关闭"><iconify-icon icon="lucide:x"></iconify-icon></button>
+              <button class="icon-btn" data-modal-close type="button" aria-label="关闭" title="关闭"><iconify-icon icon="ph:x-bold"></iconify-icon></button>
 
             </div>
 
@@ -2921,6 +2861,20 @@
   </div>
 
 
+
+  <div class="settings-drawer" id="settingsDrawer" hidden>
+    <div class="settings-drawer-backdrop" id="settingsDrawerBackdrop" data-close-settings></div>
+    <aside class="settings-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="settingsDrawerTitle">
+      <div class="settings-drawer-head">
+        <div>
+          <p class="card-kicker">系统管理</p>
+          <h2 id="settingsDrawerTitle">设置与策略</h2>
+        </div>
+        <button class="icon-btn" id="btnCloseSettings" type="button" data-close-settings aria-label="关闭设置" title="关闭设置"><iconify-icon icon="ph:x-bold"></iconify-icon></button>
+      </div>
+      <div class="settings-drawer-body" id="settingsDrawerBody"></div>
+    </aside>
+  </div>
 
   <div class="toast" id="toast"></div>
 
@@ -2944,7 +2898,7 @@
 
         </div>
 
-        <button class="icon-btn" type="button" data-modal-close aria-label="关闭" title="关闭"><iconify-icon icon="lucide:x"></iconify-icon></button>
+        <button class="icon-btn" type="button" data-modal-close aria-label="关闭" title="关闭"><iconify-icon icon="ph:x-bold"></iconify-icon></button>
 
       </div>
 

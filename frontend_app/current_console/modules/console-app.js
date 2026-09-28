@@ -50,19 +50,13 @@ setTimeout(async () => {
 
     if (!hasLocal) {
 
-      console.log("[OCR] 本地 OCR 服务器不可用，开始预加载 ppu-paddle-ocr 浏览器引擎...");
+      console.log("[OCR] 本地 OCR 服务器不可用，开始预加载浏览器 OCR 引擎。");
 
       _preloadPaddleOcr();
-
-      // Show a subtle info banner
-
-      _showOcrServerBanner(false);
 
     } else {
 
       console.log(`[OCR] 本地 OCR 服务器可用 (${_localOcrEngines.join('+')}), 跳过浏览器引擎预加载`);
-
-      _showOcrServerBanner(true);
 
     }
 
@@ -104,7 +98,7 @@ function _showOcrServerBanner(available) {
 
       ? `file:// 页面无法连接 OCR 服务。请启动本地服务后打开 <a href="http://127.0.0.1:8766" style="color:#fff;text-decoration:underline;font-weight:bold;">http://127.0.0.1:8766</a>。`
 
-      : `OCR 服务未运行。请启动本地 OCR 服务，或运行 <code style="background:rgba(255,255,255,0.15);padding:1px 5px;border-radius:3px;">python app.py</code>。`;
+      : `扫描件可走浏览器 OCR。如需本机 OCR 服务，请运行 <code style="background:rgba(255,255,255,0.15);padding:1px 5px;border-radius:3px;">python frontend_app/current_console/ocr_server.py</code>。`;
 
     banner.innerHTML = `<div style="position:fixed;right:18px;bottom:18px;z-index:99998;max-width:min(560px,calc(100vw - 36px));padding:10px 14px;border-radius:8px;background:rgba(127,29,29,0.96);color:#ffcdd2;font-size:12px;display:flex;gap:12px;align-items:center;justify-content:space-between;font-family:system-ui,sans-serif;box-shadow:0 10px 28px rgba(0,0,0,0.32);">
 
@@ -174,7 +168,7 @@ async function _retryOcrServerCheck() {
 
   } else {
 
-    showToast("Still cannot connect to the OCR server. Confirm the local server is running.", "danger");
+    showToast("仍未连上本机 OCR 服务。可继续用浏览器 OCR，或启动 frontend_app/current_console/ocr_server.py。", "danger");
 
   }
 
@@ -603,6 +597,7 @@ const state = {
   selectedProcessedUploads: new Set(),
 
   processedEditMode: false,
+  showAllLocalUploads: false,
 
   lastProcess: null,
 
@@ -3398,7 +3393,7 @@ async function deleteLocalProcessedUploads(filenames) {
 
   }
 
-  if (!window.confirm(`Delete ${selected.length} processed files and clear their local vectors?`)) return;
+  if (!window.confirm(`确定删除 ${selected.length} 个已入库文件，并清理对应向量吗？`)) return;
 
   purgeLocalVectorsByFilename(selected);
 
@@ -3420,9 +3415,9 @@ async function deleteLocalProcessedUploads(filenames) {
 
   renderSearchResults();
 
-  addActivity("success", "Processed files removed", `Deleted ${selected.length} files and cleared local vectors.`);
+  addActivity("success", "已删除入库文件", `已删除 ${selected.length} 个文件，并清理对应向量。`);
 
-  showToast(`Deleted ${selected.length} processed files.`, "success");
+  showToast(`已删除 ${selected.length} 个已入库文件。`, "success");
 
   void saveLocalWorkspaceSnapshot("processed-delete");
 
@@ -4749,7 +4744,7 @@ function statusTagMarkup(status) {
 
   const normalized = status === "processed" ? "processed" : "uploaded";
 
-  const label = normalized === "processed" ? "processed" : "uploaded";
+  const label = normalized === "processed" ? "已入库" : "待处理";
 
   const cls = normalized === "processed" ? "status-tag success" : "status-tag";
 
@@ -4757,11 +4752,35 @@ function statusTagMarkup(status) {
 
 }
 
+const HIDDEN_LOCAL_UPLOAD_RE = /wechat|private_chunks|affection_graph|强基|清华|北大|清北|校测|招生选拔|试题库|报考指南|大型标注|power_rag_corpus|project-1-at-/i;
+
+function currentDeliveryCollection() {
+  const value = String($("publicBooksJsonCollection")?.value || "").trim();
+  return value || POWER_EQUIPMENT_DEMO_COLLECTION;
+}
+
+function isDeliveryVisibleUpload(item) {
+  if (state.showAllLocalUploads) return true;
+  const blob = [
+    item?.filename,
+    item?.display_name,
+    item?.original_name,
+    item?.last_collection,
+    item?.source_path,
+    item?.relative_path
+  ].filter(Boolean).join(" ");
+  if (HIDDEN_LOCAL_UPLOAD_RE.test(blob)) return false;
+  const collection = String(item.last_collection || "").trim();
+  if (collection && collection !== currentDeliveryCollection()) return false;
+  return true;
+}
+
 
 
 function getPendingUploads() {
 
-  return Array.isArray(state.pendingUploads) ? state.pendingUploads : [];
+  const list = Array.isArray(state.pendingUploads) ? state.pendingUploads : [];
+  return list.filter(isDeliveryVisibleUpload);
 
 }
 
@@ -4769,7 +4788,8 @@ function getPendingUploads() {
 
 function getProcessedUploads() {
 
-  return Array.isArray(state.processedUploads) ? state.processedUploads : [];
+  const list = Array.isArray(state.processedUploads) ? state.processedUploads : [];
+  return list.filter(isDeliveryVisibleUpload);
 
 }
 
@@ -6312,9 +6332,23 @@ function renderEmpty(container, message) {
 
 
 
+const WORKBENCH_ORDER = ["data", "kg_data", "kg_search", "delivery", "acceptance"];
+const DRAWER_PAGES = ["admin", "overview"];
+
+const WORKBENCH_STAGE_META = {
+  data: { step: "M1", title: "资料接入" },
+  kg_data: { step: "M2", title: "知识组织" },
+  kg_search: { step: "M3", title: "图谱问答" },
+  delivery: { step: "M4", title: "可信交付" },
+  acceptance: { step: "M5", title: "验收签字" },
+  overview: { step: "监测", title: "运行总览" }
+};
+
 function normalizePageName(page) {
 
-  return globalThis.PowerRAGPages.normalize(page, "overview");
+  const next = globalThis.PowerRAGPages.normalize(page, "data");
+  if (next === "search" || next === "kg") return next === "search" ? "kg_search" : "kg_data";
+  return next;
 
 }
 
@@ -6324,8 +6358,102 @@ function initialPageName() {
 
   const params = new URLSearchParams(window.location.search || "");
 
-  return normalizePageName(params.get("page") || window.location.hash.slice(1) || "overview");
+  return normalizePageName(params.get("page") || window.location.hash.slice(1) || "data");
 
+}
+
+function isUnifiedWorkbench() {
+  return document.body.classList.contains("workbench-unified");
+}
+
+function decorateWorkbenchStages() {
+  Object.entries(WORKBENCH_STAGE_META).forEach(([id, meta]) => {
+    const page = document.getElementById(`page-${id}`);
+    if (!page || page.querySelector(".stage-ribbon")) return;
+    const ribbon = document.createElement("div");
+    ribbon.className = "stage-ribbon";
+    ribbon.innerHTML = `<span>${escapeHtml(meta.step)}</span><strong>${escapeHtml(meta.title)}</strong>`;
+    page.prepend(ribbon);
+  });
+}
+
+function mountUnifiedWorkbench() {
+  document.body.classList.add("workbench-unified");
+  const host = document.getElementById("workbenchHost");
+  const drawerBody = document.getElementById("settingsDrawerBody");
+  if (host) {
+    WORKBENCH_ORDER.forEach((id) => {
+      const page = document.getElementById(`page-${id}`);
+      if (page) host.appendChild(page);
+    });
+  }
+  DRAWER_PAGES.forEach((id) => {
+    const page = document.getElementById(`page-${id}`);
+    if (page && drawerBody) {
+      drawerBody.appendChild(page);
+      page.classList.add("active");
+      page.hidden = false;
+    }
+  });
+  document.querySelectorAll(".page").forEach((page) => {
+    const id = page.id.replace(/^page-/, "");
+    if (!WORKBENCH_ORDER.includes(id) && !DRAWER_PAGES.includes(id)) {
+      page.hidden = true;
+      page.setAttribute("hidden", "");
+      page.style.display = "none";
+    }
+  });
+  decorateWorkbenchStages();
+  els.pages = Array.from(document.querySelectorAll(".page")).filter((page) => {
+    const id = page.id.replace(/^page-/, "");
+    return WORKBENCH_ORDER.includes(id) || DRAWER_PAGES.includes(id);
+  });
+}
+
+function openSettingsDrawer() {
+  const drawer = $("settingsDrawer");
+  if (!drawer) return;
+  drawer.hidden = false;
+  requestAnimationFrame(() => drawer.classList.add("is-open"));
+  document.body.classList.add("drawer-open");
+}
+
+function closeSettingsDrawer() {
+  const drawer = $("settingsDrawer");
+  if (!drawer) return;
+  drawer.classList.remove("is-open");
+  document.body.classList.remove("drawer-open");
+  window.setTimeout(() => {
+    if (!drawer.classList.contains("is-open")) drawer.hidden = true;
+  }, 220);
+}
+
+function markPipeline(nextPage) {
+  els.navList?.querySelectorAll(".nav-item").forEach((button) => {
+    const isActive = button.dataset.page === nextPage;
+    button.classList.toggle("active", isActive);
+    if (isActive) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+  });
+}
+
+function bindWorkbenchScrollSpy() {
+  if (!isUnifiedWorkbench() || typeof IntersectionObserver !== "function") return;
+  const stages = WORKBENCH_ORDER
+    .map((id) => document.getElementById(`page-${id}`))
+    .filter(Boolean);
+  const observer = new IntersectionObserver((entries) => {
+    const visible = entries
+      .filter((entry) => entry.isIntersecting)
+      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+    if (!visible) return;
+    const id = visible.target.id.replace(/^page-/, "");
+    if (id && id !== state.page) {
+      state.page = id;
+      markPipeline(id);
+    }
+  }, { rootMargin: "-18% 0px -62% 0px", threshold: [0.12, 0.28, 0.5] });
+  stages.forEach((el) => observer.observe(el));
 }
 
 
@@ -6335,6 +6463,51 @@ function setPage(page, options = {}) {
   const nextPage = normalizePageName(page);
 
   state.page = nextPage;
+
+  if (isUnifiedWorkbench()) {
+    if (DRAWER_PAGES.includes(nextPage)) {
+      markPipeline(nextPage);
+      openSettingsDrawer();
+      if (options.updateHash !== false && window.location.hash.slice(1) !== nextPage) {
+        history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${nextPage}`);
+      }
+      if (options.scroll !== false) {
+        document.getElementById(`page-${nextPage}`)?.scrollIntoView({
+          behavior: options.instant ? "auto" : "smooth",
+          block: "start"
+        });
+      }
+      globalThis.PowerRAGPages.enter(nextPage);
+      return;
+    }
+
+    closeSettingsDrawer();
+
+    els.pages.forEach((element) => {
+      if (DRAWER_PAGES.some((id) => element.id === `page-${id}`)) {
+        element.classList.add("active");
+        element.hidden = false;
+        return;
+      }
+      element.classList.add("active");
+      element.hidden = false;
+      element.classList.toggle("is-current-stage", element.id === `page-${nextPage}`);
+    });
+
+    markPipeline(nextPage);
+
+    if (options.updateHash !== false && window.location.hash.slice(1) !== nextPage) {
+      history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${nextPage}`);
+    }
+
+    if (options.scroll !== false) {
+      const target = document.getElementById(`page-${nextPage}`);
+      target?.scrollIntoView({ behavior: options.instant ? "auto" : "smooth", block: "start" });
+    }
+
+    globalThis.PowerRAGPages.enter(nextPage);
+    return;
+  }
 
   els.pages.forEach((element) => {
 
@@ -6355,14 +6528,7 @@ function setPage(page, options = {}) {
 
   });
 
-  els.navList?.querySelectorAll(".nav-item").forEach((button) => {
-
-    const isActive = button.dataset.page === nextPage;
-    button.classList.toggle("active", isActive);
-    if (isActive) button.setAttribute("aria-current", "page");
-    else button.removeAttribute("aria-current");
-
-  });
+  markPipeline(nextPage);
 
   if (options.updateHash !== false && window.location.hash.slice(1) !== nextPage) {
 
@@ -6380,6 +6546,16 @@ function setWorkspaceMode(mode, options = {}) {
 
   activateGroupButton(els.globalModeToggle, (el) => el.dataset.mode === nextMode);
 
+  if (isUnifiedWorkbench()) {
+    els.navList?.querySelectorAll(".nav-item").forEach((button) => {
+      button.classList.remove("is-hidden");
+      button.hidden = false;
+      button.setAttribute("aria-hidden", "false");
+    });
+    if (options.keepPage !== true && options.page) setPage(options.page);
+    return nextMode;
+  }
+
   els.navList?.querySelectorAll(".nav-item").forEach((button) => {
 
     const isHidden = button.dataset.modeTag !== nextMode;
@@ -6395,11 +6571,11 @@ function setWorkspaceMode(mode, options = {}) {
 
     if (isRag) {
 
-      if (globalThis.PowerRAGPages.idsForMode("graphrag").includes(state.page)) setPage(options.page || "overview");
+      if (globalThis.PowerRAGPages.idsForMode("graphrag").includes(state.page)) setPage(options.page || "data");
 
     } else if (globalThis.PowerRAGPages.idsForMode("rag").includes(state.page)) {
 
-      setPage(options.page || "kg");
+      setPage(options.page || "kg_data");
 
     }
 
@@ -6493,33 +6669,33 @@ function renderStatus() {
 
   if (state.publicDemo) {
 
-    statusMessage = "Demo snapshot loaded. Connect the backend service to use full vector ingestion and retrieval.";
+    statusMessage = "已载入演示快照。连接后端后可使用完整入库与检索。";
 
-    stamp = `Demo snapshot ${snapshotClock()}`;
+    stamp = `演示快照 ${snapshotClock()}`;
 
     level = "success";
 
   } else if (state.localMode) {
 
-    statusMessage = "Browser-local runtime is ready. No localhost:8000 server is required.";
+    statusMessage = "本机运行时已就绪，可不依赖外部服务完成本地操作。";
 
-    stamp = `Local session ${snapshotClock()}`;
+    stamp = `本机会话 ${snapshotClock()}`;
 
     level = "success";
 
   } else if (state.online) {
 
-    statusMessage = `Backend connected${state.version ? ` · v${state.version}` : ""}. Upload and retrieval are available.`;
+    statusMessage = `后端已连接${state.version ? ` · v${state.version}` : ""}。可进行入库与检索。`;
 
-    stamp = `Last sync ${snapshotClock()}`;
+    stamp = `最近同步 ${snapshotClock()}`;
 
     level = "success";
 
   } else {
 
-    statusMessage = "Backend is not connected. Start the backend service to use the full feature set.";
+    statusMessage = "后端未连接。请启动服务后再使用完整功能。";
 
-    stamp = "Waiting for backend";
+    stamp = "等待后端";
 
     level = "danger";
 
@@ -6947,13 +7123,13 @@ function renderSummaryMetrics() {
 
   if (els.statPrecision) els.statPrecision.textContent = `精度: ${searchResults.length ? formatPercent(searchScore, 1) : "--"}`;
 
-  if (els.statQuality) els.statQuality.textContent = state.lastProcess?.quality_report?.issue_count ? `quality warnings: ${state.lastProcess.quality_report.issue_count}` : "quality OK";
+  if (els.statQuality) els.statQuality.textContent = state.lastProcess?.quality_report?.issue_count ? `质量告警: ${state.lastProcess.quality_report.issue_count}` : "质量监测正常";
 
   if (els.miniThroughput) els.miniThroughput.textContent = throughput;
 
   if (els.miniPrecision) els.miniPrecision.textContent = searchResults.length ? formatPercent(searchScore, 1) : "--";
 
-  if (els.searchPulse) els.searchPulse.textContent = searchResults.length ? `${searchResults.length} hits` : (state.online ? "waiting for search" : "backend offline");
+  if (els.searchPulse) els.searchPulse.textContent = searchResults.length ? `${searchResults.length} 条命中` : (state.online ? "等待检索" : "后端离线");
 
 }
 
@@ -7113,6 +7289,8 @@ function renderProcessedUploads() {
   const selectedCount = state.selectedProcessedUploads.size;
 
   els.processedCountPill.textContent = `${formatNumber(processed.length)} 个文件`;
+  const processedSummary = $("processedSettingsSummary");
+  if (processedSummary) processedSummary.textContent = `${formatNumber(processed.length)} 个已处理`;
 
   els.processedMeta.textContent = processed.length
 
@@ -7563,18 +7741,18 @@ function renderQualityReport() {
 function renderUploads() {
   if (!els.queueList || !els.uploadQueueMeta || !els.queueCountPill) return;
 
-  const uploads = Array.isArray(state.uploads) ? state.uploads : [];
+  const uploads = (Array.isArray(state.uploads) ? state.uploads : []).filter(isDeliveryVisibleUpload);
   const pending = getPendingUploads();
   const processed = getProcessedUploads();
   const selectedCount = state.selectedUploads.size;
 
-  els.queueCountPill.textContent = `${formatNumber(uploads.length)} files`;
+  els.queueCountPill.textContent = `${formatNumber(uploads.length)} 个文件`;
   els.uploadQueueMeta.textContent = uploads.length
-    ? `${formatNumber(pending.length)} pending, ${formatNumber(processed.length)} processed, ${formatNumber(selectedCount)} selected.`
-    : "Upload files to build or refresh the local corpus.";
+    ? `待处理 ${formatNumber(pending.length)}，已入库 ${formatNumber(processed.length)}，已选 ${formatNumber(selectedCount)}。`
+    : "拖入文件或载入演示数据后，会出现在这个目录里。";
 
   if (!uploads.length) {
-    renderEmpty(els.queueList, "Upload files to show the queue here; select pending files before ingestion.");
+    renderEmpty(els.queueList, "还没有待入库文件。请先选择文件、文件夹，或载入演示数据。");
     return;
   }
 
@@ -7585,8 +7763,8 @@ function renderUploads() {
     const isSelected = !isProcessed && state.selectedUploads.has(item.filename);
     const stamp = isProcessed ? (item.processed_at || item.modified) : (item.uploaded_at || item.modified);
     const recordMeta = isProcessed
-      ? `${formatNumber(item.last_records || 0)} records, ${formatNumber(item.last_chunks || 0)} chunks`
-      : "Select to include in the next ingestion run";
+      ? `${formatNumber(item.last_records || 0)} 条记录 · ${formatNumber(item.last_chunks || 0)} 个片段`
+      : "勾选后可加入本次入库";
 
     return `
       <article class="queue-item ${isSelected ? "is-selected" : ""} ${isProcessed ? "is-processed" : ""}">
@@ -7607,13 +7785,13 @@ function renderUploads() {
           </div>
         </div>
         <div class="queue-meta">
-          <span>Stored as ${escapeHtml(item.filename)}</span>
+          <span>存储为 ${escapeHtml(item.filename)}</span>
           <span>${recordMeta}</span>
-          ${item.last_log_file ? logLinkMarkup(item.last_log_file, "log") : ""}
+          ${item.last_log_file ? logLinkMarkup(item.last_log_file, "日志") : ""}
         </div>
         ${item.last_error ? `<div class="queue-hint danger-text">${escapeHtml(item.last_error)}</div>` : ""}
         <div class="queue-actions is-tight">
-          ${isProcessed ? "" : `<button class="ghost-btn" type="button" data-delete-upload="${escapeHtml(item.filename)}">Remove</button>`}
+          ${isProcessed ? "" : `<button class="ghost-btn" type="button" data-delete-upload="${escapeHtml(item.filename)}">移出目录</button>`}
         </div>
       </article>
     `;
@@ -7630,22 +7808,30 @@ function renderProcessedUploads() {
   }
 
   const selectedCount = state.selectedProcessedUploads.size;
-  els.processedCountPill.textContent = `${formatNumber(processed.length)} files`;
+  els.processedCountPill.textContent = `${formatNumber(processed.length)} 个文件`;
+  const processedLedgerSummary = $("processedSettingsSummary");
+  if (processedLedgerSummary) processedLedgerSummary.textContent = `${formatNumber(processed.length)} 个已处理`;
   els.processedMeta.textContent = processed.length
-    ? `Processed files are listed here. ${state.processedEditMode ? `${formatNumber(selectedCount)} selected for deletion.` : "Deleting a file also removes its vector records."}`
-    : "Processed files will appear here after ingestion.";
+    ? `这里只显示可交付资料。${state.processedEditMode ? `已勾选 ${formatNumber(selectedCount)} 个准备删除。` : "删除时会同步清理对应向量。"}`
+    : "入库完成后，正式资料会出现在这里。";
 
   if (els.processedEditButton) {
     els.processedEditButton.disabled = !processed.length && !state.processedEditMode;
-    els.processedEditButton.innerHTML = `${iconMarkup(state.processedEditMode ? "lucide:x" : "lucide:pencil-line")}<span>${state.processedEditMode ? "Done" : "Edit"}</span>`;
+    els.processedEditButton.innerHTML = `${iconMarkup(state.processedEditMode ? "lucide:x" : "lucide:pencil-line")}<span>${state.processedEditMode ? "完成" : "编辑"}</span>`;
   }
   if (els.processedDeleteButton) {
     els.processedDeleteButton.hidden = !state.processedEditMode;
     els.processedDeleteButton.disabled = !selectedCount;
   }
+  const showAllBtn = $("processedShowAllButton");
+  if (showAllBtn) {
+    showAllBtn.textContent = state.showAllLocalUploads ? "只看交付资料" : "显示本机全部";
+  }
 
   if (!processed.length) {
-    renderEmpty(els.processedList, "Processed files are shown here separately from the upload queue.");
+    renderEmpty(els.processedList, state.showAllLocalUploads
+      ? "还没有已入库文件。"
+      : "还没有可交付的已入库资料。本机练习文件已隐藏。");
     return;
   }
 
@@ -7675,12 +7861,12 @@ function renderProcessedUploads() {
           </div>
         </div>
         <div class="queue-meta">
-          <span>Collection ${escapeHtml(item.last_collection || POWER_RAG_DEFAULT_COLLECTION || "-")}</span>
-          <span>${formatNumber(item.last_records || 0)} records</span>
-          <span>${formatNumber(item.last_chunks || 0)} chunks</span>
-          ${item.last_log_file ? logLinkMarkup(item.last_log_file, "log") : ""}
+          <span>集合 ${escapeHtml(item.last_collection || POWER_RAG_DEFAULT_COLLECTION || "-")}</span>
+          <span>${formatNumber(item.last_records || 0)} 条记录</span>
+          <span>${formatNumber(item.last_chunks || 0)} 个片段</span>
+          ${item.last_log_file ? logLinkMarkup(item.last_log_file, "日志") : ""}
         </div>
-        <div class="queue-hint">Deletion removes the file and its vector records.</div>
+        <div class="queue-hint">删除时会同步移除该文件及其向量数据。</div>
       </article>
     `;
   }).join("");
@@ -7698,7 +7884,7 @@ function renderProcessSummary() {
   if (!els.processLog) return;
   const result = state.lastProcess;
   if (!result) {
-    renderEmpty(els.processLog, "After ingestion, this panel shows the processing summary.");
+    renderEmpty(els.processLog, "入库完成后，处理摘要会显示在这里。");
     return;
   }
 
@@ -7812,7 +7998,7 @@ function renderQualityReport() {
   if (!els.qualityReport) return;
   const report = state.lastProcess?.quality_report;
   if (!report) {
-    renderEmpty(els.qualityReport, "After processing, chunk statistics and quality issues are shown here.");
+    renderEmpty(els.qualityReport, "处理后会在这里显示分块统计和质量问题。");
     return;
   }
 
@@ -7901,9 +8087,9 @@ function renderSearchResults() {
 
   if (!payload) {
 
-    els.searchMeta.textContent = "Waiting for a search query.";
+    els.searchMeta.textContent = "等待检索输入。";
 
-    renderEmpty(els.searchResults, "After you enter a question, matching chunks, sources, and scores appear here.");
+    renderEmpty(els.searchResults, "输入问题后，匹配片段、来源和相似度会显示在这里。");
 
     return;
 
@@ -8511,7 +8697,7 @@ async function deleteProcessedUploads(filenames) {
 
   if (!selected.length) {
 
-    showToast("Select processed files first.", "warning");
+    showToast("请先选择已入库文件。", "warning");
 
     return;
 
@@ -17773,6 +17959,249 @@ async function exportLocalChunksAsChromaZip() {
 
 
 
+const DUTY_SETTINGS_KEY = "powerrag.duty.settings";
+
+function optionLabel(select) {
+  if (!select) return "";
+  return select.selectedOptions?.[0]?.textContent?.trim() || select.value || "";
+}
+
+function updateDutySettingSummaries() {
+  const ingest = $("ingestSettingsSummary");
+  if (ingest) {
+    const name = $("publicBooksJsonCollection")?.value || "power_equipment_demo";
+    const mode = $("publicBooksJsonMode")?.value === "create" ? "重建" : "追加";
+    const chunk = $("publicBooksJsonChunkSize")?.value || "900";
+    const overlap = $("publicBooksJsonOverlap")?.value || "120";
+    ingest.textContent = `${name} · ${mode} · ${chunk}/${overlap}`;
+  }
+  const search = $("searchSettingsSummary");
+  if (search) search.textContent = `TopK ${$("searchTopK")?.value || "20"}`;
+  const kgIngest = $("kgIngestSettingsSummary");
+  if (kgIngest) {
+    const name = $("kgPublicBooksJsonCollection")?.value || "power_equipment_demo";
+    const mode = $("kgPublicBooksJsonMode")?.value === "create" ? "重建" : "追加";
+    const chunk = $("kgPublicBooksJsonChunkSize")?.value || "900";
+    const overlap = $("kgPublicBooksJsonOverlap")?.value || "120";
+    kgIngest.textContent = `${name} · ${mode} · ${chunk}/${overlap}`;
+  }
+  const schema = $("kgSchemaSettingsSummary");
+  if (schema) {
+    const engine = optionLabel($("kgExtractEngine")) || "Schema 约束";
+    const algo = optionLabel($("kgCommunityAlgo")) || "Leiden";
+    schema.textContent = `${engine.split(" ")[0]} · ${algo.split(" ")[0]}`;
+  }
+  const kgSearch = $("kgSearchSettingsSummary");
+  if (kgSearch) {
+    const mode = $("kgSearchMode")?.value === "local" ? "Local" : "Global";
+    kgSearch.textContent = `${mode} · TopK ${$("kgSearchTopK")?.value || "20"} · ${$("kgMaxHops")?.value || "2"} hops`;
+  }
+  const delivery = $("deliveryParseSettingsSummary");
+  if (delivery) {
+    const parser = optionLabel($("deliveryParserBackend")) || "自动路由";
+    const ocr = optionLabel($("deliveryUseOcr")) || "自动判断";
+    const dup = $("deliveryAllowDuplicate")?.value === "true" ? "允许重复" : "重复则停";
+    delivery.textContent = `${parser} · OCR ${ocr} · ${dup}`;
+  }
+  const llm = $("llmSettingsSummary");
+  if (llm) llm.textContent = $("llmModel")?.value ? `模型 ${$("llmModel").value}` : "模型默认未改";
+  const kgLlm = $("kgLlmSettingsSummary");
+  if (kgLlm) kgLlm.textContent = $("kgLlmModel")?.value ? `模型 ${$("kgLlmModel").value}` : "模型默认未改";
+}
+
+function persistDutySettings() {
+  try {
+    localStorage.setItem(DUTY_SETTINGS_KEY, JSON.stringify({
+      collection: $("publicBooksJsonCollection")?.value,
+      mode: $("publicBooksJsonMode")?.value,
+      chunk: $("publicBooksJsonChunkSize")?.value,
+      overlap: $("publicBooksJsonOverlap")?.value,
+      topK: $("searchTopK")?.value,
+      kgCollection: $("kgPublicBooksJsonCollection")?.value,
+      kgMode: $("kgPublicBooksJsonMode")?.value,
+      kgChunk: $("kgPublicBooksJsonChunkSize")?.value,
+      kgOverlap: $("kgPublicBooksJsonOverlap")?.value,
+      kgTopK: $("kgSearchTopK")?.value,
+      kgSearchMode: $("kgSearchMode")?.value,
+      kgMaxHops: $("kgMaxHops")?.value,
+      parser: $("deliveryParserBackend")?.value,
+      ocr: $("deliveryUseOcr")?.value,
+      allowDuplicate: $("deliveryAllowDuplicate")?.value
+    }));
+  } catch {}
+}
+
+function restoreDutySettings() {
+  try {
+    const raw = localStorage.getItem(DUTY_SETTINGS_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    const assign = (id, value) => {
+      const el = $(id);
+      if (el && value != null && value !== "") el.value = value;
+    };
+    assign("publicBooksJsonCollection", data.collection);
+    assign("publicBooksJsonMode", data.mode);
+    assign("publicBooksJsonChunkSize", data.chunk);
+    assign("publicBooksJsonOverlap", data.overlap);
+    assign("searchTopK", data.topK);
+    assign("kgPublicBooksJsonCollection", data.kgCollection);
+    assign("kgPublicBooksJsonMode", data.kgMode);
+    assign("kgPublicBooksJsonChunkSize", data.kgChunk);
+    assign("kgPublicBooksJsonOverlap", data.kgOverlap);
+    assign("kgSearchTopK", data.kgTopK);
+    assign("kgSearchMode", data.kgSearchMode);
+    assign("kgMaxHops", data.kgMaxHops);
+    assign("deliveryParserBackend", data.parser);
+    assign("deliveryUseOcr", data.ocr);
+    assign("deliveryAllowDuplicate", data.allowDuplicate);
+  } catch {}
+}
+
+function closeDutyGears() {
+  document.querySelectorAll(".gear-panel, .gear-sheet").forEach((panel) => {
+    panel.hidden = true;
+  });
+  document.querySelectorAll(".gear-toggle").forEach((button) => {
+    button.setAttribute("aria-expanded", "false");
+  });
+}
+
+function mountDutySettingsInline() {
+  document.querySelectorAll(".gear-settings").forEach((root) => {
+    const key = root.getAttribute("data-gear");
+    const panel = root.querySelector(".gear-panel");
+    const toggle = root.querySelector(".gear-toggle");
+    if (key && panel && !panel.id) {
+      panel.id = `dutyGear_${key.replace(/[^a-z0-9_-]/gi, "_")}`;
+    }
+    if (panel?.id && toggle && !toggle.getAttribute("data-gear-sheet")) {
+      toggle.setAttribute("data-gear-sheet", panel.id);
+    }
+  });
+  document.querySelectorAll(".gear-settings .gear-panel").forEach((panel) => {
+    const host = panel.closest(".panel");
+    const head = panel.closest(".panel-head");
+    if (host && head && head.parentElement === host) head.after(panel);
+  });
+  [
+    ["llmConfigPanel", "btnClearAnswer"],
+    ["kgLlmConfigPanel", "btnClearKgAnswer"]
+  ].forEach(([sheetId, btnId]) => {
+    const sheet = $(sheetId);
+    const askPanel = $(btnId)?.closest(".panel");
+    const head = askPanel?.querySelector(".panel-head");
+    if (sheet && askPanel && head) head.after(sheet);
+  });
+}
+
+function closeSplitMenus() {
+  document.querySelectorAll(".split-menu").forEach((menu) => {
+    menu.hidden = true;
+  });
+  document.querySelectorAll(".panel.is-menu-open").forEach((panel) => {
+    panel.classList.remove("is-menu-open");
+  });
+}
+
+function setDutySidebar(id, open) {
+  const sidebar = $(id);
+  const split = sidebar?.closest(".duty-split") || document.querySelector(`[data-sidebar="${id}"]`);
+  if (!sidebar) return;
+  sidebar.hidden = !open;
+  split?.classList.toggle("is-sidebar-open", open);
+  document.querySelectorAll(`[data-sidebar-toggle="${id}"]`).forEach((button) => {
+    button.setAttribute("aria-expanded", String(open));
+    const label = button.querySelector("span");
+    if (label) {
+      if (id === "kgInspectSidebar") label.textContent = open ? "收起图谱" : "打开图谱";
+      else if (id === "deliveryInspectSidebar") label.textContent = open ? "收起任务台" : "打开任务台";
+      else label.textContent = open ? "收起侧栏" : "打开侧栏";
+    }
+  });
+  if (open && id === "kgInspectSidebar") {
+    window.requestAnimationFrame(() => {
+      try { window.dispatchEvent(new Event("resize")); } catch {}
+    });
+  }
+}
+
+function bindDutySidebars() {
+  document.querySelectorAll("[data-sidebar-toggle]").forEach((button) => {
+    if (button.dataset.sidebarBound) return;
+    button.dataset.sidebarBound = "1";
+    button.addEventListener("click", () => {
+      const id = button.getAttribute("data-sidebar-toggle");
+      const sidebar = id ? $(id) : null;
+      setDutySidebar(id, Boolean(sidebar?.hidden));
+    });
+  });
+}
+
+function bindSplitMenus() {
+  document.querySelectorAll("[data-split-toggle]").forEach((button) => {
+    if (button.dataset.splitBound) return;
+    button.dataset.splitBound = "1";
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const root = button.closest(".split-action");
+      const menu = root?.querySelector(".split-menu");
+      const panel = button.closest(".panel");
+      const willOpen = Boolean(menu?.hidden);
+      closeSplitMenus();
+      if (menu && willOpen) {
+        menu.hidden = false;
+        panel?.classList.add("is-menu-open");
+      }
+    });
+  });
+  document.querySelectorAll(".split-menu button").forEach((item) => {
+    item.addEventListener("click", () => closeSplitMenus());
+  });
+  document.addEventListener("click", () => closeSplitMenus());
+}
+
+function bindDutyGears() {
+  mountDutySettingsInline();
+  document.querySelectorAll(".gear-toggle").forEach((button) => {
+    if (button.dataset.gearBound) return;
+    button.dataset.gearBound = "1";
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const sheetId = button.getAttribute("data-gear-sheet");
+      const root = button.closest(".gear-settings");
+      const host = button.closest(".panel");
+      const panel = root?.querySelector(".gear-panel") || host?.querySelector(":scope > .gear-panel");
+      const sheet = sheetId ? $(sheetId) : null;
+      const target = sheet || panel;
+      const willOpen = Boolean(target?.hidden);
+      closeDutyGears();
+      if (target && willOpen) {
+        target.hidden = false;
+        button.setAttribute("aria-expanded", "true");
+      }
+    });
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeDutyGears();
+  });
+  [
+    "publicBooksJsonCollection", "publicBooksJsonMode", "publicBooksJsonChunkSize", "publicBooksJsonOverlap",
+    "searchTopK", "kgPublicBooksJsonCollection", "kgPublicBooksJsonMode", "kgPublicBooksJsonChunkSize",
+    "kgPublicBooksJsonOverlap", "kgSearchTopK", "kgSearchMode", "kgMaxHops", "kgExtractEngine",
+    "kgCommunityAlgo", "deliveryParserBackend", "deliveryUseOcr", "deliveryAllowDuplicate",
+    "llmModel", "kgLlmModel"
+  ].forEach((id) => {
+    $(id)?.addEventListener("change", () => {
+      updateDutySettingSummaries();
+      persistDutySettings();
+    });
+    $(id)?.addEventListener("input", () => {
+      updateDutySettingSummaries();
+    });
+  });
+}
+
 function bindEvents() {
 
   els.globalModeToggle?.addEventListener("click", (event) => {
@@ -17795,6 +18224,19 @@ function bindEvents() {
 
     setPage(button.dataset.page);
 
+  });
+
+  $("btnOpenSettings")?.addEventListener("click", () => setPage("admin"));
+  document.querySelectorAll("[data-close-settings]").forEach((button) => {
+    button.addEventListener("click", () => {
+      closeSettingsDrawer();
+      if (state.page === "admin") setPage("data", { scroll: false });
+    });
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && document.body.classList.contains("drawer-open")) {
+      closeSettingsDrawer();
+    }
   });
 
   els.deliveryProjectSelect?.addEventListener("change", async () => {
@@ -17968,6 +18410,11 @@ function bindEvents() {
   });
 
   els.processedEditButton?.addEventListener("click", () => toggleProcessedEditMode());
+  $("processedShowAllButton")?.addEventListener("click", () => {
+    state.showAllLocalUploads = !state.showAllLocalUploads;
+    renderUploads();
+    renderProcessedUploads();
+  });
 
   els.processedDeleteButton?.addEventListener("click", async () => {
 
@@ -18461,6 +18908,7 @@ $("btnKgBuild")?.addEventListener("click", async () => {
       });
       if (shouldRenderKgGraph(nodes, links)) renderRestoredKgGraphSnapshot();
       else renderKgGraphLimitNotice(nodes, links);
+      setDutySidebar("kgInspectSidebar", true);
 
       const typeCounts = {};
       nodes.forEach((node) => { typeCounts[node.type] = (typeCounts[node.type] || 0) + 1; });
@@ -20511,7 +20959,16 @@ async function init() {
 
   moveAdminPanelsToSystemPage();
 
+  mountUnifiedWorkbench();
+
   bindEvents();
+  restoreDutySettings();
+  bindDutyGears();
+  bindSplitMenus();
+  bindDutySidebars();
+  updateDutySettingSummaries();
+
+  bindWorkbenchScrollSpy();
 
   updateJsonIngestButtonState("standard");
   updateJsonIngestButtonState("kgCorpus");
@@ -20530,7 +20987,7 @@ async function init() {
 
   setWorkspaceMode(firstMode, { keepPage: true });
 
-  setPage(firstPage, { updateHash: false });
+  setPage(firstPage, { updateHash: false, instant: true, scroll: firstPage !== "data" });
 
   await restoreLocalWorkspaceSnapshot();
 

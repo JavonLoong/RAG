@@ -605,6 +605,9 @@ def test_project_package_verifies_and_restores_into_an_isolated_workspace(tmp_pa
     )
     source_file = registry.project_dir("source") / "source_assets" / "manual.txt"
     source_file.write_text("source bytes", encoding="utf-8")
+    empty_bin = registry.project_dir("source") / "retrieval" / "chroma" / "link_lists.bin"
+    empty_bin.parent.mkdir(parents=True, exist_ok=True)
+    empty_bin.write_bytes(b"")
     registry.upsert_provider(
         project_id="source",
         provider_id="private-llm",
@@ -662,6 +665,7 @@ def test_project_package_verifies_and_restores_into_an_isolated_workspace(tmp_pa
     assert (registry.project_dir("restored") / "source_assets" / "manual.txt").read_text(
         encoding="utf-8"
     ) == "source bytes"
+    assert (registry.project_dir("restored") / "retrieval" / "chroma" / "link_lists.bin").read_bytes() == b""
     restored_document = registry.governance_store("restored").list_document_catalog()[0]
     assert restored_document.project_id == "restored"
     assert restored_document.evidence[0].text == "restorable evidence"

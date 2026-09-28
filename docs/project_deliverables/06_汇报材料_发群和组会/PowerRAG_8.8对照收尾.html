@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>PowerRAG 对照 8.8 收尾</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #ececec; color: #000;
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif; }
+    .stage { height: 100%; display: flex; align-items: center; justify-content: center; }
+    .deck { width: min(100vw, calc(100vh * 16 / 9)); height: min(100vh, calc(100vw * 9 / 16));
+      background: #fff; position: relative; }
+    .slide { display: none; position: absolute; inset: 0; padding: 4.4% 4.2% 7%; box-sizing: border-box; }
+    .slide.on { display: block; }
+    h1 { font-size: 28px; font-weight: 400; margin: 0 0 3.6%; }
+    .lead { font-size: 26px; line-height: 1.55; margin: 0 0 0.8em; }
+    .copy { font-size: 22px; line-height: 1.7; margin: 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 20px; }
+    th, td { border: 1px solid #000; padding: 14px 12px; text-align: left; font-weight: 400; }
+    th { font-weight: 600; }
+    td:first-child, th:first-child { width: 14%; font-weight: 600; }
+    .foot { position: absolute; left: 4.2%; right: 4.2%; bottom: 6.2%; font-size: 20px; }
+    .bar { position: fixed; right: 16px; bottom: 12px; font-size: 12px; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="stage"><div class="deck" id="deck"></div></div>
+  <div class="bar" id="bar"></div>
+  <script>
+    const slides = [
+      { t: "", html: `<table><tr><th></th><th>8.15</th><th>现在</th></tr><tr><td>解析</td><td>只有接口，合成样例能跑</td><td>真实资料上传后，原页和解析在同一屏</td></tr><tr><td>入库</td><td>资料能进库、能搜</td><td>改完出新稿，能对照旧稿，也能退回旧稿</td></tr><tr><td>图谱</td><td>抽图不够，还要回到原来的 RAG</td><td>Schema 出图后，由 GraphRAG 沿路径回答</td></tr><tr><td>FMEA</td><td>字段带着来源</td><td>故障分析表，出处写到页，导出 JSON / CSV / DOCX</td></tr></table>`, f: "" },
+      { t: "",
+        html: `<p class="lead">面向燃气轮机与动力装备资料的本地 GraphRAG 工作台。</p>
+          <p class="copy">产品就是这一个工作台，浏览器打开。<br>手册、扫描件上传后，解析、入库、图谱问答都能做完。<br>按燃气轮机与动力装备 Schema 抽出设备、部件、故障、原因、措施，关系落在证据边上。<br>GraphRAG 沿路径问答。<br>FMEA 是故障模式与影响分析：设备、故障、原因、措施做成一张表，出处写到页，导出 JSON / CSV / DOCX。</p>`,
+        f: "" },
+      { t: "交什么",
+        html: `<p class="copy">一个本地工作台，浏览器打开就能用。<br>用户上传资料，解析、入库、图谱问答走完。<br>FMEA 故障分析表能出 JSON / CSV / DOCX。</p>`,
+        f: "解析  —  入库  —  图谱问答" }
+    ];
+    const deck = document.getElementById("deck");
+    slides.forEach((s) => {
+      const el = document.createElement("section");
+      el.className = "slide";
+      el.innerHTML = (s.t ? `<h1>${s.t}</h1>` : "") + s.html + (s.f ? `<div class="foot">${s.f}</div>` : "");
+      deck.appendChild(el);
+    });
+    let i = 0;
+    const pages = [...deck.children];
+    const bar = document.getElementById("bar");
+    const show = (n) => {
+      i = (n + pages.length) % pages.length;
+      pages.forEach((p, k) => p.classList.toggle("on", k === i));
+      bar.textContent = `${String(i + 1).padStart(2, "0")} / ${String(pages.length).padStart(2, "0")}  ·  ← →`;
+    };
+    show(0);
+    window.addEventListener("keydown", (e) => {
+      if (["ArrowRight", " ", "PageDown"].includes(e.key)) show(i + 1);
+      if (["ArrowLeft", "PageUp"].includes(e.key)) show(i - 1);
+    });
+  </script>
+</body>
+</html>

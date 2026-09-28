@@ -1,0 +1,4 @@
+interface:
+  display_name: "Industrial Ops Workbench"
+  short_description: "Full-width GraphRAG console with optional duty sidebars"
+  default_prompt: "Use $industrial-ops-workbench to restyle or implement the PowerRAG console as a full-width industrial workbench with optional sidebars."

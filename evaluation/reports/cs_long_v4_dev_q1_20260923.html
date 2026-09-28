@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PowerRAG v4-dev Q1 四路语义评估（开发试跑 2026-09-23）</title>
+<style>
+:root { --ink:#1b1c1a; --muted:#5c5a52; --line:#d8d3c4; --ok:#1f6b3a; --mid:#8a5a12; --bad:#8b1e1e; --bg:#f6f3ea; --card:#fffdf6; }
+* { box-sizing:border-box; }
+body { margin:0; font:16px/1.55 "Segoe UI","Microsoft YaHei",sans-serif; color:var(--ink); background:var(--bg); }
+header, main, footer { max-width:1280px; margin:0 auto; padding:24px; }
+header { padding-top:36px; }
+h1 { font-size:28px; margin:0 0 8px; }
+.lede { color:var(--muted); }
+table { width:100%; border-collapse:collapse; background:var(--card); margin:12px 0 24px; }
+th, td { border:1px solid var(--line); padding:8px 10px; vertical-align:top; }
+th { background:#efe8d6; text-align:left; }
+.ok { color:var(--ok); }
+.mid { color:var(--mid); }
+.bad { color:var(--bad); }
+.stem { white-space:pre-wrap; background:var(--card); border:1px solid var(--line); padding:16px; }
+pre.raw { white-space:pre-wrap; word-break:break-word; background:#f1eee4; padding:12px; overflow:auto; max-height:640px; }
+.why { font-size:13px; color:var(--muted); margin-top:6px; }
+.warn { background:#fff3d6; border:1px solid #e2c56a; padding:12px 14px; }
+.note { color:var(--muted); font-size:14px; }
+.ans { background:var(--card); border:1px solid var(--line); padding:8px 12px; margin:12px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>PowerRAG v4-dev Q1 四路语义评估</h1>
+  <p class="lede">开发试跑 · 2026-09-23 · 仅 Q1 · 662 文件 / 约 261 万字符 · 24 有据格 + 24 未报告格 + 对账 20 分。Q2–Q4 未启动。GPT 与 Fable 不纳入。</p>
+  <p class="warn">本轮是开发集，不是留出验证。四路都<strong>没有</strong>建图、图检索或调用 delivery API。A 读了技能后做了本地 hash 去重索引；C 同模型未读技能，也做了 manifest hash 去重。B/D 是 Composer，单独报告，不把模型差算成技能增益。金标未因任一路改规则。近满分保留，并记下 6000 / 东方终端 节点是主要分差。</p>
+</header>
+<main>
+  <h2>总分与方法</h2>
+  <table>
+    <thead><tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th></tr></thead>
+    <tbody>
+      <tr><th>揭盲</th><td>Grok 4.7 + 原技能</td><td>Composer 2.5 直答</td><td>Grok 4.7 直答</td><td>Composer 2.5 + 原技能</td></tr>
+      <tr><th>对照组</th><td>A−C 技能对照</td><td>B−D 另报</td><td>A−C 技能对照</td><td>B−D 另报</td></tr>
+      <tr><th>slug</th><td>grok-4.7-xhigh-fast</td><td>composer-2.5-fast</td><td>grok-4.7-xhigh-fast</td><td>composer-2.5-fast</td></tr>
+      <tr><th>线程</th><td>8d8a9944-8797-42bf-94b3-b7681da55213</td><td>862a6516-59a0-43d9-9196-cbcafc884367</td><td>c0c6408e-c59a-4975-88d0-f5ab9871b27d</td><td>6791877c-294f-4f94-87f9-3d3cf4c7b200</td></tr>
+      <tr><th>总分</th><td><strong>97.7</strong>/100</td><td><strong>90.6</strong>/100</td><td><strong>97.2</strong>/100</td><td><strong>91.8</strong>/100</td></tr>
+      <tr><th>有据关系 /60</th><td>60.00</td><td>57.08</td><td>60.00</td><td>58.75</td></tr>
+      <tr><th>未报告覆盖 /20</th><td>19.17</td><td>18.54</td><td>19.17</td><td>18.54</td></tr>
+      <tr><th>对账 /20</th><td>18.50</td><td>15.00</td><td>18.00</td><td>14.50</td></tr>
+      <tr><th>严重外推扣分</th><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+      <tr><th>实际方法</th><td>Read govern-graphrag-delivery skill, then locally hashed and deduplicated the 2019 JCZF/JCZB/JCZC replies from the assigned corpus and extracted an object-by-problem ledger from those texts; no graph store and no delivery API were used.</td><td>Regex-parsed 15 JCZF举一反三报告单 from corpus plus manifest dedupe, manual ledger rows for 16 objects with explicit empty cells.</td><td>Deduplicated JCZF2019002/3/4 replies by manifest body_sha256, then read each unique report plus the JCZB/JCZC source sheets to build an object-by-issue ledger.</td><td>Manifest-linked corpus reads and ripgrep-style search over JCZF2019002/003/004举一反三 forms; manual structured extraction into ledger (no vector index or graph).</td></tr>
+      <tr><th>运行记录</th><td>读技能：是<br>建索引：是<br>建图：否；图检索：否<br>delivery API：否<br>预处理/建图/作答秒：未知<br>费用/token：unknown unless you have a real meter</td><td>读技能：否<br>建索引：否<br>建图：否；图检索：否<br>delivery API：否<br>预处理/建图/作答秒：未知<br>费用/token：unknown unless you have a real meter</td><td>读技能：否<br>建索引：是<br>建图：否；图检索：否<br>delivery API：否<br>预处理/建图/作答秒：未知<br>费用/token：unknown unless you have a real meter</td><td>读技能：是<br>建索引：否<br>建图：否；图检索：否<br>delivery API：否<br>预处理/建图/作答秒：未知<br>费用/token：unknown</td></tr>
+    </tbody>
+  </table>
+
+  <h2>差距落在哪里（不外推整体优劣）</h2>
+  <ul>
+    <li><strong>A 97.7，C 97.2。</strong>同 Grok 4.7。有据 24 格两边都按对象/状态/关键事实收齐。分差主要在未报告格与对账：两边都把「涠洲东方6000 × 油泵」和东方终端叙述并在一起，没有把该粒度标成未见结论。这不是 GraphRAG 增益；A 的本地 hash 索引与 C 的 manifest 去重都不是图谱。</li>
+    <li><strong>B 90.6，D 91.8。</strong>同 Composer 2.5，另报。D 读了技能，B 没有。D 在海上控制逻辑、梧州油泵观察口径、衢州产品二 HSJS 升级说明上更完整；B 在对账计数上少一个自相矛盾。两边都把 6000×油泵填成已实施，这是本包相对 gold 节点最大的共同缺口。</li>
+    <li>A−C 才是技能对照。B−D 是另一模型的技能对照。A−B / A−D 混杂模型，不能当技能分数。</li>
+    <li>四路都认出 15 份独立回复、6/4/5、梧州/衢州旋钮未关、梧州滤器待改、衢州产品二滤器闭环、海上滤器已改未验证、北阿未换东方那台螺杆泵。没有一路把待整改写成已关闭，故严重外推项为 0。</li>
+    <li>近满分说明：对本题的 24 个有据格，强模型直接读 15 份去重正文已经够用。技能没有改写这些格的对错。若还要拉开方法，需要真正建图/检索，或另留未见过的案例。</li>
+  </ul>
+  <p>B 额外错误（未再扣严重项）：海上P2被标成「仅提出风险或建议（低可能性）」，原文是品牌依据的可能性判断，不是待办风险项。</p>
+  <p>D 额外错误（未再扣严重项）：统计表verified:2与正文「已有功能验证=1单元格」不一致。</p>
+
+  <h2>原题（只评了 Q1）</h2>
+  <pre class="stem"># V4：跨项目整改审计任务
+
+你收到的是资料库的文本快照。请仅根据本包资料回答，不联网补全项目事实。图片只保留引用、部分字段为空，这些地方不得猜测。允许任意检索、编程、建索引和计算；交付形式不计分，内容的完整性、正确性和可复核性计分。
+
+四题均以同一历史资料集为对象：2019 年围绕烟墩站控制电源开关误碰停机、3#机组油泵异响、机带双联滤压差开关连接有误开展的举一反三回复。结论限定在这些回复能够证明的历史状态；库中其他资料可以帮助理解，不得用后来情况覆盖当时状态。重复上传不代表重复事件；空缺不能当作没有风险。每项实质结论须能定位到来源及原文，引用格式不限。
+
+## Q1｜给质量负责人重建一份可签字的全量台账
+
+这轮举一反三已经收集了不少回复，但质量负责人无法据此判断：究竟覆盖了哪些项目和设备，各自哪类问题仍需要处理，哪些已经验证完成，哪些只是自查判断。
+
+请重建完整的“对象 × 三类问题”台账，覆盖这轮回复中全部被明确列为自查对象的项目。能细分到产品或机组的地方按资料可支持的粒度细分；只有站级结论的地方保留站级，不能摊到每台设备。台账同时保留设备型号、历史处置、当时状态、结论适用范围和依据。未找到某对象对某问题的回复也须显式显示。
+
+随后给出能与台账逐项对账的统计：独立回复数、每类问题的覆盖对象、已确认但未证明完成的整改、仅提出风险或建议的事项、已实施但未见功能验证的事项、已有功能验证的事项。自行定义清楚统计单位；不得把项目、机组、回复份数混算。</pre>
+
+  <h2>金标：24 个有据单元</h2>
+  <p class="note">参照 16 个对象节点，不是 16 个独立物理站。烟墩是起因对象，不自动算新增自查节点。允许等价层级表示。</p>
+  <table>
+    <thead><tr><th>对象</th><th>问题</th><th>状态</th><th>必须成立的事实</th><th>回复 / 代表文件</th></tr></thead>
+    <tbody><tr><td>科丰</td><td>开关误碰</td><td>自查有防护</td><td class='why'>配电箱旋钮均有保护壳；报告判断不致误碰跳机。不是新增整改的验收证明。</td><td>JCZF2019002-1<br><span class='why'>D0435.txt、D0436.txt、D0437.txt</span></td></tr><tr><td>青岛</td><td>开关误碰</td><td>自查有防护</td><td class='why'>配电箱旋钮均有保护壳；报告判断不致误碰跳机。不是新增整改的验收证明。</td><td>JCZF2019002-1<br><span class='why'>D0435.txt、D0436.txt、D0437.txt</span></td></tr><tr><td>泰兴</td><td>开关误碰</td><td>自查有防护</td><td class='why'>配电箱旋钮均有保护壳；报告判断不致误碰跳机。不是新增整改的验收证明。</td><td>JCZF2019002-1<br><span class='why'>D0435.txt、D0436.txt、D0437.txt</span></td></tr><tr><td>珠海</td><td>开关误碰</td><td>自查有防护</td><td class='why'>配电箱旋钮均有保护壳；报告判断不致误碰跳机。不是新增整改的验收证明。</td><td>JCZF2019002-1<br><span class='why'>D0435.txt、D0436.txt、D0437.txt</span></td></tr><tr><td>理文</td><td>开关误碰</td><td>自查有防护</td><td class='why'>配电箱旋钮均有保护壳；报告判断不致误碰跳机。不是新增整改的验收证明。</td><td>JCZF2019002-1<br><span class='why'>D0435.txt、D0436.txt、D0437.txt</span></td></tr><tr><td>海上平台国产化发电项目</td><td>开关误碰</td><td>控制方案与防护说明</td><td class='why'>就地/远方切换会失去系统控制能力但不改变当时运行状态并报警；远方模式下就地启停按钮无效；电源开关可能停设备或失控，压力检测启动UPS应急泵并报警。发电机供油泵逻辑未设ESD以维持供电争取协调时间；燃机泵为内部循环；防雨罩降低误碰。无ESD不等于无影响、无风险或控制可任意迁移。</td><td>JCZF2019002-2<br><span class='why'>D0438.txt、D0439.txt、D0440.txt</span></td></tr><tr><td>黄岩</td><td>开关误碰</td><td>自查结构防护及无历史同类故障</td><td class='why'>无旋转按钮；油泵急停有盖板；机组急停周围有金属凸台保护；报告称未出现按钮误操作故障，不能据此证明所有故障风险为零。</td><td>JCZF2019002-3<br><span class='why'>D0441.txt、D0442.txt、D0443.txt</span></td></tr><tr><td>东方平台</td><td>开关误碰</td><td>自查结构防护及无历史同类故障</td><td class='why'>无旋转按钮；油泵急停有盖板；机组急停周围有金属凸台保护；报告称未出现按钮误操作故障，不能据此证明所有故障风险为零。</td><td>JCZF2019002-3<br><span class='why'>D0441.txt、D0442.txt、D0443.txt</span></td></tr><tr><td>曹妃甸平台</td><td>开关误碰</td><td>自查结构防护及无历史同类故障</td><td class='why'>无旋转按钮；油泵急停有盖板；机组急停周围有金属凸台保护；报告称未出现按钮误操作故障，不能据此证明所有故障风险为零。</td><td>JCZF2019002-3<br><span class='why'>D0441.txt、D0442.txt、D0443.txt</span></td></tr><tr><td>梧州站</td><td>开关误碰</td><td>确认风险、整改待实施</td><td class='why'>已有电源按按钮保护盖，但遗漏旋钮；旋钮仍无保护，拟后续增加。不得把已有按按钮保护当作旋钮风险已关闭。</td><td>JCZF2019002-4<br><span class='why'>D0444.txt、D0445.txt、D0446.txt</span></td></tr><tr><td>衢州站（站级）</td><td>开关误碰</td><td>确认风险、整改待实施</td><td class='why'>站级确认误碰风险，后续拟增加保护盖；没有证明完成，也未逐产品分配。</td><td>JCZF2019002-5<br><span class='why'>D0447.txt、D0448.txt、D0449.txt</span></td></tr><tr><td>涠洲东方6000（报告范围）</td><td>开关误碰</td><td>自查布局排除该现场路径</td><td class='why'>现场无控制电源总开关，开关在配电室；排除现场巡检清扫误碰该开关的路径，不等于所有误操作都无风险。</td><td>JCZF2019002-6<br><span class='why'>D0450.txt、D0451.txt、D0452.txt</span></td></tr><tr><td>海上平台国产化发电项目</td><td>油泵异响</td><td>品牌依据的风险判断</td><td class='why'>进口ALLWEILER，报告判断类似故障可能性较小；没有提供本故障专项验证或零风险证明。</td><td>JCZF2019003-1<br><span class='why'>D0453.txt、D0454.txt、D0455.txt</span></td></tr><tr><td>梧州站</td><td>油泵异响</td><td>不同型号、未见同类问题、继续观察</td><td class='why'>燃机工艺泵HSNK280R46T1Q；压缩机应急泵HSNK280R46T1；主/辅泵HSNK440R40T1；与烟墩HJSB440-46不同，暂不按同类考虑，继续观察。</td><td>JCZF2019003-2<br><span class='why'>D0456.txt、D0457.txt、D0458.txt</span></td></tr><tr><td>衢州产品一（进口机）</td><td>油泵异响</td><td>不同型号且已有运行观察</td><td class='why'>HSJB280-460，累计超过3300小时无问题。不能把产品二的换泵建议摊到产品一。</td><td>JCZF2019003-3<br><span class='why'>D0459.txt、D0460.txt、D0461.txt</span></td></tr><tr><td>衢州产品二（国产机）</td><td>油泵异响</td><td>潜在同类风险、建议换泵</td><td class='why'>HSJ440-46；厂家称HSJS为HSJ升级版；2#可能出现同类故障，建议更换，未证明实施；不得静默改写为HJSB440-46。</td><td>JCZF2019003-3<br><span class='why'>D0459.txt、D0460.txt、D0461.txt</span></td></tr><tr><td>伊朗北阿UGT15000</td><td>油泵异响</td><td>曾发生同类问题、已改材、继续检查</td><td class='why'>HJSB440-46，泵体与泵缸刮磨；报告归因缺少轴向平衡、启动偏磨及久用刮缸；碳钢泵缸改铝合金，改装后未见问题但需定检轴承。没有东方终端后续整泵替换的证据。</td><td>JCZF2019003-4<br><span class='why'>D0462.txt、D0463.txt、D0464.txt</span></td></tr><tr><td>东方终端UGT6001</td><td>油泵异响</td><td>改材后又换泵、有运行观察</td><td class='why'>先同北阿改碳钢泵缸为铝合金并要求轴承检查；后东方终端换HSNK440R36N1MT5，运行2年无故障。不是所有东方命名项目、不是全部6000机组，也不是北阿均换此泵。</td><td>JCZF2019003-4<br><span class='why'>D0462.txt、D0463.txt、D0464.txt</span></td></tr><tr><td>海上平台国产化发电项目</td><td>滤器接管</td><td>已实施、未见功能验证描述</td><td class='why'>确认压差开关引压管路接反；研发修改图纸，2019年3月研发与生产赴现场整改；本回复没有衢州式的功能验证过程。</td><td>JCZF2019004-1<br><span class='why'>D0465.txt、D0466.txt、D0467.txt</span></td></tr><tr><td>梧州站</td><td>滤器接管</td><td>确认问题、待整改</td><td class='why'>确认双联滤高低压引压管连接与烟墩同样接反，需择机整改。</td><td>JCZF2019004-2<br><span class='why'>D0468.txt、D0469.txt、D0470.txt、D0471.txt</span></td></tr><tr><td>衢州产品一（进口机）</td><td>滤器接管</td><td>自查未接反</td><td class='why'>产品一不存在接反；不能因同站产品二有问题而推广到产品一。</td><td>JCZF2019004-3<br><span class='why'>D0472.txt、D0473.txt、D0474.txt</span></td></tr><tr><td>衢州产品二（国产机）</td><td>滤器接管</td><td>已整改并功能验证</td><td class='why'>按高压接滤前、低压接滤后重新制作管路；运行出现压差报警，切换双联滤后报警消除，报告明确形成闭环。</td><td>JCZF2019004-3<br><span class='why'>D0472.txt、D0473.txt、D0474.txt</span></td></tr><tr><td>伊朗北阿UGT15000</td><td>滤器接管</td><td>自查未接反</td><td class='why'>乌方原装管路，回复称未接反；与其油泵曾有同类故障不冲突。</td><td>JCZF2019004-4<br><span class='why'>D0475.txt、D0476.txt、D0477.txt、D0478.txt</span></td></tr><tr><td>涠洲东方6000（报告范围）</td><td>滤器接管</td><td>自查未接反</td><td class='why'>接头进出箭头与压差开关进出口对应；回复称涠洲东方正确接管。不得把报告组名自动等同于东方平台SGT600。</td><td>JCZF2019004-5<br><span class='why'>D0479.txt、D0480.txt、D0481.txt</span></td></tr></tbody>
+  </table>
+
+  <h2>金标：24 个未报告单元</h2>
+  <p class="note">正确做法是区分「本轮该粒度没有结论」与「检查后无问题」。未报告 ≠ 无风险。</p>
+  <table>
+    <thead><tr><th>对象</th><th>问题</th><th>金标状态</th></tr></thead>
+    <tbody><tr><td>科丰</td><td>油泵异响</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>科丰</td><td>滤器接管</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>青岛</td><td>油泵异响</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>青岛</td><td>滤器接管</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>泰兴</td><td>油泵异响</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>泰兴</td><td>滤器接管</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>珠海</td><td>油泵异响</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>珠海</td><td>滤器接管</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>理文</td><td>油泵异响</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>理文</td><td>滤器接管</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>黄岩</td><td>油泵异响</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>黄岩</td><td>滤器接管</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>东方平台</td><td>油泵异响</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>东方平台</td><td>滤器接管</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>曹妃甸平台</td><td>油泵异响</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>曹妃甸平台</td><td>滤器接管</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>衢州站（站级）</td><td>油泵异响</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>衢州站（站级）</td><td>滤器接管</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>涠洲东方6000（报告范围）</td><td>油泵异响</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>衢州产品一（进口机）</td><td>开关误碰</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>衢州产品二（国产机）</td><td>开关误碰</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>伊朗北阿UGT15000</td><td>开关误碰</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>东方终端UGT6001</td><td>开关误碰</td><td>本轮回复未提供该粒度的结论</td></tr><tr><td>东方终端UGT6001</td><td>滤器接管</td><td>本轮回复未提供该粒度的结论</td></tr></tbody>
+  </table>
+
+  <h2>逐格评分：有据关系（每格对象/状态/事实，平均后 ×60）</h2>
+  <table>
+    <thead><tr><th>格</th><th>对象 / 问题</th><th>金标要点</th><th>A</th><th>B</th><th>C</th><th>D</th></tr></thead>
+    <tbody><tr><td>P01</td><td>科丰<br><span class='why'>开关误碰</span></td><td class='why'>配电箱旋钮均有保护壳；报告判断不致误碰跳机。不是新增整改的验收证明。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>五项目并列，保护壳，仅自查判断，不写成验收。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>五项目+保护壳+自查。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>五项目系列结论，仅自查。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>保护壳，自查无隐患，无功能验证。</div></td></tr><tr><td>P02</td><td>青岛<br><span class='why'>开关误碰</span></td><td class='why'>同科丰，H-25(32)</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>同上。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>同上。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>同上。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>同上。</div></td></tr><tr><td>P03</td><td>泰兴<br><span class='why'>开关误碰</span></td><td class='why'>同科丰，H-25(32)</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>同上。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>同上。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>同上。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>同上。</div></td></tr><tr><td>P04</td><td>珠海<br><span class='why'>开关误碰</span></td><td class='why'>同科丰，H-25(42)</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>H-25(42)保留。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>同上。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>同上。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>同上。</div></td></tr><tr><td>P05</td><td>理文<br><span class='why'>开关误碰</span></td><td class='why'>同科丰，H-25(32)</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>同上。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>同上。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>同上。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>同上。</div></td></tr><tr><td>P06</td><td>海上平台国产化发电项目<br><span class='why'>开关误碰</span></td><td class='why'>就地/远方、远方下就地启停无效、电源开关可能停设备、UPS应急泵、未设ESD、防雨罩；无ESD≠无影响/可任意迁移。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>三情景+未设ESD+防雨罩；写明不证明误碰无影响、不能推广到烟墩类ESD。</div></td><td class='mid'><strong>0.67</strong><div class='why'>对象1 · 状态0.5 · 事实0.5</div><div class='why'>有防雨罩、UPS、不设ESD；标题写成无ESD同类风险；缺就地/远方切换与远方下就地启停无效。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>控制逻辑+防雨罩；写明只证明不走ESD，不证明无影响。</div></td><td class='mid'><strong>0.83</strong><div class='why'>对象1 · 状态0.5 · 事实1</div><div class='why'>三情景+防雨罩+不推广；状态写成「自查判断无ESD风险」。</div></td></tr><tr><td>P07</td><td>黄岩<br><span class='why'>开关误碰</span></td><td class='why'>无旋转按钮；油泵急停有盖板；机组急停有金属凸台；无历史误操作≠零风险。SGT400</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>无旋钮、盖板、凸台；仅自查；SGT400。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>无旋钮、盖板/凸台。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>结构防护+仅自查。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>结构防护，适用范围非烟墩式旋钮。</div></td></tr><tr><td>P08</td><td>东方平台<br><span class='why'>开关误碰</span></td><td class='why'>同黄岩结构防护。SGT600。不得与东方终端/涠洲东方6000合并。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>明确不得与涠洲东方6000/东方终端UGT6001合并。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>东方平台SGT600单独成行。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>写明不是涠洲东方6000/UGT6001。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>SGT600单独对象。</div></td></tr><tr><td>P09</td><td>曹妃甸平台<br><span class='why'>开关误碰</span></td><td class='why'>同黄岩。SGT700</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>SGT700分列。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>曹妃甸单独成行。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>分列。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>SGT700单独对象。</div></td></tr><tr><td>P10</td><td>梧州站<br><span class='why'>开关误碰</span></td><td class='why'>已有电源按钮保护盖，遗漏旋钮；旋钮仍无保护，拟后续增加。按钮盖≠旋钮已关闭。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>按钮盖≠旋钮盖，旋钮未证已加。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>按钮盖未覆盖旋钮，待加盖。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>按钮盖≠旋钮盖。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>按钮盖已加、旋钮未解决。</div></td></tr><tr><td>P11</td><td>衢州站（站级）<br><span class='why'>开关误碰</span></td><td class='why'>站级确认误碰风险，拟加保护盖；未完成；未逐产品分配。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>仅站级；产品一/二P1标未见产品级回复；自查栏空。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>站级待整改。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>仅站级，不拆产品。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>站级待加盖。</div></td></tr><tr><td>P12</td><td>涠洲东方6000（报告范围）<br><span class='why'>开关误碰</span></td><td class='why'>现场无控制电源总开关，开关在配电室；排除该现场路径≠所有误操作无风险。不含北阿。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>开关在配电室；明确不含北阿。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>开关在配电室。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>配电室开关；不覆盖北阿。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>配电室，无现场总开关。</div></td></tr><tr><td>P13</td><td>海上平台国产化发电项目<br><span class='why'>油泵异响</span></td><td class='why'>进口ALLWEILER；类似故障可能性较小；无专项验证或零风险证明。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>ALLWEILER，可能性较小，仅自查。</div></td><td class='mid'><strong>0.83</strong><div class='why'>对象1 · 状态0.5 · 事实1</div><div class='why'>ALLWEILER与低可能性在；状态写成「仅提出风险或建议」。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>ALLWEILER，仅自查。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>ALLWEILER，可能性较小。</div></td></tr><tr><td>P14</td><td>梧州站<br><span class='why'>油泵异响</span></td><td class='why'>HSNK280R46T1Q / HSNK280R46T1 / HSNK440R40T1；与烟墩HJSB440-46不同；暂不按同类、继续观察。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>三型号+HJSB对照+勤观察。</div></td><td class='mid'><strong>0.83</strong><div class='why'>对象1 · 状态0.5 · 事实1</div><div class='why'>三型号正确；状态写成「自查判断无同类风险」，观察被弱化。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>三型号+观察建议。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>三型号+勤观察。</div></td></tr><tr><td>P15</td><td>衢州产品一（进口机）<br><span class='why'>油泵异响</span></td><td class='why'>HSJB280-460，累计超过3300小时无问题。不能把产品二换泵建议摊到产品一。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>HSJB280-460，3300h，不摊产品二。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>HSJB280-460，3300h。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>HSJB280-460。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>HSJB280-460，3300h。</div></td></tr><tr><td>P16</td><td>衢州产品二（国产机）<br><span class='why'>油泵异响</span></td><td class='why'>HSJ440-46；HSJS为HSJ升级版；建议更换未实施；不得改写成HJSB440-46。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>HSJ440-46、HSJS/HSJ、建议更换未见已换。</div></td><td class='mid'><strong>0.83</strong><div class='why'>对象1 · 状态1 · 事实0.5</div><div class='why'>建议更换正确；未写HSJS为HSJ升级版。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>HSJ440-46，建议更换。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>HSJ440-46，HSJS/HSJ，建议更换。</div></td></tr><tr><td>P17</td><td>伊朗北阿UGT15000<br><span class='why'>油泵异响</span></td><td class='why'>HJSB440-46刮磨；缺轴向平衡/启动偏磨；碳钢泵缸改铝合金；须定检轴承；没有东方终端整泵替换证据。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>改缸+定检轴承；正文未写北阿已换HSNK。</div></td><td class='mid'><strong>0.83</strong><div class='why'>对象1 · 状态1 · 事实0.5</div><div class='why'>北阿行只写换铝合金缸；缺轴向平衡/启动偏磨；换泵写在6000行。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>改缸；未写北阿已换HSNK。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>北阿仅改缸+定检；写明东方换泵数据不归北阿。</div></td></tr><tr><td>P18</td><td>东方终端UGT6001<br><span class='why'>油泵异响</span></td><td class='why'>先同北阿改缸；后换HSNK440R36N1MT5运行2年。不是全部6000，也不是北阿均换此泵。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>东方终端另换HSNK440R36N1MT5；两年运行史≠本轮验证；不写成北阿最终措施。</div></td><td class='mid'><strong>0.83</strong><div class='why'>对象0.5 · 状态1 · 事实1</div><div class='why'>HSNK440R36N1MT5与两年运行在6000行，对象与6000合并。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>东方换螺杆泵与北阿分开；两年无故障=运行陈述。</div></td><td class='mid'><strong>0.67</strong><div class='why'>对象0.5 · 状态0.5 · 事实1</div><div class='why'>换HSNK与两年运行写在6000对象下；状态「已实施；部分有运行记录」偏满。</div></td></tr><tr><td>P19</td><td>海上平台国产化发电项目<br><span class='why'>滤器接管</span></td><td class='why'>确认接反；2019年3月改图并现场整改；无衢州式功能验证。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>2019-03现场改管，无功能验证。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>2019-03整改，未见功能验证。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>2019-03已实施未见验证。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>2019-03整改无验证。</div></td></tr><tr><td>P20</td><td>梧州站<br><span class='why'>滤器接管</span></td><td class='why'>与烟墩同样接反，需择机整改。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>接反，择机整改。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>接反，择机整改。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>择机整改。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>择机整改。</div></td></tr><tr><td>P21</td><td>衢州产品一（进口机）<br><span class='why'>滤器接管</span></td><td class='why'>产品一不存在接反；不能因产品二推广。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>进口机不存在接反。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>进口机无接反。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>产品一未接反。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>进口机无接反。</div></td></tr><tr><td>P22</td><td>衢州产品二（国产机）<br><span class='why'>滤器接管</span></td><td class='why'>高压接滤前、低压接滤后；运行报警、切滤消除、闭环。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>报警+切滤消除+闭环，2018-12-30。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>闭环原文完整。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>功能验证闭环。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>闭环完整。</div></td></tr><tr><td>P23</td><td>伊朗北阿UGT15000<br><span class='why'>滤器接管</span></td><td class='why'>乌方原装，回复称未接反。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>乌方原装未接反。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>乌方原装未接反。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>乌方原装。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>乌方原装。</div></td></tr><tr><td>P24</td><td>涠洲东方6000（报告范围）<br><span class='why'>滤器接管</span></td><td class='why'>接头进出箭头对应；涠洲东方正确接管。不得等同东方平台SGT600。</td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>箭头接管；范围仅涠洲东方6000。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>箭头接管。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>仅涠洲东方6000。</div></td><td class='ok'><strong>1.00</strong><div class='why'>对象1 · 状态1 · 事实1</div><div class='why'>箭头接管。</div></td></tr></tbody>
+  </table>
+
+  <h2>逐格评分：未报告覆盖（平均后 ×20）</h2>
+  <table>
+    <thead><tr><th>格</th><th>对象</th><th>问题</th><th>A</th><th>B</th><th>C</th><th>D</th></tr></thead>
+    <tbody><tr><td>U01</td><td>科丰</td><td>油泵异响</td><td class='ok'><strong>1</strong><div class='why'>H-25 P2 未见回复。</div></td><td class='ok'><strong>1</strong><div class='why'>无本轮回复。</div></td><td class='ok'><strong>1</strong><div class='why'>H-25无B/C回复。</div></td><td class='ok'><strong>1</strong><div class='why'>无JCZF。</div></td></tr><tr><td>U02</td><td>科丰</td><td>滤器接管</td><td class='ok'><strong>1</strong><div class='why'>H-25 P3 未见回复。</div></td><td class='ok'><strong>1</strong><div class='why'>无本轮回复。</div></td><td class='ok'><strong>1</strong><div class='why'>同上。</div></td><td class='ok'><strong>1</strong><div class='why'>无JCZF。</div></td></tr><tr><td>U03</td><td>青岛</td><td>油泵异响</td><td class='ok'><strong>1</strong><div class='why'>同U01。</div></td><td class='ok'><strong>1</strong><div class='why'>无本轮回复。</div></td><td class='ok'><strong>1</strong><div class='why'>同上。</div></td><td class='ok'><strong>1</strong><div class='why'>无JCZF。</div></td></tr><tr><td>U04</td><td>青岛</td><td>滤器接管</td><td class='ok'><strong>1</strong><div class='why'>同U02。</div></td><td class='ok'><strong>1</strong><div class='why'>无本轮回复。</div></td><td class='ok'><strong>1</strong><div class='why'>同上。</div></td><td class='ok'><strong>1</strong><div class='why'>无JCZF。</div></td></tr><tr><td>U05</td><td>泰兴</td><td>油泵异响</td><td class='ok'><strong>1</strong><div class='why'>同U01。</div></td><td class='ok'><strong>1</strong><div class='why'>无本轮回复。</div></td><td class='ok'><strong>1</strong><div class='why'>同上。</div></td><td class='ok'><strong>1</strong><div class='why'>无JCZF。</div></td></tr><tr><td>U06</td><td>泰兴</td><td>滤器接管</td><td class='ok'><strong>1</strong><div class='why'>同U02。</div></td><td class='ok'><strong>1</strong><div class='why'>无本轮回复。</div></td><td class='ok'><strong>1</strong><div class='why'>同上。</div></td><td class='ok'><strong>1</strong><div class='why'>无JCZF。</div></td></tr><tr><td>U07</td><td>珠海</td><td>油泵异响</td><td class='ok'><strong>1</strong><div class='why'>同U01。</div></td><td class='ok'><strong>1</strong><div class='why'>无本轮回复。</div></td><td class='ok'><strong>1</strong><div class='why'>同上。</div></td><td class='ok'><strong>1</strong><div class='why'>无JCZF。</div></td></tr><tr><td>U08</td><td>珠海</td><td>滤器接管</td><td class='ok'><strong>1</strong><div class='why'>同U02。</div></td><td class='ok'><strong>1</strong><div class='why'>无本轮回复。</div></td><td class='ok'><strong>1</strong><div class='why'>同上。</div></td><td class='ok'><strong>1</strong><div class='why'>无JCZF。</div></td></tr><tr><td>U09</td><td>理文</td><td>油泵异响</td><td class='ok'><strong>1</strong><div class='why'>同U01。</div></td><td class='ok'><strong>1</strong><div class='why'>无本轮回复。</div></td><td class='ok'><strong>1</strong><div class='why'>同上。</div></td><td class='ok'><strong>1</strong><div class='why'>无JCZF。</div></td></tr><tr><td>U10</td><td>理文</td><td>滤器接管</td><td class='ok'><strong>1</strong><div class='why'>同U02。</div></td><td class='ok'><strong>1</strong><div class='why'>无本轮回复。</div></td><td class='ok'><strong>1</strong><div class='why'>同上。</div></td><td class='ok'><strong>1</strong><div class='why'>无JCZF。</div></td></tr><tr><td>U11</td><td>黄岩</td><td>油泵异响</td><td class='ok'><strong>1</strong><div class='why'>西门子 P2 未见。</div></td><td class='ok'><strong>1</strong><div class='why'>无本轮回复。</div></td><td class='ok'><strong>1</strong><div class='why'>西门子无B/C。</div></td><td class='ok'><strong>1</strong><div class='why'>无JCZF。</div></td></tr><tr><td>U12</td><td>黄岩</td><td>滤器接管</td><td class='ok'><strong>1</strong><div class='why'>西门子 P3 未见。</div></td><td class='ok'><strong>1</strong><div class='why'>无本轮回复。</div></td><td class='ok'><strong>1</strong><div class='why'>同上。</div></td><td class='ok'><strong>1</strong><div class='why'>无JCZF。</div></td></tr><tr><td>U13</td><td>东方平台</td><td>油泵异响</td><td class='ok'><strong>1</strong><div class='why'>东方平台≠东方终端；P2未见。</div></td><td class='ok'><strong>1</strong><div class='why'>东方平台P2空。</div></td><td class='ok'><strong>1</strong><div class='why'>同上。</div></td><td class='ok'><strong>1</strong><div class='why'>东方平台P2空。</div></td></tr><tr><td>U14</td><td>东方平台</td><td>滤器接管</td><td class='ok'><strong>1</strong><div class='why'>东方平台 P3 未见。</div></td><td class='ok'><strong>1</strong><div class='why'>东方平台P3空。</div></td><td class='ok'><strong>1</strong><div class='why'>同上。</div></td><td class='ok'><strong>1</strong><div class='why'>东方平台P3空。</div></td></tr><tr><td>U15</td><td>曹妃甸平台</td><td>油泵异响</td><td class='ok'><strong>1</strong><div class='why'>曹妃甸 P2 未见。</div></td><td class='ok'><strong>1</strong><div class='why'>曹妃甸P2空。</div></td><td class='ok'><strong>1</strong><div class='why'>同上。</div></td><td class='ok'><strong>1</strong><div class='why'>曹妃甸P2空。</div></td></tr><tr><td>U16</td><td>曹妃甸平台</td><td>滤器接管</td><td class='ok'><strong>1</strong><div class='why'>曹妃甸 P3 未见。</div></td><td class='ok'><strong>1</strong><div class='why'>曹妃甸P3空。</div></td><td class='ok'><strong>1</strong><div class='why'>同上。</div></td><td class='ok'><strong>1</strong><div class='why'>曹妃甸P3空。</div></td></tr><tr><td>U17</td><td>衢州站（站级）</td><td>油泵异响</td><td class='ok'><strong>1</strong><div class='why'>站级不摊油泵；指向产品一/二。</div></td><td class='ok'><strong>1</strong><div class='why'>衢州站级P2用—。</div></td><td class='ok'><strong>1</strong><div class='why'>油泵在产品行。</div></td><td class='ok'><strong>1</strong><div class='why'>站级P2指向产品。</div></td></tr><tr><td>U18</td><td>衢州站（站级）</td><td>滤器接管</td><td class='ok'><strong>1</strong><div class='why'>站级不摊滤器。</div></td><td class='ok'><strong>1</strong><div class='why'>衢州站级P3用—。</div></td><td class='ok'><strong>1</strong><div class='why'>滤器在产品行。</div></td><td class='ok'><strong>1</strong><div class='why'>站级P3指向产品。</div></td></tr><tr><td>U19</td><td>涠洲东方6000（报告范围）</td><td>油泵异响</td><td class='mid'><strong>0.5</strong><div class='why'>台账把P2写在东方终端+北阿行，统计却写成「东方终端/涠洲东方6000同一油泵叙述」，未把6000×油泵标成该粒度未见回复。</div></td><td class='bad'><strong>0</strong><div class='why'>把6000×油泵填成已实施（含东方终端换泵），该粒度应为未见结论。</div></td><td class='mid'><strong>0.5</strong><div class='why'>2.7节标题把6000与东方终端并在一起写B；统计把涠洲东方6000列入油泵覆盖。</div></td><td class='bad'><strong>0</strong><div class='why'>OBJ14把6000×油泵填成已实施，并写入北阿与东方终端换泵事实。</div></td></tr><tr><td>U20</td><td>衢州产品一（进口机）</td><td>开关误碰</td><td class='ok'><strong>1</strong><div class='why'>产品一 P1 未见产品级回复。</div></td><td class='ok'><strong>1</strong><div class='why'>产品一P1无本轮回复。</div></td><td class='ok'><strong>1</strong><div class='why'>产品一无P1行。</div></td><td class='ok'><strong>1</strong><div class='why'>产品一P1无回复。</div></td></tr><tr><td>U21</td><td>衢州产品二（国产机）</td><td>开关误碰</td><td class='ok'><strong>1</strong><div class='why'>产品二 P1 未见产品级回复。</div></td><td class='ok'><strong>1</strong><div class='why'>产品二P1无本轮回复。</div></td><td class='ok'><strong>1</strong><div class='why'>产品二无P1行。</div></td><td class='ok'><strong>1</strong><div class='why'>产品二P1无回复。</div></td></tr><tr><td>U22</td><td>伊朗北阿UGT15000</td><td>开关误碰</td><td class='ok'><strong>1</strong><div class='why'>北阿无P1专门回复。</div></td><td class='ok'><strong>1</strong><div class='why'>北阿P1无回复。</div></td><td class='ok'><strong>1</strong><div class='why'>北阿无A回复。</div></td><td class='ok'><strong>1</strong><div class='why'>北阿P1无回复。</div></td></tr><tr><td>U23</td><td>东方终端UGT6001</td><td>开关误碰</td><td class='mid'><strong>0.75</strong><div class='why'>未给东方终端伪造P1，也未单列「东方终端×开关未见」。</div></td><td class='mid'><strong>0.5</strong><div class='why'>6000行地点写成「涠洲东方/东方终端」，P1自查判断容易读成终端也有开关结论。</div></td><td class='mid'><strong>0.75</strong><div class='why'>未伪造终端P1，未单列未见。</div></td><td class='mid'><strong>0.5</strong><div class='why'>OBJ14设备行写「自查亦涉及东方终端UGT6001」，P1仍落在6000。</div></td></tr><tr><td>U24</td><td>东方终端UGT6001</td><td>滤器接管</td><td class='mid'><strong>0.75</strong><div class='why'>P3标题写成「涠洲东方6000/东方终端」，正文范围仅6000。</div></td><td class='mid'><strong>0.75</strong><div class='why'>P3范围写6000，未单列终端×滤器未见。</div></td><td class='mid'><strong>0.75</strong><div class='why'>C写在6000/东方终端节下，范围句是仅6000。</div></td><td class='mid'><strong>0.75</strong><div class='why'>滤器在6000，未单列终端未见。</div></td></tr></tbody>
+  </table>
+
+  <h2>对账（20）</h2>
+  <table>
+    <thead><tr><th>项</th><th>A</th><th>B</th><th>C</th><th>D</th></tr></thead>
+    <tbody><tr><td>独立回复 15 及 6/4/5（5）</td><td><strong>5</strong><div class='why'>15份，6/4/5。重复上传按hash合并。空白模板不计。</div></td><td><strong>5</strong><div class='why'>15，6/4/5。</div></td><td><strong>5</strong><div class='why'>15，6/4/5。</div></td><td><strong>5</strong><div class='why'>15份；约3拷贝/份。</div></td></tr><tr><td>覆盖粒度与分母（5）</td><td><strong>4.5</strong><div class='why'>单位定义清楚；站级/产品级不混。统计把烟墩和6000油泵并进覆盖对象，分母略胀。</div></td><td><strong>3.5</strong><div class='why'>16行把东方终端折进6000；P3覆盖写成6；烟墩P3只写无JCZF。</div></td><td><strong>4.5</strong><div class='why'>单位清楚；覆盖统计把烟墩和6000油泵算进去。</div></td><td><strong>3</strong><div class='why'>16对象用烟墩换掉东方终端节点；P1覆盖写成11；P2/P3各6。</div></td></tr><tr><td>未完成/建议/实施/验证分类（10）</td><td><strong>9</strong><div class='why'>待整改/建议/已实施未验证/已验证分类完整；功能验证仅衢州产品二P3。多记烟墩源发行，不影响必填分类。漏把6000×油泵从覆盖里剔除。</div></td><td><strong>6.5</strong><div class='why'>梧州/衢州P1与梧州P3待整改、衢州产品二P3闭环、海上P3未验证都对。梧州P2、海上P2分类偏；6000吸收东方终端换泵；状态计数标签碎。</div></td><td><strong>8.5</strong><div class='why'>必填开项与唯一功能验证都对；北阿/东方换泵不合并。6000油泵覆盖口径与gold节点不完全对齐。</div></td><td><strong>6.5</strong><div class='why'>正文关键开项对；2.3计数verified=2与「仅1格功能验证」自相矛盾；done_unverified=3偏少。</div></td></tr></tbody>
+  </table>
+
+  <h2>四路完整原始回答（未经裁判改写）</h2>
+  <details class='ans'><summary>A · Grok 4.7 + govern-graphrag-delivery · 97.7/100</summary><pre class='raw'># Q1｜2019年三类问题举一反三：可签字全量台账
+
+**结论时点**：仅依据本包中 2019 年围绕（1）烟墩站控制电源开关误碰停机、（2）3#机组油泵异响、（3）机带双联滤压差开关连接有误 收集的回复与同源故障/处理单，重建当时状态。库内更晚资料未用于覆盖当时结论。重复上传按同一份回复计。图片只保留文件中已写的题注，不据图猜测。空缺不作“无风险”。
+
+**三类问题代码**
+
+| 代码 | 问题 | 源发编号（去重后） |
+| --- | --- | --- |
+| P1 | 滑油撬/接线箱控制电源旋钮误碰导致停机 | JCZB2019002、JCZC2019002、YD020（2019-05-18，烟墩3#） |
+| P2 | 压缩机油站油泵异响/刮缸 | JCZB2019003、JCZC2019003、YD021（报告日期 2019-05-19，正文写 5 月 18 日，烟墩3#） |
+| P3 | 机带双联滤压差开关管路接反 | JCZB2019004 / CGT25-D-001-1801（内部）、YD017（2018-12-27 发现，本轮仍作为举一反三源发） |
+
+---
+
+## 0. 统计单位（先定义，后文只按此计）
+
+| 单位 | 定义 | 不计什么 |
+| --- | --- | --- |
+| **独立回复** | 一份有编号的《举一反三报告单》，按 `JCZF2019002-*` / `JCZF2019003-*` / `JCZF2019004-*` 编号去重。同一编号多份上传 = 1。 | 不把 JCZB/JCZC/YD/空白模板算作“独立回复”；不把项目数、机组数加进回复数。 |
+| **自查对象** | 回复“举一反三项目”栏或自查正文明确点名的项目/产品/机组；源发站烟墩按处理单能支持的粒度列入。 | 不把“其他项目”四字扩成未点名项目；不把系列组名摊到未点名的每台设备。 |
+| **台账行** | 一个自查对象 × 一个问题。统计整改/风险/验证时按台账行，不与回复份数混加。 | 站级结论不复制成未点名的每台机组行。 |
+
+**证据充分性（台账“状态类”）**
+
+- `未见回复`：该对象该问题没有本轮专门回复。空缺 ≠ 无风险。
+- `仅自查判断`：结论为“不存在/可能性小/未发现”，无整改、无功能验证。
+- `仅风险或建议`：提出风险、观察或更换建议，未写已实施。
+- `已确认未证完成`：已确认同类问题或必须整改，未见完成证明。
+- `已实施未见功能验证`：写了已做措施，未见运行/功能验证记录。
+- `已有功能验证`：写了措施，并写明运行中如何验证有效。
+
+源发表格中的验证栏、签字栏大量空白，空白不当作已验证。
+
+---
+
+## 1. 独立回复清单（去重后 15 份）
+
+重复上传：各 JCZF 编号一般 3 份同哈希文本；`JCZF2019004-2` 4 份、`JCZF2019004-4` 4 份，哈希仍各为 1，不另计事件。
+
+| 独立回复 | 对象（原文） | 问题 | 代表文件 | 实施人/签字原文 |
+| --- | --- | --- | --- | --- |
+| JCZF2019002-1 | 科丰H-25（35）、青岛H-25（32）、泰兴H-25（32）、珠海H-25（42）、理文H-25（32） | P1 | D0435 | 项目负责人：郑陆松 |
+| JCZF2019002-2 | 海上平台机组（产品组：海上平台燃气轮机发电机组国产化研制） | P1 | D0438 | 项目负责人：任博铖 |
+| JCZF2019002-3 | 黄岩SGT400、东方平台SGT600、曹妃甸平台SGT700 | P1 | D0441 | 项目负责人：郑涛 |
+| JCZF2019002-4 | 西气东输二线广南支干线梧州站 | P1 | D0444 | 实施人：刘博 |
+| JCZF2019002-5 | 西气东输二线上海支干线衢州站 | P1 | D0447 | 实施人栏日期空 |
+| JCZF2019002-6 | 涠洲东方6000发电机组 | P1 | D0450 | 实施人/负责人：骆平平 |
+| JCZF2019003-1 | 海上平台项目 | P2 | D0453 | 签字栏空 |
+| JCZF2019003-2 | 梧州站滑油撬油泵 | P2 | D0456 | 负责人：刘博 |
+| JCZF2019003-3 | 西二线衢州站（产品一、产品二） | P2 | D0459 | 实施人：郭宏亮，2019-05-31 |
+| JCZF2019003-4 | 涠洲东方6000发电机组项目、伊朗北阿15000燃机发电项目 | P2 | D0462 | 实施人/负责人：骆平平 |
+| JCZF2019004-1 | 海上平台项目 | P3 | D0465 | 负责人：任博铖 |
+| JCZF2019004-2 | 梧州站机带双联滤压差测量 | P3 | D0468 | 签字栏空 |
+| JCZF2019004-3 | 西二线衢州站（产品一、产品二） | P3 | D0472 | 实施人：郭宏亮，日期写 2018-12-30 |
+| JCZF2019004-4 | 伊朗北阿 UGT15000燃气轮机发电机组项目 | P3 | D0475 | 负责人：任博铖 |
+| JCZF2019004-5 | 涠洲东方6000发电机组 | P3 | D0479 | 实施人/负责人：骆平平 |
+
+**未计入独立回复（仍作依据）**
+
+- 源发/处理：JCZB2019002（D0381）、JCZB2019003（D0384）、JCZB2019004（D0387，与 D0563/D0564 同哈希）、JCZC2019002（D0408）、JCZC2019003（D0411）、YD017（D0587）、YD020（D0590）、YD021（D0591）。
+- 同号另一扫描件 D0565：页 2 多出与 D0387 冲突的 1#/3# 表述，单独引用，不另计事件。
+- D0556 举一反三报告单为空白模板（自查/结果栏空），不计入回复。
+- D0559、D0653 纠正措施单验证/举一反三栏空，不作完成证明。
+
+**本轮未见的交叉回复（对象已在其他问题上被点名）**
+
+- P2、P3：H-25 五项目、西门子三项目均无 JCZF 回复。
+- P1：伊朗北阿/UGT15000 无专门误碰回复（6000 的 P1 回复只写“6000 机组”，未写北阿）。
+- P3：烟墩 2# 从未被点名，不摊站级结论。
+
+---
+
+## 2. 对象 × 三类问题 全量台账
+
+能细分到产品或机组的，按资料粒度分行；只有站级结论的，保留站级。
+
+### 2.1 烟墩站（源发，西气东输三线/西三西，原文并存）
+
+**机组编号原文冲突，不得归一**：P1/P2 的 JCZB 写 3# 所属 `CGT25-D-002`；YD020/YD017 写 `GT25-D-003`；P3 的 JCZB 写所属 `CGT25-D-001`、环境“烟墩 3#燃机”。下表保留原值。
+
+| 对象 | 问题 | 设备型号原文 | 历史处置（当时文本） | 当时状态类 | 结论适用范围 | 依据 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 烟墩站（站级，所有滑油撬配电箱） | P1 | JCZB：滑油撬接线箱；所属 CGT25-D-002/燃压机组。JCZC 未给全站型号清单。 | JCZC：纠正=配电箱增加防误碰防护；纠正措施=后续项目设计考虑增加；验证栏空。D0559（审核日期 2019-06-01）：已购买保护罩，**正在安装**；措施验证栏空。YD020（3#）：“在旋钮外安装防触碰护罩”，处理完成日期 2019-05-31。 | **已确认未证完成**（安装完成与否两份单冲突）；**已实施未见功能验证**（即便取 YD020，也无防误碰功能验证）。 | 仅烟墩站当时在役滑油撬配电箱旋钮。不能外推到未点名项目，也不能把“所有滑油撬”再拆成未单独检查的每台结论。 | D0408；D0559；D0590；D0381 |
+| 烟墩站 3#机组（事件机组） | P1 | 故障地点：烟墩站 3#机组。YD020：机组编号 GT25-D-003，型号 CGT25-D，运行时长 70000h。 | 2019-05-18 16:45 清扫时误关 3# 压缩机滑油撬配电箱控制电源总开关，滑油泵停、机组故障停机。YD020：外部因=人员未识别风险；内部因=无防触碰装置。 | 源发已发生。防护：见上行冲突。 | 仅该次 3# 事件及该接线箱。 | D0408；D0381；D0590 |
+| 烟墩站 1#、2# | P1 | 书中无 1#/2# 单独型号检查记录。 | 无机组级回复。 | **未见回复**（有站级“所有滑油撬旋钮无防护”，不摊成 1#/2# 已查）。 | 不得写成 1#/2# 已完成自查。 | D0408 |
+| 烟墩站 3# 压缩机油站 1#油泵 | P2 | JCZB：滑油撬压缩机 1#油泵，批次号 HJSB440-46，所属 CGT25-D-002。JCZC：3#机组（CGT25-D-002），泵类型 HJSB440-46。YD021：机组编号 X002，型号 CGT25-D；改型由 HJSB440-46 为 **HJJA440-46**。 | JCZC：轴承滚珠碎裂、外壳破损、刮磨壁面；现场已换泵；新泵“改进型，**型号相同但批次不同**”；建议停该批次供应；贮备改进型作备件。验证栏空。YD021：处理完成 2019-05-23，更换滑油撬压缩机油泵 HJJA440-46。D0653 原因/纠正/验证栏空。 | **已实施未见功能验证**。换后型号两份原文冲突（同型号不同批次 vs HJJA440-46），不能择一。 | 仅烟墩 3# 该次更换的那一台压缩机油泵。 | D0384；D0411；D0591；D0653 |
+| 烟墩站（3 台机组、共 6 台该型号泵） | P2 | “该站 3 台机组都采用该型号泵，共 6 个”。 | “目前已经更换其中 3 个，另外三个已经备好备件。”未写哪 3 台已换（除 3# 事件泵外不能指定）。纠正措施=出现问题时更换。 | **已确认未证完成**（余 3 台仅备件，未证已换）；已换 3 台**未见功能验证**。 | 仅当时烟墩 3 台、6 泵。不能写成 6 台均已换完或均已验证。 | D0411 |
+| 烟墩站 1#机组 | P2 | 未给 1# 当时在役泵号。 | “之前 1#机组投产初期同样存在该问题。”无本轮 1# 更换/验证记录。 | 历史同类现象，**本轮未见 1# 专项回复/验证**。 | 不得把 3# 本次更换写成 1# 已处理。 | D0411 |
+| 烟墩站 2#机组 | P2 | 无 2# 泵号。 | 仅被“3 台都采用该型号”覆盖，无 2# 检查、更换、异响记录。 | **未见机组级回复**。空缺 ≠ 2# 无风险。 | 停留在站级 6 泵口径。 | D0411 |
+| 烟墩 3#燃机 机带双联滤压差开关 | P3 | JCZB/D0387：故障件=机带双联滤压差开关管路接口；所属 **CGT25-D-001 燃压机组**；环境=烟墩 3#燃机。YD017：机组编号 **GT25-D-003**，型号 CGT25-D，运行时长 5000h。 | D0387：2018-12-25 起装配，对比后称 3# 与 1#、梧州 1# **接口相反**；图为图片引用，不据图判断哪侧为正确。YD017：现场更换管路，处理完成 2018-12-31。无压差报警/切滤验证。D0565（同号另一件）建议研发部查图纸、说明书，核对 3#、1# 是否连接正确。 | **已实施未见功能验证**（取 YD017）；同时 **图纸对错未在 D0565 关闭**。所属机组号 CGT25-D-001 vs GT25-D-003 并存。 | 仅烟墩 3# 该次管路。不能外推 2# 或全站未点名滤器。 | D0387；D0587；D0565 |
+| 烟墩 1#燃机 机带双联滤压差开关 | P3 | D0387 未单列 1# 型号。D0565：1# 与 3# 开关标识相同，外侧 high、内侧 low。 | D0387 正文：3# 与 1#、梧州 1# **相反**。D0565：1# **与 3# 相同**，并建议核对是否正确。两份同号文本冲突。 | **冲突未消解**；1# 无“已改管+验证”记录。 | 不能用 3# YD017 关闭 1#。不能在冲突上判定 1# 对或错。 | D0387；D0565 |
+| 烟墩 2# | P3 | 无。 | 无。 | **未见回复**。 | 不得用 1#/3# 结论摊到 2#。 | （本轮 P3 回复未点名 2#） |
+
+### 2.2 H-25 燃机项目小组（仅 P1 有回复）
+
+一份回复覆盖五个点名项目，结论相同，按产品分行。无产品级型号/机组号。
+
+| 对象 | 问题 | 设备型号原文 | 历史处置 | 当时状态类 | 结论适用范围 | 依据 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 科丰H-25（35） | P1 | 无产品型号字段。 | 自查：H-25 燃机项目配电箱旋钮均配有保护壳，“应该不存在”误碰跳机。 | **仅自查判断** | 仅该回复点名的 H-25 五项目，不能外推未点名 H-25 机组或其他系列。 | D0435 |
+| 青岛H-25（32） | P1 | 同上 | 同上 | **仅自查判断** | 同上 | D0435 |
+| 泰兴H-25（32） | P1 | 同上 | 同上 | **仅自查判断** | 同上 | D0435 |
+| 珠海H-25（42） | P1 | 同上 | 同上 | **仅自查判断** | 同上 | D0435 |
+| 理文H-25（32） | P1 | 同上 | 同上 | **仅自查判断** | 同上 | D0435 |
+| 上述五项目各一行 | P2 | — | 本轮无 H-25 油泵举一反三单。 | **未见回复** | 空缺 ≠ 无油泵风险。 | — |
+| 上述五项目各一行 | P3 | — | 本轮无 H-25 双联滤举一反三单。 | **未见回复** | 空缺 ≠ 无接管风险。 | — |
+
+### 2.3 西门子机组（仅 P1 有回复）
+
+| 对象 | 问题 | 设备型号原文 | 历史处置 | 当时状态类 | 结论适用范围 | 依据 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 黄岩SGT400 | P1 | 黄岩项目 SGT400 机组 | 自查：机组内部无旋转按钮；油泵急停有盖板；机组急停周围有金属凸台；“从机组运行至现在未出现过机组内按钮误碰造成故障”。附图未读。 | **仅自查判断** | 仅黄岩 SGT400，不能代表其他西门子型号。 | D0441 |
+| 东方平台SGT600 | P1 | 东方平台 SGT600 机组 | 同上（同一份回复并列）。 | **仅自查判断** | 仅东方平台 SGT600。**不得与“涠洲东方6000 / 东方终端 UGT6001”混为同一对象。** | D0441 |
+| 曹妃甸平台SGT700 | P1 | 曹妃甸平台 SGT700 机组 | 同上。 | **仅自查判断** | 仅曹妃甸 SGT700。 | D0441 |
+| 上述三项目各一行 | P2 | — | 无西门子油泵回复。 | **未见回复** | 空缺 ≠ 无风险。 | — |
+| 上述三项目各一行 | P3 | — | 无西门子双联滤回复。 | **未见回复** | 空缺 ≠ 无风险。 | — |
+
+### 2.4 海上平台燃气轮机发电机组国产化研制
+
+| 对象 | 问题 | 设备型号原文 | 历史处置 | 当时状态类 | 结论适用范围 | 依据 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 海上平台项目（未拆到单机组） | P1 | 未给燃机/发电机型号。设备：燃机滑油站、发电机滑油站就地控制箱（就地/远控、油泵与加热器起停、动力/控制电源开关）。 | 分析：燃机滑油站油泵为箱内循环工艺泵，误碰“不会造成机组紧急停机”，故重点写发电机滑油站。（1）误切就地：不影响油站运行，上位机报警。（2）远控时就地起停失效。（3）误关电源会使设备停或失控，但靠发电机滑油站出口压力启应急油泵（UPS），且**未在发电机供油泵逻辑设 ESD**。另：国产机组滑油站接线箱外有防雨罩，高过按钮上表面。结论：不存在误碰导致 ESD 的可能性。 | **仅自查判断**（逻辑说明+防雨罩；无加装旋钮护罩、无误碰试验）。 | 仅该海上平台项目、且按正文限于所分析的滑油站控制逻辑。不能推广到烟墩/梧州类“控制电源总开关无防护即 ESD”的燃压机组。 | D0438 |
+| 同上 | P2 | “进口 ALLWEILER 螺杆泵” | 质量较好，且为业主文件推荐品牌。结论：出现类似故障的可能性较小。 | **仅自查判断** | 仅该项目所用 ALLWEILER 泵。不能证明不会发生，也不能外推国产 HJSB 泵。 | D0453 |
+| 同上 | P3 | 无滤器/开关型号。 | “确认海上平台项目亦存在压差开关引压管路接反”；研发部改图；**2019 年 3 月**研发部、生产部现场整改。 | **已实施未见功能验证**（无报警/切滤/运行验证）。 | 仅该项目当时所改管路。不能写成已功能关闭。 | D0465 |
+
+### 2.5 梧州站（西气东输二线广南支干线，CGT25-D）
+
+| 对象 | 问题 | 设备型号原文 | 历史处置 | 当时状态类 | 结论适用范围 | 依据 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 梧州站（站级） | P1 | 产品组：梧州站燃驱压缩机组 CGT25-D。对象：滑油撬控制箱电源旋钮。 | 自查：与烟墩相同，无保护盖。图题注原文同时出现“衢州站滑油撬控制箱(情况与烟墩站相同)”和“梧州站滑油撬控制箱”——题注把衢州写进梧州单，**不能代替衢州自己的回复**。另：“本次梧州站增加了电源**按钮**的保护盖……但忽视了**旋钮**误碰问题。”结果：存在旋钮误碰风险，后期优化需完成保护盖添加。 | **已确认未证完成**（旋钮防护未证已加）。按钮盖属**已实施未见功能验证**，且正文声明未覆盖旋钮。 | 仅梧州站滑油撬控制箱旋钮。不摊到未点名的每台梧州机组。 | D0444 |
+| 梧州站滑油撬油泵（站级，列出多型号） | P2 | 燃机工艺泵 HSNK280R46T1Q；压缩机应急泵 HSNK280R46T1；压缩机主/辅泵 HSNK440R40T1（出现两次）。对比烟墩 HJSB440-46。 | “型号完全不同，且目前未发现相同问题，建议暂不做同类考虑，日后有条件勤做观察。” | **仅风险或建议**（观察），不是整改完成。 | 仅所列梧州泵型号。不能写成已排除长期风险。 | D0456 |
+| 梧州站燃机机带双联滤 | P3 | 无开关型号。源发 D0387 点名 **梧州 1#燃机** 接口与烟墩 3# 相反。 | JCZF：现场实查“连接方式与烟墩相同，同样存在双联滤压差接反”，“需择机整改”。 | **已确认未证完成**。 | 回复是站级“梧州站燃机”；源发还点了梧州 1#。不能把“已接反”摊到未写的其他梧州产品，也不能写成已改完。 | D0468；D0387 |
+
+### 2.6 衢州站（西气东输二线上海支干线 / 西二线）
+
+P1 只有站级；P2/P3 分产品一、产品二。产品一/二的 P1 不另造机组结论，只指向站级。
+
+| 对象 | 问题 | 设备型号原文 | 历史处置 | 当时状态类 | 结论适用范围 | 依据 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 衢州站（站级） | P1 | 产品组：衢州站燃驱压缩机组 CGT25-D。对象：滑油撬控制箱电源旋钮。无自查过程，只有结果句。 | “也存在……误碰的风险，在后期的优化过程中，需完成保护盖的添加工作。” | **已确认未证完成** | 仅站级旋钮。不能写成产品一/二分别已查。 | D0447 |
+| 衢州站 产品一 | P1 | — | 无产品级 P1 回复。 | **未见产品级回复**（见站级）。 | 不把站级复制成产品一已查。 | D0447 |
+| 衢州站 产品一 | P2 | 产品一压缩机油站油泵 **HSJB280-460**（原文如此） | 与烟墩型号不同；累计运行超过 3300 小时暂未出现问题。 | **仅自查判断**（运行观察，非验证关闭）。 | 仅产品一该泵号。 | D0459 |
+| 衢州站 产品一（进口机） | P3 | 产品一（进口机）。无开关型号。附图未读。 | 自查：不存在接反。 | **仅自查判断** | 仅产品一进口机该管路。 | D0472 |
+| 衢州站 产品二 / 2#压缩机油站 | P2 | 产品二压缩机油站油泵 **HSJ440-46**；“与厂家了解 HSJS 型号应为 HSJ 的升级版”。结果句称“衢州站 **2#** 压缩机油站油泵”。 | “有可能出现烟墩站类似故障，建议进行更换。”未见已换。 | **仅风险或建议** | 仅产品二/2# 该泵。不得要求全站或他站一律换泵。 | D0459 |
+| 衢州站 产品二（国产机） | P3 | 产品二（国产机）燃机机带双联滤压差开关。无型号。 | 存在接反；“按高压端接滤前、低压端接滤后重新制作管路”。“验证：重新连接后运行过程中出现压差开关报警，经切换双联滤后报警消除，整改得到了验证。形成闭环。”实施人郭宏亮，日期 **2018-12-30**。 | **已有功能验证** | 仅衢州产品二该次改管。不能推广到产品一、梧州、烟墩或他站。 | D0472 |
+
+### 2.7 6000 系列 / 东方终端（骆平平）与 伊朗北阿（不得与西门子“东方平台SGT600”合并）
+
+| 对象 | 问题 | 设备型号原文 | 历史处置 | 当时状态类 | 结论适用范围 | 依据 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 涠洲东方6000发电机组 | P1 | 产品组：涠洲东方6000发电机组。故障信息报告单编号栏原文为 **JCZF2019002**（不是 JCZB）。 | “6000 机组滑油撬等均无现场控制电源总开关，所有开关均在配电室”，不存在现场巡检/清扫误碰。 | **仅自查判断** | 仅 6000 机组现场滑油撬。**不含北阿。** 不能推广到有现场总开关的燃压站。 | D0450 |
+| 伊朗北阿 UGT15000 / 北阿15000 | P1 | — | 无 P1 专门回复。 | **未见回复** | 空缺 ≠ 北阿无误碰风险。 | — |
+| 东方终端自备电站 UGT6001 与北阿（油泵，同一份回复） | P2 | 减速器滑油站滑油泵 **HJSB440-46**（与烟墩相同）。后文东方终端再换 **HSNK440R36N1MT5**。 | 同样出现泵体与泵缸刮磨；分析为缺轴向平衡、启动偏磨。先将碳钢泵缸改为铝合金，“目前换装后未出现问题。但须定期检查轴承。”之后东方终端换 HSNK440R36N1MT5，“运行两年未出现故障。”北阿是否换到 HSNK：**正文未写**。 | 换缸/换泵：**已实施未见功能验证**（“未出现问题/运行两年”是运行史，不是本轮试验记录）。**仅风险或建议**：须定期检查轴承。不得把东方换螺杆泵写成北阿最终措施。 | 泵型适用于正文中的北阿与东方终端 UGT6001 减速器滑油站。不能外推海上 ALLWEILER 或梧州 HSNK 系列。 | D0462 |
+| 涠洲东方6000 / 东方终端 | P3 | 无开关型号。 | “双联滤接压差开关接头处标记有进出箭头……目前涠洲东方均按进出箭头正确接管，不存在接反。” | **仅自查判断** | 仅涠洲东方 6000 当时接管。 | D0479 |
+| 伊朗北阿 UGT15000 | P3 | 产品组：伊朗北阿 UGT15000。故障信息报告单编号栏原文为 **JCZF2019004**。 | “相关管路为乌方原装，没有接反。”“滑油滤器引压管未接反。” | **仅自查判断** | 仅北阿乌方原装该管路。 | D0475 |
+
+---
+
+## 3. 可与台账对账的统计
+
+### 3.1 独立回复数 = **15**
+
+- P1：6（002-1…002-6）
+- P2：4（003-1…003-4）
+- P3：5（004-1…004-5）
+
+源发/处理单另计 8 份去重记录（JCZB×3、JCZC×2、YD017/020/021），**不要与 15 相加后称作回复数**。
+
+### 3.2 每类问题的覆盖对象（有专门文字的对象；单位=对象，不是回复份数）
+
+**P1 有回复的对象（12 个点名产品/项目 + 1 个源发站）**
+
+1–5. 科丰/青岛/泰兴/珠海/理文 H-25  
+6. 海上平台项目  
+7–9. 黄岩SGT400、东方平台SGT600、曹妃甸SGT700  
+10. 梧州站  
+11. 衢州站（站级）  
+12. 涠洲东方6000  
+13. 烟墩站（站级+3#事件）
+
+P1 **未见回复**（已是本轮自查对象、但本问题无单）：北阿/UGT15000；烟墩 1#/2# 无机组级单。
+
+**P2 有回复的对象（7）**
+
+1. 海上平台  
+2. 梧州站（多泵型号）  
+3. 衢州产品一  
+4. 衢州产品二/2#  
+5. 东方终端 UGT6001 / 涠洲东方6000（同一油泵叙述）  
+6. 伊朗北阿15000  
+7. 烟墩 3# 及站级 3 台/6 泵  
+
+P2 **未见回复**：H-25 五项目；西门子三项目；烟墩 2# 机组级。
+
+**P3 有回复的对象（8）**
+
+1. 海上平台  
+2. 梧州站（源发另点梧州 1#）  
+3. 衢州产品一（进口机）  
+4. 衢州产品二（国产机）  
+5. 北阿 UGT15000  
+6. 涠洲东方6000  
+7. 烟墩 3#  
+8. 烟墩 1#（两份源发文本冲突）  
+
+P3 **未见回复**：H-25 五项目；西门子三项目；烟墩 2#。
+
+### 3.3 已确认但未证明完成的整改（台账行=6）
+
+| # | 对象 × 问题 | 已确认什么 | 缺什么才能叫完成 |
+| --- | --- | --- | --- |
+| 1 | 烟墩站 × P1 | 全站滑油撬旋钮无防护；须加防护 | 安装完成证明（YD020 与 D0559 冲突）+ 验证栏 |
+| 2 | 梧州站 × P1 | 旋钮无防护，须加保护盖；按钮盖未覆盖旋钮 | 旋钮保护盖已加的记录 |
+| 3 | 衢州站 × P1 | 同样须加保护盖 | 任何已添加证据 |
+| 4 | 烟墩 6 泵中余 3 台 × P2 | 已备件，未写已换 | 余 3 台去向（已换或仍在役） |
+| 5 | 梧州站 × P3 | 压差管接反，须择机整改 | 已改管记录 |
+| 6 | 烟墩 1# × P3 | 源发对其对错两份文本冲突；D0565 要求核对图纸 | 图纸核对结论及 1# 实际接管状态 |
+
+### 3.4 仅提出风险或建议的事项（台账行=5）
+
+| # | 对象 × 问题 | 原文要点 |
+| --- | --- | --- |
+| 1 | 梧州 × P2 | 型号不同，暂不做同类考虑，日后勤观察 |
+| 2 | 衢州产品二 × P2 | 可能类似故障，**建议更换**（未见已换） |
+| 3 | 北阿与东方终端 × P2 | 换缸后**须定期检查轴承** |
+| 4 | 烟墩 × P2 | 建议停止 HJSB440-46 该批次供应 |
+| 5 | 烟墩 1#/3# × P3（D0565） | 建议研发部查图纸和说明书，核对是否接对 |
+
+海上 P2“可能性较小”、H-25/西门子/6000/北阿 P1 或 P3 的“不存在”，记入自查判断，**不记入本表**。
+
+### 3.5 已实施但未见功能验证的事项（台账行=8）
+
+| # | 对象 × 问题 | 已写实施 | 未见 |
+| --- | --- | --- | --- |
+| 1 | 烟墩 3# × P1（YD020） | 安装防触碰护罩 | 误碰防护功能验证；且与 D0559“正在安装”冲突 |
+| 2 | 梧州 × P1 | 已加电源**按钮**保护盖 | 按钮盖验证；旋钮仍未覆盖 |
+| 3 | 烟墩 3# × P2 | 已换泵（改进型/HJJA440-46 原文冲突） | JCZC/D0653 验证栏空 |
+| 4 | 烟墩站已换的 3 台泵 × P2 | “已更换其中 3 个” | 无运行验证、未指认机组 |
+| 5 | 北阿与东方 × P2 | 泵缸改铝合金 | 无试验记录；仅“未出现问题” |
+| 6 | 东方终端 × P2 | 再换 HSNK440R36N1MT5 | “运行两年无故障”非本轮验证单 |
+| 7 | 海上平台 × P3 | 2019-03 现场改管、改图 | 无报警/切滤/运行验证 |
+| 8 | 烟墩 3# × P3（YD017） | 2018-12-31 更换管路 | 无压差报警验证 |
+
+### 3.6 已有功能验证的事项（台账行=1）
+
+| # | 对象 × 问题 | 验证原文 |
+| --- | --- | --- |
+| 1 | 衢州产品二（国产机）× P3 | 改管后运行出现压差开关报警，切换双联滤后报警消除，“整改得到了验证。形成闭环。”（D0472，实施日期写 2018-12-30） |
+
+此外，各 JCZC 验证栏、D0559/D0653 验证意见栏均为空，**0 条质量信息处理验证关闭**。
+
+---
+
+## 4. 供签字的阅读规则（质量负责人）
+
+1. **不能签字为“三类问题举一反三已全部覆盖并验证关闭”。** 15 份独立回复中，功能验证闭环只有衢州产品二的 P3。
+2. **覆盖不齐**：H-25、西门子完全没有 P2/P3 回复；北阿没有 P1 回复；烟墩 2# 在 P1/P3 无机组级文字，P2 只有站级 6 泵口径。
+3. **自查判断 ≠ 整改完成**。H-25 保护壳、海上无 ESD 逻辑、西门子无旋钮、6000 开关在配电室、海上进口泵、北阿乌方原装、东方箭头接管、衢州产品一未接反/泵型号不同，都只是当时判断。
+4. **必须继续盯的实物项**：烟墩/梧州/衢州 P1 旋钮防护；梧州 P3 接反；烟墩余 3 台 HJSB 泵去向；衢州产品二 P2 是否换泵（当时仅建议）。
+5. **不得外推**：海上控制逻辑不能消除烟墩类现场总开关 ESD；东方 HSNK 换泵不能写成北阿或全部项目的最终措施；衢州产品二 P3 闭环不能写成梧州/烟墩已验证。
+6. **原文冲突须上审，不得在台账里抹平**：烟墩 3# 机组号 CGT25-D-001 / CGT25-D-002 / GT25-D-003；烟墩换泵“同型号不同批次”vs HJJA440-46；烟墩 1# 与 3# 压差接口“相反”vs“相同”；P1 护罩“已装”vs“正在安装”。
+7. **空白签字/空白验证**：多数 JCZF 实施日期、部门领导签、JCZC 验证人均空。台账反映资料能证明的历史状态，不代替原件补签。
+
+---
+
+## 5. 源发事实（便于对账，不计独立回复）
+
+**P1 源发**（D0408/D0381/D0590）：2019-05-18 16:45，烟墩 3#，清扫误关压缩机滑油撬配电箱控制电源总开关 → 滑油泵停 → 供油压力低 → 机组停机。当时判断：烟墩所有滑油撬配电箱旋钮无防误碰防护。
+
+**P2 源发**（D0411/D0384/D0591）：2019-05-18（YD021 故障日期栏为 05-19）烟墩 3#（CGT25-D-002）压缩机油站油泵异响，双联滤压差高；轴承滚珠碎裂、外壳破损、刮缸。泵号 HJSB440-46。寿命原文 24000 小时。1# 投产初期曾有同类问题。
+
+**P3 源发**（D0387/D0565/D0587）：2018-12-27 报告。装配对比称烟墩 3# 与烟墩 1#、梧州 1# 压差开关接口相反。YD017 写 12-31 已换管。D0565 要求研发核对 1#/3# 是否接对，并写 1# 与 3# 标识相同。
+</pre></details><details class='ans'><summary>B · Composer 2.5 直答 · 90.6/100</summary><pre class='raw'># Q1｜对象×三类问题全量台账（可签字版）
+
+## 一、范围与统计口径
+
+本轮资料围绕 2019 年烟墩站三类质量事件开展的举一反三。**独立回复**指编号为 `JCZF2019002-x`（6 份）、`JCZF2019003-x`（4 份）、`JCZF2019004-x`（5 份）的《举一反三报告单》，共 **15** 份；同一编号的重复 PDF 快照按 `manifest.json` 的 `body_sha256` 去重，仅保留一份代表件。
+
+**台账对象**取自各回复中明确列为自查/举一反三的项目、站场、产品或机组；能细分的按资料粒度列出（如衢州站产品一/产品二），仅站级结论的保留站级（如梧州站燃机）。**烟墩站 3#机组**为源发故障点，其处置记录在故障信息/质量信息/维修记录中，一并纳入台账但不计入 15 份 outward 回复数。
+
+**状态用语**（用于矩阵单元格，可与统计逐项对账）：
+
+| 状态 | 含义 |
+| --- | --- |
+| 无本轮举一反三回复 | 该对象未出现在该类问题的 JCZF 回复中 |
+| 自查判断无同类风险/不适用/无接反 | 回复结论为不存在同类隐患或设计不适用 |
+| 仅提出风险或建议 | 发现潜在同类问题或建议更换/观察，未述及完成整改 |
+| 已确认待整改（未证明完成） | 明确存在风险或需择机/后期加防护，未见验证闭环 |
+| 已实施但未见功能验证 | 已更换/整改/安装，但回复未给出运行或功能验证记录 |
+| 已有功能验证 | 回复载明运行、报警或切换试验等验证结果 |
+
+## 二、源发事件与设备型号（摘要）
+
+- **P1**：2019-05-18 烟墩 3# 误碰压缩机滑油撬「控制电源总开关」致供油泵停、ESD（D0590、D0381）；质量信息要求全站滑油撬加防误碰（D0410）。
+- **P2**：2019-05-18/19 烟墩 3#（CGT25-D-002）压缩机油泵 HJSB440-46 异响刮缸，伴双联滤压差高（D0591、D0385、D0412）；改型 HJJA440-46。
+- **P3**：2018-12 装配发现烟墩 3# 与 1#、梧州 1# 机带双联滤压差开关接口相反（D0387，编号 CGT25-D-001-1801）。
+
+## 三、对象×三类问题台账
+
+| 序号 | 对象 | 地点/项目 | 设备型号或范围 | P1 当时状态与处置 | P2 当时状态与处置 | P3 当时状态与处置 |
+| ---: | --- | --- | --- | --- | --- | --- |
+| 1 | 科丰H-25（35）项目 | 各H-25现场 | H-25燃机（站级） | **自查判断无同类风险**&lt;br&gt;处置/历史：配电箱旋钮配有保护壳&lt;br&gt;适用范围：仅H-25项目配电箱，不含其他机型&lt;br&gt;依据：D0435.txt：综上，H-25燃机项目不会出现误碰配电箱旋钮导致机组跳机的情况。 | **无本轮举一反三回复** | **无本轮举一反三回复** |
+| 2 | 青岛H-25（32）项目 | 各H-25现场 | H-25燃机（站级） | **自查判断无同类风险**&lt;br&gt;处置/历史：配电箱旋钮配有保护壳&lt;br&gt;适用范围：仅H-25项目配电箱，不含其他机型&lt;br&gt;依据：D0435.txt：综上，H-25燃机项目不会出现误碰配电箱旋钮导致机组跳机的情况。 | **无本轮举一反三回复** | **无本轮举一反三回复** |
+| 3 | 泰兴H-25（32）项目 | 各H-25现场 | H-25燃机（站级） | **自查判断无同类风险**&lt;br&gt;处置/历史：配电箱旋钮配有保护壳&lt;br&gt;适用范围：仅H-25项目配电箱，不含其他机型&lt;br&gt;依据：D0435.txt：综上，H-25燃机项目不会出现误碰配电箱旋钮导致机组跳机的情况。 | **无本轮举一反三回复** | **无本轮举一反三回复** |
+| 4 | 珠海H-25（42）项目 | 各H-25现场 | H-25燃机（站级） | **自查判断无同类风险**&lt;br&gt;处置/历史：配电箱旋钮配有保护壳&lt;br&gt;适用范围：仅H-25项目配电箱，不含其他机型&lt;br&gt;依据：D0435.txt：综上，H-25燃机项目不会出现误碰配电箱旋钮导致机组跳机的情况。 | **无本轮举一反三回复** | **无本轮举一反三回复** |
+| 5 | 理文H-25（32）项目 | 各H-25现场 | H-25燃机（站级） | **自查判断无同类风险**&lt;br&gt;处置/历史：配电箱旋钮配有保护壳&lt;br&gt;适用范围：仅H-25项目配电箱，不含其他机型&lt;br&gt;依据：D0435.txt：综上，H-25燃机项目不会出现误碰配电箱旋钮导致机组跳机的情况。 | **无本轮举一反三回复** | **无本轮举一反三回复** |
+| 6 | 海上平台项目 | 海上平台 | 国产化燃机/发电机滑油站（ALLWEILER螺杆泵） | **自查判断无ESD同类风险**&lt;br&gt;处置/历史：就地箱有防雨罩；发电机滑油站误碰电源开关时应急油泵(UPS)维持运行、不设ESD&lt;br&gt;适用范围：海上平台项目整体；燃机滑油站工艺泵误碰不致紧急停机&lt;br&gt;依据：D0438.txt：海上平台项目不存在误碰滑油站就地控制箱按钮导致ESD 的可能性。… | **仅提出风险或建议（低可能性）**&lt;br&gt;处置/历史：进口ALLWEILER螺杆泵&lt;br&gt;适用范围：海上平台滑油站&lt;br&gt;依据：D0453.txt：海上平台机组滑油站所用的滑油泵出现类似故障的可能性较小。 | **已实施但未见功能验证**&lt;br&gt;处置/历史：2019年3月研发改图纸并现场整改引压管路&lt;br&gt;适用范围：海上平台机带双联滤压差引压管&lt;br&gt;依据：D0465.txt：研发部修改对应管路的图纸，并于 2019 年3 月，由研发部和生产部人员在现场进行了整改。 |
+| 7 | 黄岩SGT400项目 | 黄岩SGT400项目 | SGT400/SGT600/SGT700 | **自查判断无同类风险**&lt;br&gt;处置/历史：无旋转按钮；急停有盖板/凸台保护&lt;br&gt;适用范围：西门子机组本体按钮，非烟墩式滑油撬接线箱&lt;br&gt;依据：D0441.txt：综上，从机组实际运行情况和设计分析情况看，我公司黄岩项目 SGT400 机组、东方平台SGT600机组、曹妃甸平台 SGT700 机组均不存在烟墩站电钮误碰的隐患。 | **无本轮举一反三回复** | **无本轮举一反三回复** |
+| 8 | 东方平台SGT600项目 | 东方平台SGT600项目 | SGT400/SGT600/SGT700 | **自查判断无同类风险**&lt;br&gt;处置/历史：无旋转按钮；急停有盖板/凸台保护&lt;br&gt;适用范围：西门子机组本体按钮，非烟墩式滑油撬接线箱&lt;br&gt;依据：D0441.txt：综上，从机组实际运行情况和设计分析情况看，我公司黄岩项目 SGT400 机组、东方平台SGT600机组、曹妃甸平台 SGT700 机组均不存在烟墩站电钮误碰的隐患。 | **无本轮举一反三回复** | **无本轮举一反三回复** |
+| 9 | 曹妃甸SGT700项目 | 曹妃甸SGT700项目 | SGT400/SGT600/SGT700 | **自查判断无同类风险**&lt;br&gt;处置/历史：无旋转按钮；急停有盖板/凸台保护&lt;br&gt;适用范围：西门子机组本体按钮，非烟墩式滑油撬接线箱&lt;br&gt;依据：D0441.txt：综上，从机组实际运行情况和设计分析情况看，我公司黄岩项目 SGT400 机组、东方平台SGT600机组、曹妃甸平台 SGT700 机组均不存在烟墩站电钮误碰的隐患。 | **无本轮举一反三回复** | **无本轮举一反三回复** |
+| 10 | 梧州站燃驱压缩机组 | 梧州站 | CGT25-D；滑油泵 HSNK280R46T1Q/HSNK280R46T1/HSNK440R40T1（与烟墩HJSB440-46不同） | **已确认待整改（未证明完成）**&lt;br&gt;处置/历史：滑油撬控制箱电源旋钮无保护盖；已加按钮保护盖但未覆盖旋钮&lt;br&gt;适用范围：梧州站滑油撬控制箱（站级，未分机组）&lt;br&gt;依据：D0444.txt：梧州站也存在滑油撬控制箱上电源旋钮误碰的风险，在后期的优化过程中，需完成保护盖的添加 工作。 | **自查判断无同类风险（型号不同）**&lt;br&gt;处置/历史：泵型号与烟墩不同，暂未发现相同问题&lt;br&gt;适用范围：梧州站各滑油撬油泵（站级）&lt;br&gt;依据：D0456.txt：梧州站与烟墩站泵的型号完全不同，且目前未发现相同问题，建议暂不做同类考虑，日后有条件的情况下，勤做观察。 | **已确认待整改（未证明完成）**&lt;br&gt;处置/历史：燃机机带双联滤压差引压管与烟墩相同，存在接反&lt;br&gt;适用范围：梧州站燃机（站级，未分#号机）&lt;br&gt;依据：D0468.txt：梧州站存在双联滤压差接反的问题，需择机整改。 |
+| 11 | 衢州站（滑油撬控制箱，站级） | 衢州站 | CGT25-D燃驱压缩机组 | **已确认待整改（未证明完成）**&lt;br&gt;处置/历史：滑油撬控制箱电源旋钮误碰风险同烟墩&lt;br&gt;适用范围：衢州站滑油撬（站级）&lt;br&gt;依据：D0447.txt：衢州站也存在滑油撬控制箱上电源旋钮误碰的风险，在后期的优化过程中，需完成保护盖的添加工作。 | **—** | **—** |
+| 12 | 衢州站-产品一（进口机） | 衢州站 | 进口机；压缩机油站油泵 HSJB280-460 | **无本轮举一反三回复** | **自查判断无同类风险**&lt;br&gt;处置/历史：型号与烟墩不同，运行3300+h暂未出现问题&lt;br&gt;适用范围：产品一压缩机油站&lt;br&gt;依据：D0459.txt 自查：根据故障信息报告单所述故障进行自查、自检，确定产品一压缩机油站油泵型号为HSJB280-460，与烟墩站型号不同且已累计… | **自查判断无接反问题**&lt;br&gt;处置/历史：进口机不存在接反&lt;br&gt;适用范围：产品一燃机机带双联滤&lt;br&gt;依据：D0472.txt 自查：产品一（进口机）不存在接反问题 |
+| 13 | 衢州站-产品二（国产机）/2#压缩机油站 | 衢州站 | 国产机；压缩机油站油泵 HSJ440-46 | **无本轮举一反三回复** | **仅提出风险或建议**&lt;br&gt;处置/历史：HSJ440-46可能类似烟墩HJSB440-46故障&lt;br&gt;适用范围：产品二2#压缩机油站油泵&lt;br&gt;依据：D0459.txt：根据自查情况衢州站2#压缩机油站油泵有可能出现烟墩站类似故障，建议进行更换。 | **已有功能验证**&lt;br&gt;处置/历史：重制引压管路后运行报警，切换双联滤后消除&lt;br&gt;适用范围：产品二燃机机带双联滤&lt;br&gt;依据：D0472.txt：现场按照压差开关高压端接滤前，低压端接滤后的方式重新制作管路连接。验证：重新连接管路后运行过程中出现压差开关报警，经切换双联滤后报警消除，整改得到了验证。形成闭环。 |
+| 14 | 涠洲东方6000发电机组 | 涠洲东方/东方终端 | UGT6001等；减速器滑油泵 HJSB440-46 / 改型 HSNK440R36N1MT5 | **自查判断不适用**&lt;br&gt;处置/历史：滑油撬无现场控制电源总开关，开关在配电室&lt;br&gt;适用范围：6000机组滑油撬&lt;br&gt;依据：D0450.txt：6000机组滑油撬不存在现场误碰控制电源总开关的可能性。 | **已实施但未见功能验证**&lt;br&gt;处置/历史：同型泵HJSB440-46曾刮磨；北阿/东方终端换铝合金泵缸；东方终端后换HSNK440R36N1MT5运行两年无故障&lt;br&gt;适用范围：6000/东方终端减速器滑油站（报告同单覆盖北阿15000）&lt;br&gt;依据：D0462.txt：针对该泵设计存在缺陷，北阿项目和东方终端首先更换了该泵的泵缸的材质，将原滑油泵碳钢泵缸改为铝合金材质，目前换装后未出现问题。但须定期检查轴承。之后东方终端换装了性能更可靠、设计优化的螺杆泵 HSNK4… | **自查判断无接反问题**&lt;br&gt;处置/历史：接头有进出箭头，按箭头接管&lt;br&gt;适用范围：6000机组双联滤压差开关&lt;br&gt;依据：D0479.txt：6000机组双联滤压差开关不存在管路接反问题。 |
+| 15 | 伊朗北阿 UGT15000燃机发电项目 | 北阿 | UGT15000；滑油滤器引压管乌方原装 | **无本轮举一反三回复** | **已实施但未见功能验证**&lt;br&gt;处置/历史：同HJSB440-46刮磨；换铝合金泵缸后未再出现问题（与003-4同述）&lt;br&gt;适用范围：北阿项目减速器滑油泵（003-4合并回复）&lt;br&gt;依据：D0462.txt 自查含北阿项目 | **自查判断无接反问题**&lt;br&gt;处置/历史：乌方原装管路&lt;br&gt;适用范围：北阿项目机组滑油滤器引压管&lt;br&gt;依据：D0475.txt：北阿项目机组的滑油滤器引压管未接反。 |
+| 16 | 烟墩站 3#机组（事发机组） | 烟墩站 | CGT25-D-002 / GT25-D-003；压缩机油泵 HJSB440-46 | **已实施但未见功能验证**&lt;br&gt;处置/历史：2019-05-18误碰控制电源总开关停机；已购保护罩安装中(D0561)；维修记录装防触碰护罩(D0590)&lt;br&gt;适用范围：3#机组压缩机滑油撬接线箱；质量信息称“所有滑油撬”旋钮均无防误碰&lt;br&gt;依据：D0590.txt、D0561.txt、D0410.txt | **已实施但未见功能验证**&lt;br&gt;处置/历史：2019-05-18油泵异响刮缸，更换改进型泵；站3台6泵已换3备3(D0412/D0591改HJJA440-46)&lt;br&gt;适用范围：3#机组压缩机油站；站级备件策略覆盖3台机组&lt;br&gt;依据：D0591.txt、D0412.txt、D0385.txt | **无本轮举一反三回复** |
+
+## 四、独立回复清单（15 份）
+
+| 编号 | 问题类 | 产品项目（专业）组 | 代表文件 |
+| --- | --- | --- | --- |
+| JCZF2019002-1 | P1 | H-25燃机项目小组 | D0435.txt |
+| JCZF2019002-2 | P1 | 海上平台燃气轮机发电机组国产化研制 | D0438.txt |
+| JCZF2019002-3 | P1 | 西门子机组 | D0441.txt |
+| JCZF2019002-4 | P1 | 梧州站燃驱压缩机组CGT25-D燃机 | D0444.txt |
+| JCZF2019002-5 | P1 | 衢州站燃驱压缩机组CGT25-D燃机 | D0447.txt |
+| JCZF2019002-6 | P1 | 涠洲东方6000发电机组 | D0450.txt |
+| JCZF2019003-1 | P2 | 海上平台燃气轮机发电机组国产化研制 | D0453.txt |
+| JCZF2019003-2 | P2 | 梧州站燃驱压缩机组CGT25-D燃机 | D0456.txt |
+| JCZF2019003-3 | P2 | 燃压 | D0459.txt |
+| JCZF2019003-4 | P2 | 涠洲东方6000 发电机组 | D0462.txt |
+| JCZF2019004-1 | P3 | 海上平台燃气轮机发电机组国产化研制 | D0465.txt |
+| JCZF2019004-2 | P3 | 梧州站燃驱压缩机组CGT25-D燃机 | D0468.txt |
+| JCZF2019004-3 | P3 | 燃压 | D0472.txt |
+| JCZF2019004-4 | P3 | 伊朗北阿 UGT15000燃气轮机发电机组项目 | D0475.txt |
+| JCZF2019004-5 | P3 | 涠洲东方6000发电机组 | D0479.txt |
+
+## 五、与台账对账的统计
+
+- **独立举一反三回复数**：**15** 份（P1：6；P2：4；P3：5）。
+- **台账对象行数**：**16** 行（48 个对象×问题单元格，其中「无本轮举一反三回复/—」共 22 格）。
+- **各类问题有实质回复的覆盖对象数**（不含「无回复/—」）：P1 **13**；P2 **7**；P3 **6**。
+- **按状态计单元格数（对象×问题）**：
+  - —：**2**
+  - 仅提出风险或建议：**1**
+  - 仅提出风险或建议（低可能性）：**1**
+  - 已实施但未见功能验证：**5**
+  - 已有功能验证：**1**
+  - 已确认待整改（未证明完成）：**3**
+  - 无本轮举一反三回复：**20**
+  - 自查判断不适用：**1**
+  - 自查判断无ESD同类风险：**1**
+  - 自查判断无同类风险：**9**
+  - 自查判断无同类风险（型号不同）：**1**
+  - 自查判断无接反问题：**3**
+
+## 六、说明
+
+1. 梧州/衢州 P1 回复为**站级**滑油撬控制箱结论，未在资料中分机组展开，台账不得外推至各号机组。
+2. JCZF2019003-4 将**涠洲东方6000**与**北阿15000**合并叙述，台账中北阿 P2 依据同单；P1/P3 北阿分别有/无独立 JCZF。
+3. 烟墩 P3 仅有 2018 年设计发现记录（D0387），**未见**本轮 JCZF2019004 系列中的烟墩闭环回复；不得视为已完成接反整改验证。
+4. 多个 H-25、西门子、海上平台项目对 P2/P3 **无** JCZF 回复，矩阵中已显式标注，不表示现场无风险，仅表示本轮未收集到对应回复。
+</pre></details><details class='ans'><summary>C · Grok 4.7 直答（与A同slug） · 97.2/100</summary><pre class='raw'># Q1｜对象 × 三类问题全量台账（供质量负责人签字）
+
+**资料截止口径（2019 年这轮回复所能证明的历史状态，不以库内更晚记录覆盖）：**  
+三类问题为：**(A) 烟墩站滑油撬配电箱/接线箱控制电源旋钮误碰停机**；**(B) 烟墩 3# 机组压缩机油站油泵异响/刮缸**；**(C) 机带双联滤压差开关接口管路接反**。  
+台账只收录这轮被明确点名为自查对象的项目/产品/机组，以及三类问题的源发站（烟墩）。重复上传按正文去重，不另计事件。图片未转写的内容不补写。空栏不作“无风险”。机组编号原文并存处不强行归一。
+
+---
+
+## 0. 统计单位与判定口径（先定义，后对账）
+
+| 单位 | 定义 | 不混算说明 |
+|---|---|---|
+| **独立回复** | 2019 年 JCZF 举一反三报告单，按正文 SHA256 去重后的 1 份 = 1 条独立回复 | 不等于项目数、不等于机组数；同文多份上传计 1 |
+| **覆盖对象** | 该条回复“举一反三项目 / 自查描述 / 结论”中被点名的项目或产品 | 系列级结论不拆成无分项证据的设备台数 |
+| **台账行** | 1 个对象 × 1 类问题 | 站级结论保留站级，不摊到每台设备 |
+
+**处置状态码（用于台账“当时状态”）：**
+
+- **未找到回复**：这轮 JCZF 中该对象对该问题无独立回复。
+- **仅自查判断**：查了配置/型号/设计，判断无同类或可能性小，无整改、无功能验证。
+- **仅风险/建议**：确认可能同类或提出更换/观察/定期检查，未见实施完成证明。
+- **已确认待整改**：确认存在隐患或错误，要求整改，未见完成证明。
+- **已实施未见功能验证**：写了已做措施，验证栏空或未描述功能试验。
+- **已有功能验证**：正文写明验证过程与闭环。
+- **源发处理中/未闭环**：源发站处理单有纠正要求，验证栏空；辅助维修表若与处理单冲突，以处理单为准。
+
+---
+
+## 1. 独立回复清单（去重后 15 份）
+
+问题 A（JCZF2019002）6 份：JCZF2019002-1 H-25 郑陆松（代表文件 D0435）；-2 海上平台 任博铖（D0438）；-3 西门子 郑涛（D0441）；-4 梧州 刘博（D0444）；-5 衢州 郭宏亮（D0447）；-6 6000 骆平平（D0450）。各 3 份重复上传。
+
+问题 B（JCZF2019003）4 份：JCZF2019003-1 海上平台（D0453）；-2 梧州 刘博（D0456）；-3 衢州 郭宏亮 2019-05-31（D0459）；-4 6000/北阿 骆平平（D0462）。各 3 份重复上传。
+
+问题 C（JCZF2019004）5 份：JCZF2019004-1 海上平台 任博铖（D0465）；-2 梧州（D0468，4 份重复）；-3 衢州 郭宏亮 2018-12-30（D0472）；-4 北阿 UGT15000 任博铖（D0475，4 份重复）；-5 6000 骆平平（D0479）。其余各 3 份重复上传。
+
+源发单（**不计入独立回复**，仅作烟墩行依据）：JCZB2019002（D0381）、JCZC2019002（D0408）、系统集成误碰处理单 2019-06-01（D0560）；JCZB2019003（D0384）、JCZC2019003（D0411/D0412）；JCZB2019004 / CGT25-D-001-1801 内部（D0387，更完整页见 D0565）。空白模板 D0556 未填，不计入回复。
+
+辅助理解、**不覆盖当时状态**：YD020（D0590）写“2019-05-31 已装防触碰护罩”，与 2019-06-01 处理单“已购买、正在安装”冲突，台账以 06-01 为准。YD021（D0591）写改型为 HJJA440-46，与 JCZC2019003“型号相同、批次不同的改进型”冲突，台账以 JCZC 为准。YD017（D0587）写烟墩 3# 2018-12-31 已换管路，但 2019 年梧州回复仍写“与烟墩相同、需择机整改”，且源发单验证栏空，故烟墩 C 不按已验证关闭。
+
+---
+
+## 2. 对象 × 三类问题台账
+
+能细分到产品/机组的只在有原文处细分；H-25 五项目只有系列级结论，五项目并列、不拆到机组。西门子三项目结论点了项目名，分列但证据同级。
+
+### 2.1 西气东输三线烟墩站（源发对象；无本站 JCZF 回复单）
+
+设备型号原文并存，不强行归一：误碰/油泵写 3# 为 **CGT25-D-002 / 燃压机组**（JCZB2019002、JCZC2019003）；双联滤源发单写 3# 所属 **CGT25-D-001 燃压机组**（JCZB2019004）；YD 表另见 GT25-D-003、X002。
+
+| 问题 | 粒度 | 设备型号原文 | 历史处置 | 当时状态 | 结论适用范围 | 依据 |
+|---|---|---|---|---|---|---|
+| A 误碰 | **站级**（“所有滑油撬配电箱”；事故机为 3#） | 滑油撬接线箱 / 配电箱旋钮；3# 为 CGT25-D-002 | 纠正：增加防误碰防护；纠正措施：后续项目设计考虑增加。2019-06-01：已购买保护罩，**正在安装**。通知人员远离接线箱。验证栏空。 | **已确认待整改 / 安装中未见验证**。不得写成全站已完成。 | 仅烟墩站已查滑油撬配电箱；不外推他站已改完 | D0381、D0408、D0560 |
+| B 油泵 | 站内可分：3# 已换；1# 投产初期同样问题；全站 3 台共 6 台该型泵 | 问题泵 **HJSB440-46**；3# = CGT25-D-002。JCZB 故障日 2019-05-19，JCZC 写 2019-05-18 | 3# 现场更换为“改进型、型号相同批次不同”；建议停该批次供应；贮备改进型备件。举一反三：6 台中已换 3、另 3 已备件。验证栏空。 | **3#：已实施未见功能验证**；**其余已换者未逐台指认**；**未换的 3 台仅有备件**。1# 仅记历史同类，无本轮验证。 | 仅该站采用该型号的 6 台泵；不外推他站 | D0384、D0412 |
+| C 双联滤 | 可分到 1#、3#；**2# 未找到** | 机带双联滤压差开关管路接口；3# 所属系统原文 CGT25-D-001 | 2018-12-25 起 3# 装配时对比：3# 与 1#、梧州 1# **接口相反**。D0565：1# 开关标识与 3# 相同（外侧 high、内侧 low）；建议研发核对 1#、3# 是否连对。验证/签字栏空。 | **1#、3#：已确认存在相反/正确性未闭合**；**2#：未找到回复**。不以 YD017 覆盖为已验证关闭。 | 仅被点名的 1#、3#；2# 不得填“无问题” | D0387、D0565 |
+
+### 2.2 西气东输二线广南支干线梧州站燃驱压缩机组（CGT25-D）
+
+| 问题 | 粒度 | 设备型号原文 | 历史处置 | 当时状态 | 结论适用范围 | 依据 |
+|---|---|---|---|---|---|---|
+| A 误碰 | 站级（滑油撬控制箱电源旋钮） | CGT25-D；未分机组 | 与烟墩相同无保护盖。曾加**电源按钮**保护盖（就地油循环防误碰），**忽视旋钮误碰**。结论：存在旋钮误碰风险，后期优化需添加保护盖。 | **已确认待整改**（旋钮盖未完成）。按钮盖≠旋钮盖，且无功能验证。 | 仅梧州站该控制箱；照片标注“衢州站…与烟墩相同”不代替衢州本单自查 | D0444（刘博） |
+| B 油泵 | 站级（列出泵型号，结论不按机组拆） | 燃机工艺泵 HSNK280R46T1Q；压缩机应急泵 HSNK280R46T1；压缩机主/辅泵 HSNK440R40T1（两处同型号）。烟墩问题泵 HJSB440-46 | 对照厂家质量文件，型号与烟墩完全不同，当时未发现相同问题。建议暂不做同类考虑，有条件勤观察。 | **仅自查判断 + 观察建议**。空缺≠无寿命风险。 | 仅已列出的梧州泵型号 | D0456（刘博） |
+| C 双联滤 | 站级（正文“梧州站燃机”；源发对照点过梧州 1#） | CGT25-D | 现场实查：高低压引压管连接方式与烟墩相同，同样接反。结论：需择机整改。未见实施、验证。 | **已确认待整改** | 站级结论不摊到未点名的每台机。源发对照中的梧州 1# 包含在站级结论内，不另造“已改完” | D0468；对照 D0387 |
+
+### 2.3 西二线衢州站
+
+回复将产品一、产品二分开的，台账分开；误碰只有站级一句，不摊到产品一/二。
+
+**误碰（站级，产品一/二不得各写一行已查）：**
+
+| 问题 | 粒度 | 设备型号原文 | 历史处置 | 当时状态 | 结论适用范围 | 依据 |
+|---|---|---|---|---|---|---|
+| A 误碰 | **仅站级** | 西气东输二线上海支干线衢州站燃驱压缩机组；CGT25-D；滑油撬控制箱电源旋钮 | 本单**自查情况栏为空**（不猜测）。结论：也存在旋钮误碰风险，后期优化需添加保护盖。未见实施、验证。梧州单照片标注衢州箱“情况与烟墩相同”，只作旁证。 | **已确认待整改**；自查过程缺项 | 仅衢州站该控制箱，不拆产品一/二 | D0447（郭宏亮）；旁证 D0444 |
+
+**油泵、双联滤（可分产品）：**
+
+| 对象 | 问题 | 设备型号原文 | 历史处置 | 当时状态 | 结论适用范围 | 依据 |
+|---|---|---|---|---|---|---|
+| 衢州产品一（进口机） | B 油泵 | 压缩机油站油泵 **HSJB280-460** | 与烟墩型号不同；累计运行超过 3300 小时暂未出现问题 | **仅自查判断**（运行经历≠功能验证，≠无风险） | 仅产品一该泵 | D0459，2019-05-31 郭宏亮 |
+| 衢州产品二 / 2# 压缩机（国产机） | B 油泵 | **HSJ440-46**；正文称与厂家了解 HSJS 应为 HSJ 升级版，故可能同类 | **建议进行更换**。未见已换、未见验证 | **仅风险/建议** | 仅 2# / 产品二该泵；不得写成全站已换 | D0459 |
+| 衢州产品一（进口机） | C 双联滤 | 未给开关型号 | 自查：不存在接反 | **仅自查判断** | 仅产品一 | D0472 |
+| 衢州产品二（国产机） | C 双联滤 | 未给开关型号 | 确认接反。按高压端接滤前、低压端接滤后重新接管。**验证：重新连接后运行中压差开关报警，切换双联滤后报警消除，整改得到验证，形成闭环。** 实施人郭宏亮，2018-12-30 | **已有功能验证** | 仅产品二；不外推产品一或他站 | D0472 |
+
+### 2.4 海上平台燃气轮机发电机组国产化研制
+
+| 问题 | 粒度 | 设备型号原文 | 历史处置 | 当时状态 | 结论适用范围 | 依据 |
+|---|---|---|---|---|---|---|
+| A 误碰 | 项目级（分析落到发电机滑油站；燃机滑油站仅排除 ESD） | 就地控制箱：就地/远控、油泵/加热器起停、动力/控制电源开关。国产机组接线箱外有防雨罩（高于按钮上表面） | 误碰远控切换：不影响运行、有报警；远控下就地起停失效；误碰电源开关会关设备，靠出口压力启应急泵（UPS），**未设 ESD 点**。结论：不存在误碰导致 ESD 的可能性 | **仅自查判断**（逻辑+防雨罩）。防雨罩≠防护罩闭环；不证明误碰无影响，只证明按该逻辑不走 ESD | 仅该国产化海上平台项目，不外推燃压站 | D0438（任博铖） |
+| B 油泵 | 项目级 | **进口 ALLWEILER 螺杆泵**（业主推荐品牌） | 判断出现类似故障可能性较小。未见拆检/寿命验证 | **仅自查判断** | 仅该项目该品牌泵 | D0453 |
+| C 双联滤 | 项目级 | 未给开关型号 | 确认亦接反。研发改图，**2019 年 3 月**研发部+生产部现场整改。无验证描述 | **已实施未见功能验证** | 仅该项目已改现场；不证明功能正确 | D0465（任博铖） |
+
+### 2.5 H-25 燃机项目（科丰 35、青岛 32、泰兴 32、珠海 42、理文 32）
+
+五项目被点名为自查对象，但只有一条系列结论，**不摊到每台机组**。
+
+| 问题 | 粒度 | 设备型号原文 | 历史处置 | 当时状态 | 结论适用范围 | 依据 |
+|---|---|---|---|---|---|---|
+| A 误碰 | 系列级（五项目并列） | H-25（括号内 35/32/42 为原文） | “配电箱旋钮均配有保护壳，应该不存在人员误碰导致跳机”。无分项目检查表 | **仅自查判断**。五项目共享同一句，不得写成五次独立验证 | 仅 H-25 该条系列结论 | D0435（郑陆松） |
+| B 油泵 | — | — | — | **未找到回复** | 不得填无风险 | 无 JCZF2019003-H25 |
+| C 双联滤 | — | — | — | **未找到回复** | 不得填无风险 | 无 JCZF2019004-H25 |
+
+### 2.6 西门子机组三项目（结论点名，分列）
+
+| 对象 | A 误碰 | B 油泵 | C 双联滤 |
+|---|---|---|---|
+| 黄岩 SGT400 | 自查：内部无旋转按钮；油泵急停有盖板；机组急停有金属凸台。运行至今未因箱内按钮误碰故障。结论：不存在烟墩电钮误碰隐患。**仅自查判断**。型号 SGT400。依据 D0441（郑涛） | **未找到回复** | **未找到回复** |
+| 东方平台 SGT600 | 同上一条系列结论（与黄岩、曹妃甸共用 D0441）。**不是**涠洲东方 6000 / UGT6001 | **未找到回复** | **未找到回复** |
+| 曹妃甸平台 SGT700 | 同上，D0441 | **未找到回复** | **未找到回复** |
+
+### 2.7 涠洲东方 6000 发电机组 / 东方终端自备电站 UGT6001
+
+| 问题 | 粒度 | 设备型号原文 | 历史处置 | 当时状态 | 结论适用范围 | 依据 |
+|---|---|---|---|---|---|---|
+| A 误碰 | 6000 机组/滑油撬级 | 涠洲东方 6000；无现场控制电源总开关，开关在配电室 | 判断不存在现场巡检/清扫误碰总开关的可能 | **仅自查判断** | 仅 6000 机组滑油撬布置，不覆盖北阿 | D0450（骆平平） |
+| B 油泵 | 与北阿写在同一回复，对象分开记账 | 减速器滑油站泵 **HJSB440-46**（与烟墩相同）；后换 **HSNK440R36N1MT5** | 同泵已出现泵体-泵缸刮磨；缺轴向平衡、启动偏磨。先将碳钢泵缸改铝合金，换装后未出现问题，**须定期检查轴承**。之后东方换螺杆泵 HSNK440R36N1MT5，**运行两年未出现故障** | **已实施**：改缸 + 换螺杆泵。**两年无故障是运行陈述，验证栏未写。** 定期检查轴承仍未关闭 | 仅东方终端该滑油站；改缸与换螺杆泵是两阶段，不得写成与北阿同一最终措施 | D0462（骆平平） |
+| C 双联滤 | 6000 机组级 | 双联滤接压差开关接头有进出箭头 | 称按箭头正确接管，不存在接反 | **仅自查判断** | 仅涠洲东方 6000，不覆盖北阿 | D0479（骆平平） |
+
+### 2.8 伊朗北阿 UGT15000 燃气轮机发电机组
+
+| 问题 | 粒度 | 设备型号原文 | 历史处置 | 当时状态 | 结论适用范围 | 依据 |
+|---|---|---|---|---|---|---|
+| A 误碰 | — | — | — | **未找到回复** | 不得用 6000“无现场总开关”外推北阿 | 无 JCZF2019002-15000 |
+| B 油泵 | 项目级（与东方共用 D0462） | 减速器滑油站 **HJSB440-46** | 同样刮磨；先改铝合金缸，换装后未出现问题，**须定期检查轴承**。**未写北阿已换 HSNK 螺杆泵** | **已实施改缸、未见功能验证**；残留定期检查。**不得写成与东方同一最终换泵** | 仅北阿该泵 | D0462 |
+| C 双联滤 | 项目级 | 未给型号 | 相关管路为乌方原装，没有接反。结论：滑油滤器引压管未接反 | **仅自查判断** | 仅北阿 | D0475（任博铖）；故障信息编号栏原文为 JCZF2019004，与其它单的 JCZB2019004 不一致，保留原值 |
+
+---
+
+## 3. 与台账逐项对账的统计
+
+### 3.1 独立回复数（回复单位）
+
+**15**（问题 A 6 + 问题 B 4 + 问题 C 5）。重复上传已按 hash 合并。源发 JCZB/JCZC、空白模板、YD 维修表不计入。
+
+### 3.2 每类问题的覆盖对象（对象单位，不与 15 混加）
+
+**问题 A 误碰——有回复覆盖的对象（12 个点名 + 烟墩源发）：**  
+科丰 H-25（35）、青岛 H-25（32）、泰兴 H-25（32）、珠海 H-25（42）、理文 H-25（32）、海上平台、黄岩 SGT400、东方平台 SGT600、曹妃甸 SGT700、梧州站、衢州站（站级）、涠洲东方 6000；另加烟墩站（源发处理单）。  
+**A 未找到回复：** 伊朗北阿 UGT15000。
+
+**问题 B 油泵——有回复/源发覆盖：**  
+海上平台、梧州站、衢州产品一、衢州产品二、涠洲东方 6000、伊朗北阿、烟墩站（3 台/6 泵，3#、1# 被点名）。  
+**B 未找到回复：** 上述 H-25 五项目、西门子三项目（黄岩 / 东方平台 SGT600 / 曹妃甸）。
+
+**问题 C 双联滤——有回复/源发覆盖：**  
+海上平台、梧州站、衢州产品一、衢州产品二、伊朗北阿、涠洲东方 6000、烟墩 1#、烟墩 3#。  
+**C 未找到回复：** H-25 五项目、西门子三项目、**烟墩 2#**。
+
+### 3.3 已确认但未证明完成的整改（事项单位 = 对象×问题）
+
+1. 烟墩 × A：全站旋钮无防护；06-01 仍在安装；验证空。  
+2. 梧州 × A：旋钮保护盖待加（按钮盖已加不能关闭本项）。  
+3. 衢州站 × A：保护盖待加；本单自查栏空。  
+4. 梧州 × C：接反，择机整改，未见完成。  
+5. 烟墩 3# × C、烟墩 1# × C：相反/正确性未闭环（源发建议核对；验证空）。
+
+### 3.4 仅提出风险或建议的事项
+
+1. 衢州产品二 / 2# × B：可能同类，**建议更换**，未见已换。  
+2. 梧州 × B：型号不同，**勤做观察**。  
+3. 北阿 × B、东方 × B：改缸后**须定期检查轴承**。  
+4. 纠正措施层面：后续项目设计考虑防误碰（D0408）——不是在役对象关闭证明。
+
+### 3.5 已实施但未见功能验证的事项
+
+1. 烟墩 3# × B：已换改进型同型号不同批次泵；验证空。全站“已换 3 / 备 3”未逐台验证。  
+2. 北阿 × B：碳钢缸改铝合金；无验证。  
+3. 东方 × B：先改缸，后换 HSNK440R36N1MT5；“运行两年未出现故障”为运行陈述，无验证栏。  
+4. 海上平台 × C：2019-03 现场改管；无验证。  
+5. 梧州 × A 的按钮保护盖：已加，无验证，且不关闭旋钮项。
+
+### 3.6 已有功能验证的事项
+
+**仅 1 项：** 衢州产品二 × C——重接管后运行中压差开关报警，切换双联滤后报警消除，正文写明验证并闭环（D0472）。
+
+不得把“无同类故障 / 型号不同 / 可能性较小 / 运行若干小时或两年无故障 / 有防雨罩或保护壳”计作功能验证。
+
+---
+
+## 4. 签字前须看见的缺口（与台账同行）
+
+- 独立回复 15 份，**不是**“所有项目 × 三类问题已闭环”。  
+- 北阿无 A 回复；H-25、西门子无 B、C 回复；烟墩 2# 无 C 回复——空缺不能当无风险。  
+- 东方平台 SGT600 ≠ 涠洲东方 6000；北阿改缸 ≠ 东方换螺杆泵。  
+- 当时可签字确认的是：**台账与 15 份去重回复合对、上列未完成/未验证/未覆盖项仍打开**。当时**不能**签字确认三类问题举一反三已全部关闭。
+</pre></details><details class='ans'><summary>D · Composer 2.5 + govern-graphrag-delivery · 91.8/100</summary><pre class='raw'># Q1 答复：对象 × 三类问题全量台账（Arm D）
+
+## 0. 方法与范围
+
+- **三类问题**：P1 烟墩站滑油撬/控制箱**控制电源开关误碰**致停机（JCZB2019002 系列）；P2 烟墩站 **3# 机组压缩机油泵异响**（JCZB2019003）；P3 **机带双联滤压差开关连接有误**（JCZB2019004）。
+- **数据范围**：仅使用 `answerer/corpus` 中 **JCZF2019002/003/004** 举一反三报告单（去重后 15 份）及源故障/质量处理单（烟墩 OBJ16）。未调用 `/api/delivery`，未建图谱；对 corpus 全文检索 + 结构化抽取。
+- **台账行**：各回复「举一反三项目」字段中出现的产品/项目/站级对象之并集；能细分处按衢州产品一/二、H-25 五项目细分；源站烟墩单独成行（无 JCZF 对外回复，用 JCZC/JCZB 作历史处置）。
+- **空表模板**：`Pei_Dian_Xiang_Xuan_Niu_Ju_Yi_Fan_San_Bao_Gao_Dan_*.pdf`（如 D0556.txt）无实施内容，**不计**入独立回复。
+
+
+## 1. 全量台账
+
+### OBJ01 科丰 H-25（35）项目
+
+- **设备型号/配置（原文）**：H-25 燃机项目配电箱（报告未写具体燃机型号）
+
+#### P1 控制电源误碰
+
+**回复** `JCZF2019002-1`（D0435.txt）
+- 状态：自查判断无隐患
+- 结论/处置：配电箱旋钮均配有保护壳，不会出现误碰配电箱旋钮导致机组跳机。
+- 验证：无功能验证记录
+- 适用范围：仅 H-25 配电箱旋钮误碰类问题，不含油泵/滤器。
+
+#### P2 油泵异响
+
+**无本轮举一反三回复**
+
+#### P3 双联滤压差接反
+
+**无本轮举一反三回复**
+
+### OBJ02 青岛 H-25（32）项目
+
+- **设备型号/配置（原文）**：同 OBJ01
+
+#### P1 控制电源误碰
+
+**回复** `JCZF2019002-1`（D0435.txt）
+- 状态：自查判断无隐患
+- 结论/处置：同科丰条目（同一报告覆盖五地 H-25 项目）。
+- 验证：无
+- 适用范围：同 OBJ01
+
+#### P2 油泵异响
+
+**无本轮举一反三回复**
+
+#### P3 双联滤压差接反
+
+**无本轮举一反三回复**
+
+### OBJ03 泰兴 H-25（32）项目
+
+- **设备型号/配置（原文）**：同 OBJ01
+
+#### P1 控制电源误碰
+
+**回复** `JCZF2019002-1`（D0435.txt）
+- 状态：自查判断无隐患
+- 结论/处置：同科丰条目。
+- 验证：无
+- 适用范围：同 OBJ01
+
+#### P2 油泵异响
+
+**无本轮举一反三回复**
+
+#### P3 双联滤压差接反
+
+**无本轮举一反三回复**
+
+### OBJ04 珠海 H-25（42）项目
+
+- **设备型号/配置（原文）**：同 OBJ01
+
+#### P1 控制电源误碰
+
+**回复** `JCZF2019002-1`（D0435.txt）
+- 状态：自查判断无隐患
+- 结论/处置：同科丰条目。
+- 验证：无
+- 适用范围：同 OBJ01
+
+#### P2 油泵异响
+
+**无本轮举一反三回复**
+
+#### P3 双联滤压差接反
+
+**无本轮举一反三回复**
+
+### OBJ05 理文 H-25（32）项目
+
+- **设备型号/配置（原文）**：同 OBJ01
+
+#### P1 控制电源误碰
+
+**回复** `JCZF2019002-1`（D0435.txt）
+- 状态：自查判断无隐患
+- 结论/处置：同科丰条目。
+- 验证：无
+- 适用范围：同 OBJ01
+
+#### P2 油泵异响
+
+**无本轮举一反三回复**
+
+#### P3 双联滤压差接反
+
+**无本轮举一反三回复**
+
+### OBJ06 海上平台项目（燃机/发电机滑油站）
+
+- **设备型号/配置（原文）**：国产化海上平台机组；滑油站就地控制箱（报告未列具体机组位号）
+
+#### P1 控制电源误碰
+
+**回复** `JCZF2019002-2`（D0438.txt）
+- 状态：自查判断无 ESD 风险
+- 结论/处置：分析发电机滑油站误碰各开关后果：未设供油泵 ESD，应急泵可维持运行；燃机滑油站误碰不致紧急停机；接线箱有防雨罩。结论：不存在误碰导致 ESD。
+- 验证：无试验或运行验证记录
+- 适用范围：海上平台发电机滑油站控制逻辑，不推广到其他项目。
+
+#### P2 油泵异响
+
+**回复** `JCZF2019003-1`（D0453.txt）
+- 状态：风险判断：类似故障可能性较小
+- 结论/处置：滑油站螺杆泵均为进口 ALLWEILER，质量较好且为业主推荐品牌。
+- 验证：无
+- 适用范围：海上平台滑油站泵型与烟墩 HJSB440-46 不同。
+
+#### P3 双联滤压差接反
+
+**回复** `JCZF2019004-1`（D0465.txt）
+- 状态：已实施整改，未见功能验证
+- 结论/处置：确认存在压差开关引压管路接反；研发修改图纸，2019 年 3 月研发部与生产部现场整改。
+- 验证：回复未记载试运或报警切换验证
+- 适用范围：海上平台机带双联滤压差管路，对照烟墩/梧州接口方向问题。
+
+### OBJ07 黄岩 SGT400 项目
+
+- **设备型号/配置（原文）**：SGT400
+
+#### P1 控制电源误碰
+
+**回复** `JCZF2019002-3`（D0441.txt）
+- 状态：自查判断无隐患
+- 结论/处置：机组内无旋转按钮；油泵急停按钮有盖板及金属凸台保护，运行至今未发生按钮误碰故障（附图）。
+- 验证：无专项试验
+- 适用范围：西门子机组急停/油泵按钮，非烟墩式配电箱旋钮。
+
+#### P2 油泵异响
+
+**无本轮举一反三回复**
+
+#### P3 双联滤压差接反
+
+**无本轮举一反三回复**
+
+### OBJ08 东方平台 SGT600 项目
+
+- **设备型号/配置（原文）**：SGT600
+
+#### P1 控制电源误碰
+
+**回复** `JCZF2019002-3`（D0441.txt）
+- 状态：自查判断无隐患
+- 结论/处置：同黄岩条目（同一报告）。
+- 验证：无
+- 适用范围：同 OBJ07
+
+#### P2 油泵异响
+
+**无本轮举一反三回复**
+
+#### P3 双联滤压差接反
+
+**无本轮举一反三回复**
+
+### OBJ09 曹妃甸平台 SGT700 项目
+
+- **设备型号/配置（原文）**：SGT700
+
+#### P1 控制电源误碰
+
+**回复** `JCZF2019002-3`（D0441.txt）
+- 状态：自查判断无隐患
+- 结论/处置：同黄岩条目。
+- 验证：无
+- 适用范围：同 OBJ07
+
+#### P2 油泵异响
+
+**无本轮举一反三回复**
+
+#### P3 双联滤压差接反
+
+**无本轮举一反三回复**
+
+### OBJ10 梧州站燃驱压缩机组（西二线广南支干线）
+
+- **设备型号/配置（原文）**：CGT25-D 燃机；滑油撬油泵 HSNK280R46T1Q / HSNK280R46T1 / HSNK440R40T1（与烟墩 HJSB440-46 不同）
+
+#### P1 控制电源误碰
+
+**回复** `JCZF2019002-4`（D0444.txt）
+- 状态：确认风险；部分措施已做，未完成；无验证
+- 结论/处置：滑油撬控制箱电源旋钮与烟墩相同无保护盖，存在误碰风险；本次已增加电源按钮保护盖，但未解决旋钮误碰；需后期优化加保护盖。
+- 验证：无
+- 适用范围：梧州站滑油撬控制箱，不含衢州/烟墩其他机组。
+
+#### P2 油泵异响
+
+**回复** `JCZF2019003-2`（D0456.txt）
+- 状态：建议观察，未作同类整改
+- 结论/处置：梧州站油泵型号与烟墩完全不同，目前未发现相同问题，建议暂不做同类考虑，日后有条件勤观察。
+- 验证：无
+- 适用范围：梧州站各滑油撬油泵型号清单自查。
+
+#### P3 双联滤压差接反
+
+**回复** `JCZF2019004-2`（D0468.txt）
+- 状态：确认问题待整改
+- 结论/处置：燃机机带双联滤压差引压管连接方式与烟墩相同，存在接反问题，需择机整改。
+- 验证：无
+- 适用范围：梧州站燃机机带双联滤，不含已整改的衢州产品二。
+
+### OBJ11 衢州站燃驱压缩机组（西二线上海支干线，站级）
+
+- **设备型号/配置（原文）**：CGT25-D 燃机（报告站级表述）
+
+#### P1 控制电源误碰
+
+**回复** `JCZF2019002-5`（D0447.txt）
+- 状态：确认风险待整改
+- 结论/处置：存在滑油撬控制箱电源旋钮误碰风险，后期优化需完成保护盖添加。
+- 验证：无
+- 适用范围：站级结论；产品一/产品二在 P2/P3 细分。
+
+#### P2 油泵异响
+
+**无本轮举一反三回复**（站级 P2 由 OBJ12/OBJ13 覆盖）
+
+#### P3 双联滤压差接反
+
+**无本轮举一反三回复**（站级 P3 由 OBJ12/OBJ13 覆盖）
+
+### OBJ12 衢州站产品一（进口机）
+
+- **设备型号/配置（原文）**：压缩机油站油泵 HSJB280-460
+
+#### P1 控制电源误碰
+
+**无本轮举一反三回复**（P1 未按产品拆分，见 OBJ11）
+
+#### P2 油泵异响
+
+**回复** `JCZF2019003-3`（D0459.txt）
+- 状态：自查无同类问题
+- 结论/处置：型号与烟墩不同，累计运行超 3300 小时暂未出现问题。
+- 验证：运行小时数陈述，无换泵后试运记录
+- 适用范围：衢州站进口机压缩机油站。
+
+#### P3 双联滤压差接反
+
+**回复** `JCZF2019004-3`（D0472.txt）
+- 状态：自查无接反
+- 结论/处置：进口机不存在机带双联滤压差开关接口接反问题。
+- 验证：无
+- 适用范围：衢州站产品一燃机机带双联滤。
+
+### OBJ13 衢州站产品二（国产机）
+
+- **设备型号/配置（原文）**：压缩机油站油泵 HSJ440-46（报告述为 HSJS/HSJ 升级版）
+
+#### P1 控制电源误碰
+
+**无本轮举一反三回复**（P1 未按产品拆分，见 OBJ11）
+
+#### P2 油泵异响
+
+**回复** `JCZF2019003-3`（D0459.txt）
+- 状态：确认风险，建议更换
+- 结论/处置：2# 压缩机油站油泵有可能出现烟墩站类似故障，建议进行更换。
+- 验证：无更换完成或试运记录
+- 适用范围：衢州站国产机 2# 压缩机油站。
+
+#### P3 双联滤压差接反
+
+**回复** `JCZF2019004-3`（D0472.txt）
+- 状态：已整改并有功能验证
+- 结论/处置：存在接反；按高压端接滤前、低压端接滤后重制管路；运行中报警、切换双联滤后报警消除，形成闭环。
+- 验证：2018-12-30 实施人郭宏亮；运行过程验证描述
+- 适用范围：衢州站产品二燃机机带双联滤。
+
+### OBJ14 涠洲东方 6000 发电机组项目
+
+- **设备型号/配置（原文）**：6000 机组；滑油泵 HJSB440-46（与烟墩同型）；自查亦涉及东方终端 UGT6001 减速器滑油站
+
+#### P1 控制电源误碰
+
+**回复** `JCZF2019002-6`（D0450.txt）
+- 状态：自查判断无隐患
+- 结论/处置：6000 机组滑油撬无现场控制电源总开关，开关均在配电室，不存在现场误碰总开关可能。
+- 验证：无
+- 适用范围：6000 滑油撬配电方式，不同于烟墩就地箱。
+
+#### P2 油泵异响
+
+**回复** `JCZF2019003-4`（D0462.txt）
+- 状态：已实施整改；部分有运行记录
+- 结论/处置：北阿与东方终端 UGT6001 使用 HJSB440-46 出现刮磨；北阿/东方终端更换泵缸材质（碳钢改铝合金），换装后未再出现问题；东方终端后续换装 HSNK440R36N1MT5，运行两年未故障。
+- 验证：东方终端换泵型有“运行两年未故障”陈述；需定期检查轴承
+- 适用范围：6000 项目及东方终端 UGT6001 减速器滑油站，不含北阿 UGT15000 整机。
+
+#### P3 双联滤压差接反
+
+**回复** `JCZF2019004-5`（D0479.txt）
+- 状态：自查无接反
+- 结论/处置：双联滤接头有进出箭头，涠洲东方均按箭头正确接管，不存在接反。
+- 验证：无试运记录
+- 适用范围：6000 机带双联滤压差开关管路。
+
+### OBJ15 伊朗北阿 15000 燃机发电项目
+
+- **设备型号/配置（原文）**：UGT15000；P2 与 OBJ14 同报告
+
+#### P1 控制电源误碰
+
+**无本轮举一反三回复**
+
+#### P2 油泵异响
+
+**回复** `JCZF2019003-4`（D0462.txt）
+- 状态：已实施整改，未见完整验证
+- 结论/处置：与烟墩同型 HJSB440-46 刮磨；更换泵缸材质为铝合金，换装后未出现问题，须定期检查轴承。
+- 验证：无换泵型后的长期运行数据（东方终端有，北阿仅述换装后未出现问题）
+- 适用范围：北阿项目减速器滑油站 HJSB440-46。
+
+#### P3 双联滤压差接反
+
+**回复** `JCZF2019004-4`（D0475.txt）
+- 状态：自查无接反
+- 结论/处置：相关管路为乌方原装，没有接反；滑油滤器引压管未接反。
+- 验证：无
+- 适用范围：北阿 UGT15000 机带双联滤引压管路。
+
+### OBJ16 烟墩站 3# 燃压机组（源事件，CGT25-D-002）
+
+- **设备型号/配置（原文）**：CGT25-D-002；油泵 HJSB440-46；滑油撬接线箱
+
+#### P1 控制电源误碰
+
+**无 JCZF 举一反三回复**；源站资料 `D0408.txt / JCZC2019002`
+- 状态：源站处置：纠正措施已提出，举一反三发出
+- 处置/结论：2019-05-18 误触控制电源总开关致 3# 停机；原因：旋钮无防误碰防护；纠正：增加防护装置；举一反三要求其他项目梳理。验证栏为空。
+- 验证：质量信息处理单验证栏未填写
+- 适用范围：烟墩站全部滑油撬配电箱旋钮。
+
+#### P2 油泵异响
+
+**无 JCZF 举一反三回复**；源站资料 `D0411.txt / JCZC2019003`
+- 状态：源站已换泵；备件储备
+- 处置/结论：2019-05-19 3# 压缩机油泵异响、双联滤压差高，更换 HJSB440-46 改进型批次；3 台机组 6 泵已换 3 个，另 3 个备件就绪。验证栏为空。
+- 验证：无
+- 适用范围：烟墩 3# 机组压缩机油站。
+
+#### P3 双联滤压差接反
+
+**无 JCZF 举一反三回复**；源站资料 `D0387.txt / JCZB2019004`
+- 状态：源事件记录（2018-12-27）
+- 处置/结论：烟墩 3# 与 1#、梧州 1# 机带双联滤压差开关接口连接管路相反；装配对比发现。
+- 验证：故障信息报告单，非举一反三闭环
+- 适用范围：烟墩 3# 燃机机带双联滤接口（源发现）。
+
+
+## 2. 统计（与台账逐项对账）
+
+### 2.1 统计单位定义
+
+- **独立回复**：一份编号的 JCZF 举一反三报告单（JCZF2019002-1…6、2019003-1…4、2019004-1…5），共 **15** 份；manifest 中同文 PDF 重复上传 **45** 份（约 3 拷贝/份）。
+- **台账对象**：上表 **16** 个对象（含 5 个 H-25 子项目、衢州 2 产品细分、烟墩源站）。
+- **对象×问题单元格**：16×3=**48** 格；其中 **24** 格有 JCZF 回复，**21** 格显式无 JCZF 回复，**3** 格为烟墩源站仅用 JCZC/JCZB 历史资料（无对外 JCZF 表单）。
+
+### 2.2 汇总表
+
+| 指标 | 数值 |
+|------|------|
+| 独立举一反三回复（JCZF） | 15 |
+| P1 有回复的对象 | 科丰/青岛/泰兴/珠海/理文 H-25、海上平台、黄岩/东方/曹妃甸 SGT、梧州站、衢州站（站级）、涠洲东方 6000（11 对象/站级组） |
+| P2 有回复的对象 | 海上平台、梧州站、衢州产品一/二、涠洲东方 6000、北阿 15000（6 对象） |
+| P3 有回复的对象 | 海上平台、梧州站、衢州产品一/二、北阿 UGT15000、涠洲东方 6000（6 对象） |
+| 已有功能验证（资料明确试运/报警验证） | 1 单元格：衢州产品二 P3（切换双联滤报警消除） |
+| 已实施但未见功能验证 | 例：海上平台 P3 现场整改；梧州/衢州 P1 部分护罩；北阿/东方终端 P2 换泵缸/换泵型（东方终端有运行两年陈述） |
+| 仅风险/建议/自查无同类 | 例：H-25/SGT/6000 P1 无隐患判断；梧州 P2 暂不换泵；衢州产品二 P2 建议换泵；梧州 P3 择机整改 |
+| 确认风险待关闭 | 梧州 P1/P3、衢州站 P1、衢州产品二 P2 等 |
+
+### 2.3 按单元格状态计数（48 格）
+
+- verified: 2
+- done_unverified: 3
+- risk_or_suggest: 7
+- self_check_ok: 13
+- no_reply: 21
+- other: 2
+
+### 2.4 交叉缺失（显式无 JCZF 回复）
+
+- **P1 无回复**：北阿 15000、烟墩源站（仅有 JCZC 纠正意图）；全部 H-25/SGT 对 P2/P3 无回复。
+
+- **P2 无回复**：全部 H-25、西门子三项目、衢州站站级（由产品细分覆盖）、烟墩源站（JCZC 换泵记录）。
+
+- **P3 无回复**：全部 H-25、西门子三项目、衢州站站级、烟墩源站（JCZB 源记录）。
+</pre></details>
+
+  <h2>仍未验证</h2>
+  <ul>
+    <li>无独立第二审核者；不是双盲双审。</li>
+    <li>TXT 未与原 PDF / 图片逐页校对。图片未转写内容按规则不作为必答。</li>
+    <li>四路都不是完整 GraphRAG（组织 / 建图 / 图检索 / 发布）。A 的「建索引」是本地 hash 去重，不是向量库或图谱。</li>
+    <li>墙钟、token、费用均未知。每路只跑了 1 次。</li>
+    <li>Q2–Q4 未启动，不自动调用付费模型。</li>
+    <li>已中止的其他模型线程不重启。</li>
+    <li>本包四题共用同一证据簇，不能当四个独立样本，也不能当方法优越性的最终证明。</li>
+  </ul>
+</main>
+<footer>
+  <p class="note">评分底稿：rag-eval-v4-runs-20260923/judge_scores/q1_cell_scores.json 与 q1_totals.json。原始答卷：{A,B,C,D}_Q1/answers_Q1.md。协议：run_protocol.json。金标：rag-eval-v4-20260923/judge/gold.json。</p>
+</footer>
+</body>
+</html>

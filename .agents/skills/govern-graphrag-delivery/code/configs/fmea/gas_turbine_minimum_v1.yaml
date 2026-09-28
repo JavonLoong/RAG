@@ -1,0 +1,60 @@
+template: gas_turbine_minimum_v1
+version: "1.1.0"
+status: approved
+description: 燃气轮机 FMEA 最小可审核字段模板；不自动生成无证据的评分。
+
+graph_constraints:
+  knowledge_types:
+    - STRUCTURAL
+    - FAILURE
+    - CAUSAL
+    - EFFECT
+    - DETECTION
+    - MITIGATION
+    - MODEL_APPLICABILITY
+    - MODEL_DIFFERENCE
+  equipment_hierarchy:
+    relation: PART_OF
+    allowed_endpoints:
+      - [COMPONENT, SYSTEM]
+      - [COMPONENT, EQUIPMENT]
+      - [SYSTEM, SYSTEM]
+      - [SYSTEM, EQUIPMENT]
+  minimum_failure_chain:
+    - {relation: HAS_FAILURE_MODE, subject: [EQUIPMENT, SYSTEM, COMPONENT], object: FAILURE_MODE}
+    - {relation: CAUSED_BY, subject: FAILURE_MODE, object: CAUSE}
+    - {relation: HAS_EFFECT, subject: FAILURE_MODE, object: EFFECT}
+    - {relation: DETECTED_BY, subject: FAILURE_MODE, object: DETECTION_METHOD}
+    - {relation: MITIGATED_BY, subject: FAILURE_MODE, object: ACTION}
+  model_scope_policy:
+    preserve_model_specific_values: true
+    normalize_model_aliases: true
+    do_not_treat_cross_model_values_as_source_conflicts: true
+    surface_cross_model_differences: true
+
+fields:
+  - {name: equipment, label: 设备, required: true}
+  - {name: component, label: 部件/系统, required: true}
+  - {name: failure_mode, label: 故障模式, required: true}
+  - {name: cause, label: 原因, required: true}
+  - {name: effect, label: 影响, required: true}
+  - {name: detection_method, label: 检测方法, required: true}
+  - {name: recommended_action, label: 建议措施, required: true}
+
+evidence_policy:
+  per_field_required: true
+  unknown_value: null
+  show_conflicts: true
+  allow_human_correction: true
+
+scoring_policy:
+  automatic_s_o_d_scores: false
+  reason: 任务清单明确暂缓自动生成无依据的 FMEA 评分
+
+report_layout:
+  report_template_id: gas_turbine_formal_docx_v1
+  title: PowerRAG 燃气轮机可信 FMEA 正式交付表
+  orientation: landscape
+  font: Microsoft YaHei
+  accent_color: 1F4E79
+  margin_inches: 0.45
